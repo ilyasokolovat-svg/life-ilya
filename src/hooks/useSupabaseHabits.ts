@@ -90,7 +90,7 @@ export default function useSupabaseHabits() {
       
       try {
         // Check and create habit_days table
-        const { error: daysError } = await supabase.rpc('create_habit_days_table');
+        const { error: daysError } = await supabase.rpc('create_habit_days_table') as any;
         
         if (daysError && !daysError.message.includes('already exists')) {
           console.error('Error creating habit_days table:', daysError);
@@ -98,7 +98,7 @@ export default function useSupabaseHabits() {
         }
         
         // Check and create habit_goals table
-        const { error: goalsError } = await supabase.rpc('create_habit_goals_table');
+        const { error: goalsError } = await supabase.rpc('create_habit_goals_table') as any;
         
         if (goalsError && !goalsError.message.includes('already exists')) {
           console.error('Error creating habit_goals table:', goalsError);
@@ -125,7 +125,7 @@ export default function useSupabaseHabits() {
         const { data, error } = await supabase
           .from('habit_days')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', userId) as any;
           
         if (error) {
           console.error('Failed to fetch habit data:', error);
@@ -159,7 +159,7 @@ export default function useSupabaseHabits() {
         const { data, error } = await supabase
           .from('habit_goals')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', userId) as any;
           
         if (error) {
           console.error('Failed to fetch habit goals:', error);
@@ -227,7 +227,7 @@ export default function useSupabaseHabits() {
               updated_at: new Date()
             },
             { onConflict: 'user_id,date' }
-          );
+          ) as any;
           
         if (error) {
           console.error('Failed to update habit:', error);
@@ -297,7 +297,7 @@ export default function useSupabaseHabits() {
               updated_at: new Date()
             },
             { onConflict: 'user_id,month_key' }
-          );
+          ) as any;
           
         if (error) {
           console.error('Failed to update goal:', error);
