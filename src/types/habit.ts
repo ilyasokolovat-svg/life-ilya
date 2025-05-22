@@ -1,8 +1,10 @@
+
 export type HabitType = 'gym' | 'alcohol' | 'sleep' | 'meditation';
 
 export interface HabitData {
   planned: boolean;
   completed: boolean;
+  sleepHours?: number; // Optional field for tracking sleep hours
 }
 
 export interface DayData {

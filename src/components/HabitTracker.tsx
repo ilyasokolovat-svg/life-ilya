@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { HabitData, HabitType } from "@/types/habit";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   onUpdate,
 }) => {
   const [showAnimation, setShowAnimation] = useState(false);
+  const [sleepHours, setSleepHours] = useState(habitData.sleepHours?.toString() || "");
 
   const handlePlannedChange = (checked: boolean) => {
     onUpdate(habitType, {
@@ -43,6 +45,29 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       ...habitData,
       completed: checked,
       planned: checked ? true : habitData.planned, // If completing, ensure it's also planned
+    });
+  };
+
+  const handleSleepHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSleepHours(value);
+    
+    const hours = parseFloat(value);
+    const isCompleted = !isNaN(hours) && hours >= 7;
+    
+    if (isCompleted && !habitData.completed) {
+      setShowAnimation(true);
+      setTimeout(() => setShowAnimation(false), 1000);
+      toast(`Great job! You got enough sleep!`, {
+        icon: "🎉",
+      });
+    }
+    
+    onUpdate(habitType, {
+      ...habitData,
+      sleepHours: isNaN(hours) ? undefined : hours,
+      completed: isCompleted,
+      planned: true, // Always mark as planned when hours are entered
     });
   };
 
@@ -97,27 +122,46 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       </div>
       
       <div className="flex items-center gap-1 ml-auto">
-        <div className="flex items-center mr-1">
-          <label className="text-[9px] mr-0.5 whitespace-nowrap">P</label>
-          <Checkbox
-            checked={habitData.planned}
-            onCheckedChange={handlePlannedChange}
-            // Allow planning for today and future dates, disable only for past dates that weren't planned
-            disabled={isPast && !habitData.planned}
-            className="h-3 w-3"
-          />
-        </div>
-        
-        <div className="flex items-center">
-          <label className="text-[9px] mr-0.5 whitespace-nowrap">D</label>
-          <Checkbox
-            checked={habitData.completed}
-            onCheckedChange={handleCompletedChange}
-            // Only disable completion for future dates
-            disabled={isFuture}
-            className={`h-3 w-3 ${habitData.completed ? "bg-success border-success" : ""}`}
-          />
-        </div>
+        {habitType === "sleep" ? (
+          <div className="flex items-center">
+            <Input
+              type="number"
+              value={sleepHours}
+              onChange={handleSleepHoursChange}
+              className="h-5 w-12 text-[10px] px-1 py-0"
+              placeholder="hrs"
+              min="0"
+              max="24"
+              step="0.5"
+              disabled={isFuture}
+            />
+            <span className="text-[9px] ml-1">hrs</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center mr-1">
+              <label className="text-[9px] mr-0.5 whitespace-nowrap">P</label>
+              <Checkbox
+                checked={habitData.planned}
+                onCheckedChange={handlePlannedChange}
+                // Allow planning for today and future dates, disable only for past dates that weren't planned
+                disabled={isPast && !habitData.planned}
+                className="h-3 w-3"
+              />
+            </div>
+            
+            <div className="flex items-center">
+              <label className="text-[9px] mr-0.5 whitespace-nowrap">D</label>
+              <Checkbox
+                checked={habitData.completed}
+                onCheckedChange={handleCompletedChange}
+                // Only disable completion for future dates
+                disabled={isFuture}
+                className={`h-3 w-3 ${habitData.completed ? "bg-success border-success" : ""}`}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
