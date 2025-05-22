@@ -26,17 +26,22 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   );
   const isMobile = useMediaQuery("(max-width: 640px)");
 
-  const handlePlannedChange = (checked: boolean) => {
+  const handlePlannedChange = (checked: boolean | string) => {
+    const isChecked = checked === true || checked === "true";
+    console.log(`Marking ${habitType} as ${isChecked ? 'planned' : 'not planned'}`);
     onUpdate(habitType, {
       ...habitData,
-      planned: checked,
+      planned: isChecked,
       // Don't automatically change completed state when unplanning
     });
   };
 
-  const handleCompletedChange = (checked: boolean) => {
+  const handleCompletedChange = (checked: boolean | string) => {
+    const isChecked = checked === true || checked === "true";
+    console.log(`Marking ${habitType} as ${isChecked ? 'completed' : 'not completed'}`);
+    
     // If marking as completed, show animation and toast
-    if (checked && !habitData.completed) {
+    if (isChecked && !habitData.completed) {
       setShowAnimation(true);
       setTimeout(() => setShowAnimation(false), 1000);
       toast(`Great job! You completed your ${habitType} goal!`, {
@@ -47,8 +52,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     // When completing, automatically mark as planned too
     onUpdate(habitType, {
       ...habitData,
-      completed: checked,
-      planned: checked ? true : habitData.planned, // If completing, ensure it's also planned
+      completed: isChecked,
+      planned: isChecked ? true : habitData.planned, // If completing, ensure it's also planned
     });
   };
 
@@ -67,6 +72,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       });
     }
     
+    console.log(`Updating sleep hours to ${hours}, completed: ${isCompleted}`);
     onUpdate(habitType, {
       ...habitData,
       sleepHours: isNaN(hours) ? undefined : hours,

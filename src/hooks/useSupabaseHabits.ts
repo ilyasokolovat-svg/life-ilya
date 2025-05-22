@@ -38,16 +38,13 @@ export default function useSupabaseHabits() {
     let anonId = localStorage.getItem('anon_user_id');
     
     if (!anonId) {
-      anonId = `anon_${crypto.randomUUID()}`;
+      anonId = `anon-${crypto.randomUUID()}`;
       localStorage.setItem('anon_user_id', anonId);
     }
     
     setUserId(anonId);
     setIsAuthChecking(false);
     console.log("Using user ID:", anonId);
-    
-    // No need to create tables on each component mount
-    // That's handled in App.tsx during initial load
   }, []);
 
   // Fetch habit days
@@ -57,6 +54,7 @@ export default function useSupabaseHabits() {
       if (!userId) return {};
       
       try {
+        console.log('Fetching habit days for user:', userId);
         const { data, error } = await supabase
           .from('habit_days')
           .select('*')
@@ -72,7 +70,7 @@ export default function useSupabaseHabits() {
         
         // Transform to the format our app expects
         const transformedData: Record<string, DayData> = {};
-        if (data) {
+        if (data && Array.isArray(data)) {
           data.forEach((record: HabitDayRecord) => {
             // Cast Json to DayData since we know the structure matches
             transformedData[record.date] = record.habit_data as unknown as DayData;
@@ -96,6 +94,7 @@ export default function useSupabaseHabits() {
       if (!userId) return createDefaultMonthlyGoals();
       
       try {
+        console.log('Fetching habit goals for user:', userId);
         const { data, error } = await supabase
           .from('habit_goals')
           .select('*')
@@ -111,7 +110,7 @@ export default function useSupabaseHabits() {
         
         // Transform to the format our app expects
         const transformedGoals: Record<string, any> = {};
-        if (data) {
+        if (data && Array.isArray(data)) {
           data.forEach((record: HabitGoalRecord) => {
             // Cast Json to our expected structure
             transformedGoals[record.month_key] = record.goals_data as any;
@@ -144,7 +143,11 @@ export default function useSupabaseHabits() {
       habitType: HabitType, 
       data: HabitData 
     }) => {
-      if (!userId) throw new Error('User not authenticated');
+      if (!userId) {
+        console.error('Cannot update habit: No user ID available');
+        toast.error('Failed to save your progress');
+        throw new Error('User not authenticated');
+      }
       
       const dateISO = formatDateISO(date);
       
@@ -161,28 +164,25 @@ export default function useSupabaseHabits() {
       
       try {
         // Convert to JSON for Supabase (stringified and parsed to ensure clean JSON)
-        // This helps avoid circular reference issues
-        const habitDataJson = JSON.parse(JSON.stringify(dayData));
+        const cleanDayData = JSON.parse(JSON.stringify(dayData));
         
         console.log('Upserting habit day:', {
           date: dateISO,
           habitType,
           userId,
-          data: habitDataJson
+          data: cleanDayData
         });
         
         // Create a record for upsert
         const record = {
           user_id: userId,
           date: dateISO,
-          habit_data: habitDataJson
+          habit_data: cleanDayData
         };
         
-        const { data: result, error } = await supabase
+        const { error } = await supabase
           .from('habit_days')
-          .upsert(record)
-          .select()
-          .single();
+          .upsert(record);
           
         if (error) {
           console.error('Failed to update habit:', error);
@@ -190,8 +190,8 @@ export default function useSupabaseHabits() {
           throw error;
         }
         
-        console.log('Successfully updated habit day:', result);
-        return result;
+        console.log('Successfully updated habit day');
+        return { success: true };
       } catch (error) {
         console.error('Error in update day mutation:', error);
         toast.error('Failed to save your progress');
@@ -233,7 +233,11 @@ export default function useSupabaseHabits() {
       habitType: HabitType,
       goal: any
     }) => {
-      if (!userId) throw new Error('User not authenticated');
+      if (!userId) {
+        console.error('Cannot update goal: No user ID available');
+        toast.error('Failed to save your goal');
+        throw new Error('User not authenticated');
+      }
       
       const monthKey = formatYearMonth(year, month);
       
@@ -248,27 +252,25 @@ export default function useSupabaseHabits() {
       
       try {
         // Convert to JSON for Supabase
-        const goalsDataJson = JSON.parse(JSON.stringify(monthGoals));
+        const cleanGoalsData = JSON.parse(JSON.stringify(monthGoals));
         
         console.log('Upserting goal:', {
           monthKey,
           userId,
           habitType,
-          goal: goalsDataJson
+          goal: cleanGoalsData
         });
         
         // Create a record for upsert
         const record = {
           user_id: userId,
           month_key: monthKey,
-          goals_data: goalsDataJson
+          goals_data: cleanGoalsData
         };
         
-        const { data: result, error } = await supabase
+        const { error } = await supabase
           .from('habit_goals')
-          .upsert(record)
-          .select()
-          .single();
+          .upsert(record);
           
         if (error) {
           console.error('Failed to update goal:', error);
@@ -276,8 +278,8 @@ export default function useSupabaseHabits() {
           throw error;
         }
         
-        console.log('Successfully updated goal:', result);
-        return result;
+        console.log('Successfully updated goal');
+        return { success: true };
       } catch (error) {
         console.error('Error in update goal mutation:', error);
         toast.error('Failed to save your goal');
@@ -323,4 +325,3 @@ export default function useSupabaseHabits() {
     userId
   };
 }
-

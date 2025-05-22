@@ -26,7 +26,7 @@ const App = () => {
     const initializeApp = async () => {
       try {
         // Simple query to check if Supabase is connected
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('habit_days')
           .select('count')
           .limit(1);
@@ -34,16 +34,30 @@ const App = () => {
         if (error) {
           console.error('Error connecting to Supabase:', error);
           
-          // Try to create tables if they don't exist
+          toast.error('Could not connect to database. Some features may not work.');
           console.log('Attempting to create habit tables...');
           
           try {
             await supabase.rpc('create_habit_days_table');
             await supabase.rpc('create_habit_goals_table');
             console.log('Successfully created habit tracking tables');
+            
+            // Verify tables were created
+            const { error: checkError } = await supabase
+              .from('habit_days')
+              .select('count')
+              .limit(1);
+              
+            if (checkError) {
+              console.error('Tables might not have been created:', checkError);
+              toast.error('Database setup incomplete. Please reload the page.');
+            } else {
+              console.log('Tables verified successfully');
+              toast.success('Database connected successfully');
+            }
           } catch (tableError) {
             console.error('Failed to create tables:', tableError);
-            toast.error('Could not connect to database. Some features may not work.');
+            toast.error('Could not set up database tables. Please try again later.');
           }
         } else {
           console.log('Successfully connected to Supabase');
@@ -76,4 +90,3 @@ const App = () => {
 };
 
 export default App;
-
