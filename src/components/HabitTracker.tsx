@@ -65,7 +65,20 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     }
   };
 
-  const habitLabel = habitType.charAt(0).toUpperCase() + habitType.slice(1);
+  const getHabitLabel = () => {
+    switch (habitType) {
+      case "gym":
+        return "Gym";
+      case "alcohol":
+        return "No Alcohol";
+      case "sleep":
+        return "Sleep";
+      case "meditation":
+        return "Meditation";
+      default:
+        return habitType.charAt(0).toUpperCase() + habitType.slice(1);
+    }
+  };
   
   // Update the status class to color the entire row based on completion status
   let habitStatusClass = "bg-transparent";
@@ -80,7 +93,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     <div className={`flex items-center justify-between py-0.5 px-1 rounded ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
       <div className="flex items-center gap-1">
         {renderIcon()}
-        <span className="text-[10px] font-medium ml-0.5">{habitLabel}</span>
+        <span className="text-[10px] font-medium ml-0.5">{getHabitLabel()}</span>
       </div>
       
       <div className="flex items-center gap-1 ml-auto">
