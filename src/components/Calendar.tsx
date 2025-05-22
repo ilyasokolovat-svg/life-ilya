@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,16 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
   }, [viewMonth, viewYear]);
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  
+  // Change: Calculate first day of month with Monday as first day of week (0)
+  // In JavaScript, Sunday is 0, Monday is 1, ..., Saturday is 6
+  // To make Monday the first day, we subtract 1 and use modulo 7
+  const firstDayOfMonth = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7;
+  
   const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
   
-  // Get array of week days
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Update weekdays array to start with Monday
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   
   // Navigation functions
   const goToPreviousMonth = () => {
@@ -188,7 +194,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
       
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
-        {/* Week day headers */}
+        {/* Week day headers - now starting with Monday */}
         {weekDays.map((day) => (
           <div key={day} className="text-center font-medium py-2">
             {day}

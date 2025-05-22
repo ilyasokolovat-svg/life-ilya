@@ -8,7 +8,7 @@ export const getWeeksInMonth = (year: number, month: number): Date[] => {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   
-  // Find the start of the first week
+  // Find the start of the first week (now Monday)
   let currentWeekStart = getStartOfWeek(firstDay);
   
   // Add all week starts until we're past the end of the month

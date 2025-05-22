@@ -35,11 +35,13 @@ export const getDayCompletionPercentage = (day: DayData): number => {
   return Math.round((completedCount / plannedCount) * 100);
 };
 
-// Get the start date of the current week (Sunday)
+// Get the start date of the current week (Monday instead of Sunday)
 export const getStartOfWeek = (date: Date): Date => {
   const result = new Date(date);
   const day = result.getDay();
-  result.setDate(result.getDate() - day); // Go to start of week (Sunday)
+  // Adjust for Monday start (1 is Monday, 0 is Sunday in JS)
+  const daysToSubtract = day === 0 ? 6 : day - 1;
+  result.setDate(result.getDate() - daysToSubtract); // Go to start of week (Monday)
   result.setHours(0, 0, 0, 0);
   return result;
 };

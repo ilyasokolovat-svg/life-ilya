@@ -27,7 +27,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
 }) => {
   const colors = habitColors[habitType];
   
-  // Transform data for the chart
+  // Transform data for the chart - maintain original structure for tooltip
   const chartData = data.map((week) => ({
     name: formatWeekLabel(week.weekStart),
     planned: habitType === 'sleep' ? 7 : week.planned, // For sleep, we use 7 days as the goal
@@ -68,15 +68,31 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
           <BarChart 
             data={chartData} 
             margin={{ top: 5, right: 5, left: -15, bottom: 5 }}
-            barCategoryGap={1} // Reduce gap between categories to make bars overlap more
-            barGap={0} // No gap between bars in the same category for overlapping effect
+            // Make planned and completed in the same position
+            barCategoryGap={8} 
+            barGap={0}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="name" fontSize={8} tickMargin={5} />
             <YAxis allowDecimals={false} fontSize={8} />
             <Tooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="planned" fill={colors.secondary} radius={[2, 2, 0, 0]} />
-            <Bar dataKey="completed" fill={colors.primary} radius={[2, 2, 0, 0]} />
+            {/* Always render planned bar first (in the back) */}
+            <Bar 
+              dataKey="planned" 
+              fill={colors.secondary} 
+              radius={[2, 2, 0, 0]}
+              // Position the bar so it will be overlaid
+              stackId="stack"
+            />
+            {/* Then completed bar on top */}
+            <Bar 
+              dataKey="completed" 
+              fill={colors.primary} 
+              radius={[2, 2, 0, 0]}
+              // Use the same stackId to position at the same spot,
+              // but the completed bar will visually overlay on top of the planned bar
+              stackId="stack"
+            />
           </BarChart>
         </ResponsiveContainer>
       </ChartContainer>
