@@ -24,11 +24,12 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     onUpdate(habitType, {
       ...habitData,
       planned: checked,
-      completed: checked ? habitData.completed : false,
+      // Don't automatically change completed state when unplanning
     });
   };
 
   const handleCompletedChange = (checked: boolean) => {
+    // If marking as completed, show animation and toast
     if (checked && !habitData.completed) {
       setShowAnimation(true);
       setTimeout(() => setShowAnimation(false), 1000);
@@ -37,14 +38,17 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       });
     }
     
+    // When completing, automatically mark as planned too
     onUpdate(habitType, {
       ...habitData,
       completed: checked,
+      planned: checked ? true : habitData.planned, // If completing, ensure it's also planned
     });
   };
 
   const isToday = new Date().toDateString() === date.toDateString();
   const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+  const isFuture = date > new Date(new Date().setHours(23, 59, 59, 999));
 
   const renderIcon = () => {
     switch (habitType) {
@@ -79,6 +83,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
           <Checkbox
             checked={habitData.planned}
             onCheckedChange={handlePlannedChange}
+            // Allow planning for today and future dates, disable only for past dates that weren't planned
             disabled={isPast && !habitData.planned}
             className="h-3 w-3"
           />
@@ -89,7 +94,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
           <Checkbox
             checked={habitData.completed}
             onCheckedChange={handleCompletedChange}
-            disabled={!habitData.planned || (!isToday && !isPast)}
+            // Only disable completion for future dates
+            disabled={isFuture}
             className={`h-3 w-3 ${habitData.completed ? "bg-success border-success" : ""}`}
           />
         </div>
