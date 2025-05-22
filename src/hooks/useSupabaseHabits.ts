@@ -12,7 +12,7 @@ interface HabitDayRecord {
   id?: string;
   user_id: string;
   date: string;
-  habit_data: Json; // Changed: Use Json type from Supabase types
+  habit_data: Json;
   created_at?: string;
   updated_at?: string;
 }
@@ -21,7 +21,7 @@ interface HabitGoalRecord {
   id?: string;
   user_id: string;
   month_key: string;
-  goals_data: Json; // Changed: Use Json type from Supabase types
+  goals_data: Json;
   created_at?: string;
   updated_at?: string;
 }
@@ -43,25 +43,29 @@ export default function useSupabaseHabits() {
           setUserId(session.user.id);
           console.log("User is authenticated:", session.user.id);
         } else {
-          console.log("No authenticated user, creating anonymous session");
-          // Create anonymous session
-          const { data: { user }, error } = await supabase.auth.signUp({
-            email: `anon_${crypto.randomUUID()}@example.com`,
-            password: crypto.randomUUID(),
-          });
+          console.log("No authenticated user, using local storage ID");
           
-          if (error) {
-            console.error('Failed to create anonymous session:', error);
-            toast.error('Failed to create user session. Try refreshing the page.');
-            return;
+          // Look for existing anonymous ID in localStorage
+          let anonId = localStorage.getItem('anon_user_id');
+          
+          if (!anonId) {
+            // Create new anonymous ID and store it
+            anonId = `anon_${crypto.randomUUID()}`;
+            localStorage.setItem('anon_user_id', anonId);
           }
           
-          setUserId(user?.id ?? null);
-          console.log("Created anonymous user:", user?.id);
+          // Use the anonymous ID directly
+          setUserId(anonId);
+          console.log("Using anonymous ID:", anonId);
         }
       } catch (error) {
         console.error('Error checking authentication status:', error);
         toast.error('Error checking user session');
+        
+        // Fallback to a random ID if everything fails
+        const fallbackId = `fallback_${crypto.randomUUID()}`;
+        setUserId(fallbackId);
+        console.log("Using fallback ID:", fallbackId);
       } finally {
         setIsAuthChecking(false);
       }
@@ -75,7 +79,13 @@ export default function useSupabaseHabits() {
       if (event === 'SIGNED_IN' && session?.user) {
         setUserId(session.user.id);
       } else if (event === 'SIGNED_OUT') {
-        setUserId(null);
+        // When signed out, check if we have an anonymous ID
+        const anonId = localStorage.getItem('anon_user_id');
+        if (anonId) {
+          setUserId(anonId);
+        } else {
+          setUserId(null);
+        }
       }
     });
     
@@ -125,7 +135,8 @@ export default function useSupabaseHabits() {
       try {
         const { data, error } = await supabase
           .from('habit_days')
-          .select('*');
+          .select('*')
+          .eq('user_id', userId);
           
         if (error) {
           console.error('Failed to fetch habit data:', error);
@@ -135,10 +146,12 @@ export default function useSupabaseHabits() {
         
         // Transform to the format our app expects
         const transformedData: Record<string, DayData> = {};
-        data.forEach((record: HabitDayRecord) => {
-          // Cast Json to DayData since we know the structure matches
-          transformedData[record.date] = record.habit_data as unknown as DayData;
-        });
+        if (data) {
+          data.forEach((record: HabitDayRecord) => {
+            // Cast Json to DayData since we know the structure matches
+            transformedData[record.date] = record.habit_data as unknown as DayData;
+          });
+        }
         
         return transformedData;
       } catch (error) {
@@ -159,7 +172,8 @@ export default function useSupabaseHabits() {
       try {
         const { data, error } = await supabase
           .from('habit_goals')
-          .select('*');
+          .select('*')
+          .eq('user_id', userId);
           
         if (error) {
           console.error('Failed to fetch habit goals:', error);
@@ -169,10 +183,12 @@ export default function useSupabaseHabits() {
         
         // Transform to the format our app expects
         const transformedGoals: Record<string, any> = {};
-        data.forEach((record: HabitGoalRecord) => {
-          // Cast Json to our expected structure
-          transformedGoals[record.month_key] = record.goals_data as any;
-        });
+        if (data) {
+          data.forEach((record: HabitGoalRecord) => {
+            // Cast Json to our expected structure
+            transformedGoals[record.month_key] = record.goals_data as any;
+          });
+        }
         
         // If empty, return defaults
         if (Object.keys(transformedGoals).length === 0) {
@@ -218,15 +234,17 @@ export default function useSupabaseHabits() {
       }
       
       try {
-        // Convert to Json type for Supabase
+        // Create a single object for upsert (not an array)
+        const record = {
+          user_id: userId,
+          date: dateISO,
+          habit_data: dayData as unknown as Json,
+          updated_at: new Date().toISOString()
+        };
+        
         const { error } = await supabase
           .from('habit_days')
-          .upsert({
-            user_id: userId,
-            date: dateISO,
-            habit_data: dayData as unknown as Json, // Cast our type to Json for Supabase
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'user_id,date' });
+          .upsert(record, { onConflict: 'user_id,date' });
           
         if (error) {
           console.error('Failed to update habit:', error);
@@ -286,14 +304,17 @@ export default function useSupabaseHabits() {
       };
       
       try {
+        // Create a single object for upsert (not an array)
+        const record = {
+          user_id: userId,
+          month_key: monthKey,
+          goals_data: monthGoals as unknown as Json,
+          updated_at: new Date().toISOString()
+        };
+        
         const { error } = await supabase
           .from('habit_goals')
-          .upsert({
-            user_id: userId,
-            month_key: monthKey,
-            goals_data: monthGoals as unknown as Json, // Cast our type to Json for Supabase
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'user_id,month_key' });
+          .upsert(record, { onConflict: 'user_id,month_key' });
           
         if (error) {
           console.error('Failed to update goal:', error);

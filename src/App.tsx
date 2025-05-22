@@ -25,6 +25,9 @@ const App = () => {
   useEffect(() => {
     const checkSupabaseConnection = async () => {
       try {
+        // Generate a unique identifier for anonymous users
+        const anonymousId = crypto.randomUUID();
+        
         // Simple query to check if Supabase is connected
         const { data, error } = await supabase
           .from('habit_days')
