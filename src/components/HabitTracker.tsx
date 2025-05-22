@@ -29,56 +29,71 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   const handlePlannedChange = (checked: boolean | string) => {
     const isChecked = checked === true || checked === "true";
     console.log(`Marking ${habitType} as ${isChecked ? 'planned' : 'not planned'}`);
-    onUpdate(habitType, {
-      ...habitData,
-      planned: isChecked,
-      // Don't automatically change completed state when unplanning
-    });
+    
+    try {
+      onUpdate(habitType, {
+        ...habitData,
+        planned: isChecked,
+      });
+    } catch (error) {
+      console.error("Failed to update planned status:", error);
+      toast.error("Failed to save your progress");
+    }
   };
 
   const handleCompletedChange = (checked: boolean | string) => {
     const isChecked = checked === true || checked === "true";
     console.log(`Marking ${habitType} as ${isChecked ? 'completed' : 'not completed'}`);
     
-    // If marking as completed, show animation and toast
-    if (isChecked && !habitData.completed) {
-      setShowAnimation(true);
-      setTimeout(() => setShowAnimation(false), 1000);
-      toast(`Great job! You completed your ${habitType} goal!`, {
-        icon: "🎉",
+    try {
+      // If marking as completed, show animation and toast
+      if (isChecked && !habitData.completed) {
+        setShowAnimation(true);
+        setTimeout(() => setShowAnimation(false), 1000);
+        toast(`Great job! You completed your ${habitType} goal!`, {
+          icon: "🎉",
+        });
+      }
+      
+      // When completing, automatically mark as planned too
+      onUpdate(habitType, {
+        ...habitData,
+        completed: isChecked,
+        planned: isChecked ? true : habitData.planned, // If completing, ensure it's also planned
       });
+    } catch (error) {
+      console.error("Failed to update completion status:", error);
+      toast.error("Failed to save your progress");
     }
-    
-    // When completing, automatically mark as planned too
-    onUpdate(habitType, {
-      ...habitData,
-      completed: isChecked,
-      planned: isChecked ? true : habitData.planned, // If completing, ensure it's also planned
-    });
   };
 
   const handleSleepHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSleepHours(value);
     
-    const hours = parseFloat(value);
-    const isCompleted = !isNaN(hours) && hours >= 7;
-    
-    if (isCompleted && !habitData.completed) {
-      setShowAnimation(true);
-      setTimeout(() => setShowAnimation(false), 1000);
-      toast(`Great job! You got enough sleep!`, {
-        icon: "🎉",
+    try {
+      const hours = parseFloat(value);
+      const isCompleted = !isNaN(hours) && hours >= 7;
+      
+      if (isCompleted && !habitData.completed) {
+        setShowAnimation(true);
+        setTimeout(() => setShowAnimation(false), 1000);
+        toast(`Great job! You got enough sleep!`, {
+          icon: "🎉",
+        });
+      }
+      
+      console.log(`Updating sleep hours to ${hours}, completed: ${isCompleted}`);
+      onUpdate(habitType, {
+        ...habitData,
+        sleepHours: isNaN(hours) ? undefined : hours,
+        completed: isCompleted,
+        planned: true, // Always mark as planned when hours are entered
       });
+    } catch (error) {
+      console.error("Failed to update sleep hours:", error);
+      toast.error("Failed to save your progress");
     }
-    
-    console.log(`Updating sleep hours to ${hours}, completed: ${isCompleted}`);
-    onUpdate(habitType, {
-      ...habitData,
-      sleepHours: isNaN(hours) ? undefined : hours,
-      completed: isCompleted,
-      planned: true, // Always mark as planned when hours are entered
-    });
   };
 
   const isToday = new Date().toDateString() === date.toDateString();

@@ -32,13 +32,14 @@ export default function useSupabaseHabits() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const queryClient = useQueryClient();
 
-  // Initialize anonymous user ID
+  // Initialize anonymous user ID - fixed to use simple string IDs that won't cause UUID errors
   useEffect(() => {
-    // Simplified user ID initialization
+    // Get existing ID or create a new one, ensuring it's not in UUID format to avoid type errors
     let anonId = localStorage.getItem('anon_user_id');
     
     if (!anonId) {
-      anonId = `anon-${crypto.randomUUID()}`;
+      // Create a simple string ID rather than a UUID to avoid format issues
+      anonId = `user_${Math.random().toString(36).substring(2, 15)}`;
       localStorage.setItem('anon_user_id', anonId);
     }
     
@@ -72,8 +73,12 @@ export default function useSupabaseHabits() {
         const transformedData: Record<string, DayData> = {};
         if (data && Array.isArray(data)) {
           data.forEach((record: HabitDayRecord) => {
-            // Cast Json to DayData since we know the structure matches
-            transformedData[record.date] = record.habit_data as unknown as DayData;
+            // Make sure we handle the JSON conversion properly
+            const habitData = typeof record.habit_data === 'string' 
+              ? JSON.parse(record.habit_data as unknown as string)
+              : record.habit_data;
+              
+            transformedData[record.date] = habitData as unknown as DayData;
           });
         }
         
@@ -112,8 +117,12 @@ export default function useSupabaseHabits() {
         const transformedGoals: Record<string, any> = {};
         if (data && Array.isArray(data)) {
           data.forEach((record: HabitGoalRecord) => {
-            // Cast Json to our expected structure
-            transformedGoals[record.month_key] = record.goals_data as any;
+            // Properly handle JSON data
+            const goalsData = typeof record.goals_data === 'string'
+              ? JSON.parse(record.goals_data as unknown as string)
+              : record.goals_data;
+              
+            transformedGoals[record.month_key] = goalsData;
           });
         }
         
@@ -132,7 +141,7 @@ export default function useSupabaseHabits() {
     enabled: !!userId && !isAuthChecking,
   });
   
-  // Update day mutation
+  // Update day mutation - significantly simplified with better error handling
   const updateDay = useMutation({
     mutationFn: async ({ 
       date, 
@@ -145,7 +154,6 @@ export default function useSupabaseHabits() {
     }) => {
       if (!userId) {
         console.error('Cannot update habit: No user ID available');
-        toast.error('Failed to save your progress');
         throw new Error('User not authenticated');
       }
       
@@ -163,52 +171,41 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Convert to JSON for Supabase (stringified and parsed to ensure clean JSON)
-        const cleanDayData = JSON.parse(JSON.stringify(dayData));
-        
-        console.log('Upserting habit day:', {
-          date: dateISO,
-          habitType,
-          userId,
-          data: cleanDayData
-        });
-        
-        // Create a record for upsert
+        // Create a clean record with proper types
         const record = {
           user_id: userId,
           date: dateISO,
-          habit_data: cleanDayData
+          habit_data: dayData
         };
         
+        console.log('Upserting habit day with data:', record);
+        
+        // Use insert with 'count' to avoid extra DB calls
         const { error } = await supabase
           .from('habit_days')
-          .upsert(record);
+          .upsert(record)
+          .select('count');
           
         if (error) {
-          console.error('Failed to update habit:', error);
-          toast.error('Failed to save your progress');
+          console.error('Database error updating habit:', error);
           throw error;
         }
         
         console.log('Successfully updated habit day');
-        return { success: true };
+        return { success: true, data: dayData };
       } catch (error) {
         console.error('Error in update day mutation:', error);
-        toast.error('Failed to save your progress');
         throw error;
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       const dateISO = formatDateISO(variables.date);
       
       // Update local cache
       queryClient.setQueryData(['habit_days', userId], (oldData: any) => {
-        const newData = { ...oldData };
-        if (!newData[dateISO]) {
-          newData[dateISO] = createEmptyDayData(variables.date);
-        }
-        newData[dateISO] = {
-          ...newData[dateISO],
+        const newData = { ...(oldData || {}) };
+        newData[dateISO] = result.data || {
+          ...createEmptyDayData(variables.date),
           [variables.habitType]: variables.data
         };
         return newData;
@@ -220,7 +217,7 @@ export default function useSupabaseHabits() {
     }
   });
   
-  // Update goal mutation
+  // Update goal mutation - simplified with better error handling
   const updateGoal = useMutation({
     mutationFn: async ({
       year,
@@ -235,7 +232,6 @@ export default function useSupabaseHabits() {
     }) => {
       if (!userId) {
         console.error('Cannot update goal: No user ID available');
-        toast.error('Failed to save your goal');
         throw new Error('User not authenticated');
       }
       
@@ -251,47 +247,39 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Convert to JSON for Supabase
-        const cleanGoalsData = JSON.parse(JSON.stringify(monthGoals));
-        
-        console.log('Upserting goal:', {
-          monthKey,
-          userId,
-          habitType,
-          goal: cleanGoalsData
-        });
-        
-        // Create a record for upsert
+        // Create a clean record
         const record = {
           user_id: userId,
           month_key: monthKey,
-          goals_data: cleanGoalsData
+          goals_data: monthGoals
         };
         
+        console.log('Upserting goal with data:', record);
+        
+        // Use insert with 'count' to avoid extra DB calls
         const { error } = await supabase
           .from('habit_goals')
-          .upsert(record);
+          .upsert(record)
+          .select('count');
           
         if (error) {
-          console.error('Failed to update goal:', error);
-          toast.error('Failed to save your goal');
+          console.error('Database error updating goal:', error);
           throw error;
         }
         
         console.log('Successfully updated goal');
-        return { success: true };
+        return { success: true, data: monthGoals };
       } catch (error) {
         console.error('Error in update goal mutation:', error);
-        toast.error('Failed to save your goal');
         throw error;
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       const monthKey = formatYearMonth(variables.year, variables.month);
       
       // Update local cache
       queryClient.setQueryData(['habit_goals', userId], (oldData: any) => {
-        const newGoals = { ...oldData };
+        const newGoals = { ...(oldData || {}) };
         if (!newGoals[monthKey]) {
           newGoals[monthKey] = createDefaultMonthlyGoals()[monthKey];
         }
