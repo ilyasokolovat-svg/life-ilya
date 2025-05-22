@@ -38,8 +38,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
     }
   };
 
-  // Calculate progress toward weekly goal
-  const weeklyProgress = goal?.frequency ? Math.min(100, Math.round((stats.currentWeekCompleted / goal.frequency) * 100)) : 0;
+  // Calculate progress toward monthly goal
+  const monthlyProgress = goal?.frequency ? Math.min(100, Math.round((stats.totalCompleted / goal.frequency) * 100)) : 0;
 
   return (
     <Card className="stats-card h-full">
@@ -72,10 +72,10 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
         {goal && (
           <div className="mt-6">
             <div className="flex justify-between mb-1">
-              <span className="text-xs">Weekly Goal Progress ({stats.currentWeekCompleted}/{goal.frequency} days)</span>
-              <span className="text-xs font-semibold">{weeklyProgress}%</span>
+              <span className="text-xs">Monthly Goal Progress ({stats.totalCompleted}/{goal.frequency} days)</span>
+              <span className="text-xs font-semibold">{monthlyProgress}%</span>
             </div>
-            <Progress value={weeklyProgress} className="h-2" />
+            <Progress value={monthlyProgress} className="h-2" />
           </div>
         )}
         

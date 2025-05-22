@@ -99,7 +99,7 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         {/* Goals Section */}
         <div className="mb-8">
-          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Weekly Goals</h2>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Monthly Goals</h2>
           <GoalSetting 
             goals={safeGoals}
             onUpdateGoal={handleUpdateGoal}

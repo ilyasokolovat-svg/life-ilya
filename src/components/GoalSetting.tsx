@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { HabitType, HabitGoal } from "@/types/habit";
 import { Dumbbell, Wine, Moon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface GoalSettingProps {
   goals: Record<HabitType, HabitGoal>;
@@ -70,18 +69,18 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               <div>
-                <Label htmlFor={`${type}-frequency`}>Goal (days per week)</Label>
+                <Label htmlFor={`${type}-frequency`}>Goal (days per month)</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     id={`${type}-frequency`}
                     type="number"
                     min="0"
-                    max="7"
+                    max="31"
                     value={goal.frequency}
                     className="w-24"
                     onChange={(e) => handleFrequencyChange(type, e.target.value)}
                   />
-                  <span className="text-sm text-muted-foreground">days/week</span>
+                  <span className="text-sm text-muted-foreground">days/month</span>
                 </div>
               </div>
               
