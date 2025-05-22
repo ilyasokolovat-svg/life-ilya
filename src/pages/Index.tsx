@@ -6,7 +6,7 @@ import HabitStats from "@/components/HabitStats";
 import { HabitType, HabitsState, HabitData } from "@/types/habit";
 import { calculateHabitStats, formatDateISO, createEmptyDayData } from "@/utils/habitUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { Gym, AlcoholOff, Sleep } from "lucide-react";
+import { Dumbbell, Wine, Moon } from "lucide-react";
 
 const Index = () => {
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits-tracker", {
@@ -98,19 +98,19 @@ const Index = () => {
           <div className="flex justify-center space-x-8 mb-6">
             <div className="flex flex-col items-center">
               <div className="bg-blue-light p-4 rounded-full mb-2">
-                <Gym className="h-8 w-8 text-blue-dark" />
+                <Dumbbell className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Stay Active</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="bg-blue-light p-4 rounded-full mb-2">
-                <AlcoholOff className="h-8 w-8 text-blue-dark" />
+                <Wine className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Stay Sober</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="bg-blue-light p-4 rounded-full mb-2">
-                <Sleep className="h-8 w-8 text-blue-dark" />
+                <Moon className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Rest Well</p>
             </div>
