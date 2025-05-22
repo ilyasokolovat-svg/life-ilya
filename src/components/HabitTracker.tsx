@@ -49,11 +49,11 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   const renderIcon = () => {
     switch (habitType) {
       case "gym":
-        return <Dumbbell className={`h-5 w-5 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Dumbbell className={`h-4 w-4 ${habitData.completed ? "text-success" : ""}`} />;
       case "alcohol":
-        return <Wine className={`h-5 w-5 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Wine className={`h-4 w-4 ${habitData.completed ? "text-success" : ""}`} />;
       case "sleep":
-        return <Moon className={`h-5 w-5 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Moon className={`h-4 w-4 ${habitData.completed ? "text-success" : ""}`} />;
       default:
         return null;
     }
@@ -62,29 +62,30 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   const habitLabel = habitType.charAt(0).toUpperCase() + habitType.slice(1);
 
   return (
-    <div className={`flex items-center justify-between p-2 rounded-md ${showAnimation ? "animate-success-pulse bg-blue-light/20" : ""}`}>
-      <div className="flex items-center space-x-2">
+    <div className={`flex items-center justify-between py-1 px-1 rounded-md ${showAnimation ? "animate-success-pulse bg-blue-light/20" : ""}`}>
+      <div className="flex items-center gap-1">
         {renderIcon()}
-        <span className="text-sm font-medium">{habitLabel}</span>
+        <span className="text-xs font-medium ml-1">{habitLabel}</span>
       </div>
       
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs whitespace-nowrap mr-1">Plan</span>
+      <div className="flex items-center gap-1 ml-auto">
+        <div className="flex items-center mr-1">
+          <label className="text-[10px] mr-1 whitespace-nowrap">Plan</label>
           <Checkbox
             checked={habitData.planned}
             onCheckedChange={handlePlannedChange}
             disabled={isPast && !habitData.planned}
+            className="h-3 w-3"
           />
         </div>
         
-        <div className="flex items-center space-x-2">
-          <span className="text-xs whitespace-nowrap mr-1">Done</span>
+        <div className="flex items-center">
+          <label className="text-[10px] mr-1 whitespace-nowrap">Done</label>
           <Checkbox
             checked={habitData.completed}
             onCheckedChange={handleCompletedChange}
             disabled={!habitData.planned || (!isToday && !isPast)}
-            className={habitData.completed ? "bg-success border-success" : ""}
+            className={`h-3 w-3 ${habitData.completed ? "bg-success border-success" : ""}`}
           />
         </div>
       </div>

@@ -46,20 +46,20 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-2 rounded-md bg-blue-light/50">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-3 rounded-md bg-blue-light/50">
             <p className="text-sm text-muted-foreground">Current Streak</p>
             <h3 className="text-2xl font-bold">{stats.currentStreak} days</h3>
           </div>
-          <div className="p-2 rounded-md bg-blue-light/50">
+          <div className="p-3 rounded-md bg-blue-light/50">
             <p className="text-sm text-muted-foreground">Longest Streak</p>
             <h3 className="text-2xl font-bold">{stats.longestStreak} days</h3>
           </div>
-          <div className="p-2 rounded-md bg-blue-light/50">
+          <div className="p-3 rounded-md bg-blue-light/50">
             <p className="text-sm text-muted-foreground">Total Completed</p>
             <h3 className="text-2xl font-bold">{stats.totalCompleted}</h3>
           </div>
-          <div className="p-2 rounded-md bg-blue-light/50">
+          <div className="p-3 rounded-md bg-blue-light/50">
             <p className="text-sm text-muted-foreground">Completion Rate</p>
             <h3 className="text-2xl font-bold">{stats.completionRate}%</h3>
           </div>
