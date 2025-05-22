@@ -141,7 +141,7 @@ export default function useSupabaseHabits() {
     enabled: !!userId && !isAuthChecking,
   });
   
-  // Update day mutation - significantly simplified with better error handling
+  // Update day mutation - fixed the type issue with JSON serialization
   const updateDay = useMutation({
     mutationFn: async ({ 
       date, 
@@ -171,16 +171,16 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Create a clean record with proper types
-        const record = {
+        // Create a record with proper type casting for Supabase
+        const record: HabitDayRecord = {
           user_id: userId,
           date: dateISO,
-          habit_data: dayData
+          habit_data: dayData as unknown as Json // Cast to Json type for Supabase
         };
         
         console.log('Upserting habit day with data:', record);
         
-        // Use insert with 'count' to avoid extra DB calls
+        // Use upsert to create or update the record
         const { error } = await supabase
           .from('habit_days')
           .upsert(record)
@@ -217,7 +217,7 @@ export default function useSupabaseHabits() {
     }
   });
   
-  // Update goal mutation - simplified with better error handling
+  // Update goal mutation - with type casting for JSON compatibility
   const updateGoal = useMutation({
     mutationFn: async ({
       year,
@@ -247,16 +247,16 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Create a clean record
-        const record = {
+        // Create a record with proper type casting
+        const record: HabitGoalRecord = {
           user_id: userId,
           month_key: monthKey,
-          goals_data: monthGoals
+          goals_data: monthGoals as unknown as Json // Cast to Json type for Supabase
         };
         
         console.log('Upserting goal with data:', record);
         
-        // Use insert with 'count' to avoid extra DB calls
+        // Use upsert with 'count' to avoid extra DB calls
         const { error } = await supabase
           .from('habit_goals')
           .upsert(record)

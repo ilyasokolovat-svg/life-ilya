@@ -26,7 +26,7 @@ const App = () => {
     const initializeApp = async () => {
       try {
         // Simple query to check if Supabase is connected
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('habit_days')
           .select('count')
           .limit(1);
