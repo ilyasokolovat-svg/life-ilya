@@ -62,15 +62,15 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   const habitLabel = habitType.charAt(0).toUpperCase() + habitType.slice(1);
 
   return (
-    <div className={`flex items-center justify-between p-1 ${showAnimation ? "animate-success-pulse" : ""}`}>
+    <div className={`flex items-center justify-between p-2 rounded-md ${showAnimation ? "animate-success-pulse bg-blue-light/20" : ""}`}>
       <div className="flex items-center space-x-2">
         {renderIcon()}
-        <span className="text-sm">{habitLabel}</span>
+        <span className="text-sm font-medium">{habitLabel}</span>
       </div>
       
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center">
-          <span className="text-xs mr-1">Plan</span>
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-xs whitespace-nowrap mr-1">Plan</span>
           <Checkbox
             checked={habitData.planned}
             onCheckedChange={handlePlannedChange}
@@ -78,8 +78,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
           />
         </div>
         
-        <div className="flex items-center">
-          <span className="text-xs mr-1">Done</span>
+        <div className="flex items-center space-x-2">
+          <span className="text-xs whitespace-nowrap mr-1">Done</span>
           <Checkbox
             checked={habitData.completed}
             onCheckedChange={handleCompletedChange}

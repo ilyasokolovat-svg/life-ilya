@@ -61,30 +61,32 @@ const Index = () => {
   const sleepStats = calculateHabitStats(habitsState, "sleep");
 
   return (
-    <div className="min-h-screen bg-blue-light/30 pb-12">
+    <div className="min-h-screen bg-blue-light/10 pb-12">
       <Toaster />
       
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-blue-dark text-center">Habit Tracker</h1>
-          <p className="text-center text-gray-600 mt-2">Track your journey to become a better version of yourself</p>
+      <header className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-blue-dark text-center">Habit Tracker</h1>
+          <p className="text-center text-gray-600 mt-1 text-sm md:text-base">Track your journey to become a better version of yourself</p>
         </div>
       </header>
       
       {/* Main content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-10">
-          <h2 className="text-2xl font-semibold mb-6">Your Monthly Calendar</h2>
-          <Calendar
-            days={habitsState.days}
-            onUpdateHabit={handleUpdateHabit}
-          />
+      <main className="container mx-auto px-4 py-6">
+        <div className="mb-8">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Monthly Calendar</h2>
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <Calendar
+              days={habitsState.days}
+              onUpdateHabit={handleUpdateHabit}
+            />
+          </div>
         </div>
         
         {/* Stats section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-semibold mb-6">Your Progress Stats</h2>
+        <div className="mt-8 mb-8">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <HabitStats habitType="gym" stats={gymStats} />
             <HabitStats habitType="alcohol" stats={alcoholStats} />
@@ -93,9 +95,9 @@ const Index = () => {
         </div>
         
         {/* Motivational section */}
-        <div className="mt-16 bg-white rounded-lg shadow-md p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Your Habits Shape Your Future</h2>
-          <div className="flex justify-center space-x-8 mb-6">
+        <div className="mt-12 bg-white rounded-lg shadow-md p-6 text-center">
+          <h2 className="text-xl md:text-2xl font-bold mb-6">Your Habits Shape Your Future</h2>
+          <div className="flex justify-center flex-wrap gap-8 mb-6">
             <div className="flex flex-col items-center">
               <div className="bg-blue-light p-4 rounded-full mb-2">
                 <Dumbbell className="h-8 w-8 text-blue-dark" />
