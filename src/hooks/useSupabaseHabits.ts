@@ -12,8 +12,8 @@ interface HabitDayRecord {
   user_id: string;
   date: string;
   habit_data: DayData;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface HabitGoalRecord {
@@ -21,8 +21,8 @@ interface HabitGoalRecord {
   user_id: string;
   month_key: string;
   goals_data: Record<string, any>;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Main hook for habit data
@@ -45,7 +45,7 @@ export default function useSupabaseHabits() {
           console.log("No authenticated user, creating anonymous session");
           // Create anonymous session
           const { data: { user }, error } = await supabase.auth.signUp({
-            email: `${crypto.randomUUID()}@anonymous.com`,
+            email: `anon_${crypto.randomUUID()}@example.com`,
             password: crypto.randomUUID(),
           });
           
@@ -217,17 +217,15 @@ export default function useSupabaseHabits() {
       }
       
       try {
+        // Fixed: Pass the object directly, not wrapped in an array
         const { error } = await supabase
           .from('habit_days')
-          .upsert(
-            {
-              user_id: userId,
-              date: dateISO,
-              habit_data: dayData,
-              updated_at: new Date()
-            },
-            { onConflict: 'user_id,date' }
-          ) as any;
+          .upsert({
+            user_id: userId,
+            date: dateISO,
+            habit_data: dayData,
+            updated_at: new Date().toISOString() // Fixed: Convert Date to string
+          }, { onConflict: 'user_id,date' }) as any;
           
         if (error) {
           console.error('Failed to update habit:', error);
@@ -287,17 +285,15 @@ export default function useSupabaseHabits() {
       };
       
       try {
+        // Fixed: Pass the object directly, not wrapped in an array
         const { error } = await supabase
           .from('habit_goals')
-          .upsert(
-            {
-              user_id: userId,
-              month_key: monthKey,
-              goals_data: monthGoals,
-              updated_at: new Date()
-            },
-            { onConflict: 'user_id,month_key' }
-          ) as any;
+          .upsert({
+            user_id: userId,
+            month_key: monthKey,
+            goals_data: monthGoals,
+            updated_at: new Date().toISOString() // Fixed: Convert Date to string
+          }, { onConflict: 'user_id,month_key' }) as any;
           
         if (error) {
           console.error('Failed to update goal:', error);
