@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, handleError } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { HabitsState, DayData, HabitType, HabitData } from '@/types/habit';
 import { formatYearMonth, createEmptyDayData, createDefaultMonthlyGoals, formatDateISO } from '@/utils/habitUtils';
+import { toast } from 'sonner';
 
 // Types for the database
 interface HabitDayRecord {
@@ -27,28 +28,41 @@ interface HabitGoalRecord {
 // Main hook for habit data
 export default function useSupabaseHabits() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const queryClient = useQueryClient();
 
   // Check auth status on load
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        // Create anonymous session
-        const { data: { user }, error } = await supabase.auth.signUp({
-          email: `${crypto.randomUUID()}@anonymous.com`,
-          password: crypto.randomUUID(),
-        });
+      try {
+        setIsAuthChecking(true);
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (error) {
-          handleError(error, 'Failed to create anonymous session');
-          return;
+        if (session?.user) {
+          setUserId(session.user.id);
+          console.log("User is authenticated:", session.user.id);
+        } else {
+          console.log("No authenticated user, creating anonymous session");
+          // Create anonymous session
+          const { data: { user }, error } = await supabase.auth.signUp({
+            email: `${crypto.randomUUID()}@anonymous.com`,
+            password: crypto.randomUUID(),
+          });
+          
+          if (error) {
+            console.error('Failed to create anonymous session:', error);
+            toast.error('Failed to create user session. Try refreshing the page.');
+            return;
+          }
+          
+          setUserId(user?.id ?? null);
+          console.log("Created anonymous user:", user?.id);
         }
-        
-        setUserId(user?.id ?? null);
+      } catch (error) {
+        console.error('Error checking authentication status:', error);
+        toast.error('Error checking user session');
+      } finally {
+        setIsAuthChecking(false);
       }
     };
     
@@ -56,6 +70,7 @@ export default function useSupabaseHabits() {
     
     // Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event);
       if (event === 'SIGNED_IN' && session?.user) {
         setUserId(session.user.id);
       } else if (event === 'SIGNED_OUT') {
@@ -73,28 +88,31 @@ export default function useSupabaseHabits() {
     const createTables = async () => {
       if (!userId) return;
       
-      // Check and create habit_days table
-      const { error: daysError } = await supabase
-        .from('habit_days')
-        .select('id')
-        .limit(1);
+      try {
+        // Check and create habit_days table
+        const { error: daysError } = await supabase.rpc('create_habit_days_table');
         
-      if (daysError && daysError.code === 'PGRST116') {
-        await supabase.rpc('create_habit_days_table');
-      }
-      
-      // Check and create habit_goals table
-      const { error: goalsError } = await supabase
-        .from('habit_goals')
-        .select('id')
-        .limit(1);
+        if (daysError && !daysError.message.includes('already exists')) {
+          console.error('Error creating habit_days table:', daysError);
+          toast.error('Failed to set up habit tracking');
+        }
         
-      if (goalsError && goalsError.code === 'PGRST116') {
-        await supabase.rpc('create_habit_goals_table');
+        // Check and create habit_goals table
+        const { error: goalsError } = await supabase.rpc('create_habit_goals_table');
+        
+        if (goalsError && !goalsError.message.includes('already exists')) {
+          console.error('Error creating habit_goals table:', goalsError);
+          toast.error('Failed to set up goal tracking');
+        }
+      } catch (error) {
+        console.error('Failed to create tables:', error);
+        toast.error('Failed to set up database tables');
       }
     };
     
-    createTables();
+    if (userId) {
+      createTables();
+    }
   }, [userId]);
 
   // Fetch habit days
@@ -103,25 +121,32 @@ export default function useSupabaseHabits() {
     queryFn: async (): Promise<Record<string, DayData>> => {
       if (!userId) return {};
       
-      const { data, error } = await supabase
-        .from('habit_days')
-        .select('*')
-        .eq('user_id', userId);
+      try {
+        const { data, error } = await supabase
+          .from('habit_days')
+          .select('*')
+          .eq('user_id', userId);
+          
+        if (error) {
+          console.error('Failed to fetch habit data:', error);
+          toast.error('Could not load your habit data');
+          return {};
+        }
         
-      if (error) {
-        handleError(error, 'Failed to fetch habit data');
+        // Transform to the format our app expects
+        const transformedData: Record<string, DayData> = {};
+        data.forEach((record: HabitDayRecord) => {
+          transformedData[record.date] = record.habit_data;
+        });
+        
+        return transformedData;
+      } catch (error) {
+        console.error('Error in habit days query:', error);
+        toast.error('Failed to load habit data');
         return {};
       }
-      
-      // Transform to the format our app expects
-      const transformedData: Record<string, DayData> = {};
-      data.forEach((record: HabitDayRecord) => {
-        transformedData[record.date] = record.habit_data;
-      });
-      
-      return transformedData;
     },
-    enabled: !!userId,
+    enabled: !!userId && !isAuthChecking,
   });
   
   // Fetch habit goals
@@ -130,30 +155,37 @@ export default function useSupabaseHabits() {
     queryFn: async () => {
       if (!userId) return createDefaultMonthlyGoals();
       
-      const { data, error } = await supabase
-        .from('habit_goals')
-        .select('*')
-        .eq('user_id', userId);
+      try {
+        const { data, error } = await supabase
+          .from('habit_goals')
+          .select('*')
+          .eq('user_id', userId);
+          
+        if (error) {
+          console.error('Failed to fetch habit goals:', error);
+          toast.error('Could not load your goals');
+          return createDefaultMonthlyGoals();
+        }
         
-      if (error) {
-        handleError(error, 'Failed to fetch habit goals');
+        // Transform to the format our app expects
+        const transformedGoals: Record<string, any> = {};
+        data.forEach((record: HabitGoalRecord) => {
+          transformedGoals[record.month_key] = record.goals_data;
+        });
+        
+        // If empty, return defaults
+        if (Object.keys(transformedGoals).length === 0) {
+          return createDefaultMonthlyGoals();
+        }
+        
+        return transformedGoals;
+      } catch (error) {
+        console.error('Error in goals query:', error);
+        toast.error('Failed to load goal data');
         return createDefaultMonthlyGoals();
       }
-      
-      // Transform to the format our app expects
-      const transformedGoals: Record<string, any> = {};
-      data.forEach((record: HabitGoalRecord) => {
-        transformedGoals[record.month_key] = record.goals_data;
-      });
-      
-      // If empty, return defaults
-      if (Object.keys(transformedGoals).length === 0) {
-        return createDefaultMonthlyGoals();
-      }
-      
-      return transformedGoals;
     },
-    enabled: !!userId,
+    enabled: !!userId && !isAuthChecking,
   });
   
   // Update day mutation
@@ -184,24 +216,31 @@ export default function useSupabaseHabits() {
         dayData[habitType] = data;
       }
       
-      const { error } = await supabase
-        .from('habit_days')
-        .upsert(
-          {
-            user_id: userId,
-            date: dateISO,
-            habit_data: dayData,
-            updated_at: new Date()
-          },
-          { onConflict: 'user_id,date' }
-        );
+      try {
+        const { error } = await supabase
+          .from('habit_days')
+          .upsert(
+            {
+              user_id: userId,
+              date: dateISO,
+              habit_data: dayData,
+              updated_at: new Date()
+            },
+            { onConflict: 'user_id,date' }
+          );
+          
+        if (error) {
+          console.error('Failed to update habit:', error);
+          toast.error('Failed to save your progress');
+          return false;
+        }
         
-      if (error) {
-        handleError(error, 'Failed to update habit');
+        return true;
+      } catch (error) {
+        console.error('Error in update day mutation:', error);
+        toast.error('Could not update habit');
         return false;
       }
-      
-      return true;
     },
     onSuccess: (_, variables) => {
       const dateISO = formatDateISO(variables.date);
@@ -247,24 +286,31 @@ export default function useSupabaseHabits() {
         [habitType]: goal
       };
       
-      const { error } = await supabase
-        .from('habit_goals')
-        .upsert(
-          {
-            user_id: userId,
-            month_key: monthKey,
-            goals_data: monthGoals,
-            updated_at: new Date()
-          },
-          { onConflict: 'user_id,month_key' }
-        );
+      try {
+        const { error } = await supabase
+          .from('habit_goals')
+          .upsert(
+            {
+              user_id: userId,
+              month_key: monthKey,
+              goals_data: monthGoals,
+              updated_at: new Date()
+            },
+            { onConflict: 'user_id,month_key' }
+          );
+          
+        if (error) {
+          console.error('Failed to update goal:', error);
+          toast.error('Failed to save your goal');
+          return false;
+        }
         
-      if (error) {
-        handleError(error, 'Failed to update goal');
+        return true;
+      } catch (error) {
+        console.error('Error in update goal mutation:', error);
+        toast.error('Could not update goal');
         return false;
       }
-      
-      return true;
     },
     onSuccess: (_, variables) => {
       const monthKey = formatYearMonth(variables.year, variables.month);
@@ -284,7 +330,7 @@ export default function useSupabaseHabits() {
     }
   });
 
-  const isLoading = isLoadingDays || isLoadingGoals || !userId;
+  const isLoading = isLoadingDays || isLoadingGoals || isAuthChecking || !userId;
 
   // Combine into the format our app expects
   const habitsState: HabitsState = {
