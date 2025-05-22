@@ -1,5 +1,4 @@
-
-export type HabitType = 'gym' | 'alcohol' | 'sleep';
+export type HabitType = 'gym' | 'alcohol' | 'sleep' | 'meditation';
 
 export interface HabitData {
   planned: boolean;
@@ -11,6 +10,7 @@ export interface DayData {
   gym: HabitData;
   alcohol: HabitData;
   sleep: HabitData;
+  meditation: HabitData;
 }
 
 export interface HabitGoal {

@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dumbbell, Wine, Moon } from "lucide-react";
+import { Dumbbell, Wine, Moon, Lotus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { HabitData, HabitType } from "@/types/habit";
 import { toast } from "sonner";
@@ -58,6 +58,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
         return <Wine className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       case "sleep":
         return <Moon className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
+      case "meditation":
+        return <Lotus className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       default:
         return null;
     }
@@ -83,7 +85,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       
       <div className="flex items-center gap-1 ml-auto">
         <div className="flex items-center mr-1">
-          <label className="text-[9px] mr-0.5 whitespace-nowrap">Plan</label>
+          <label className="text-[9px] mr-0.5 whitespace-nowrap">P</label>
           <Checkbox
             checked={habitData.planned}
             onCheckedChange={handlePlannedChange}
@@ -94,7 +96,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
         </div>
         
         <div className="flex items-center">
-          <label className="text-[9px] mr-0.5 whitespace-nowrap">Done</label>
+          <label className="text-[9px] mr-0.5 whitespace-nowrap">D</label>
           <Checkbox
             checked={habitData.completed}
             onCheckedChange={handleCompletedChange}

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { HabitType, HabitGoal } from "@/types/habit";
-import { Dumbbell, Wine, Moon } from "lucide-react";
+import { Dumbbell, Wine, Moon, Lotus } from "lucide-react";
 
 interface GoalSettingProps {
   goals: Record<HabitType, HabitGoal>;
@@ -21,6 +21,8 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
         return <Wine className="h-5 w-5" />;
       case "sleep":
         return <Moon className="h-5 w-5" />;
+      case "meditation":
+        return <Lotus className="h-5 w-5" />;
       default:
         return null;
     }
@@ -34,6 +36,8 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
         return "Alcohol-Free Days";
       case "sleep":
         return "Good Sleep";
+      case "meditation":
+        return "Meditation";
       default:
         return "";
     }
@@ -54,7 +58,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {Object.keys(goals).map((habitType) => {
         const type = habitType as HabitType;
         const goal = goals[type];

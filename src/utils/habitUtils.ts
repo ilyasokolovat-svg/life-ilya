@@ -1,4 +1,3 @@
-
 import { DayData, HabitStats, HabitType, HabitsState } from "@/types/habit";
 
 // Get all days in a month
@@ -120,7 +119,8 @@ export const createEmptyDayData = (date: Date): DayData => {
     date: formatDateISO(date),
     gym: { planned: false, completed: false },
     alcohol: { planned: false, completed: false },
-    sleep: { planned: false, completed: false }
+    sleep: { planned: false, completed: false },
+    meditation: { planned: false, completed: false }
   };
 };
 
@@ -129,7 +129,7 @@ export const createDefaultGoals = () => {
   return {
     gym: { frequency: 3, notes: "" },
     alcohol: { frequency: 4, notes: "" },
-    sleep: { frequency: 7, notes: "" }
+    sleep: { frequency: 7, notes: "" },
+    meditation: { frequency: 5, notes: "" }
   };
 };
-

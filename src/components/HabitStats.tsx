@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { HabitStats as HabitStatsType, HabitType, HabitGoal } from "@/types/habit";
-import { Dumbbell, Wine, Moon } from "lucide-react";
+import { Dumbbell, Wine, Moon, Lotus } from "lucide-react";
 
 interface HabitStatsProps {
   habitType: HabitType;
@@ -20,6 +20,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
         return <Wine className="h-5 w-5" />;
       case "sleep":
         return <Moon className="h-5 w-5" />;
+      case "meditation":
+        return <Lotus className="h-5 w-5" />;
       default:
         return null;
     }
@@ -33,6 +35,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
         return "Alcohol-Free Days";
       case "sleep":
         return "Good Sleep";
+      case "meditation":
+        return "Meditation";
       default:
         return "";
     }

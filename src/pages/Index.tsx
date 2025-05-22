@@ -7,7 +7,7 @@ import GoalSetting from "@/components/GoalSetting";
 import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
 import { calculateHabitStats, formatDateISO, createEmptyDayData, createDefaultGoals } from "@/utils/habitUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { Dumbbell, Wine, Moon } from "lucide-react";
+import { Dumbbell, Wine, Moon, Lotus } from "lucide-react";
 
 const Index = () => {
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits-tracker", {
@@ -82,6 +82,7 @@ const Index = () => {
   const gymStats = calculateHabitStats(habitsState, "gym");
   const alcoholStats = calculateHabitStats(habitsState, "alcohol");
   const sleepStats = calculateHabitStats(habitsState, "sleep");
+  const meditationStats = calculateHabitStats(habitsState, "meditation");
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
@@ -119,10 +120,11 @@ const Index = () => {
         {/* Stats section */}
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <HabitStats habitType="gym" stats={gymStats} goal={safeGoals.gym} />
             <HabitStats habitType="alcohol" stats={alcoholStats} goal={safeGoals.alcohol} />
             <HabitStats habitType="sleep" stats={sleepStats} goal={safeGoals.sleep} />
+            <HabitStats habitType="meditation" stats={meditationStats} goal={safeGoals.meditation} />
           </div>
         </div>
         
@@ -147,6 +149,12 @@ const Index = () => {
                 <Moon className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Rest Well</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-light p-4 rounded-full mb-2">
+                <Lotus className="h-8 w-8 text-blue-dark" />
+              </div>
+              <p className="text-sm">Stay Mindful</p>
             </div>
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto">

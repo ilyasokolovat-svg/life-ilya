@@ -86,14 +86,15 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
         
         {/* Habit mini-zones - display at the top with clear separation */}
         <div className="flex w-full h-3 mb-1 border-t border-gray-100">
-          <div className={`w-1/3 ${getHabitStatusClass(dayData, "gym")}`}></div>
-          <div className={`w-1/3 ${getHabitStatusClass(dayData, "alcohol")}`}></div>
-          <div className={`w-1/3 ${getHabitStatusClass(dayData, "sleep")}`}></div>
+          <div className={`w-1/4 ${getHabitStatusClass(dayData, "gym")}`}></div>
+          <div className={`w-1/4 ${getHabitStatusClass(dayData, "alcohol")}`}></div>
+          <div className={`w-1/4 ${getHabitStatusClass(dayData, "sleep")}`}></div>
+          <div className={`w-1/4 ${getHabitStatusClass(dayData, "meditation")}`}></div>
         </div>
         
         {/* Habits for the day */}
         <div className="flex-1 p-1 space-y-1">
-          {['gym', 'alcohol', 'sleep'].map((habitType) => (
+          {['gym', 'alcohol', 'sleep', 'meditation'].map((habitType) => (
             <HabitTracker
               key={`${isoDate}-${habitType}`}
               date={date}
