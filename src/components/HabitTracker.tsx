@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { HabitData, HabitType } from "@/types/habit";
 import { toast } from "sonner";
+import { useMediaQuery } from "@/hooks/use-mobile";
 
 interface HabitTrackerProps {
   date: Date;
@@ -23,6 +24,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   const [sleepHours, setSleepHours] = useState(
     habitData.sleepHours !== undefined ? habitData.sleepHours.toString() : ""
   );
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   const handlePlannedChange = (checked: boolean) => {
     onUpdate(habitType, {
@@ -105,6 +107,11 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     <div className={`flex items-center justify-between py-0.5 px-1 rounded ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
       <div className="flex items-center">
         {renderIcon()}
+        {!isMobile && (
+          <span className="ml-1 text-xs">
+            {habitType.charAt(0).toUpperCase() + habitType.slice(1)}
+          </span>
+        )}
       </div>
       
       <div className="flex items-center gap-1 ml-auto">

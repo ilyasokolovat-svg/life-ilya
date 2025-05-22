@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HabitType, DayData } from "@/types/habit";
 import HabitTracker from "./HabitTracker";
