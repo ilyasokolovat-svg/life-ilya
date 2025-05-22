@@ -35,6 +35,15 @@ export const getDayCompletionPercentage = (day: DayData): number => {
   return Math.round((completedCount / plannedCount) * 100);
 };
 
+// Get the start date of the current week (Sunday)
+export const getStartOfWeek = (date: Date): Date => {
+  const result = new Date(date);
+  const day = result.getDay();
+  result.setDate(result.getDate() - day); // Go to start of week (Sunday)
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
 // Calculate habit statistics
 export const calculateHabitStats = (state: HabitsState, habitType: HabitType): HabitStats => {
   const days = Object.values(state.days).sort(
@@ -46,6 +55,10 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType): H
   let tempStreak = 0;
   let totalPlanned = 0;
   let totalCompleted = 0;
+  let currentWeekCompleted = 0;
+  
+  const today = new Date();
+  const weekStart = getStartOfWeek(today);
   
   // Process days in reverse (newest first) for current streak
   for (let i = days.length - 1; i >= 0; i--) {
@@ -67,6 +80,12 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType): H
       if (day[habitType]?.completed) {
         totalCompleted++;
         tempStreak++;
+        
+        // Check if this is in the current week
+        const dayDate = new Date(day.date);
+        if (dayDate >= weekStart && dayDate <= today) {
+          currentWeekCompleted++;
+        }
       } else {
         tempStreak = 0;
       }
@@ -79,7 +98,8 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType): H
     currentStreak,
     longestStreak,
     totalCompleted,
-    completionRate: totalPlanned > 0 ? Math.round((totalCompleted / totalPlanned) * 100) : 0
+    completionRate: totalPlanned > 0 ? Math.round((totalCompleted / totalPlanned) * 100) : 0,
+    currentWeekCompleted
   };
 };
 
@@ -90,5 +110,14 @@ export const createEmptyDayData = (date: Date): DayData => {
     gym: { planned: false, completed: false },
     alcohol: { planned: false, completed: false },
     sleep: { planned: false, completed: false }
+  };
+};
+
+// Create default goals
+export const createDefaultGoals = () => {
+  return {
+    gym: { frequency: 3, notes: "" },
+    alcohol: { frequency: 4, notes: "" },
+    sleep: { frequency: 7, notes: "" }
   };
 };

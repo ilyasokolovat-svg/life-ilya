@@ -2,15 +2,16 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { HabitStats as HabitStatsType, HabitType } from "@/types/habit";
+import { HabitStats as HabitStatsType, HabitType, HabitGoal } from "@/types/habit";
 import { Dumbbell, Wine, Moon } from "lucide-react";
 
 interface HabitStatsProps {
   habitType: HabitType;
   stats: HabitStatsType;
+  goal?: HabitGoal;
 }
 
-const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats }) => {
+const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
   const getHabitIcon = () => {
     switch (habitType) {
       case "gym":
@@ -36,6 +37,9 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats }) => {
         return "";
     }
   };
+
+  // Calculate progress toward weekly goal
+  const weeklyProgress = goal?.frequency ? Math.min(100, Math.round((stats.currentWeekCompleted / goal.frequency) * 100)) : 0;
 
   return (
     <Card className="stats-card h-full">
@@ -65,13 +69,30 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats }) => {
           </div>
         </div>
         
-        <div className="mt-6">
+        {goal && (
+          <div className="mt-6">
+            <div className="flex justify-between mb-1">
+              <span className="text-xs">Weekly Goal Progress ({stats.currentWeekCompleted}/{goal.frequency} days)</span>
+              <span className="text-xs font-semibold">{weeklyProgress}%</span>
+            </div>
+            <Progress value={weeklyProgress} className="h-2" />
+          </div>
+        )}
+        
+        <div className="mt-4">
           <div className="flex justify-between mb-1">
-            <span className="text-xs">Completion</span>
+            <span className="text-xs">Overall Completion</span>
             <span className="text-xs font-semibold">{stats.completionRate}%</span>
           </div>
           <Progress value={stats.completionRate} className="h-2" />
         </div>
+        
+        {goal?.notes && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-md">
+            <p className="text-xs font-medium mb-1">Goal Notes:</p>
+            <p className="text-sm">{goal.notes}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

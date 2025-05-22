@@ -13,14 +13,21 @@ export interface DayData {
   sleep: HabitData;
 }
 
+export interface HabitGoal {
+  frequency: number; // days per week
+  notes: string;
+}
+
 export interface HabitStats {
   currentStreak: number;
   longestStreak: number;
   totalCompleted: number;
   completionRate: number; // percentage
+  currentWeekCompleted: number; // number of days completed this week
 }
 
 export interface HabitsState {
   days: Record<string, DayData>;  // key is ISO date
   currentDate: string;  // ISO date
+  goals: Record<HabitType, HabitGoal>; // goals for each habit type
 }

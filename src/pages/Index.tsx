@@ -3,8 +3,9 @@ import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
 import HabitStats from "@/components/HabitStats";
-import { HabitType, HabitsState, HabitData } from "@/types/habit";
-import { calculateHabitStats, formatDateISO, createEmptyDayData } from "@/utils/habitUtils";
+import GoalSetting from "@/components/GoalSetting";
+import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
+import { calculateHabitStats, formatDateISO, createEmptyDayData, createDefaultGoals } from "@/utils/habitUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { Dumbbell, Wine, Moon } from "lucide-react";
 
@@ -12,6 +13,7 @@ const Index = () => {
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits-tracker", {
     days: {},
     currentDate: formatDateISO(new Date()),
+    goals: createDefaultGoals()
   });
 
   // Ensure today exists in the data
@@ -54,6 +56,16 @@ const Index = () => {
       };
     });
   };
+
+  const handleUpdateGoal = (type: HabitType, goal: HabitGoal) => {
+    setHabitsState((prevState) => ({
+      ...prevState,
+      goals: {
+        ...prevState.goals,
+        [type]: goal
+      }
+    }));
+  };
   
   // Calculate stats for each habit type
   const gymStats = calculateHabitStats(habitsState, "gym");
@@ -74,6 +86,15 @@ const Index = () => {
       
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
+        {/* Goals Section */}
+        <div className="mb-8">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Weekly Goals</h2>
+          <GoalSetting 
+            goals={habitsState.goals}
+            onUpdateGoal={handleUpdateGoal}
+          />
+        </div>
+        
         <div className="mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Monthly Calendar</h2>
           <div className="bg-white rounded-lg shadow-md p-4">
@@ -88,9 +109,9 @@ const Index = () => {
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <HabitStats habitType="gym" stats={gymStats} />
-            <HabitStats habitType="alcohol" stats={alcoholStats} />
-            <HabitStats habitType="sleep" stats={sleepStats} />
+            <HabitStats habitType="gym" stats={gymStats} goal={habitsState.goals.gym} />
+            <HabitStats habitType="alcohol" stats={alcoholStats} goal={habitsState.goals.alcohol} />
+            <HabitStats habitType="sleep" stats={sleepStats} goal={habitsState.goals.sleep} />
           </div>
         </div>
         
