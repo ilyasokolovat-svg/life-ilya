@@ -11,20 +11,18 @@ import {
   formatDateISO, 
   createEmptyDayData, 
   createDefaultGoals,
-  createDefaultMonthlyGoals,
   formatYearMonth,
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
-import useLocalStorage from "@/hooks/useLocalStorage";
 import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
+import useSupabaseHabits from "@/hooks/useSupabaseHabits";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits-tracker", {
-    days: {},
-    currentDate: formatDateISO(new Date()),
-    goals: createDefaultMonthlyGoals()
-  });
+  // Use Supabase hook instead of localStorage
+  const { habitsState, updateDay, updateGoal, isLoading } = useSupabaseHabits();
 
   // Track current view month/year for charts and calendar
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
@@ -38,73 +36,24 @@ const Index = () => {
     meditation: { month: viewMonth, year: viewYear }
   });
 
-  // Ensure today exists in the data
+  // Ensure today exists in the data (moved to useEffect to avoid react state update in render)
   useEffect(() => {
+    if (isLoading) return;
+    
     const today = new Date();
     const todayISO = formatDateISO(today);
     
     if (!habitsState.days[todayISO]) {
-      setHabitsState((prevState) => ({
-        ...prevState,
-        days: {
-          ...prevState.days,
-          [todayISO]: createEmptyDayData(today)
-        },
-        currentDate: todayISO
-      }));
+      updateDay(today, 'sleep', { planned: false, completed: false });
     }
-
-    // Also ensure goals exist with the new monthly structure
-    if (!habitsState.goals || Object.keys(habitsState.goals).length === 0) {
-      setHabitsState((prevState) => ({
-        ...prevState,
-        goals: createDefaultMonthlyGoals()
-      }));
-    }
-  }, [habitsState, setHabitsState]);
+  }, [isLoading, habitsState.days]);
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
-    const dateISO = formatDateISO(date);
-    
-    setHabitsState((prevState) => {
-      // Get or create the day data
-      const existingDay = prevState.days[dateISO] || createEmptyDayData(date);
-      
-      // Update the specific habit
-      const updatedDay = {
-        ...existingDay,
-        [type]: data
-      };
-      
-      // Return updated state
-      return {
-        ...prevState,
-        days: {
-          ...prevState.days,
-          [dateISO]: updatedDay
-        }
-      };
-    });
+    updateDay(date, type, data);
   };
 
   const handleUpdateGoal = (type: HabitType, goal: HabitGoal) => {
-    const monthKey = formatYearMonth(viewYear, viewMonth);
-    
-    setHabitsState((prevState) => {
-      // Get or create the goals for the current month
-      const currentMonthGoals = prevState.goals[monthKey] || createDefaultGoals();
-      
-      return {
-        ...prevState,
-        goals: {
-          ...prevState.goals,
-          [monthKey]: {
-            ...currentMonthGoals,
-            [type]: goal
-          }
-        }
-      };
-    });
+    updateGoal(type, goal, viewYear, viewMonth);
   };
   
   // Handle month change for charts and calendar
@@ -132,7 +81,7 @@ const Index = () => {
   // Get goals for current view month
   const currentMonthGoals = getMonthGoals(habitsState, viewYear, viewMonth);
   
-  // Calculate stats for each habit type using safe goals
+  // Calculate stats for each habit type
   const sleepStats = calculateHabitStats(habitsState, "sleep");
   const gymStats = calculateHabitStats(habitsState, "gym");
   const alcoholStats = calculateHabitStats(habitsState, "alcohol");
@@ -143,6 +92,17 @@ const Index = () => {
   const gymWeeklyStats = getMonthlyWeeklyStats(habitsState, "gym", chartMonths.gym.year, chartMonths.gym.month);
   const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", chartMonths.alcohol.year, chartMonths.alcohol.month);
   const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", chartMonths.meditation.year, chartMonths.meditation.month);
+
+  // Show loading state while fetching data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-blue-light/10 flex flex-col items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-dark mb-4" />
+        <h2 className="text-xl font-medium text-blue-dark">Loading your habits...</h2>
+        <p className="text-gray-600 mt-2">Syncing data across your devices</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
@@ -167,7 +127,7 @@ const Index = () => {
           />
         </div>
         
-        {/* Goals Section - now displays goals for current view month */}
+        {/* Goals Section */}
         <div className="mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Monthly Goals</h2>
           <GoalSetting 

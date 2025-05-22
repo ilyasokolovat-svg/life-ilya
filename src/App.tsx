@@ -8,8 +8,15 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import React from "react";
 
-// Create a client
-const queryClient = new QueryClient();
+// Create a client with default options - increasing staleTime for better caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <React.StrictMode>
