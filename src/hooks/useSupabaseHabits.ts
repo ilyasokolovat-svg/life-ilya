@@ -32,12 +32,10 @@ export default function useSupabaseHabits() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const queryClient = useQueryClient();
 
-  // Check auth status on load
+  // Initialize anonymous user ID
   useEffect(() => {
-    const checkUser = async () => {
+    const initUserId = () => {
       try {
-        setIsAuthChecking(true);
-        
         // Look for existing anonymous ID in localStorage
         let anonId = localStorage.getItem('anon_user_id');
         
@@ -50,20 +48,21 @@ export default function useSupabaseHabits() {
         // Use the anonymous ID directly
         setUserId(anonId);
         console.log("Using anonymous ID:", anonId);
+        setIsAuthChecking(false);
       } catch (error) {
-        console.error('Error checking authentication status:', error);
-        toast.error('Error checking user session');
+        console.error('Error initializing user ID:', error);
+        toast.error('Error initializing user session');
         
         // Fallback to a random ID if everything fails
         const fallbackId = `fallback_${crypto.randomUUID()}`;
         setUserId(fallbackId);
+        localStorage.setItem('anon_user_id', fallbackId);
         console.log("Using fallback ID:", fallbackId);
-      } finally {
         setIsAuthChecking(false);
       }
     };
     
-    checkUser();
+    initUserId();
   }, []);
   
   // Ensure tables exist
@@ -206,11 +205,14 @@ export default function useSupabaseHabits() {
       }
       
       try {
-        // Create a single object for upsert
+        // Create a proper JSON object for Supabase
+        const habitDataJson = JSON.parse(JSON.stringify(dayData));
+        
+        // Create a record for upsert
         const record: HabitDayRecord = {
           user_id: userId,
           date: dateISO,
-          habit_data: dayData as unknown as Json,
+          habit_data: habitDataJson as unknown as Json,
           updated_at: new Date().toISOString()
         };
         
@@ -218,19 +220,21 @@ export default function useSupabaseHabits() {
         
         const { error } = await supabase
           .from('habit_days')
-          .upsert(record, { onConflict: 'user_id,date' });
+          .upsert(record)
+          .select()
+          .single();
           
         if (error) {
           console.error('Failed to update habit:', error);
           toast.error('Failed to save your progress');
-          return false;
+          throw error;
         }
         
         return true;
       } catch (error) {
         console.error('Error in update day mutation:', error);
-        toast.error('Could not update habit');
-        return false;
+        toast.error('Failed to save your progress');
+        throw error;
       }
     },
     onSuccess: (_, variables) => {
@@ -282,11 +286,14 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Create a single object for upsert
+        // Create a proper JSON object for Supabase
+        const goalsDataJson = JSON.parse(JSON.stringify(monthGoals));
+        
+        // Create a record for upsert
         const record: HabitGoalRecord = {
           user_id: userId,
           month_key: monthKey,
-          goals_data: monthGoals as unknown as Json,
+          goals_data: goalsDataJson as unknown as Json,
           updated_at: new Date().toISOString()
         };
         
@@ -294,19 +301,21 @@ export default function useSupabaseHabits() {
         
         const { error } = await supabase
           .from('habit_goals')
-          .upsert(record, { onConflict: 'user_id,month_key' });
+          .upsert(record)
+          .select()
+          .single();
           
         if (error) {
           console.error('Failed to update goal:', error);
           toast.error('Failed to save your goal');
-          return false;
+          throw error;
         }
         
         return true;
       } catch (error) {
         console.error('Error in update goal mutation:', error);
-        toast.error('Could not update goal');
-        return false;
+        toast.error('Failed to save your goal');
+        throw error;
       }
     },
     onSuccess: (_, variables) => {
