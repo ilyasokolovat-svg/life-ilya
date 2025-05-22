@@ -49,11 +49,11 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   const renderIcon = () => {
     switch (habitType) {
       case "gym":
-        return <Dumbbell className={`h-4 w-4 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Dumbbell className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       case "alcohol":
-        return <Wine className={`h-4 w-4 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Wine className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       case "sleep":
-        return <Moon className={`h-4 w-4 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Moon className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       default:
         return null;
     }
@@ -67,15 +67,15 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       : "";
 
   return (
-    <div className={`flex items-center justify-between py-1 px-1 rounded-md ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
+    <div className={`flex items-center justify-between py-0.5 px-1 rounded ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
       <div className="flex items-center gap-1">
         {renderIcon()}
-        <span className="text-xs font-medium ml-1">{habitLabel}</span>
+        <span className="text-[10px] font-medium ml-0.5">{habitLabel}</span>
       </div>
       
       <div className="flex items-center gap-1 ml-auto">
         <div className="flex items-center mr-1">
-          <label className="text-[10px] mr-1 whitespace-nowrap">Plan</label>
+          <label className="text-[9px] mr-0.5 whitespace-nowrap">Plan</label>
           <Checkbox
             checked={habitData.planned}
             onCheckedChange={handlePlannedChange}
@@ -85,7 +85,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
         </div>
         
         <div className="flex items-center">
-          <label className="text-[10px] mr-1 whitespace-nowrap">Done</label>
+          <label className="text-[9px] mr-0.5 whitespace-nowrap">Done</label>
           <Checkbox
             checked={habitData.completed}
             onCheckedChange={handleCompletedChange}

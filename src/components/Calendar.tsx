@@ -84,8 +84,8 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
           </span>
         </div>
         
-        {/* Habit mini-zones - display at the top */}
-        <div className="flex w-full h-2 mb-1">
+        {/* Habit mini-zones - display at the top with clear separation */}
+        <div className="flex w-full h-3 mb-1 border-t border-gray-100">
           <div className={`w-1/3 ${getHabitStatusClass(dayData, "gym")}`}></div>
           <div className={`w-1/3 ${getHabitStatusClass(dayData, "alcohol")}`}></div>
           <div className={`w-1/3 ${getHabitStatusClass(dayData, "sleep")}`}></div>
@@ -144,6 +144,18 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
       </div>
       
       <Separator className="my-4" />
+
+      {/* Legend for mini-zones */}
+      <div className="flex flex-wrap items-center justify-end mb-2 text-xs">
+        <div className="flex items-center mr-3">
+          <div className="w-3 h-3 bg-success mr-1"></div>
+          <span>Completed</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-blue-light/50 mr-1"></div>
+          <span>Planned</span>
+        </div>
+      </div>
       
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
@@ -161,18 +173,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
         
         {/* Actual days */}
         {daysInMonth.map((date) => renderDay(date))}
-      </div>
-      
-      {/* Legend */}
-      <div className="mt-4 flex items-center justify-end text-xs">
-        <div className="flex items-center mr-3">
-          <div className="w-3 h-3 bg-success mr-1"></div>
-          <span>Completed</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-blue-light/50 mr-1"></div>
-          <span>Planned</span>
-        </div>
       </div>
     </div>
   );
