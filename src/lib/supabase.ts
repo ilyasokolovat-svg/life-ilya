@@ -20,4 +20,3 @@ export const handleError = (error: any, message = 'An error occurred') => {
   console.error(error);
   toast.error(`${message}: ${error.message || 'Unknown error'}`);
 };
-
