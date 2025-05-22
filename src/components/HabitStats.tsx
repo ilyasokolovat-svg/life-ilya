@@ -85,13 +85,10 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
             <Progress 
               value={monthlyProgress} 
               className="h-2" 
-              indicatorClassName="bg-blue-500" 
               style={{ 
-                backgroundColor: colors.secondary,
-              }}
-              indicatorStyle={{
-                backgroundColor: colors.primary
-              }}
+                "--progress-background": colors.secondary,
+                "--progress-foreground": colors.primary
+              } as React.CSSProperties}
             />
           </div>
         )}
@@ -103,13 +100,11 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
           </div>
           <Progress 
             value={stats.completionRate} 
-            className="h-2" 
+            className="h-2"
             style={{ 
-              backgroundColor: colors.secondary,
-            }}
-            indicatorStyle={{
-              backgroundColor: colors.primary
-            }}
+              "--progress-background": colors.secondary,
+              "--progress-foreground": colors.primary
+            } as React.CSSProperties}
           />
         </div>
         
