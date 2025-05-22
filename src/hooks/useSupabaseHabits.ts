@@ -37,27 +37,19 @@ export default function useSupabaseHabits() {
     const checkUser = async () => {
       try {
         setIsAuthChecking(true);
-        const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          setUserId(session.user.id);
-          console.log("User is authenticated:", session.user.id);
-        } else {
-          console.log("No authenticated user, using local storage ID");
-          
-          // Look for existing anonymous ID in localStorage
-          let anonId = localStorage.getItem('anon_user_id');
-          
-          if (!anonId) {
-            // Create new anonymous ID and store it
-            anonId = `anon_${crypto.randomUUID()}`;
-            localStorage.setItem('anon_user_id', anonId);
-          }
-          
-          // Use the anonymous ID directly
-          setUserId(anonId);
-          console.log("Using anonymous ID:", anonId);
+        // Look for existing anonymous ID in localStorage
+        let anonId = localStorage.getItem('anon_user_id');
+        
+        if (!anonId) {
+          // Create new anonymous ID and store it
+          anonId = `anon_${crypto.randomUUID()}`;
+          localStorage.setItem('anon_user_id', anonId);
         }
+        
+        // Use the anonymous ID directly
+        setUserId(anonId);
+        console.log("Using anonymous ID:", anonId);
       } catch (error) {
         console.error('Error checking authentication status:', error);
         toast.error('Error checking user session');
@@ -72,26 +64,6 @@ export default function useSupabaseHabits() {
     };
     
     checkUser();
-    
-    // Setup auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event);
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUserId(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        // When signed out, check if we have an anonymous ID
-        const anonId = localStorage.getItem('anon_user_id');
-        if (anonId) {
-          setUserId(anonId);
-        } else {
-          setUserId(null);
-        }
-      }
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
   
   // Ensure tables exist
@@ -234,13 +206,15 @@ export default function useSupabaseHabits() {
       }
       
       try {
-        // Create a single object for upsert (not an array)
-        const record = {
+        // Create a single object for upsert
+        const record: HabitDayRecord = {
           user_id: userId,
           date: dateISO,
           habit_data: dayData as unknown as Json,
           updated_at: new Date().toISOString()
         };
+        
+        console.log('Upserting habit day record:', record);
         
         const { error } = await supabase
           .from('habit_days')
@@ -274,6 +248,10 @@ export default function useSupabaseHabits() {
         };
         return newData;
       });
+    },
+    onError: (error) => {
+      console.error('Update day mutation error:', error);
+      toast.error('Failed to save your progress');
     }
   });
   
@@ -304,13 +282,15 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Create a single object for upsert (not an array)
-        const record = {
+        // Create a single object for upsert
+        const record: HabitGoalRecord = {
           user_id: userId,
           month_key: monthKey,
           goals_data: monthGoals as unknown as Json,
           updated_at: new Date().toISOString()
         };
+        
+        console.log('Upserting goal record:', record);
         
         const { error } = await supabase
           .from('habit_goals')
@@ -344,6 +324,10 @@ export default function useSupabaseHabits() {
         };
         return newGoals;
       });
+    },
+    onError: (error) => {
+      console.error('Update goal mutation error:', error);
+      toast.error('Failed to save your goal');
     }
   });
 

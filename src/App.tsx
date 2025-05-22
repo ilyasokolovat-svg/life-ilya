@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -25,9 +25,6 @@ const App = () => {
   useEffect(() => {
     const checkSupabaseConnection = async () => {
       try {
-        // Generate a unique identifier for anonymous users
-        const anonymousId = crypto.randomUUID();
-        
         // Simple query to check if Supabase is connected
         const { data, error } = await supabase
           .from('habit_days')
