@@ -48,72 +48,62 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
     return days[isoDate];
   };
 
+  const getHabitStatusClass = (dayData: DayData | undefined, habitType: HabitType): string => {
+    if (!dayData || !dayData[habitType]) {
+      return "bg-transparent";
+    }
+    
+    if (dayData[habitType].planned && dayData[habitType].completed) {
+      return "bg-success";
+    } else if (dayData[habitType].planned) {
+      return "bg-blue-light/50";
+    }
+    
+    return "bg-transparent";
+  };
+
   const renderDay = (date: Date) => {
     const dayData = getDayData(date);
     const isoDate = formatDateISO(date);
     const isToday = formatDateISO(today) === isoDate;
     const isPast = date < new Date(today.setHours(0, 0, 0, 0));
     
-    // Calculate completion percentage if day has planned habits
-    const completionPercentage = dayData ? getDayCompletionPercentage(dayData) : 0;
-    
     // Day style (highlight today)
     const dayStyle = isToday
       ? 'border-2 border-blue shadow-sm'
       : 'border border-gray-light';
-      
-    // Color based on completion (only if day has planned tasks)
-    let colorStyle = '';
-    if (completionPercentage > 0) {
-      if (completionPercentage === 100) {
-        colorStyle = 'bg-success/10';
-      } else if (completionPercentage >= 50) {
-        colorStyle = 'bg-blue-light/50';
-      } else {
-        colorStyle = 'bg-gray-light';
-      }
-    }
 
     return (
       <div 
         key={isoDate} 
-        className={`habit-day ${dayStyle} ${colorStyle} min-h-[140px]`}
+        className={`habit-day ${dayStyle} min-h-[140px] overflow-hidden flex flex-col`}
       >
-        <div className="habit-day-content">
-          {/* Date and completion indicator */}
-          <div className="flex justify-between items-start mb-1">
-            <span className={`text-sm font-medium ${isToday ? 'text-blue-dark' : ''}`}>
-              {date.getDate()}
-            </span>
-            {completionPercentage > 0 && (
-              <span 
-                className={`habit-badge ${
-                  completionPercentage === 100 
-                    ? 'completed' 
-                    : completionPercentage > 0 
-                      ? 'planned' 
-                      : ''
-                }`}
-              >
-                {completionPercentage}%
-              </span>
-            )}
-          </div>
-          
-          {/* Habits for the day */}
-          <div className="space-y-1">
-            {['gym', 'alcohol', 'sleep'].map((habitType) => (
-              <HabitTracker
-                key={`${isoDate}-${habitType}`}
-                date={date}
-                habitType={habitType as HabitType}
-                habitData={
-                  dayData?.[habitType as HabitType] || { planned: false, completed: false }
-                }
-                onUpdate={(type, data) => onUpdateHabit(date, type, data)}
-              />
-            ))}
-          </div>
+        <div className="p-1">
+          <span className={`text-sm font-medium ${isToday ? 'text-blue-dark' : ''}`}>
+            {date.getDate()}
+          </span>
+        </div>
+        
+        {/* Habit mini-zones - display at the top */}
+        <div className="flex w-full h-2 mb-1">
+          <div className={`w-1/3 ${getHabitStatusClass(dayData, "gym")}`}></div>
+          <div className={`w-1/3 ${getHabitStatusClass(dayData, "alcohol")}`}></div>
+          <div className={`w-1/3 ${getHabitStatusClass(dayData, "sleep")}`}></div>
+        </div>
+        
+        {/* Habits for the day */}
+        <div className="flex-1 p-1 space-y-1">
+          {['gym', 'alcohol', 'sleep'].map((habitType) => (
+            <HabitTracker
+              key={`${isoDate}-${habitType}`}
+              date={date}
+              habitType={habitType as HabitType}
+              habitData={
+                dayData?.[habitType as HabitType] || { planned: false, completed: false }
+              }
+              onUpdate={(type, data) => onUpdateHabit(date, type, data)}
+            />
+          ))}
         </div>
       </div>
     );
@@ -171,6 +161,18 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
         
         {/* Actual days */}
         {daysInMonth.map((date) => renderDay(date))}
+      </div>
+      
+      {/* Legend */}
+      <div className="mt-4 flex items-center justify-end text-xs">
+        <div className="flex items-center mr-3">
+          <div className="w-3 h-3 bg-success mr-1"></div>
+          <span>Completed</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-blue-light/50 mr-1"></div>
+          <span>Planned</span>
+        </div>
       </div>
     </div>
   );

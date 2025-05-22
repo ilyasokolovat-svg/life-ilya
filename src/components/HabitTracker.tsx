@@ -60,9 +60,14 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   };
 
   const habitLabel = habitType.charAt(0).toUpperCase() + habitType.slice(1);
+  const habitStatusClass = habitData.planned && habitData.completed 
+    ? "bg-success/10 border-success border" 
+    : habitData.planned 
+      ? "bg-blue-light/10 border-blue-light border" 
+      : "";
 
   return (
-    <div className={`flex items-center justify-between py-1 px-1 rounded-md ${showAnimation ? "animate-success-pulse bg-blue-light/20" : ""}`}>
+    <div className={`flex items-center justify-between py-1 px-1 rounded-md ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
       <div className="flex items-center gap-1">
         {renderIcon()}
         <span className="text-xs font-medium ml-1">{habitLabel}</span>
