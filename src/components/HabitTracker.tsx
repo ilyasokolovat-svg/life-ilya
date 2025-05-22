@@ -92,7 +92,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     }
   };
 
-  const getHabitLabel = () => {
+  const getHabitLabel = (): string => {
     switch (habitType) {
       case "gym":
         return "Gym";
@@ -103,7 +103,9 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       case "meditation":
         return "Meditation";
       default:
-        return habitType.charAt(0).toUpperCase() + habitType.slice(1);
+        // Since habitType is limited to the union type, this should never happen
+        // But just in case, handle it safely
+        return String(habitType);
     }
   };
   
