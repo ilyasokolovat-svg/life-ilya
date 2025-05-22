@@ -31,7 +31,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
       case "gym":
         return "Gym Workouts";
       case "alcohol":
-        return "Alcohol-Free Days";
+        return "No Alcohol Days";
       case "sleep":
         return "Good Sleep";
       case "meditation":

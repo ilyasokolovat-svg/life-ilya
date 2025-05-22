@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
       case "gym":
         return "Gym Workouts";
       case "alcohol":
-        return "Alcohol-Free Days";
+        return "No Alcohol Days";
       case "sleep":
         return "Good Sleep";
       case "meditation":
