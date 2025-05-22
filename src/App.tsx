@@ -23,7 +23,7 @@ const queryClient = new QueryClient({
 const App = () => {
   // Check Supabase connection on app load
   useEffect(() => {
-    const checkSupabaseConnection = async () => {
+    const initializeApp = async () => {
       try {
         // Simple query to check if Supabase is connected
         const { data, error } = await supabase
@@ -35,20 +35,15 @@ const App = () => {
           console.error('Error connecting to Supabase:', error);
           
           // Try to create tables if they don't exist
-          await supabase.rpc('create_habit_days_table');
-          await supabase.rpc('create_habit_goals_table');
+          console.log('Attempting to create habit tables...');
           
-          // Check if table creation was successful
-          const { error: retryError } = await supabase
-            .from('habit_days')
-            .select('count')
-            .limit(1);
-            
-          if (retryError) {
-            console.error('Failed to create tables:', retryError);
-            toast.error('Could not connect to database. Some features may not work.');
-          } else {
+          try {
+            await supabase.rpc('create_habit_days_table');
+            await supabase.rpc('create_habit_goals_table');
             console.log('Successfully created habit tracking tables');
+          } catch (tableError) {
+            console.error('Failed to create tables:', tableError);
+            toast.error('Could not connect to database. Some features may not work.');
           }
         } else {
           console.log('Successfully connected to Supabase');
@@ -59,7 +54,7 @@ const App = () => {
       }
     };
     
-    checkSupabaseConnection();
+    initializeApp();
   }, []);
 
   return (
@@ -71,7 +66,6 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
@@ -82,3 +76,4 @@ const App = () => {
 };
 
 export default App;
+
