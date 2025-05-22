@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -101,7 +100,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       case "meditation":
         return "Meditation";
       default:
-        return habitType.charAt(0).toUpperCase() + habitType.slice(1);
+        return habitType.toString().charAt(0).toUpperCase() + habitType.toString().slice(1);
     }
   };
   

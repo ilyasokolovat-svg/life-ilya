@@ -139,29 +139,38 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Stats section - reordered to match habit order */}
+        {/* Stats section with charts integrated */}
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <HabitStats habitType="sleep" stats={sleepStats} goal={safeGoals.sleep} />
-            <HabitStats habitType="gym" stats={gymStats} goal={safeGoals.gym} />
-            <HabitStats habitType="alcohol" stats={alcoholStats} goal={safeGoals.alcohol} />
-            <HabitStats habitType="meditation" stats={meditationStats} goal={safeGoals.meditation} />
-          </div>
-        </div>
-        
-        {/* Weekly Charts Section */}
-        <div className="mt-8 mb-8">
-          <h2 className="text-xl md:text-2xl font-semibold mb-4">Weekly Progress</h2>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <WeeklyChart habitType="sleep" data={sleepWeeklyStats} />
-            <WeeklyChart habitType="gym" data={gymWeeklyStats} />
-            <WeeklyChart habitType="alcohol" data={alcoholWeeklyStats} />
-            <WeeklyChart habitType="meditation" data={meditationWeeklyStats} />
+            {/* Sleep */}
+            <div className="space-y-3">
+              <HabitStats habitType="sleep" stats={sleepStats} goal={safeGoals.sleep} />
+              <WeeklyChart habitType="sleep" data={sleepWeeklyStats} />
+            </div>
+            
+            {/* Gym */}
+            <div className="space-y-3">
+              <HabitStats habitType="gym" stats={gymStats} goal={safeGoals.gym} />
+              <WeeklyChart habitType="gym" data={gymWeeklyStats} />
+            </div>
+            
+            {/* Alcohol */}
+            <div className="space-y-3">
+              <HabitStats habitType="alcohol" stats={alcoholStats} goal={safeGoals.alcohol} />
+              <WeeklyChart habitType="alcohol" data={alcoholWeeklyStats} />
+            </div>
+            
+            {/* Meditation */}
+            <div className="space-y-3">
+              <HabitStats habitType="meditation" stats={meditationStats} goal={safeGoals.meditation} />
+              <WeeklyChart habitType="meditation" data={meditationWeeklyStats} />
+            </div>
           </div>
         </div>
         
-        {/* Motivational section - reordered icons to match habit order */}
+        {/* Motivational section */}
         <div className="mt-12 bg-white rounded-lg shadow-md p-6 text-center">
           <h2 className="text-xl md:text-2xl font-bold mb-6">Your Habits Shape Your Future</h2>
           <div className="flex justify-center flex-wrap gap-8 mb-6">
