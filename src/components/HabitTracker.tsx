@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dumbbell, Wine, Moon, Lotus } from "lucide-react";
+import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { HabitData, HabitType } from "@/types/habit";
 import { toast } from "sonner";
@@ -59,7 +59,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       case "sleep":
         return <Moon className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       case "meditation":
-        return <Lotus className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Brain className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       default:
         return null;
     }

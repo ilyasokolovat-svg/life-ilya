@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
@@ -7,7 +6,7 @@ import GoalSetting from "@/components/GoalSetting";
 import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
 import { calculateHabitStats, formatDateISO, createEmptyDayData, createDefaultGoals } from "@/utils/habitUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { Dumbbell, Wine, Moon, Lotus } from "lucide-react";
+import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 
 const Index = () => {
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits-tracker", {
@@ -152,7 +151,7 @@ const Index = () => {
             </div>
             <div className="flex flex-col items-center">
               <div className="bg-blue-light p-4 rounded-full mb-2">
-                <Lotus className="h-8 w-8 text-blue-dark" />
+                <Brain className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Stay Mindful</p>
             </div>

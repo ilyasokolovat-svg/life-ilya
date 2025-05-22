@@ -1,11 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { HabitType, HabitGoal } from "@/types/habit";
-import { Dumbbell, Wine, Moon, Lotus } from "lucide-react";
+import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 
 interface GoalSettingProps {
   goals: Record<HabitType, HabitGoal>;
@@ -22,7 +21,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
       case "sleep":
         return <Moon className="h-5 w-5" />;
       case "meditation":
-        return <Lotus className="h-5 w-5" />;
+        return <Brain className="h-5 w-5" />;
       default:
         return null;
     }
