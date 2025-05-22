@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,6 +6,7 @@ import { Dumbbell, Wine, Moon, Brain, ChevronLeft, ChevronRight } from "lucide-r
 import { habitColors } from "@/utils/chartUtils";
 import { Button } from "@/components/ui/button";
 import WeeklyChart from "./WeeklyChart";
+import { formatYearMonth, getMonthGoals } from "@/utils/habitUtils";
 
 interface HabitStatsProps {
   habitType: HabitType;

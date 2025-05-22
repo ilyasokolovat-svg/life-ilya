@@ -6,7 +6,15 @@ import HabitStats from "@/components/HabitStats";
 import MonthSlider from "@/components/MonthSlider";
 import GoalSetting from "@/components/GoalSetting";
 import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
-import { calculateHabitStats, formatDateISO, createEmptyDayData, createDefaultGoals } from "@/utils/habitUtils";
+import { 
+  calculateHabitStats, 
+  formatDateISO, 
+  createEmptyDayData, 
+  createDefaultGoals,
+  createDefaultMonthlyGoals,
+  formatYearMonth,
+  getMonthGoals
+} from "@/utils/habitUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
@@ -15,7 +23,7 @@ const Index = () => {
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits-tracker", {
     days: {},
     currentDate: formatDateISO(new Date()),
-    goals: createDefaultGoals()
+    goals: createDefaultMonthlyGoals()
   });
 
   // Track current view month/year for charts and calendar
@@ -46,11 +54,11 @@ const Index = () => {
       }));
     }
 
-    // Also ensure goals exist
+    // Also ensure goals exist with the new monthly structure
     if (!habitsState.goals || Object.keys(habitsState.goals).length === 0) {
       setHabitsState((prevState) => ({
         ...prevState,
-        goals: createDefaultGoals()
+        goals: createDefaultMonthlyGoals()
       }));
     }
   }, [habitsState, setHabitsState]);
@@ -80,13 +88,23 @@ const Index = () => {
   };
 
   const handleUpdateGoal = (type: HabitType, goal: HabitGoal) => {
-    setHabitsState((prevState) => ({
-      ...prevState,
-      goals: {
-        ...prevState.goals,
-        [type]: goal
-      }
-    }));
+    const monthKey = formatYearMonth(viewYear, viewMonth);
+    
+    setHabitsState((prevState) => {
+      // Get or create the goals for the current month
+      const currentMonthGoals = prevState.goals[monthKey] || createDefaultGoals();
+      
+      return {
+        ...prevState,
+        goals: {
+          ...prevState.goals,
+          [monthKey]: {
+            ...currentMonthGoals,
+            [type]: goal
+          }
+        }
+      };
+    });
   };
   
   // Handle month change for charts and calendar
@@ -111,8 +129,8 @@ const Index = () => {
     }));
   };
   
-  // Ensure goals object exists before accessing it
-  const safeGoals = habitsState.goals || createDefaultGoals();
+  // Get goals for current view month
+  const currentMonthGoals = getMonthGoals(habitsState, viewYear, viewMonth);
   
   // Calculate stats for each habit type using safe goals
   const sleepStats = calculateHabitStats(habitsState, "sleep");
@@ -140,21 +158,23 @@ const Index = () => {
       
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
-        {/* Goals Section */}
-        <div className="mb-8">
-          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Monthly Goals</h2>
-          <GoalSetting 
-            goals={safeGoals}
-            onUpdateGoal={handleUpdateGoal}
-          />
-        </div>
-        
         {/* Month Slider for Charts and Calendar */}
         <div className="mb-4">
           <MonthSlider
             viewMonth={viewMonth}
             viewYear={viewYear}
             onChange={handleMonthChange}
+          />
+        </div>
+        
+        {/* Goals Section - now displays goals for current view month */}
+        <div className="mb-8">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Monthly Goals</h2>
+          <GoalSetting 
+            goals={currentMonthGoals}
+            viewMonth={viewMonth}
+            viewYear={viewYear}
+            onUpdateGoal={handleUpdateGoal}
           />
         </div>
         
@@ -180,7 +200,7 @@ const Index = () => {
             <HabitStats 
               habitType="sleep" 
               stats={sleepStats} 
-              goal={safeGoals.sleep} 
+              goal={currentMonthGoals.sleep} 
               weeklyData={sleepWeeklyStats}
               viewMonth={chartMonths.sleep.month}
               viewYear={chartMonths.sleep.year}
@@ -191,7 +211,7 @@ const Index = () => {
             <HabitStats 
               habitType="gym" 
               stats={gymStats} 
-              goal={safeGoals.gym} 
+              goal={currentMonthGoals.gym} 
               weeklyData={gymWeeklyStats}
               viewMonth={chartMonths.gym.month}
               viewYear={chartMonths.gym.year}
@@ -202,7 +222,7 @@ const Index = () => {
             <HabitStats 
               habitType="alcohol" 
               stats={alcoholStats} 
-              goal={safeGoals.alcohol} 
+              goal={currentMonthGoals.alcohol} 
               weeklyData={alcoholWeeklyStats}
               viewMonth={chartMonths.alcohol.month}
               viewYear={chartMonths.alcohol.year}
@@ -213,7 +233,7 @@ const Index = () => {
             <HabitStats 
               habitType="meditation" 
               stats={meditationStats} 
-              goal={safeGoals.meditation} 
+              goal={currentMonthGoals.meditation} 
               weeklyData={meditationWeeklyStats}
               viewMonth={chartMonths.meditation.month}
               viewYear={chartMonths.meditation.year}

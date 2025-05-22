@@ -9,10 +9,12 @@ import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 
 interface GoalSettingProps {
   goals: Record<HabitType, HabitGoal>;
+  viewMonth: number;
+  viewYear: number;
   onUpdateGoal: (type: HabitType, goal: HabitGoal) => void;
 }
 
-const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
+const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, onUpdateGoal }) => {
   const getHabitIcon = (habitType: HabitType) => {
     switch (habitType) {
       case "gym":
@@ -42,6 +44,11 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
         return "";
     }
   };
+  
+  // Get month name for display
+  const getMonthName = (month: number) => {
+    return new Date(2000, month, 1).toLocaleString('default', { month: 'long' });
+  };
 
   const handleFrequencyChange = (type: HabitType, value: string) => {
     onUpdateGoal(type, {
@@ -58,50 +65,55 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, onUpdateGoal }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-      {Object.keys(goals).map((habitType) => {
-        const type = habitType as HabitType;
-        const goal = goals[type];
-        
-        return (
-          <Card key={habitType} className="overflow-hidden">
-            <CardHeader className="pb-2 bg-blue-light/20">
-              <CardTitle className="text-lg flex items-center gap-2">
-                {getHabitIcon(type)}
-                {getHabitTitle(type)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              <div>
-                <Label htmlFor={`${type}-frequency`}>Goal (days per month)</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input
-                    id={`${type}-frequency`}
-                    type="number"
-                    min="0"
-                    max="31"
-                    value={goal.frequency}
-                    className="w-24"
-                    onChange={(e) => handleFrequencyChange(type, e.target.value)}
-                  />
-                  <span className="text-sm text-muted-foreground">days/month</span>
+    <div>
+      <h3 className="text-lg font-medium mb-4">
+        Goals for {getMonthName(viewMonth)} {viewYear}
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {Object.keys(goals).map((habitType) => {
+          const type = habitType as HabitType;
+          const goal = goals[type];
+          
+          return (
+            <Card key={habitType} className="overflow-hidden">
+              <CardHeader className="pb-2 bg-blue-light/20">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  {getHabitIcon(type)}
+                  {getHabitTitle(type)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                <div>
+                  <Label htmlFor={`${type}-frequency`}>Goal (days per month)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      id={`${type}-frequency`}
+                      type="number"
+                      min="0"
+                      max="31"
+                      value={goal.frequency}
+                      className="w-24"
+                      onChange={(e) => handleFrequencyChange(type, e.target.value)}
+                    />
+                    <span className="text-sm text-muted-foreground">days/month</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <Label htmlFor={`${type}-notes`}>Notes</Label>
-                <Textarea
-                  id={`${type}-notes`}
-                  placeholder="Add notes for your goal..."
-                  value={goal.notes}
-                  onChange={(e) => handleNotesChange(type, e.target.value)}
-                  className="mt-1 h-24 resize-none"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                
+                <div>
+                  <Label htmlFor={`${type}-notes`}>Notes</Label>
+                  <Textarea
+                    id={`${type}-notes`}
+                    placeholder="Add notes for your goal..."
+                    value={goal.notes}
+                    onChange={(e) => handleNotesChange(type, e.target.value)}
+                    className="mt-1 h-24 resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };

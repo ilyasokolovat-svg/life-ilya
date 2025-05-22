@@ -1,5 +1,4 @@
-
-import { DayData, HabitStats, HabitType, HabitsState } from "@/types/habit";
+import { DayData, HabitStats, HabitType, HabitsState, HabitGoal } from "@/types/habit";
 
 // Get all days in a month
 export const getDaysInMonth = (year: number, month: number): Date[] => {
@@ -17,6 +16,29 @@ export const getDaysInMonth = (year: number, month: number): Date[] => {
 // Format date as ISO string (YYYY-MM-DD)
 export const formatDateISO = (date: Date): string => {
   return date.toISOString().split('T')[0];
+};
+
+// Format month as YYYY-MM
+export const formatYearMonth = (year: number, month: number): string => {
+  return `${year}-${String(month + 1).padStart(2, '0')}`;
+};
+
+// Get current month key
+export const getCurrentMonthKey = (): string => {
+  const date = new Date();
+  return formatYearMonth(date.getFullYear(), date.getMonth());
+};
+
+// Get goals for a specific month
+export const getMonthGoals = (state: HabitsState, year: number, month: number): Record<HabitType, HabitGoal> => {
+  const monthKey = formatYearMonth(year, month);
+  
+  // If goals for this month don't exist, use default goals
+  if (!state.goals || !state.goals[monthKey]) {
+    return createDefaultGoals();
+  }
+  
+  return state.goals[monthKey];
 };
 
 // Get day percentage completion
@@ -134,5 +156,13 @@ export const createDefaultGoals = () => {
     alcohol: { frequency: 4, notes: "" },
     sleep: { frequency: 7, notes: "7+ hours of sleep per day" },
     meditation: { frequency: 5, notes: "" }
+  };
+};
+
+// Create default monthly goals
+export const createDefaultMonthlyGoals = () => {
+  const monthKey = getCurrentMonthKey();
+  return {
+    [monthKey]: createDefaultGoals()
   };
 };

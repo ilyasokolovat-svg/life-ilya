@@ -16,8 +16,13 @@ export interface DayData {
 }
 
 export interface HabitGoal {
-  frequency: number; // days per week
+  frequency: number; // days per month
   notes: string;
+}
+
+// New type for monthly goals
+export interface MonthlyGoals {
+  [key: string]: Record<HabitType, HabitGoal>; // key is YYYY-MM format
 }
 
 export interface HabitStats {
@@ -37,6 +42,5 @@ export interface WeeklyStats {
 export interface HabitsState {
   days: Record<string, DayData>;  // key is ISO date
   currentDate: string;  // ISO date
-  goals: Record<HabitType, HabitGoal>; // goals for each habit type
+  goals: MonthlyGoals; // goals for each month and each habit type
 }
-
