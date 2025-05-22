@@ -2,17 +2,28 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { HabitStats as HabitStatsType, HabitType, HabitGoal } from "@/types/habit";
+import { HabitStats as HabitStatsType, HabitType, HabitGoal, WeeklyStats } from "@/types/habit";
 import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 import { habitColors } from "@/utils/chartUtils";
+import WeeklyChart from "./WeeklyChart";
 
 interface HabitStatsProps {
   habitType: HabitType;
   stats: HabitStatsType;
   goal?: HabitGoal;
+  weeklyData: WeeklyStats[];
+  viewMonth: number;
+  viewYear: number;
 }
 
-const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
+const HabitStats: React.FC<HabitStatsProps> = ({ 
+  habitType, 
+  stats, 
+  goal,
+  weeklyData,
+  viewMonth,
+  viewYear
+}) => {
   const colors = habitColors[habitType];
   
   const getHabitIcon = () => {
@@ -56,28 +67,28 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
           {getHabitTitle()}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-sm text-muted-foreground">Current Streak</p>
-            <h3 className="text-2xl font-bold">{stats.currentStreak} days</h3>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+            <p className="text-xs text-muted-foreground">Current Streak</p>
+            <h3 className="text-xl font-bold">{stats.currentStreak} days</h3>
           </div>
-          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-sm text-muted-foreground">Longest Streak</p>
-            <h3 className="text-2xl font-bold">{stats.longestStreak} days</h3>
+          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+            <p className="text-xs text-muted-foreground">Longest Streak</p>
+            <h3 className="text-xl font-bold">{stats.longestStreak} days</h3>
           </div>
-          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-sm text-muted-foreground">Total Completed</p>
-            <h3 className="text-2xl font-bold">{stats.totalCompleted}</h3>
+          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+            <p className="text-xs text-muted-foreground">Total Completed</p>
+            <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
           </div>
-          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-sm text-muted-foreground">Completion Rate</p>
-            <h3 className="text-2xl font-bold">{stats.completionRate}%</h3>
+          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+            <p className="text-xs text-muted-foreground">Completion Rate</p>
+            <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
           </div>
         </div>
         
         {goal && (
-          <div className="mt-6">
+          <div>
             <div className="flex justify-between mb-1">
               <span className="text-xs">Monthly Goal Progress ({stats.totalCompleted}/{goal.frequency} days)</span>
               <span className="text-xs font-semibold">{monthlyProgress}%</span>
@@ -93,7 +104,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
           </div>
         )}
         
-        <div className="mt-4">
+        <div>
           <div className="flex justify-between mb-1">
             <span className="text-xs">Overall Completion</span>
             <span className="text-xs font-semibold">{stats.completionRate}%</span>
@@ -108,8 +119,18 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
           />
         </div>
         
+        {/* Embedded Weekly Chart */}
+        <div className="mt-1">
+          <WeeklyChart 
+            habitType={habitType} 
+            data={weeklyData}
+            title={`${getHabitTitle()} Trend`}
+            compact={true}
+          />
+        </div>
+        
         {goal?.notes && (
-          <div className="mt-4 p-3 bg-gray-50 rounded-md">
+          <div className="p-2 bg-gray-50 rounded-md">
             <p className="text-xs font-medium mb-1">Goal Notes:</p>
             <p className="text-sm">{goal.notes}</p>
           </div>

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
 import HabitStats from "@/components/HabitStats";
-import WeeklyChart from "@/components/WeeklyChart";
+import MonthSlider from "@/components/MonthSlider";
 import GoalSetting from "@/components/GoalSetting";
 import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
 import { calculateHabitStats, formatDateISO, createEmptyDayData, createDefaultGoals } from "@/utils/habitUtils";
@@ -45,10 +45,6 @@ const Index = () => {
         goals: createDefaultGoals()
       }));
     }
-    
-    // Sync view month/year with calendar
-    setViewMonth(today.getMonth());
-    setViewYear(today.getFullYear());
   }, [habitsState, setHabitsState]);
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
@@ -85,8 +81,8 @@ const Index = () => {
     }));
   };
   
-  // Handle month change for charts
-  const handleCalendarMonthChange = (month: number, year: number) => {
+  // Handle month change for charts and calendar
+  const handleMonthChange = (month: number, year: number) => {
     setViewMonth(month);
     setViewYear(year);
   };
@@ -129,6 +125,16 @@ const Index = () => {
           />
         </div>
         
+        {/* Month Slider for Charts and Calendar */}
+        <div className="mb-4">
+          <MonthSlider
+            viewMonth={viewMonth}
+            viewYear={viewYear}
+            onChange={handleMonthChange}
+          />
+        </div>
+        
+        {/* Calendar Section */}
         <div className="mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Monthly Calendar</h2>
           <div className="bg-white rounded-lg shadow-md p-4">
@@ -139,34 +145,50 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Stats section with charts integrated */}
+        {/* Stats section with integrated charts */}
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Sleep */}
-            <div className="space-y-3">
-              <HabitStats habitType="sleep" stats={sleepStats} goal={safeGoals.sleep} />
-              <WeeklyChart habitType="sleep" data={sleepWeeklyStats} />
-            </div>
+            <HabitStats 
+              habitType="sleep" 
+              stats={sleepStats} 
+              goal={safeGoals.sleep} 
+              weeklyData={sleepWeeklyStats}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
+            />
             
             {/* Gym */}
-            <div className="space-y-3">
-              <HabitStats habitType="gym" stats={gymStats} goal={safeGoals.gym} />
-              <WeeklyChart habitType="gym" data={gymWeeklyStats} />
-            </div>
+            <HabitStats 
+              habitType="gym" 
+              stats={gymStats} 
+              goal={safeGoals.gym} 
+              weeklyData={gymWeeklyStats}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
+            />
             
             {/* Alcohol */}
-            <div className="space-y-3">
-              <HabitStats habitType="alcohol" stats={alcoholStats} goal={safeGoals.alcohol} />
-              <WeeklyChart habitType="alcohol" data={alcoholWeeklyStats} />
-            </div>
+            <HabitStats 
+              habitType="alcohol" 
+              stats={alcoholStats} 
+              goal={safeGoals.alcohol} 
+              weeklyData={alcoholWeeklyStats}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
+            />
             
             {/* Meditation */}
-            <div className="space-y-3">
-              <HabitStats habitType="meditation" stats={meditationStats} goal={safeGoals.meditation} />
-              <WeeklyChart habitType="meditation" data={meditationWeeklyStats} />
-            </div>
+            <HabitStats 
+              habitType="meditation" 
+              stats={meditationStats} 
+              goal={safeGoals.meditation} 
+              weeklyData={meditationWeeklyStats}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
+            />
           </div>
         </div>
         

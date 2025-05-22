@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HabitType, DayData } from "@/types/habit";
@@ -11,12 +10,22 @@ import { habitColors } from "@/utils/chartUtils";
 interface CalendarProps {
   days: Record<string, DayData>;
   onUpdateHabit: (date: Date, type: HabitType, data: { planned: boolean; completed: boolean; sleepHours?: number }) => void;
+  viewMonth?: number;
+  viewYear?: number;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
+const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, viewYear }) => {
   const today = new Date();
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(viewMonth !== undefined ? viewMonth : today.getMonth());
+  const [currentYear, setCurrentYear] = useState(viewYear !== undefined ? viewYear : today.getFullYear());
+
+  // Update calendar when viewMonth or viewYear prop changes
+  useEffect(() => {
+    if (viewMonth !== undefined && viewYear !== undefined) {
+      setCurrentMonth(viewMonth);
+      setCurrentYear(viewYear);
+    }
+  }, [viewMonth, viewYear]);
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
@@ -127,39 +136,43 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
-      {/* Calendar header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">
-          {monthName} {currentYear}
-        </h2>
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goToPreviousMonth}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setCurrentMonth(today.getMonth());
-              setCurrentYear(today.getFullYear());
-            }}
-          >
-            Today
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goToNextMonth}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      
-      <Separator className="my-4" />
+      {/* Calendar header - only show if viewMonth/Year not provided (means we're not controlled by slider) */}
+      {viewMonth === undefined && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">
+              {monthName} {currentYear}
+            </h2>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToPreviousMonth}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCurrentMonth(today.getMonth());
+                  setCurrentYear(today.getFullYear());
+                }}
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToNextMonth}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <Separator className="my-4" />
+        </>
+      )}
 
       {/* Legend for mini-zones */}
       <div className="flex flex-wrap items-center justify-end mb-2 text-xs">
