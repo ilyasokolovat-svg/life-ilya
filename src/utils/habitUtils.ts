@@ -46,6 +46,17 @@ export const getStartOfWeek = (date: Date): Date => {
 
 // Calculate habit statistics
 export const calculateHabitStats = (state: HabitsState, habitType: HabitType): HabitStats => {
+  // Ensure state and days exist
+  if (!state || !state.days) {
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      totalCompleted: 0,
+      completionRate: 0,
+      currentWeekCompleted: 0
+    };
+  }
+  
   const days = Object.values(state.days).sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
@@ -121,3 +132,4 @@ export const createDefaultGoals = () => {
     sleep: { frequency: 7, notes: "" }
   };
 };
+

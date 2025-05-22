@@ -31,6 +31,14 @@ const Index = () => {
         currentDate: todayISO
       }));
     }
+
+    // Also ensure goals exist
+    if (!habitsState.goals || Object.keys(habitsState.goals).length === 0) {
+      setHabitsState((prevState) => ({
+        ...prevState,
+        goals: createDefaultGoals()
+      }));
+    }
   }, [habitsState, setHabitsState]);
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
@@ -67,7 +75,10 @@ const Index = () => {
     }));
   };
   
-  // Calculate stats for each habit type
+  // Ensure goals object exists before accessing it
+  const safeGoals = habitsState.goals || createDefaultGoals();
+  
+  // Calculate stats for each habit type using safe goals
   const gymStats = calculateHabitStats(habitsState, "gym");
   const alcoholStats = calculateHabitStats(habitsState, "alcohol");
   const sleepStats = calculateHabitStats(habitsState, "sleep");
@@ -90,7 +101,7 @@ const Index = () => {
         <div className="mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Weekly Goals</h2>
           <GoalSetting 
-            goals={habitsState.goals}
+            goals={safeGoals}
             onUpdateGoal={handleUpdateGoal}
           />
         </div>
@@ -109,9 +120,9 @@ const Index = () => {
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <HabitStats habitType="gym" stats={gymStats} goal={habitsState.goals.gym} />
-            <HabitStats habitType="alcohol" stats={alcoholStats} goal={habitsState.goals.alcohol} />
-            <HabitStats habitType="sleep" stats={sleepStats} goal={habitsState.goals.sleep} />
+            <HabitStats habitType="gym" stats={gymStats} goal={safeGoals.gym} />
+            <HabitStats habitType="alcohol" stats={alcoholStats} goal={safeGoals.alcohol} />
+            <HabitStats habitType="sleep" stats={sleepStats} goal={safeGoals.sleep} />
           </div>
         </div>
         
