@@ -19,7 +19,9 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   onUpdate,
 }) => {
   const [showAnimation, setShowAnimation] = useState(false);
-  const [sleepHours, setSleepHours] = useState(habitData.sleepHours?.toString() || "");
+  const [sleepHours, setSleepHours] = useState(
+    habitData.sleepHours !== undefined ? habitData.sleepHours.toString() : ""
+  );
 
   const handlePlannedChange = (checked: boolean) => {
     onUpdate(habitType, {
