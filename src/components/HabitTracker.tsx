@@ -64,11 +64,15 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   };
 
   const habitLabel = habitType.charAt(0).toUpperCase() + habitType.slice(1);
-  const habitStatusClass = habitData.planned && habitData.completed 
-    ? "bg-success/10 border-success border" 
-    : habitData.planned 
-      ? "bg-blue-light/10 border-blue-light border" 
-      : "";
+  
+  // Update the status class to color the entire row based on completion status
+  let habitStatusClass = "bg-transparent";
+  
+  if (habitData.planned && habitData.completed) {
+    habitStatusClass = "bg-success/20 border-success border text-success font-medium";
+  } else if (habitData.planned) {
+    habitStatusClass = "bg-blue-light/20 border-blue-light border";
+  }
 
   return (
     <div className={`flex items-center justify-between py-0.5 px-1 rounded ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
