@@ -11,9 +11,20 @@ interface WeeklyChartProps {
   data: WeeklyStats[];
   title?: string;
   compact?: boolean;
+  viewMonth?: number;
+  viewYear?: number;
+  onMonthChange?: (month: number, year: number) => void;
 }
 
-const WeeklyChart: React.FC<WeeklyChartProps> = ({ habitType, data, title, compact = false }) => {
+const WeeklyChart: React.FC<WeeklyChartProps> = ({ 
+  habitType, 
+  data, 
+  title, 
+  compact = false,
+  viewMonth,
+  viewYear,
+  onMonthChange
+}) => {
   const colors = habitColors[habitType];
   
   // Transform data for the chart
@@ -54,7 +65,12 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ habitType, data, title, compa
     <div className={compact ? "h-[100px]" : "h-[140px]"}>
       <ChartContainer config={chartConfig}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+          <BarChart 
+            data={chartData} 
+            margin={{ top: 5, right: 5, left: -15, bottom: 5 }}
+            barCategoryGap={1} // Reduce gap between categories to make bars overlap more
+            barGap={0} // No gap between bars in the same category for overlapping effect
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="name" fontSize={8} tickMargin={5} />
             <YAxis allowDecimals={false} fontSize={8} />

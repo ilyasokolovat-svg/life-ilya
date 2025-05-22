@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { HabitStats as HabitStatsType, HabitType, HabitGoal, WeeklyStats } from "@/types/habit";
-import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
+import { Dumbbell, Wine, Moon, Brain, ChevronLeft, ChevronRight } from "lucide-react";
 import { habitColors } from "@/utils/chartUtils";
+import { Button } from "@/components/ui/button";
 import WeeklyChart from "./WeeklyChart";
 
 interface HabitStatsProps {
@@ -14,6 +15,7 @@ interface HabitStatsProps {
   weeklyData: WeeklyStats[];
   viewMonth: number;
   viewYear: number;
+  onMonthChange?: (month: number, year: number) => void;
 }
 
 const HabitStats: React.FC<HabitStatsProps> = ({ 
@@ -22,8 +24,13 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   goal,
   weeklyData,
   viewMonth,
-  viewYear
+  viewYear,
+  onMonthChange
 }) => {
+  // Track chart month/year locally if no callback is provided
+  const [chartMonth, setChartMonth] = useState(viewMonth);
+  const [chartYear, setChartYear] = useState(viewYear);
+  
   const colors = habitColors[habitType];
   
   const getHabitIcon = () => {
@@ -58,6 +65,41 @@ const HabitStats: React.FC<HabitStatsProps> = ({
 
   // Calculate progress toward monthly goal
   const monthlyProgress = goal?.frequency ? Math.min(100, Math.round((stats.totalCompleted / goal.frequency) * 100)) : 0;
+  
+  // Previous month function
+  const prevMonth = () => {
+    const newMonth = chartMonth === 0 ? 11 : chartMonth - 1;
+    const newYear = chartMonth === 0 ? chartYear - 1 : chartYear;
+    
+    // Update local state
+    setChartMonth(newMonth);
+    setChartYear(newYear);
+    
+    // Call parent handler if provided
+    if (onMonthChange) {
+      onMonthChange(newMonth, newYear);
+    }
+  };
+
+  // Next month function
+  const nextMonth = () => {
+    const newMonth = chartMonth === 11 ? 0 : chartMonth + 1;
+    const newYear = chartMonth === 11 ? chartYear + 1 : chartYear;
+    
+    // Update local state
+    setChartMonth(newMonth);
+    setChartYear(newYear);
+    
+    // Call parent handler if provided
+    if (onMonthChange) {
+      onMonthChange(newMonth, newYear);
+    }
+  };
+
+  // Get month name
+  const getMonthName = (month: number) => {
+    return new Date(2000, month, 1).toLocaleDateString('default', { month: 'short' });
+  };
 
   return (
     <Card className="stats-card h-full" style={{ borderColor: colors.primary }}>
@@ -119,6 +161,27 @@ const HabitStats: React.FC<HabitStatsProps> = ({
           />
         </div>
         
+        {/* Chart navigation */}
+        <div className="flex items-center justify-between text-xs font-medium mb-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={prevMonth}
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </Button>
+          <span>{getMonthName(chartMonth)} {chartYear}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={nextMonth}
+          >
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+        </div>
+        
         {/* Embedded Weekly Chart */}
         <div className="mt-1">
           <WeeklyChart 
@@ -126,6 +189,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({
             data={weeklyData}
             title={`${getHabitTitle()} Trend`}
             compact={true}
+            viewMonth={chartMonth}
+            viewYear={chartYear}
           />
         </div>
         

@@ -18,9 +18,17 @@ const Index = () => {
     goals: createDefaultGoals()
   });
 
-  // Track current view month/year for charts
+  // Track current view month/year for charts and calendar
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  
+  // Track individual chart months/years
+  const [chartMonths, setChartMonths] = useState({
+    sleep: { month: viewMonth, year: viewYear },
+    gym: { month: viewMonth, year: viewYear },
+    alcohol: { month: viewMonth, year: viewYear },
+    meditation: { month: viewMonth, year: viewYear }
+  });
 
   // Ensure today exists in the data
   useEffect(() => {
@@ -85,6 +93,22 @@ const Index = () => {
   const handleMonthChange = (month: number, year: number) => {
     setViewMonth(month);
     setViewYear(year);
+    
+    // Also update all chart months
+    setChartMonths({
+      sleep: { month, year },
+      gym: { month, year },
+      alcohol: { month, year },
+      meditation: { month, year }
+    });
+  };
+  
+  // Handle individual chart month change
+  const handleChartMonthChange = (type: HabitType, month: number, year: number) => {
+    setChartMonths(prev => ({
+      ...prev,
+      [type]: { month, year }
+    }));
   };
   
   // Ensure goals object exists before accessing it
@@ -96,11 +120,11 @@ const Index = () => {
   const alcoholStats = calculateHabitStats(habitsState, "alcohol");
   const meditationStats = calculateHabitStats(habitsState, "meditation");
   
-  // Get weekly stats for each habit type
-  const sleepWeeklyStats = getMonthlyWeeklyStats(habitsState, "sleep", viewYear, viewMonth);
-  const gymWeeklyStats = getMonthlyWeeklyStats(habitsState, "gym", viewYear, viewMonth);
-  const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", viewYear, viewMonth);
-  const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", viewYear, viewMonth);
+  // Get weekly stats for each habit type with their respective months
+  const sleepWeeklyStats = getMonthlyWeeklyStats(habitsState, "sleep", chartMonths.sleep.year, chartMonths.sleep.month);
+  const gymWeeklyStats = getMonthlyWeeklyStats(habitsState, "gym", chartMonths.gym.year, chartMonths.gym.month);
+  const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", chartMonths.alcohol.year, chartMonths.alcohol.month);
+  const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", chartMonths.meditation.year, chartMonths.meditation.month);
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
@@ -141,6 +165,8 @@ const Index = () => {
             <Calendar
               days={habitsState.days}
               onUpdateHabit={handleUpdateHabit}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
             />
           </div>
         </div>
@@ -156,8 +182,9 @@ const Index = () => {
               stats={sleepStats} 
               goal={safeGoals.sleep} 
               weeklyData={sleepWeeklyStats}
-              viewMonth={viewMonth}
-              viewYear={viewYear}
+              viewMonth={chartMonths.sleep.month}
+              viewYear={chartMonths.sleep.year}
+              onMonthChange={(month, year) => handleChartMonthChange("sleep", month, year)}
             />
             
             {/* Gym */}
@@ -166,8 +193,9 @@ const Index = () => {
               stats={gymStats} 
               goal={safeGoals.gym} 
               weeklyData={gymWeeklyStats}
-              viewMonth={viewMonth}
-              viewYear={viewYear}
+              viewMonth={chartMonths.gym.month}
+              viewYear={chartMonths.gym.year}
+              onMonthChange={(month, year) => handleChartMonthChange("gym", month, year)}
             />
             
             {/* Alcohol */}
@@ -176,8 +204,9 @@ const Index = () => {
               stats={alcoholStats} 
               goal={safeGoals.alcohol} 
               weeklyData={alcoholWeeklyStats}
-              viewMonth={viewMonth}
-              viewYear={viewYear}
+              viewMonth={chartMonths.alcohol.month}
+              viewYear={chartMonths.alcohol.year}
+              onMonthChange={(month, year) => handleChartMonthChange("alcohol", month, year)}
             />
             
             {/* Meditation */}
@@ -186,8 +215,9 @@ const Index = () => {
               stats={meditationStats} 
               goal={safeGoals.meditation} 
               weeklyData={meditationWeeklyStats}
-              viewMonth={viewMonth}
-              viewYear={viewYear}
+              viewMonth={chartMonths.meditation.month}
+              viewYear={chartMonths.meditation.year}
+              onMonthChange={(month, year) => handleChartMonthChange("meditation", month, year)}
             />
           </div>
         </div>
