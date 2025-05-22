@@ -7,6 +7,7 @@ import HabitTracker from "./HabitTracker";
 import { formatDateISO, getDaysInMonth, getDayCompletionPercentage } from "@/utils/habitUtils";
 import { Separator } from "@/components/ui/separator";
 import { habitColors } from "@/utils/chartUtils";
+import { useMediaQuery } from "@/hooks/use-mobile";
 
 interface CalendarProps {
   days: Record<string, DayData>;
@@ -19,6 +20,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(viewMonth !== undefined ? viewMonth : today.getMonth());
   const [currentYear, setCurrentYear] = useState(viewYear !== undefined ? viewYear : today.getFullYear());
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   // Update calendar when viewMonth or viewYear prop changes
   useEffect(() => {
@@ -30,7 +32,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   
-  // Change: Calculate first day of month with Monday as first day of week (0)
+  // Calculate first day of month with Monday as first day of week (0)
   // In JavaScript, Sunday is 0, Monday is 1, ..., Saturday is 6
   // To make Monday the first day, we subtract 1 and use modulo 7
   const firstDayOfMonth = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7;
@@ -38,7 +40,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
   const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
   
   // Update weekdays array to start with Monday
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekDays = isMobile ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   
   // Navigation functions
   const goToPreviousMonth = () => {
@@ -94,10 +96,13 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     // Reordering habits to put sleep first, then gym, alcohol, and meditation
     const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
 
+    // Adjust cell height based on screen size
+    const cellHeight = isMobile ? 'min-h-[110px]' : 'min-h-[140px]';
+
     return (
       <div 
         key={isoDate} 
-        className={`habit-day ${dayStyle} min-h-[140px] overflow-hidden flex flex-col`}
+        className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col`}
       >
         <div className="p-1">
           <span className={`text-sm font-medium ${isToday ? 'text-blue-dark' : ''}`}>
@@ -209,6 +214,30 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         {/* Actual days */}
         {daysInMonth.map((date) => renderDay(date))}
       </div>
+      
+      {/* Legend for mobile */}
+      {isMobile && (
+        <div className="mt-4 border-t pt-2">
+          <div className="flex flex-wrap gap-3 text-xs">
+            <div className="flex items-center">
+              <Moon className="h-3.5 w-3.5 mr-1" />
+              <span>Sleep</span>
+            </div>
+            <div className="flex items-center">
+              <Dumbbell className="h-3.5 w-3.5 mr-1" />
+              <span>Gym</span>
+            </div>
+            <div className="flex items-center">
+              <Wine className="h-3.5 w-3.5 mr-1" />
+              <span>No Alcohol</span>
+            </div>
+            <div className="flex items-center">
+              <Brain className="h-3.5 w-3.5 mr-1" />
+              <span>Meditation</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

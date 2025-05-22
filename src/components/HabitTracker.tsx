@@ -91,23 +91,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
         return null;
     }
   };
-
-  const getHabitLabel = (): string => {
-    switch (habitType) {
-      case "gym":
-        return "Gym";
-      case "alcohol":
-        return "No Alcohol";
-      case "sleep":
-        return "Sleep";
-      case "meditation":
-        return "Meditation";
-      default:
-        // Since habitType is limited to the union type, this should never happen
-        // But just in case, handle it safely
-        return String(habitType);
-    }
-  };
   
   // Update the status class to color the entire row based on completion status
   let habitStatusClass = "bg-transparent";
@@ -120,9 +103,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
 
   return (
     <div className={`flex items-center justify-between py-0.5 px-1 rounded ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center">
         {renderIcon()}
-        <span className="text-[10px] font-medium ml-0.5">{getHabitLabel()}</span>
       </div>
       
       <div className="flex items-center gap-1 ml-auto">
@@ -132,36 +114,35 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
               type="number"
               value={sleepHours}
               onChange={handleSleepHoursChange}
-              className="h-5 w-12 text-[10px] px-1 py-0"
+              className="h-5 w-10 text-[10px] px-1 py-0"
               placeholder="hrs"
               min="0"
               max="24"
               step="0.5"
               disabled={isFuture}
             />
-            <span className="text-[9px] ml-1">hrs</span>
           </div>
         ) : (
           <>
-            <div className="flex items-center mr-1">
-              <label className="text-[9px] mr-0.5 whitespace-nowrap">P</label>
+            <div className="flex items-center">
               <Checkbox
                 checked={habitData.planned}
                 onCheckedChange={handlePlannedChange}
                 // Allow planning for today and future dates, disable only for past dates that weren't planned
                 disabled={isPast && !habitData.planned}
                 className="h-3 w-3"
+                aria-label="Planned"
               />
             </div>
             
             <div className="flex items-center">
-              <label className="text-[9px] mr-0.5 whitespace-nowrap">D</label>
               <Checkbox
                 checked={habitData.completed}
                 onCheckedChange={handleCompletedChange}
                 // Only disable completion for future dates
                 disabled={isFuture}
                 className={`h-3 w-3 ${habitData.completed ? "bg-success border-success" : ""}`}
+                aria-label="Completed"
               />
             </div>
           </>
