@@ -27,11 +27,14 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
 }) => {
   const colors = habitColors[habitType];
   
-  // Transform data for the chart - maintain original structure for tooltip
+  // Transform data for the chart - create a new format that includes both planned and completed
   const chartData = data.map((week) => ({
     name: formatWeekLabel(week.weekStart),
     planned: habitType === 'sleep' ? 7 : week.planned, // For sleep, we use 7 days as the goal
     completed: week.completed,
+    // Add a "remaining" value that represents the uncompleted planned activities
+    // This is used to render the lighter part of the bar
+    remaining: (habitType === 'sleep' ? 7 : week.planned) - week.completed
   }));
   
   // Get title based on habit type if not provided
@@ -55,7 +58,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
       label: "Completed",
       color: colors.primary,
     },
-    planned: {
+    remaining: {
       label: "Goal",
       color: colors.secondary,
     },
@@ -68,30 +71,27 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
           <BarChart 
             data={chartData} 
             margin={{ top: 5, right: 5, left: -15, bottom: 5 }}
-            // Make planned and completed in the same position
-            barCategoryGap={8} 
-            barGap={0}
+            barCategoryGap={8}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="name" fontSize={8} tickMargin={5} />
             <YAxis allowDecimals={false} fontSize={8} />
             <Tooltip content={<ChartTooltipContent />} />
-            {/* Always render planned bar first (in the back) */}
-            <Bar 
-              dataKey="planned" 
-              fill={colors.secondary} 
-              radius={[2, 2, 0, 0]}
-              // Position the bar so it will be overlaid
-              stackId="stack"
-            />
-            {/* Then completed bar on top */}
+            
+            {/* First render the "completed" part (darker color) */}
             <Bar 
               dataKey="completed" 
               fill={colors.primary} 
               radius={[2, 2, 0, 0]}
-              // Use the same stackId to position at the same spot,
-              // but the completed bar will visually overlay on top of the planned bar
-              stackId="stack"
+              stackId="a"
+            />
+            
+            {/* Then render the "remaining" part (lighter color) */}
+            <Bar 
+              dataKey="remaining" 
+              fill={colors.secondary} 
+              radius={[2, 2, 0, 0]}
+              stackId="a"
             />
           </BarChart>
         </ResponsiveContainer>
@@ -108,7 +108,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
           className="mt-1"
           payload={[
             { value: "Completed", color: colors.primary, dataKey: "completed" },
-            { value: "Goal", color: colors.secondary, dataKey: "planned" }
+            { value: "Goal", color: colors.secondary, dataKey: "remaining" }
           ]}
         />
       </div>
@@ -126,7 +126,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
           className="mt-1"
           payload={[
             { value: "Completed", color: colors.primary, dataKey: "completed" },
-            { value: "Goal", color: colors.secondary, dataKey: "planned" }
+            { value: "Goal", color: colors.secondary, dataKey: "remaining" }
           ]}
         />
       </CardContent>
