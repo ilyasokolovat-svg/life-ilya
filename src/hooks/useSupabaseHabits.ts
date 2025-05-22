@@ -5,26 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { HabitsState, DayData, HabitType, HabitData } from '@/types/habit';
 import { formatYearMonth, createEmptyDayData, createDefaultMonthlyGoals, formatDateISO } from '@/utils/habitUtils';
 import { toast } from 'sonner';
-import { Json } from '@/integrations/supabase/types';
-
-// Types for the database
-interface HabitDayRecord {
-  id?: string;
-  user_id: string;
-  date: string;
-  habit_data: Json;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface HabitGoalRecord {
-  id?: string;
-  user_id: string;
-  month_key: string;
-  goals_data: Json;
-  created_at?: string;
-  updated_at?: string;
-}
 
 // Main hook for habit data
 export default function useSupabaseHabits() {
@@ -32,7 +12,7 @@ export default function useSupabaseHabits() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const queryClient = useQueryClient();
 
-  // Initialize anonymous user ID - fixed to use simple string IDs that won't cause UUID errors
+  // Initialize anonymous user ID - fixed to use simple string IDs
   useEffect(() => {
     // Get existing ID or create a new one, ensuring it's not in UUID format to avoid type errors
     let anonId = localStorage.getItem('anon_user_id');
@@ -72,13 +52,8 @@ export default function useSupabaseHabits() {
         // Transform to the format our app expects
         const transformedData: Record<string, DayData> = {};
         if (data && Array.isArray(data)) {
-          data.forEach((record: HabitDayRecord) => {
-            // Make sure we handle the JSON conversion properly
-            const habitData = typeof record.habit_data === 'string' 
-              ? JSON.parse(record.habit_data as unknown as string)
-              : record.habit_data;
-              
-            transformedData[record.date] = habitData as unknown as DayData;
+          data.forEach((record) => {
+            transformedData[record.date] = record.habit_data as unknown as DayData;
           });
         }
         
@@ -116,13 +91,8 @@ export default function useSupabaseHabits() {
         // Transform to the format our app expects
         const transformedGoals: Record<string, any> = {};
         if (data && Array.isArray(data)) {
-          data.forEach((record: HabitGoalRecord) => {
-            // Properly handle JSON data
-            const goalsData = typeof record.goals_data === 'string'
-              ? JSON.parse(record.goals_data as unknown as string)
-              : record.goals_data;
-              
-            transformedGoals[record.month_key] = goalsData;
+          data.forEach((record) => {
+            transformedGoals[record.month_key] = record.goals_data;
           });
         }
         
@@ -141,7 +111,7 @@ export default function useSupabaseHabits() {
     enabled: !!userId && !isAuthChecking,
   });
   
-  // Update day mutation - fixed to remove the 'count' select that causes errors
+  // Update day mutation - fixed without using select() and with proper typing
   const updateDay = useMutation({
     mutationFn: async ({ 
       date, 
@@ -171,19 +141,19 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Create a record with proper type casting for Supabase
-        const record: HabitDayRecord = {
+        console.log('Upserting habit day with data:', {
           user_id: userId,
           date: dateISO,
-          habit_data: dayData as unknown as Json // Cast to Json type for Supabase
-        };
+          habit_data: dayData
+        });
         
-        console.log('Upserting habit day with data:', record);
-        
-        // Don't use select('count') - this causes the error
         const { error } = await supabase
           .from('habit_days')
-          .upsert(record);
+          .upsert({
+            user_id: userId,
+            date: dateISO,
+            habit_data: dayData as any  // Cast to any to avoid TypeScript errors
+          });
           
         if (error) {
           console.error('Database error updating habit:', error);
@@ -209,6 +179,8 @@ export default function useSupabaseHabits() {
         };
         return newData;
       });
+      
+      toast.success('Progress saved!', { duration: 1500 });
     },
     onError: (error) => {
       console.error('Update day mutation error:', error);
@@ -216,7 +188,7 @@ export default function useSupabaseHabits() {
     }
   });
   
-  // Update goal mutation - fixed to remove the 'count' select that causes errors
+  // Update goal mutation - fixed without using select() and with proper typing
   const updateGoal = useMutation({
     mutationFn: async ({
       year,
@@ -246,19 +218,19 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Create a record with proper type casting
-        const record: HabitGoalRecord = {
+        console.log('Upserting goal with data:', {
           user_id: userId,
           month_key: monthKey,
-          goals_data: monthGoals as unknown as Json // Cast to Json type for Supabase
-        };
+          goals_data: monthGoals
+        });
         
-        console.log('Upserting goal with data:', record);
-        
-        // Don't use select('count') - this causes the error
         const { error } = await supabase
           .from('habit_goals')
-          .upsert(record);
+          .upsert({
+            user_id: userId,
+            month_key: monthKey,
+            goals_data: monthGoals as any  // Cast to any to avoid TypeScript errors
+          });
           
         if (error) {
           console.error('Database error updating goal:', error);
@@ -287,6 +259,8 @@ export default function useSupabaseHabits() {
         };
         return newGoals;
       });
+      
+      toast.success('Goal updated!', { duration: 1500 });
     },
     onError: (error) => {
       console.error('Update goal mutation error:', error);

@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create habit_days table
 CREATE TABLE IF NOT EXISTS public.habit_days (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL, -- Changed from UUID to TEXT
   date TEXT NOT NULL,
   habit_data JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -20,13 +20,13 @@ ALTER TABLE public.habit_days ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS habit_days_user_policy ON public.habit_days;
 CREATE POLICY habit_days_user_policy
   ON public.habit_days
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+  USING (user_id = auth.uid()::text)
+  WITH CHECK (user_id = auth.uid()::text);
 
 -- Create habit_goals table
 CREATE TABLE IF NOT EXISTS public.habit_goals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL, -- Changed from UUID to TEXT
   month_key TEXT NOT NULL,
   goals_data JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -41,8 +41,8 @@ ALTER TABLE public.habit_goals ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS habit_goals_user_policy ON public.habit_goals;
 CREATE POLICY habit_goals_user_policy
   ON public.habit_goals
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+  USING (user_id = auth.uid()::text)
+  WITH CHECK (user_id = auth.uid()::text);
 
 -- Create functions for backward compatibility
 CREATE OR REPLACE FUNCTION create_habit_days_table()

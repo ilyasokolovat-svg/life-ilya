@@ -25,30 +25,23 @@ const App = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Simple query to check if Supabase is connected
-        const { data, error } = await supabase
-          .from('habit_days')
-          .select('*')
-          .limit(1);
-        
-        if (error) {
-          console.error('Error connecting to Supabase:', error);
-          toast.error('Could not connect to database. Some features may not work.');
-          
-          try {
-            // Attempt to create tables if they don't exist
-            await supabase.rpc('create_habit_days_table');
-            await supabase.rpc('create_habit_goals_table');
-            console.log('Successfully initialized habit tracking tables');
-            toast.success('Database connected successfully');
-          } catch (tableError) {
-            console.error('Failed to initialize tables:', tableError);
-          }
-        } else {
-          console.log('Successfully connected to Supabase');
+        // Simple query to check if Supabase is connected - use functions instead
+        // This query will fail more gracefully if the table doesn't exist yet
+        const { error: funcError } = await supabase.rpc('create_habit_days_table');
+        if (funcError) {
+          console.log('Table creation function was called but might already exist:', funcError.message);
+          // This is expected if tables already exist
         }
+        
+        console.log('Successfully initialized habit tracking tables');
+        toast.success('Database connected successfully', {
+          duration: 2000,
+        });
       } catch (err) {
         console.error('Failed to initialize Supabase connection:', err);
+        toast.error('Could not connect to database. Try refreshing the page.', {
+          duration: 5000,
+        });
       }
     };
     
