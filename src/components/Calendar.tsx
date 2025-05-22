@@ -62,7 +62,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
     return "bg-transparent";
   };
 
-  renderDay = (date: Date) => {
+  const renderDay = (date: Date) => {
     const dayData = getDayData(date);
     const isoDate = formatDateISO(date);
     const isToday = formatDateISO(today) === isoDate;
