@@ -29,19 +29,19 @@ const App = () => {
         const { data, error } = await supabase
           .from('habit_days')
           .select('count')
-          .limit(1) as any;
+          .limit(1);
         
         // If we get an error about relation not existing, create the tables
         if (error && (error.message.includes('does not exist') || error.code === 'PGRST116')) {
           // First try to create habit_days table
-          const { error: createDaysError } = await supabase.rpc('create_habit_days_table') as any;
+          const { error: createDaysError } = await supabase.rpc('create_habit_days_table');
           if (createDaysError && !createDaysError.message.includes('already exists')) {
             console.error('Error creating habit_days table:', createDaysError);
             toast.error('Failed to set up habit tracking tables');
           }
           
           // Then try to create habit_goals table
-          const { error: createGoalsError } = await supabase.rpc('create_habit_goals_table') as any;
+          const { error: createGoalsError } = await supabase.rpc('create_habit_goals_table');
           if (createGoalsError && !createGoalsError.message.includes('already exists')) {
             console.error('Error creating habit_goals table:', createGoalsError);
             toast.error('Failed to set up goal tracking tables');

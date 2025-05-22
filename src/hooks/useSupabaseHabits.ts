@@ -5,13 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { HabitsState, DayData, HabitType, HabitData } from '@/types/habit';
 import { formatYearMonth, createEmptyDayData, createDefaultMonthlyGoals, formatDateISO } from '@/utils/habitUtils';
 import { toast } from 'sonner';
+import { Json } from '@/integrations/supabase/types';
 
 // Types for the database
 interface HabitDayRecord {
   id?: string;
   user_id: string;
   date: string;
-  habit_data: DayData;
+  habit_data: Json; // Changed: Use Json type from Supabase types
   created_at?: string;
   updated_at?: string;
 }
@@ -20,7 +21,7 @@ interface HabitGoalRecord {
   id?: string;
   user_id: string;
   month_key: string;
-  goals_data: Record<string, any>;
+  goals_data: Json; // Changed: Use Json type from Supabase types
   created_at?: string;
   updated_at?: string;
 }
@@ -90,7 +91,7 @@ export default function useSupabaseHabits() {
       
       try {
         // Check and create habit_days table
-        const { error: daysError } = await supabase.rpc('create_habit_days_table') as any;
+        const { error: daysError } = await supabase.rpc('create_habit_days_table');
         
         if (daysError && !daysError.message.includes('already exists')) {
           console.error('Error creating habit_days table:', daysError);
@@ -98,7 +99,7 @@ export default function useSupabaseHabits() {
         }
         
         // Check and create habit_goals table
-        const { error: goalsError } = await supabase.rpc('create_habit_goals_table') as any;
+        const { error: goalsError } = await supabase.rpc('create_habit_goals_table');
         
         if (goalsError && !goalsError.message.includes('already exists')) {
           console.error('Error creating habit_goals table:', goalsError);
@@ -124,8 +125,7 @@ export default function useSupabaseHabits() {
       try {
         const { data, error } = await supabase
           .from('habit_days')
-          .select('*')
-          .eq('user_id', userId) as any;
+          .select('*');
           
         if (error) {
           console.error('Failed to fetch habit data:', error);
@@ -136,7 +136,8 @@ export default function useSupabaseHabits() {
         // Transform to the format our app expects
         const transformedData: Record<string, DayData> = {};
         data.forEach((record: HabitDayRecord) => {
-          transformedData[record.date] = record.habit_data;
+          // Cast Json to DayData since we know the structure matches
+          transformedData[record.date] = record.habit_data as unknown as DayData;
         });
         
         return transformedData;
@@ -158,8 +159,7 @@ export default function useSupabaseHabits() {
       try {
         const { data, error } = await supabase
           .from('habit_goals')
-          .select('*')
-          .eq('user_id', userId) as any;
+          .select('*');
           
         if (error) {
           console.error('Failed to fetch habit goals:', error);
@@ -170,7 +170,8 @@ export default function useSupabaseHabits() {
         // Transform to the format our app expects
         const transformedGoals: Record<string, any> = {};
         data.forEach((record: HabitGoalRecord) => {
-          transformedGoals[record.month_key] = record.goals_data;
+          // Cast Json to our expected structure
+          transformedGoals[record.month_key] = record.goals_data as any;
         });
         
         // If empty, return defaults
@@ -217,15 +218,15 @@ export default function useSupabaseHabits() {
       }
       
       try {
-        // Fixed: Pass the object directly, not wrapped in an array
+        // Convert to Json type for Supabase
         const { error } = await supabase
           .from('habit_days')
           .upsert({
             user_id: userId,
             date: dateISO,
-            habit_data: dayData,
-            updated_at: new Date().toISOString() // Fixed: Convert Date to string
-          }, { onConflict: 'user_id,date' }) as any;
+            habit_data: dayData as unknown as Json, // Cast our type to Json for Supabase
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,date' });
           
         if (error) {
           console.error('Failed to update habit:', error);
@@ -285,15 +286,14 @@ export default function useSupabaseHabits() {
       };
       
       try {
-        // Fixed: Pass the object directly, not wrapped in an array
         const { error } = await supabase
           .from('habit_goals')
           .upsert({
             user_id: userId,
             month_key: monthKey,
-            goals_data: monthGoals,
-            updated_at: new Date().toISOString() // Fixed: Convert Date to string
-          }, { onConflict: 'user_id,month_key' }) as any;
+            goals_data: monthGoals as unknown as Json, // Cast our type to Json for Supabase
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,month_key' });
           
         if (error) {
           console.error('Failed to update goal:', error);
