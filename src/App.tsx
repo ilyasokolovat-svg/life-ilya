@@ -28,7 +28,7 @@ const App = () => {
         // Simple query to check if Supabase is connected
         const { data, error } = await supabase
           .from('habit_days')
-          .select('count')
+          .select('*')
           .limit(1);
         
         if (error) {

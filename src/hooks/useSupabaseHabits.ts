@@ -141,7 +141,7 @@ export default function useSupabaseHabits() {
     enabled: !!userId && !isAuthChecking,
   });
   
-  // Update day mutation - fixed the type issue with JSON serialization
+  // Update day mutation - fixed to remove the 'count' select that causes errors
   const updateDay = useMutation({
     mutationFn: async ({ 
       date, 
@@ -180,11 +180,10 @@ export default function useSupabaseHabits() {
         
         console.log('Upserting habit day with data:', record);
         
-        // Use upsert to create or update the record
+        // Don't use select('count') - this causes the error
         const { error } = await supabase
           .from('habit_days')
-          .upsert(record)
-          .select('count');
+          .upsert(record);
           
         if (error) {
           console.error('Database error updating habit:', error);
@@ -217,7 +216,7 @@ export default function useSupabaseHabits() {
     }
   });
   
-  // Update goal mutation - with type casting for JSON compatibility
+  // Update goal mutation - fixed to remove the 'count' select that causes errors
   const updateGoal = useMutation({
     mutationFn: async ({
       year,
@@ -256,11 +255,10 @@ export default function useSupabaseHabits() {
         
         console.log('Upserting goal with data:', record);
         
-        // Use upsert with 'count' to avoid extra DB calls
+        // Don't use select('count') - this causes the error
         const { error } = await supabase
           .from('habit_goals')
-          .upsert(record)
-          .select('count');
+          .upsert(record);
           
         if (error) {
           console.error('Database error updating goal:', error);
