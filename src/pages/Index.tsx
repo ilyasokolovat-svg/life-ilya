@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
@@ -6,7 +7,7 @@ import GoalSetting from "@/components/GoalSetting";
 import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
 import { calculateHabitStats, formatDateISO, createEmptyDayData, createDefaultGoals } from "@/utils/habitUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
 
 const Index = () => {
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits-tracker", {
@@ -78,9 +79,9 @@ const Index = () => {
   const safeGoals = habitsState.goals || createDefaultGoals();
   
   // Calculate stats for each habit type using safe goals
+  const sleepStats = calculateHabitStats(habitsState, "sleep");
   const gymStats = calculateHabitStats(habitsState, "gym");
   const alcoholStats = calculateHabitStats(habitsState, "alcohol");
-  const sleepStats = calculateHabitStats(habitsState, "sleep");
   const meditationStats = calculateHabitStats(habitsState, "meditation");
 
   return (
@@ -116,21 +117,27 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Stats section */}
+        {/* Stats section - reordered to match habit order */}
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <HabitStats habitType="sleep" stats={sleepStats} goal={safeGoals.sleep} />
             <HabitStats habitType="gym" stats={gymStats} goal={safeGoals.gym} />
             <HabitStats habitType="alcohol" stats={alcoholStats} goal={safeGoals.alcohol} />
-            <HabitStats habitType="sleep" stats={sleepStats} goal={safeGoals.sleep} />
             <HabitStats habitType="meditation" stats={meditationStats} goal={safeGoals.meditation} />
           </div>
         </div>
         
-        {/* Motivational section */}
+        {/* Motivational section - reordered icons to match habit order */}
         <div className="mt-12 bg-white rounded-lg shadow-md p-6 text-center">
           <h2 className="text-xl md:text-2xl font-bold mb-6">Your Habits Shape Your Future</h2>
           <div className="flex justify-center flex-wrap gap-8 mb-6">
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-light p-4 rounded-full mb-2">
+                <Moon className="h-8 w-8 text-blue-dark" />
+              </div>
+              <p className="text-sm">Rest Well</p>
+            </div>
             <div className="flex flex-col items-center">
               <div className="bg-blue-light p-4 rounded-full mb-2">
                 <Dumbbell className="h-8 w-8 text-blue-dark" />
@@ -142,12 +149,6 @@ const Index = () => {
                 <Wine className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Stay Sober</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="bg-blue-light p-4 rounded-full mb-2">
-                <Moon className="h-8 w-8 text-blue-dark" />
-              </div>
-              <p className="text-sm">Rest Well</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="bg-blue-light p-4 rounded-full mb-2">

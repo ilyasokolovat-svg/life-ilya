@@ -62,7 +62,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
     return "bg-transparent";
   };
 
-  const renderDay = (date: Date) => {
+  renderDay = (date: Date) => {
     const dayData = getDayData(date);
     const isoDate = formatDateISO(date);
     const isToday = formatDateISO(today) === isoDate;
@@ -72,6 +72,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
     const dayStyle = isToday
       ? 'border-2 border-blue shadow-sm'
       : 'border border-gray-light';
+
+    // Reordering habits to put sleep first, then gym, alcohol, and meditation
+    const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
 
     return (
       <div 
@@ -84,23 +87,23 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
           </span>
         </div>
         
-        {/* Habit mini-zones - display at the top with clear separation */}
+        {/* Habit mini-zones - display at the top with clear separation, reordered */}
         <div className="flex w-full h-3 mb-1 border-t border-gray-100">
+          <div className={`w-1/4 ${getHabitStatusClass(dayData, "sleep")}`}></div>
           <div className={`w-1/4 ${getHabitStatusClass(dayData, "gym")}`}></div>
           <div className={`w-1/4 ${getHabitStatusClass(dayData, "alcohol")}`}></div>
-          <div className={`w-1/4 ${getHabitStatusClass(dayData, "sleep")}`}></div>
           <div className={`w-1/4 ${getHabitStatusClass(dayData, "meditation")}`}></div>
         </div>
         
-        {/* Habits for the day */}
+        {/* Habits for the day - reordered */}
         <div className="flex-1 p-1 space-y-1">
-          {['gym', 'alcohol', 'sleep', 'meditation'].map((habitType) => (
+          {habitOrder.map((habitType) => (
             <HabitTracker
               key={`${isoDate}-${habitType}`}
               date={date}
-              habitType={habitType as HabitType}
+              habitType={habitType}
               habitData={
-                dayData?.[habitType as HabitType] || { planned: false, completed: false }
+                dayData?.[habitType] || { planned: false, completed: false }
               }
               onUpdate={(type, data) => onUpdateHabit(date, type, data)}
             />
