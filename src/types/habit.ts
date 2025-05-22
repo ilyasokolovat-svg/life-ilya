@@ -28,8 +28,15 @@ export interface HabitStats {
   currentWeekCompleted: number; // number of days completed this week
 }
 
+export interface WeeklyStats {
+  weekStart: Date;
+  planned: number;
+  completed: number;
+}
+
 export interface HabitsState {
   days: Record<string, DayData>;  // key is ISO date
   currentDate: string;  // ISO date
   goals: Record<HabitType, HabitGoal>; // goals for each habit type
 }
+

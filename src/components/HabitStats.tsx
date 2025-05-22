@@ -1,8 +1,10 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { HabitStats as HabitStatsType, HabitType, HabitGoal } from "@/types/habit";
 import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
+import { habitColors } from "@/utils/chartUtils";
 
 interface HabitStatsProps {
   habitType: HabitType;
@@ -11,6 +13,8 @@ interface HabitStatsProps {
 }
 
 const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
+  const colors = habitColors[habitType];
+  
   const getHabitIcon = () => {
     switch (habitType) {
       case "gym":
@@ -45,7 +49,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
   const monthlyProgress = goal?.frequency ? Math.min(100, Math.round((stats.totalCompleted / goal.frequency) * 100)) : 0;
 
   return (
-    <Card className="stats-card h-full">
+    <Card className="stats-card h-full" style={{ borderColor: colors.primary }}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center gap-2">
           {getHabitIcon()}
@@ -54,19 +58,19 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-3 rounded-md bg-blue-light/50">
+          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
             <p className="text-sm text-muted-foreground">Current Streak</p>
             <h3 className="text-2xl font-bold">{stats.currentStreak} days</h3>
           </div>
-          <div className="p-3 rounded-md bg-blue-light/50">
+          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
             <p className="text-sm text-muted-foreground">Longest Streak</p>
             <h3 className="text-2xl font-bold">{stats.longestStreak} days</h3>
           </div>
-          <div className="p-3 rounded-md bg-blue-light/50">
+          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
             <p className="text-sm text-muted-foreground">Total Completed</p>
             <h3 className="text-2xl font-bold">{stats.totalCompleted}</h3>
           </div>
-          <div className="p-3 rounded-md bg-blue-light/50">
+          <div className="p-3 rounded-md" style={{ backgroundColor: colors.secondary }}>
             <p className="text-sm text-muted-foreground">Completion Rate</p>
             <h3 className="text-2xl font-bold">{stats.completionRate}%</h3>
           </div>
@@ -78,7 +82,17 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
               <span className="text-xs">Monthly Goal Progress ({stats.totalCompleted}/{goal.frequency} days)</span>
               <span className="text-xs font-semibold">{monthlyProgress}%</span>
             </div>
-            <Progress value={monthlyProgress} className="h-2" />
+            <Progress 
+              value={monthlyProgress} 
+              className="h-2" 
+              indicatorClassName="bg-blue-500" 
+              style={{ 
+                backgroundColor: colors.secondary,
+              }}
+              indicatorStyle={{
+                backgroundColor: colors.primary
+              }}
+            />
           </div>
         )}
         
@@ -87,7 +101,16 @@ const HabitStats: React.FC<HabitStatsProps> = ({ habitType, stats, goal }) => {
             <span className="text-xs">Overall Completion</span>
             <span className="text-xs font-semibold">{stats.completionRate}%</span>
           </div>
-          <Progress value={stats.completionRate} className="h-2" />
+          <Progress 
+            value={stats.completionRate} 
+            className="h-2" 
+            style={{ 
+              backgroundColor: colors.secondary,
+            }}
+            indicatorStyle={{
+              backgroundColor: colors.primary
+            }}
+          />
         </div>
         
         {goal?.notes && (

@@ -6,10 +6,11 @@ import { HabitType, DayData } from "@/types/habit";
 import HabitTracker from "./HabitTracker";
 import { formatDateISO, getDaysInMonth, getDayCompletionPercentage } from "@/utils/habitUtils";
 import { Separator } from "@/components/ui/separator";
+import { habitColors } from "@/utils/chartUtils";
 
 interface CalendarProps {
   days: Record<string, DayData>;
-  onUpdateHabit: (date: Date, type: HabitType, data: { planned: boolean; completed: boolean }) => void;
+  onUpdateHabit: (date: Date, type: HabitType, data: { planned: boolean; completed: boolean; sleepHours?: number }) => void;
 }
 
 const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
@@ -53,7 +54,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
       return "bg-transparent";
     }
     
-    if (dayData[habitType].planned && dayData[habitType].completed) {
+    if (habitType === 'sleep' && dayData[habitType].sleepHours && dayData[habitType].sleepHours >= 7) {
+      return "bg-success";
+    } else if (dayData[habitType].planned && dayData[habitType].completed) {
       return "bg-success";
     } else if (dayData[habitType].planned) {
       return "bg-blue-light/50";
@@ -89,10 +92,19 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
         
         {/* Habit mini-zones - display at the top with clear separation, reordered */}
         <div className="flex w-full h-3 mb-1 border-t border-gray-100">
-          <div className={`w-1/4 ${getHabitStatusClass(dayData, "sleep")}`}></div>
-          <div className={`w-1/4 ${getHabitStatusClass(dayData, "gym")}`}></div>
-          <div className={`w-1/4 ${getHabitStatusClass(dayData, "alcohol")}`}></div>
-          <div className={`w-1/4 ${getHabitStatusClass(dayData, "meditation")}`}></div>
+          {habitOrder.map((habit) => (
+            <div 
+              key={`mini-${isoDate}-${habit}`}
+              className={`w-1/4 ${getHabitStatusClass(dayData, habit)}`}
+              style={{
+                backgroundColor: getHabitStatusClass(dayData, habit) === "bg-success" 
+                  ? habitColors[habit].primary 
+                  : getHabitStatusClass(dayData, habit) === "bg-blue-light/50"
+                    ? habitColors[habit].secondary
+                    : "transparent"
+              }}
+            ></div>
+          ))}
         </div>
         
         {/* Habits for the day - reordered */}
@@ -152,11 +164,11 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit }) => {
       {/* Legend for mini-zones */}
       <div className="flex flex-wrap items-center justify-end mb-2 text-xs">
         <div className="flex items-center mr-3">
-          <div className="w-3 h-3 bg-success mr-1"></div>
+          <div className="w-3 h-3 mr-1" style={{ backgroundColor: habitColors.sleep.primary }}></div>
           <span>Completed</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-blue-light/50 mr-1"></div>
+          <div className="w-3 h-3 mr-1" style={{ backgroundColor: habitColors.sleep.secondary }}></div>
           <span>Planned</span>
         </div>
       </div>

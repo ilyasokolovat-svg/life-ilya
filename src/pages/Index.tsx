@@ -1,11 +1,13 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
 import HabitStats from "@/components/HabitStats";
+import WeeklyChart from "@/components/WeeklyChart";
 import GoalSetting from "@/components/GoalSetting";
 import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
 import { calculateHabitStats, formatDateISO, createEmptyDayData, createDefaultGoals } from "@/utils/habitUtils";
+import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
 
@@ -15,6 +17,10 @@ const Index = () => {
     currentDate: formatDateISO(new Date()),
     goals: createDefaultGoals()
   });
+
+  // Track current view month/year for charts
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
 
   // Ensure today exists in the data
   useEffect(() => {
@@ -39,6 +45,10 @@ const Index = () => {
         goals: createDefaultGoals()
       }));
     }
+    
+    // Sync view month/year with calendar
+    setViewMonth(today.getMonth());
+    setViewYear(today.getFullYear());
   }, [habitsState, setHabitsState]);
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
@@ -75,6 +85,12 @@ const Index = () => {
     }));
   };
   
+  // Handle month change for charts
+  const handleCalendarMonthChange = (month: number, year: number) => {
+    setViewMonth(month);
+    setViewYear(year);
+  };
+  
   // Ensure goals object exists before accessing it
   const safeGoals = habitsState.goals || createDefaultGoals();
   
@@ -83,6 +99,12 @@ const Index = () => {
   const gymStats = calculateHabitStats(habitsState, "gym");
   const alcoholStats = calculateHabitStats(habitsState, "alcohol");
   const meditationStats = calculateHabitStats(habitsState, "meditation");
+  
+  // Get weekly stats for each habit type
+  const sleepWeeklyStats = getMonthlyWeeklyStats(habitsState, "sleep", viewYear, viewMonth);
+  const gymWeeklyStats = getMonthlyWeeklyStats(habitsState, "gym", viewYear, viewMonth);
+  const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", viewYear, viewMonth);
+  const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", viewYear, viewMonth);
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
@@ -125,6 +147,17 @@ const Index = () => {
             <HabitStats habitType="gym" stats={gymStats} goal={safeGoals.gym} />
             <HabitStats habitType="alcohol" stats={alcoholStats} goal={safeGoals.alcohol} />
             <HabitStats habitType="meditation" stats={meditationStats} goal={safeGoals.meditation} />
+          </div>
+        </div>
+        
+        {/* Weekly Charts Section */}
+        <div className="mt-8 mb-8">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Weekly Progress</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WeeklyChart habitType="sleep" data={sleepWeeklyStats} />
+            <WeeklyChart habitType="gym" data={gymWeeklyStats} />
+            <WeeklyChart habitType="alcohol" data={alcoholWeeklyStats} />
+            <WeeklyChart habitType="meditation" data={meditationWeeklyStats} />
           </div>
         </div>
         
