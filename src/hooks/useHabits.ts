@@ -15,10 +15,10 @@ export default function useHabits() {
     goals: createDefaultMonthlyGoals()
   });
 
-  // Track sync status
+  // Track sync status - store in localStorage too
   const [isSyncing, setIsSyncing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [syncEnabled, setSyncEnabled] = useState<boolean>(false);
+  const [syncEnabled, setSyncEnabled] = useLocalStorage<boolean>("habits_sync_enabled", false);
 
   // Check for existing user ID or create anonymous one
   useEffect(() => {
@@ -29,7 +29,6 @@ export default function useHabits() {
         
         if (sessionData.session?.user) {
           setUserId(sessionData.session.user.id);
-          setSyncEnabled(true);
           console.log("Authenticated user found:", sessionData.session.user.id);
         } else {
           // Use anonymous ID from localStorage
@@ -171,7 +170,7 @@ export default function useHabits() {
             .upsert({
               user_id: userId,
               date: dateISO,
-              habit_data: dayData
+              habit_data: dayData as any // Cast to any to avoid TypeScript errors
             });
             
           if (error) {
@@ -222,7 +221,7 @@ export default function useHabits() {
             .upsert({
               user_id: userId,
               month_key: monthKey,
-              goals_data: updatedGoals[monthKey]
+              goals_data: updatedGoals[monthKey] as any  // Cast to any to avoid TypeScript errors
             });
             
           if (error) {
