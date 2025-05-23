@@ -13,12 +13,14 @@ import {
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
-import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Index = () => {
-  // Use local storage hook instead of Supabase
-  const { habitsState, updateDay, updateGoal } = useHabits();
+  // Use our hybrid habits hook
+  const { habitsState, updateDay, updateGoal, syncEnabled, toggleSync, isSyncing } = useHabits();
 
   // Track current view month/year for charts and calendar
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
@@ -77,15 +79,52 @@ const Index = () => {
   const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", chartMonths.alcohol.year, chartMonths.alcohol.month);
   const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", chartMonths.meditation.year, chartMonths.meditation.month);
 
+  // Toggle cloud sync
+  const handleToggleSync = () => {
+    toggleSync(!syncEnabled);
+  };
+
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
       <Toaster />
       
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-blue-dark text-center">Habit Tracker</h1>
-          <p className="text-center text-gray-600 mt-1 text-sm md:text-base">Track your journey to become a better version of yourself</p>
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl md:text-3xl font-bold text-blue-dark">Habit Tracker</h1>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center gap-1 ${syncEnabled ? 'text-green-600' : 'text-gray-400'}`}
+                  onClick={handleToggleSync}
+                  disabled={isSyncing}
+                >
+                  {syncEnabled ? (
+                    <>
+                      <Cloud className="h-4 w-4" />
+                      <span className="text-xs hidden sm:inline">Sync On</span>
+                    </>
+                  ) : (
+                    <>
+                      <CloudOff className="h-4 w-4" />
+                      <span className="text-xs hidden sm:inline">Sync Off</span>
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{syncEnabled ? 'Disable' : 'Enable'} cloud sync across devices</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
+        <div className="container mx-auto px-4 pb-2">
+          <p className="text-center text-gray-600 text-sm md:text-base">Track your journey to become a better version of yourself</p>
         </div>
       </header>
       
