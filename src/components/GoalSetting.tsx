@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,14 @@ interface GoalSettingProps {
 }
 
 const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, onUpdateGoal }) => {
+  // Local state for form values to prevent immediate updates during typing
+  const [localGoals, setLocalGoals] = useState<Record<HabitType, HabitGoal>>(goals);
+  
+  // Update local state when props change
+  useEffect(() => {
+    setLocalGoals(goals);
+  }, [goals, viewMonth, viewYear]);
+
   const getHabitIcon = (habitType: HabitType) => {
     switch (habitType) {
       case "gym":
@@ -51,17 +59,32 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
   };
 
   const handleFrequencyChange = (type: HabitType, value: string) => {
-    onUpdateGoal(type, {
-      ...goals[type],
-      frequency: parseInt(value) || 0
-    });
+    const newLocalGoals = {
+      ...localGoals,
+      [type]: {
+        ...localGoals[type],
+        frequency: parseInt(value) || 0
+      }
+    };
+    
+    setLocalGoals(newLocalGoals);
+    onUpdateGoal(type, newLocalGoals[type]);
   };
 
   const handleNotesChange = (type: HabitType, value: string) => {
-    onUpdateGoal(type, {
-      ...goals[type],
-      notes: value
+    // First update local state
+    setLocalGoals({
+      ...localGoals,
+      [type]: {
+        ...localGoals[type],
+        notes: value
+      }
     });
+  };
+  
+  // Only send updates to parent when user stops typing (blur event)
+  const handleNotesBlur = (type: HabitType) => {
+    onUpdateGoal(type, localGoals[type]);
   };
 
   return (
@@ -72,7 +95,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {Object.keys(goals).map((habitType) => {
           const type = habitType as HabitType;
-          const goal = goals[type];
+          const localGoal = localGoals[type];
           
           return (
             <Card key={habitType} className="overflow-hidden">
@@ -91,7 +114,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
                       type="number"
                       min="0"
                       max="31"
-                      value={goal.frequency}
+                      value={localGoal.frequency}
                       className="w-24"
                       onChange={(e) => handleFrequencyChange(type, e.target.value)}
                     />
@@ -104,8 +127,9 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
                   <Textarea
                     id={`${type}-notes`}
                     placeholder="Add notes for your goal..."
-                    value={goal.notes}
+                    value={localGoal.notes}
                     onChange={(e) => handleNotesChange(type, e.target.value)}
+                    onBlur={() => handleNotesBlur(type)}
                     className="mt-1 h-24 resize-none"
                   />
                 </div>

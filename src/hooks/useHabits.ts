@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { HabitsState, DayData, HabitType, HabitData } from "@/types/habit";
+import { HabitsState, DayData, HabitType, HabitData, HabitGoal } from "@/types/habit";
 import { formatDateISO, createEmptyDayData, createDefaultMonthlyGoals } from "@/utils/habitUtils";
 import { toast } from "sonner";
 import useLocalStorage from "./useLocalStorage";
@@ -66,7 +66,7 @@ export default function useHabits() {
   };
   
   // Update a goal for a specific habit type
-  const updateGoal = (type: HabitType, goal: any, year: number, month: number) => {
+  const updateGoal = (type: HabitType, goal: HabitGoal, year: number, month: number) => {
     try {
       const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
       
@@ -88,7 +88,10 @@ export default function useHabits() {
         goals: updatedGoals
       });
       
-      toast.success('Goal updated!', { duration: 1500 });
+      // Only show toast for completed updates, not during typing
+      if (goal.frequency !== undefined) {
+        toast.success('Goal updated!', { duration: 1500 });
+      }
     } catch (error) {
       console.error('Error updating goal:', error);
       toast.error('Failed to save your goal');
