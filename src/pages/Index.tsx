@@ -1,28 +1,24 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
 import HabitStats from "@/components/HabitStats";
 import MonthSlider from "@/components/MonthSlider";
 import GoalSetting from "@/components/GoalSetting";
-import { HabitType, HabitsState, HabitData, HabitGoal } from "@/types/habit";
+import { HabitType, HabitData, HabitGoal } from "@/types/habit";
 import { 
   calculateHabitStats, 
   formatDateISO, 
-  createEmptyDayData, 
-  createDefaultGoals,
   formatYearMonth,
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
 import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
-import useSupabaseHabits from "@/hooks/useSupabaseHabits";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import useHabits from "@/hooks/useHabits";
 
 const Index = () => {
-  // Use Supabase hook instead of localStorage
-  const { habitsState, updateDay, updateGoal, isLoading } = useSupabaseHabits();
+  // Use local storage hook instead of Supabase
+  const { habitsState, updateDay, updateGoal } = useHabits();
 
   // Track current view month/year for charts and calendar
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
@@ -35,18 +31,6 @@ const Index = () => {
     alcohol: { month: viewMonth, year: viewYear },
     meditation: { month: viewMonth, year: viewYear }
   });
-
-  // Ensure today exists in the data (moved to useEffect to avoid react state update in render)
-  useEffect(() => {
-    if (isLoading) return;
-    
-    const today = new Date();
-    const todayISO = formatDateISO(today);
-    
-    if (!habitsState.days[todayISO]) {
-      updateDay(today, 'sleep', { planned: false, completed: false });
-    }
-  }, [isLoading, habitsState.days]);
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
     updateDay(date, type, data);
@@ -92,17 +76,6 @@ const Index = () => {
   const gymWeeklyStats = getMonthlyWeeklyStats(habitsState, "gym", chartMonths.gym.year, chartMonths.gym.month);
   const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", chartMonths.alcohol.year, chartMonths.alcohol.month);
   const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", chartMonths.meditation.year, chartMonths.meditation.month);
-
-  // Show loading state while fetching data
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-blue-light/10 flex flex-col items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-dark mb-4" />
-        <h2 className="text-xl font-medium text-blue-dark">Loading your habits...</h2>
-        <p className="text-gray-600 mt-2">Syncing data across your devices</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
