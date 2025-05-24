@@ -1,6 +1,6 @@
 
 import React from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WeeklyStats, HabitType } from "@/types/habit";
 import { formatWeekLabel, habitColors } from "@/utils/chartUtils";
@@ -14,6 +14,8 @@ interface WeeklyChartProps {
   viewMonth?: number;
   viewYear?: number;
   onMonthChange?: (month: number, year: number) => void;
+  satisfactionData?: Record<string, boolean>;
+  onSatisfactionToggle?: (weekKey: string) => void;
 }
 
 const WeeklyChart: React.FC<WeeklyChartProps> = ({ 
@@ -23,19 +25,26 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
   compact = false,
   viewMonth,
   viewYear,
-  onMonthChange
+  onMonthChange,
+  satisfactionData = {},
+  onSatisfactionToggle
 }) => {
   const colors = habitColors[habitType];
   
   // Transform data for the chart - create a new format that includes both planned and completed
-  const chartData = data.map((week) => ({
-    name: formatWeekLabel(week.weekStart),
-    planned: habitType === 'sleep' ? 7 : week.planned, // For sleep, we use 7 days as the goal
-    completed: week.completed,
-    // Add a "remaining" value that represents the uncompleted planned activities
-    // This is used to render the lighter part of the bar
-    remaining: (habitType === 'sleep' ? 7 : week.planned) - week.completed
-  }));
+  const chartData = data.map((week) => {
+    const weekKey = `${week.weekStart.getFullYear()}-${week.weekStart.getMonth()}-${Math.floor(week.weekStart.getDate() / 7)}`;
+    const isSatisfied = satisfactionData[weekKey] || false;
+    
+    return {
+      name: formatWeekLabel(week.weekStart),
+      planned: habitType === 'sleep' ? 7 : week.planned,
+      completed: week.completed,
+      remaining: (habitType === 'sleep' ? 7 : week.planned) - week.completed,
+      weekKey,
+      isSatisfied
+    };
+  });
   
   // Get title based on habit type if not provided
   const chartTitle = title || (() => {
@@ -63,6 +72,12 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
       color: colors.secondary,
     },
   };
+
+  const handleBarClick = (data: any) => {
+    if (onSatisfactionToggle && data.weekKey) {
+      onSatisfactionToggle(data.weekKey);
+    }
+  };
   
   const content = (
     <div className={compact ? "h-[100px]" : "h-[140px]"}>
@@ -86,18 +101,36 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
             {/* First render the "completed" part (darker color) */}
             <Bar 
               dataKey="completed" 
-              fill={colors.primary} 
               radius={[2, 2, 0, 0]}
               stackId="a"
-            />
+              onClick={handleBarClick}
+              style={{ cursor: onSatisfactionToggle ? 'pointer' : 'default' }}
+            >
+              {chartData.map((entry, index) => (
+                <Cell 
+                  key={`completed-cell-${index}`} 
+                  fill={entry.isSatisfied ? '#22c55e' : colors.primary}
+                  stroke={entry.isSatisfied ? '#16a34a' : 'none'}
+                  strokeWidth={entry.isSatisfied ? 2 : 0}
+                />
+              ))}
+            </Bar>
             
             {/* Then render the "remaining" part (lighter color) */}
             <Bar 
               dataKey="remaining" 
-              fill={colors.secondary} 
               radius={[2, 2, 0, 0]}
               stackId="a"
-            />
+              onClick={handleBarClick}
+              style={{ cursor: onSatisfactionToggle ? 'pointer' : 'default' }}
+            >
+              {chartData.map((entry, index) => (
+                <Cell 
+                  key={`remaining-cell-${index}`} 
+                  fill={entry.isSatisfied ? '#dcfce7' : colors.secondary}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </ChartContainer>
@@ -113,9 +146,13 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
           className="mt-1"
           payload={[
             { value: "Completed", color: colors.primary, dataKey: "completed" },
-            { value: "Goal", color: colors.secondary, dataKey: "remaining" }
+            { value: "Goal", color: colors.secondary, dataKey: "remaining" },
+            { value: "Satisfied", color: "#22c55e", dataKey: "satisfied" }
           ]}
         />
+        {onSatisfactionToggle && (
+          <p className="text-xs text-gray-500 mt-1">Click bars to mark satisfaction</p>
+        )}
       </div>
     );
   }
@@ -131,9 +168,13 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
           className="mt-1"
           payload={[
             { value: "Completed", color: colors.primary, dataKey: "completed" },
-            { value: "Goal", color: colors.secondary, dataKey: "remaining" }
+            { value: "Goal", color: colors.secondary, dataKey: "remaining" },
+            { value: "Satisfied", color: "#22c55e", dataKey: "satisfied" }
           ]}
         />
+        {onSatisfactionToggle && (
+          <p className="text-xs text-gray-500 mt-1">Click bars to mark satisfaction</p>
+        )}
       </CardContent>
     </Card>
   );
