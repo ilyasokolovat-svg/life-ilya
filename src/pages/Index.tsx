@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
 import HabitStats from "@/components/HabitStats";
@@ -13,12 +14,23 @@ import {
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
-import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Index = () => {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
   // Use our hybrid habits hook
   const { habitsState, updateDay, updateGoal, syncEnabled, toggleSync, isSyncing } = useHabits();
 
@@ -34,6 +46,18 @@ const Index = () => {
     meditation: { month: viewMonth, year: viewYear }
   });
 
+  // Don't render if still loading auth or user not authenticated
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-blue-light/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-dark mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
     updateDay(date, type, data);
   };
@@ -42,8 +66,22 @@ const Index = () => {
     updateGoal(type, goal, viewYear, viewMonth);
   };
   
-  // Handle month change for charts and calendar
+  // Handle month change for charts and calendar with better bounds checking
   const handleMonthChange = (month: number, year: number) => {
+    // Ensure we don't go beyond reasonable bounds
+    const minYear = 2020;
+    const maxYear = new Date().getFullYear() + 1;
+    
+    if (year < minYear || year > maxYear) {
+      console.warn(`Year ${year} is out of bounds (${minYear}-${maxYear})`);
+      return;
+    }
+    
+    if (month < 0 || month > 11) {
+      console.warn(`Month ${month} is out of bounds (0-11)`);
+      return;
+    }
+    
     setViewMonth(month);
     setViewYear(year);
     
@@ -64,7 +102,7 @@ const Index = () => {
     }));
   };
   
-  // Get goals for current view month
+  // Get goals for current view month - ensure defaults exist
   const currentMonthGoals = getMonthGoals(habitsState, viewYear, viewMonth);
   
   // Calculate stats for each habit type
@@ -84,6 +122,12 @@ const Index = () => {
     toggleSync(!syncEnabled);
   };
 
+  // Handle sign out
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
       <Toaster />
@@ -93,34 +137,71 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl md:text-3xl font-bold text-blue-dark">Habit Tracker</h1>
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex items-center gap-1 ${syncEnabled ? 'text-green-600' : 'text-gray-400'}`}
-                  onClick={handleToggleSync}
-                  disabled={isSyncing}
-                >
-                  {syncEnabled ? (
-                    <>
-                      <Cloud className="h-4 w-4" />
-                      <span className="text-xs hidden sm:inline">Sync On</span>
-                    </>
-                  ) : (
-                    <>
-                      <CloudOff className="h-4 w-4" />
-                      <span className="text-xs hidden sm:inline">Sync Off</span>
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{syncEnabled ? 'Disable' : 'Enable'} cloud sync across devices</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex items-center gap-2">
+            {/* User info */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">{user.email}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Logged in as {user.email}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Sync toggle */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`flex items-center gap-1 ${syncEnabled ? 'text-green-600' : 'text-gray-400'}`}
+                    onClick={handleToggleSync}
+                    disabled={isSyncing}
+                  >
+                    {syncEnabled ? (
+                      <>
+                        <Cloud className="h-4 w-4" />
+                        <span className="text-xs hidden sm:inline">Sync On</span>
+                      </>
+                    ) : (
+                      <>
+                        <CloudOff className="h-4 w-4" />
+                        <span className="text-xs hidden sm:inline">Sync Off</span>
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{syncEnabled ? 'Disable' : 'Enable'} cloud sync across devices</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Sign out */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="text-gray-600 hover:text-red-600"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sign out</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         
         <div className="container mx-auto px-4 pb-2">

@@ -5,9 +5,12 @@ import { formatDateISO, createEmptyDayData, createDefaultMonthlyGoals } from "@/
 import { toast } from "sonner";
 import useLocalStorage from "./useLocalStorage";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-// A hook that combines local storage with optional Supabase syncing
+// A hook that combines local storage with Supabase syncing for authenticated users
 export default function useHabits() {
+  const { user } = useAuth();
+  
   // Use local storage as the primary data source for immediate responsiveness
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits_data", {
     days: {},
@@ -15,53 +18,24 @@ export default function useHabits() {
     goals: createDefaultMonthlyGoals()
   });
 
-  // Track sync status - store in localStorage too
+  // Track sync status
   const [isSyncing, setIsSyncing] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [syncEnabled, setSyncEnabled] = useLocalStorage<boolean>("habits_sync_enabled", false);
 
-  // Check for existing user ID or create anonymous one
+  // Sync from Supabase when user is authenticated
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        // Check if we have an existing session
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (sessionData.session?.user) {
-          setUserId(sessionData.session.user.id);
-          console.log("Authenticated user found:", sessionData.session.user.id);
-        } else {
-          // Use anonymous ID from localStorage
-          let anonId = localStorage.getItem('anon_user_id');
-          if (!anonId) {
-            anonId = `user_${Math.random().toString(36).substring(2, 15)}`;
-            localStorage.setItem('anon_user_id', anonId);
-          }
-          setUserId(anonId);
-          console.log("Using anonymous ID:", anonId);
-        }
-      } catch (error) {
-        console.error("Error checking auth:", error);
-      }
-    };
-
-    checkUser();
-  }, []);
-
-  // Sync from Supabase when user ID is available
-  useEffect(() => {
-    if (!userId || !syncEnabled) return;
+    if (!user || !syncEnabled) return;
 
     const syncFromSupabase = async () => {
       setIsSyncing(true);
       try {
-        console.log('Syncing data from Supabase for user:', userId);
+        console.log('Syncing data from Supabase for user:', user.id);
         
         // Fetch habit days
         const { data: dayData, error: dayError } = await supabase
           .from('habit_days')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', user.id);
           
         if (dayError) {
           console.error('Failed to fetch habit data:', dayError);
@@ -72,7 +46,7 @@ export default function useHabits() {
         const { data: goalData, error: goalError } = await supabase
           .from('habit_goals')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', user.id);
           
         if (goalError) {
           console.error('Failed to fetch goal data:', goalError);
@@ -115,7 +89,7 @@ export default function useHabits() {
     };
     
     syncFromSupabase();
-  }, [userId, syncEnabled]);
+  }, [user, syncEnabled]);
 
   // Ensure today exists in the data
   useEffect(() => {
@@ -162,20 +136,19 @@ export default function useHabits() {
         days: updatedDays
       });
 
-      // Then sync to Supabase if enabled
-      if (userId && syncEnabled) {
+      // Then sync to Supabase if enabled and user is authenticated
+      if (user && syncEnabled) {
         try {
           const { error } = await supabase
             .from('habit_days')
             .upsert({
-              user_id: userId,
+              user_id: user.id,
               date: dateISO,
-              habit_data: dayData as any // Cast to any to avoid TypeScript errors
+              habit_data: dayData as any
             });
             
           if (error) {
             console.error('Error syncing to Supabase:', error);
-            // Show error but don't revert local change
             toast.error('Failed to sync to cloud', { duration: 1500, id: 'sync-error' });
           }
         } catch (syncError) {
@@ -213,20 +186,19 @@ export default function useHabits() {
         goals: updatedGoals
       });
       
-      // Then sync to Supabase if enabled
-      if (userId && syncEnabled) {
+      // Then sync to Supabase if enabled and user is authenticated
+      if (user && syncEnabled) {
         try {
           const { error } = await supabase
             .from('habit_goals')
             .upsert({
-              user_id: userId,
+              user_id: user.id,
               month_key: monthKey,
-              goals_data: updatedGoals[monthKey] as any  // Cast to any to avoid TypeScript errors
+              goals_data: updatedGoals[monthKey] as any
             });
             
           if (error) {
             console.error('Error syncing goal to Supabase:', error);
-            // Show error but don't revert local change
             toast.error('Failed to sync to cloud', { duration: 1500, id: 'sync-error' });
           }
         } catch (syncError) {
