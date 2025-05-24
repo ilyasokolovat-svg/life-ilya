@@ -1,3 +1,4 @@
+
 import { DayData, HabitStats, HabitType, HabitsState, HabitGoal } from "@/types/habit";
 
 // Get all days in a month
@@ -68,8 +69,8 @@ export const getStartOfWeek = (date: Date): Date => {
   return result;
 };
 
-// Calculate habit statistics
-export const calculateHabitStats = (state: HabitsState, habitType: HabitType): HabitStats => {
+// Calculate habit statistics for a specific month
+export const calculateHabitStats = (state: HabitsState, habitType: HabitType, year?: number, month?: number): HabitStats => {
   // Ensure state and days exist
   if (!state || !state.days) {
     return {
@@ -81,9 +82,21 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType): H
     };
   }
   
-  const days = Object.values(state.days).sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  let days = Object.values(state.days);
+  
+  // Filter by month if specified
+  if (year !== undefined && month !== undefined) {
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0); // Last day of month
+    
+    days = days.filter(day => {
+      const dayDate = new Date(day.date);
+      return dayDate >= monthStart && dayDate <= monthEnd;
+    });
+  }
+  
+  // Sort days by date
+  days.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
   let currentStreak = 0;
   let longestStreak = 0;

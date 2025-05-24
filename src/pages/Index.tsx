@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -105,11 +104,11 @@ const Index = () => {
   // Get goals for current view month - ensure defaults exist
   const currentMonthGoals = getMonthGoals(habitsState, viewYear, viewMonth);
   
-  // Calculate stats for each habit type
-  const sleepStats = calculateHabitStats(habitsState, "sleep");
-  const gymStats = calculateHabitStats(habitsState, "gym");
-  const alcoholStats = calculateHabitStats(habitsState, "alcohol");
-  const meditationStats = calculateHabitStats(habitsState, "meditation");
+  // Calculate stats for each habit type - now month-specific
+  const sleepStats = calculateHabitStats(habitsState, "sleep", viewYear, viewMonth);
+  const gymStats = calculateHabitStats(habitsState, "gym", viewYear, viewMonth);
+  const alcoholStats = calculateHabitStats(habitsState, "alcohol", viewYear, viewMonth);
+  const meditationStats = calculateHabitStats(habitsState, "meditation", viewYear, viewMonth);
   
   // Get weekly stats for each habit type with their respective months
   const sleepWeeklyStats = getMonthlyWeeklyStats(habitsState, "sleep", chartMonths.sleep.year, chartMonths.sleep.month);
