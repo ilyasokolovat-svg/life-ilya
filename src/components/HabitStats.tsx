@@ -1,6 +1,5 @@
 
-
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { HabitStats as HabitStatsType, HabitType, HabitGoal, WeeklyStats, DayData } from "@/types/habit";
@@ -41,83 +40,6 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   const sleepQualityStats = habitType === 'sleep' && habitsState 
     ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
     : null;
-
-  // Calculate money saved for alcohol category using useMemo to ensure reactivity
-  const moneySaved = useMemo(() => {
-    console.log('=== MONEY SAVED CALCULATION DEBUG ===');
-    console.log('Habit type:', habitType);
-    console.log('Habits state:', habitsState);
-    console.log('Habits state days:', habitsState?.days);
-    
-    if (habitType !== 'alcohol') {
-      console.log('Not alcohol habit, returning 0');
-      return 0;
-    }
-    
-    if (!habitsState || !habitsState.days) {
-      console.log('No habits state or days data available');
-      return 0;
-    }
-    
-    let totalMoneySaved = 0;
-    const today = new Date();
-    
-    console.log('Processing days for month/year:', viewMonth, viewYear);
-    console.log('Today:', today);
-    console.log('Available days:', Object.keys(habitsState.days));
-    
-    // Go through each day in the habits data
-    Object.keys(habitsState.days).forEach(dateKey => {
-      const dayDate = new Date(dateKey + 'T00:00:00'); // Ensure proper date parsing
-      const dayData = habitsState.days[dateKey];
-      
-      console.log(`\nProcessing day: ${dateKey}`);
-      console.log('Day date object:', dayDate);
-      console.log('Day month:', dayDate.getMonth(), 'vs view month:', viewMonth);
-      console.log('Day year:', dayDate.getFullYear(), 'vs view year:', viewYear);
-      console.log('Is past/today?', dayDate <= today);
-      
-      // Check if this day is in our target month and is past or today
-      if (dayDate.getMonth() === viewMonth && 
-          dayDate.getFullYear() === viewYear && 
-          dayDate <= today) {
-        
-        console.log(`Day ${dateKey} is in target month and past/today`);
-        console.log('Day data:', dayData);
-        
-        // Get alcohol data for this day
-        const alcoholData = dayData?.alcohol;
-        console.log('Alcohol data:', alcoholData);
-        
-        if (alcoholData) {
-          const planned = alcoholData.planned;
-          const completed = alcoholData.completed;
-          
-          console.log(`Alcohol - planned: ${planned}, completed: ${completed}`);
-          
-          // Updated logic based on user requirements:
-          // - If left checkbox (planned) is unticked AND right checkbox (completed) is ticked: +$35 (saved money)
-          // - If left checkbox (planned) is ticked AND right checkbox (completed) is unticked: -$35 (lost money)
-          if (!planned && completed) {
-            totalMoneySaved += 35;
-            console.log(`+$35 added (didn't plan to drink but did)`);
-          } else if (planned && !completed) {
-            totalMoneySaved -= 35;
-            console.log(`-$35 deducted (planned to not drink but drank anyway)`);
-          } else {
-            console.log(`No money change (planned=${planned}, completed=${completed})`);
-          }
-        } else {
-          console.log('No alcohol data for this day');
-        }
-      } else {
-        console.log(`Skipping day ${dateKey} - not in target month or in future`);
-      }
-    });
-    
-    console.log('=== FINAL MONEY SAVED TOTAL:', totalMoneySaved, '===');
-    return totalMoneySaved;
-  }, [habitType, habitsState, viewMonth, viewYear]); // Dependencies to trigger recalculation
   
   // Get habit icon
   const getHabitIcon = () => {
@@ -246,27 +168,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({
               <h3 className="text-xl font-bold">{sleepQualityStats.badSleep}</h3>
             </div>
           </div>
-        ) : habitType === 'alcohol' ? (
-          // Special layout for alcohol with money saved - all in one row
-          <div className="grid grid-cols-3 gap-2">
-            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-              <p className="text-xs text-muted-foreground">Total Completed</p>
-              <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
-            </div>
-            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-              <p className="text-xs text-muted-foreground">Completion Rate</p>
-              <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
-            </div>
-            <div className="p-2 rounded-md bg-green-100">
-              <p className="text-xs text-muted-foreground">Money Saved 💰</p>
-              <h3 className={`text-xl font-bold ${moneySaved < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                ${Math.abs(moneySaved)}
-                {moneySaved < 0 && <span className="text-xs ml-1">(lost)</span>}
-              </h3>
-            </div>
-          </div>
         ) : (
-          // Layout for other habits (gym, meditation)
+          // Layout for all other habits including alcohol - same 2-column grid
           <div className="grid grid-cols-2 gap-2">
             <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
               <p className="text-xs text-muted-foreground">Total Completed</p>
@@ -320,4 +223,3 @@ const HabitStats: React.FC<HabitStatsProps> = ({
 };
 
 export default HabitStats;
-
