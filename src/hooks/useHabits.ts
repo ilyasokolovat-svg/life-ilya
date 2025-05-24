@@ -145,6 +145,8 @@ export default function useHabits() {
               user_id: user.id,
               date: dateISO,
               habit_data: dayData as any
+            }, {
+              onConflict: 'user_id,date'
             });
             
           if (error) {
@@ -198,6 +200,8 @@ export default function useHabits() {
               user_id: user.id,
               month_key: monthKey,
               goals_data: updatedMonthGoals as any
+            }, {
+              onConflict: 'user_id,month_key'
             });
             
           if (error) {
@@ -209,7 +213,7 @@ export default function useHabits() {
         }
       }
 
-      toast.success('Goal updated!', { duration: 1500 });
+      console.log('Goal updated successfully for', type, 'in', monthKey);
     } catch (error) {
       console.error('Error updating goal:', error);
       toast.error('Failed to save your goal');
@@ -239,7 +243,7 @@ export default function useHabits() {
       console.log('Force syncing all local data to cloud...');
       console.log('Current habits state:', habitsState);
       
-      // Sync all habit days using upsert to avoid duplicate key errors
+      // Sync all habit days using upsert with proper conflict resolution
       for (const [dateISO, dayData] of Object.entries(habitsState.days)) {
         const { error } = await supabase
           .from('habit_days')
@@ -247,6 +251,8 @@ export default function useHabits() {
             user_id: user.id,
             date: dateISO,
             habit_data: dayData as any
+          }, {
+            onConflict: 'user_id,date'
           });
           
         if (error) {
@@ -255,7 +261,7 @@ export default function useHabits() {
         }
       }
 
-      // Sync all goals using upsert to avoid duplicate key errors
+      // Sync all goals using upsert with proper conflict resolution
       for (const [monthKey, monthGoals] of Object.entries(habitsState.goals)) {
         console.log(`Syncing goals for ${monthKey}:`, monthGoals);
         const { error } = await supabase
@@ -264,6 +270,8 @@ export default function useHabits() {
             user_id: user.id,
             month_key: monthKey,
             goals_data: monthGoals as any
+          }, {
+            onConflict: 'user_id,month_key'
           });
           
         if (error) {
