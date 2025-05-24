@@ -1,13 +1,17 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import WeeklyChart from "@/components/WeeklyChart";
 import WeeklyTimeline from "./WeeklyTimeline";
-import { HabitType, WeeklyStats } from "@/types/habit";
-import { getMonthlyWeeklyStats, habitColors } from "@/utils/chartUtils";
+import GoalsWeeklyChart from "./GoalsWeeklyChart";
 
 interface WeeklyTrackerProps {
   subcategories: string[];
+}
+
+interface WeeklyGoalStats {
+  weekStart: Date;
+  planned: number;
+  completed: number;
 }
 
 const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
@@ -20,11 +24,8 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  // Mock habit types for demonstration - in real app this would come from props or context
-  const habitTypes: HabitType[] = ['gym', 'sleep', 'alcohol', 'meditation'];
-
-  // Generate mock data for each habit type
-  const generateMockData = (habitType: HabitType): WeeklyStats[] => {
+  // Generate mock data for subcategories
+  const generateMockData = (subcategory: string): WeeklyGoalStats[] => {
     const weeks = [];
     const firstDay = new Date(selectedYear, selectedMonth, 1);
     const lastDay = new Date(selectedYear, selectedMonth + 1, 0);
@@ -33,7 +34,7 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
     currentWeekStart.setDate(firstDay.getDate() - firstDay.getDay() + 1); // Start from Monday
     
     while (currentWeekStart <= lastDay) {
-      const planned = habitType === 'sleep' ? 7 : Math.floor(Math.random() * 5) + 3;
+      const planned = Math.floor(Math.random() * 5) + 3;
       const completed = Math.floor(Math.random() * planned);
       
       weeks.push({
@@ -48,14 +49,27 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
     return weeks;
   };
 
-  const handleSatisfactionToggle = (habitType: HabitType, weekKey: string) => {
+  const handleSatisfactionToggle = (subcategory: string, weekKey: string) => {
     setSatisfactionData(prev => ({
       ...prev,
-      [habitType]: {
-        ...prev[habitType],
-        [weekKey]: !prev[habitType]?.[weekKey]
+      [subcategory]: {
+        ...prev[subcategory],
+        [weekKey]: !prev[subcategory]?.[weekKey]
       }
     }));
+  };
+
+  // Generate color for each subcategory
+  const getSubcategoryColor = (index: number) => {
+    const colors = [
+      { primary: '#3b82f6', secondary: '#dbeafe' }, // Blue
+      { primary: '#10b981', secondary: '#d1fae5' }, // Green
+      { primary: '#f59e0b', secondary: '#fef3c7' }, // Amber
+      { primary: '#ef4444', secondary: '#fee2e2' }, // Red
+      { primary: '#8b5cf6', secondary: '#ede9fe' }, // Violet
+      { primary: '#06b6d4', secondary: '#cffafe' }, // Cyan
+    ];
+    return colors[index % colors.length];
   };
 
   return (
@@ -95,15 +109,16 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {habitTypes.map((habitType) => (
-              <WeeklyChart
-                key={habitType}
-                habitType={habitType}
-                data={generateMockData(habitType)}
+            {subcategories.map((subcategory, index) => (
+              <GoalsWeeklyChart
+                key={subcategory}
+                subcategory={subcategory}
+                data={generateMockData(subcategory)}
                 viewMonth={selectedMonth}
                 viewYear={selectedYear}
-                satisfactionData={satisfactionData[habitType]}
-                onSatisfactionToggle={(weekKey) => handleSatisfactionToggle(habitType, weekKey)}
+                satisfactionData={satisfactionData[subcategory]}
+                onSatisfactionToggle={(weekKey) => handleSatisfactionToggle(subcategory, weekKey)}
+                colors={getSubcategoryColor(index)}
               />
             ))}
           </div>
