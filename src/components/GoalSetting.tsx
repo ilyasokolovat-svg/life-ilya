@@ -82,34 +82,36 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
 
   const handleFrequencyChange = (type: HabitType, value: string) => {
     const currentGoal = localGoals[type] || createDefaultGoal();
-    const newLocalGoals = {
-      ...localGoals,
-      [type]: {
-        ...currentGoal,
-        frequency: parseInt(value) || 0
-      }
+    const newGoal = {
+      ...currentGoal,
+      frequency: parseInt(value) || 0
     };
     
-    setLocalGoals(newLocalGoals);
-    onUpdateGoal(type, newLocalGoals[type]);
+    // Update local state
+    setLocalGoals({
+      ...localGoals,
+      [type]: newGoal
+    });
+    
+    // Immediately update parent state
+    onUpdateGoal(type, newGoal);
   };
 
   const handleNotesChange = (type: HabitType, value: string) => {
     const currentGoal = localGoals[type] || createDefaultGoal();
-    // First update local state
+    const newGoal = {
+      ...currentGoal,
+      notes: value
+    };
+    
+    // Update local state immediately
     setLocalGoals({
       ...localGoals,
-      [type]: {
-        ...currentGoal,
-        notes: value
-      }
+      [type]: newGoal
     });
-  };
-  
-  // Only send updates to parent when user stops typing (blur event)
-  const handleNotesBlur = (type: HabitType) => {
-    const currentGoal = localGoals[type] || createDefaultGoal();
-    onUpdateGoal(type, currentGoal);
+    
+    // Also update parent state immediately so changes are saved
+    onUpdateGoal(type, newGoal);
   };
 
   // Define habit types to ensure consistent ordering
@@ -156,7 +158,6 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
                     placeholder="Add notes for your goal..."
                     value={localGoal.notes}
                     onChange={(e) => handleNotesChange(habitType, e.target.value)}
-                    onBlur={() => handleNotesBlur(habitType)}
                     className="mt-1 h-24 resize-none"
                   />
                 </div>
