@@ -1,4 +1,5 @@
-import { DayData, HabitStats, HabitType, HabitsState, HabitGoal } from "@/types/habit";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
+import { HabitType, HabitData, DayData, HabitStats, HabitsState, HabitGoal, MonthlyGoals } from "@/types/habit";
 
 // Get all days in a month
 export const getDaysInMonth = (year: number, month: number): Date[] => {
@@ -269,10 +270,17 @@ export const createDefaultGoals = () => {
   };
 };
 
-// Create default monthly goals
-export const createDefaultMonthlyGoals = () => {
-  const monthKey = getCurrentMonthKey();
+// Create default monthly goals with the specified values
+export const createDefaultMonthlyGoals = (): MonthlyGoals => {
+  const defaultGoals: Record<HabitType, HabitGoal> = {
+    gym: { frequency: 12, notes: "" },
+    alcohol: { frequency: 25, notes: "" },
+    sleep: { frequency: 20, notes: "" },
+    meditation: { frequency: 25, notes: "" }
+  };
+  
   return {
-    [monthKey]: createDefaultGoals()
+    // Start with current month
+    [formatYearMonth(new Date().getFullYear(), new Date().getMonth())]: defaultGoals
   };
 };

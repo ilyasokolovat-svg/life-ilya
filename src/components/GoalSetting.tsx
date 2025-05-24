@@ -14,11 +14,20 @@ interface GoalSettingProps {
   onUpdateGoal: (type: HabitType, goal: HabitGoal) => void;
 }
 
-// Default goal for when a goal doesn't exist
-const createDefaultGoal = (): HabitGoal => ({
-  frequency: 0,
-  notes: ""
-});
+// Default goal with the new values
+const createDefaultGoal = (habitType: HabitType): HabitGoal => {
+  const defaultFrequencies = {
+    gym: 12,
+    alcohol: 25,
+    sleep: 20,
+    meditation: 25
+  };
+  
+  return {
+    frequency: defaultFrequencies[habitType],
+    notes: ""
+  };
+};
 
 // Ensure all habit types have goals
 const ensureAllGoals = (goals: Record<HabitType, HabitGoal>): Record<HabitType, HabitGoal> => {
@@ -27,7 +36,7 @@ const ensureAllGoals = (goals: Record<HabitType, HabitGoal>): Record<HabitType, 
   
   habitTypes.forEach(type => {
     if (!completeGoals[type]) {
-      completeGoals[type] = createDefaultGoal();
+      completeGoals[type] = createDefaultGoal(type);
     }
   });
   
@@ -81,7 +90,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
   };
 
   const handleFrequencyChange = (type: HabitType, value: string) => {
-    const currentGoal = localGoals[type] || createDefaultGoal();
+    const currentGoal = localGoals[type] || createDefaultGoal(type);
     const newGoal = {
       ...currentGoal,
       frequency: parseInt(value) || 0
@@ -98,7 +107,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
   };
 
   const handleNotesChange = (type: HabitType, value: string) => {
-    const currentGoal = localGoals[type] || createDefaultGoal();
+    const currentGoal = localGoals[type] || createDefaultGoal(type);
     const newGoal = {
       ...currentGoal,
       notes: value
@@ -124,7 +133,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {habitTypes.map((habitType) => {
-          const localGoal = localGoals[habitType] || createDefaultGoal();
+          const localGoal = localGoals[habitType] || createDefaultGoal(habitType);
           
           return (
             <Card key={habitType} className="overflow-hidden">
