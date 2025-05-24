@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Save, Calendar, Target, Eye, EyeOff } from "lucide-react";
 
 interface GoalTimeframesProps {
@@ -108,10 +108,10 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                 {subcategories.map((subcategory) => (
                   <TabsContent key={subcategory} value={subcategory} className="mt-0">
                     <div className="p-6">
-                      <ScrollArea className="w-full">
-                        <div className="min-w-max flex">
+                      <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                        <div className="flex w-max space-x-4 p-4">
                           {/* Fixed subcategory label column */}
-                          <div className="flex-shrink-0 w-32 mr-4">
+                          <div className="flex-shrink-0 w-32">
                             <div className="h-16 flex items-center border-b-2 border-gray-300 mb-4">
                               <div className="font-bold text-sm text-gray-700">Period</div>
                             </div>
@@ -121,72 +121,71 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                           </div>
 
                           {/* Horizontally scrollable periods */}
-                          <div className="flex gap-4">
-                            {allPeriods.map((period) => (
-                              <div key={period.key} className="flex-shrink-0 w-48">
-                                {/* Header */}
-                                <div className="text-center border-b-2 border-gray-300 pb-2 mb-4">
-                                  <div className="font-bold text-sm text-gray-700 mb-2">
-                                    {period.label}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <div className="flex-1 text-xs text-gray-500 font-medium">Plan</div>
-                                    <div className="flex-1 text-xs text-gray-500 font-medium">Fact</div>
-                                  </div>
+                          {allPeriods.map((period) => (
+                            <div key={period.key} className="flex-shrink-0 w-48">
+                              {/* Header */}
+                              <div className="text-center border-b-2 border-gray-300 pb-2 mb-4">
+                                <div className="font-bold text-sm text-gray-700 mb-2">
+                                  {period.label}
                                 </div>
-
-                                {/* Input fields */}
                                 <div className="flex gap-2">
-                                  {/* Plan */}
-                                  <div className="flex-1">
-                                    <Textarea
-                                      placeholder="Plan..."
-                                      value={goals[subcategory]?.[period.key]?.planned || ""}
-                                      onChange={(e) => updateGoal(subcategory, period.key, 'planned', e.target.value)}
-                                      className="min-h-[80px] text-xs resize-none overflow-hidden"
-                                      style={{
-                                        height: 'auto',
-                                        minHeight: '80px'
-                                      }}
-                                      onInput={(e) => {
-                                        const target = e.target as HTMLTextAreaElement;
-                                        target.style.height = 'auto';
-                                        target.style.height = Math.max(80, target.scrollHeight) + 'px';
-                                      }}
-                                    />
-                                  </div>
-                                  {/* Fact */}
-                                  <div className="flex-1">
-                                    <Textarea
-                                      placeholder="Fact..."
-                                      value={
-                                        years.some(y => y.key === period.key) 
-                                          ? goals[subcategory]?.[period.key]?.goal || ""
-                                          : goals[subcategory]?.[period.key]?.fact || ""
-                                      }
-                                      onChange={(e) => updateGoal(
-                                        subcategory, 
-                                        period.key, 
-                                        years.some(y => y.key === period.key) ? 'goal' : 'fact', 
-                                        e.target.value
-                                      )}
-                                      className="min-h-[80px] text-xs resize-none overflow-hidden"
-                                      style={{
-                                        height: 'auto',
-                                        minHeight: '80px'
-                                      }}
-                                      onInput={(e) => {
-                                        const target = e.target as HTMLTextAreaElement;
-                                        target.style.height = 'auto';
-                                        target.style.height = Math.max(80, target.scrollHeight) + 'px';
-                                      }}
-                                    />
-                                  </div>
+                                  <div className="flex-1 text-xs text-gray-500 font-medium">Plan</div>
+                                  <div className="flex-1 text-xs text-gray-500 font-medium">Fact</div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
+
+                              {/* Input fields */}
+                              <div className="flex gap-2">
+                                {/* Plan */}
+                                <div className="flex-1">
+                                  <Textarea
+                                    placeholder="Plan..."
+                                    value={goals[subcategory]?.[period.key]?.planned || ""}
+                                    onChange={(e) => updateGoal(subcategory, period.key, 'planned', e.target.value)}
+                                    className="min-h-[80px] text-xs resize-none overflow-hidden"
+                                    style={{
+                                      height: 'auto',
+                                      minHeight: '80px'
+                                    }}
+                                    onInput={(e) => {
+                                      const target = e.target as HTMLTextAreaElement;
+                                      target.style.height = 'auto';
+                                      target.style.height = Math.max(80, target.scrollHeight) + 'px';
+                                    }}
+                                  />
+                                </div>
+                                {/* Fact */}
+                                <div className="flex-1">
+                                  <Textarea
+                                    placeholder="Fact..."
+                                    value={
+                                      years.some(y => y.key === period.key) 
+                                        ? goals[subcategory]?.[period.key]?.goal || ""
+                                        : goals[subcategory]?.[period.key]?.fact || ""
+                                    }
+                                    onChange={(e) => updateGoal(
+                                      subcategory, 
+                                      period.key, 
+                                      years.some(y => y.key === period.key) ? 'goal' : 'fact', 
+                                      e.target.value
+                                    )}
+                                    className="min-h-[80px] text-xs resize-none overflow-hidden"
+                                    style={{
+                                      height: 'auto',
+                                      minHeight: '80px'
+                                    }}
+                                    onInput={(e) => {
+                                      const target = e.target as HTMLTextAreaElement;
+                                      target.style.height = 'auto';
+                                      target.style.height = Math.max(80, target.scrollHeight) + 'px';
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
+                        <ScrollBar orientation="horizontal" />
                       </ScrollArea>
                     </div>
                   </TabsContent>
