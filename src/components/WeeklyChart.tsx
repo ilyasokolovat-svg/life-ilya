@@ -75,7 +75,12 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="name" fontSize={8} tickMargin={5} />
-            <YAxis allowDecimals={false} fontSize={8} />
+            <YAxis 
+              allowDecimals={false} 
+              fontSize={8} 
+              domain={[0, 7]}
+              ticks={[0, 1, 2, 3, 4, 5, 6, 7]}
+            />
             <Tooltip content={<ChartTooltipContent />} />
             
             {/* First render the "completed" part (darker color) */}
