@@ -110,14 +110,14 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   };
 
   return (
-    <Card className="stats-card h-full" style={{ borderColor: colors.primary }}>
+    <Card className="stats-card h-full flex flex-col" style={{ borderColor: colors.primary }}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center gap-2">
           {getHabitIcon()}
           {getHabitTitle()}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex-1 flex flex-col">
         {habitType === 'sleep' && sleepQualityStats ? (
           // Special layout for sleep with quality stats
           <div className="grid grid-cols-3 gap-2">
@@ -189,45 +189,41 @@ const HabitStats: React.FC<HabitStatsProps> = ({
           />
         </div>
         
-        {/* Chart navigation */}
-        <div className="flex items-center justify-between text-xs font-medium mb-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={prevMonth}
-          >
-            <ChevronLeft className="h-3 w-3" />
-          </Button>
-          <span>{getMonthName(chartMonth)} {chartYear}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={nextMonth}
-          >
-            <ChevronRight className="h-3 w-3" />
-          </Button>
-        </div>
-        
-        {/* Embedded Weekly Chart */}
-        <div className="mt-1">
-          <WeeklyChart 
-            habitType={habitType} 
-            data={weeklyData}
-            title={`${getHabitTitle()} Trend`}
-            compact={true}
-            viewMonth={chartMonth}
-            viewYear={chartYear}
-          />
-        </div>
-        
-        {goal?.notes && (
-          <div className="p-2 bg-gray-50 rounded-md">
-            <p className="text-xs font-medium mb-1">Goal Notes:</p>
-            <p className="text-sm">{goal.notes}</p>
+        {/* Chart section - positioned at the bottom with flex-1 to push it down */}
+        <div className="flex-1 flex flex-col justify-end">
+          {/* Chart navigation */}
+          <div className="flex items-center justify-between text-xs font-medium mb-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={prevMonth}
+            >
+              <ChevronLeft className="h-3 w-3" />
+            </Button>
+            <span>{getMonthName(chartMonth)} {chartYear}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={nextMonth}
+            >
+              <ChevronRight className="h-3 w-3" />
+            </Button>
           </div>
-        )}
+          
+          {/* Embedded Weekly Chart */}
+          <div className="mt-1">
+            <WeeklyChart 
+              habitType={habitType} 
+              data={weeklyData}
+              title={`${getHabitTitle()} Trend`}
+              compact={true}
+              viewMonth={chartMonth}
+              viewYear={chartYear}
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
