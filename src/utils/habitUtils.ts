@@ -1,4 +1,3 @@
-
 import { DayData, HabitStats, HabitType, HabitsState, HabitGoal } from "@/types/habit";
 
 // Get all days in a month
@@ -108,6 +107,69 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
   const today = new Date();
   const weekStart = getStartOfWeek(today);
   
+  // For sleep, calculate based on sleep hours instead of planned/completed
+  if (habitType === 'sleep') {
+    // Calculate total days passed in the month so far
+    const currentDate = new Date();
+    let totalDaysInMonth;
+    
+    if (year !== undefined && month !== undefined) {
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0);
+      const endDate = currentDate > monthEnd ? monthEnd : currentDate;
+      
+      // Only count days up to today or end of month
+      totalDaysInMonth = Math.floor((endDate.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    } else {
+      totalDaysInMonth = days.length;
+    }
+    
+    let goodSleepDays = 0;
+    
+    // Process days for sleep-specific calculations
+    for (const day of days) {
+      const dayDate = new Date(day.date);
+      
+      // Only count days up to today
+      if (dayDate <= today) {
+        const sleepHours = day.sleep?.sleepHours || 0;
+        
+        if (sleepHours >= 7) {
+          goodSleepDays++;
+          tempStreak++;
+        } else if (sleepHours > 0) {
+          tempStreak = 0;
+        }
+        
+        longestStreak = Math.max(longestStreak, tempStreak);
+      }
+    }
+    
+    // Calculate current streak (from most recent days)
+    for (let i = days.length - 1; i >= 0; i--) {
+      const day = days[i];
+      const dayDate = new Date(day.date);
+      
+      if (dayDate <= today) {
+        const sleepHours = day.sleep?.sleepHours || 0;
+        if (sleepHours >= 7) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+    
+    return {
+      currentStreak,
+      longestStreak,
+      totalCompleted: goodSleepDays,
+      completionRate: totalDaysInMonth > 0 ? Math.round((goodSleepDays / totalDaysInMonth) * 100) : 0,
+      currentWeekCompleted: 0 // Not used for sleep
+    };
+  }
+  
+  // Original logic for other habits
   // Process days in reverse (newest first) for current streak
   for (let i = days.length - 1; i >= 0; i--) {
     const day = days[i];
@@ -149,6 +211,41 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
     completionRate: totalPlanned > 0 ? Math.round((totalCompleted / totalPlanned) * 100) : 0,
     currentWeekCompleted
   };
+};
+
+// New function to calculate sleep quality stats for a specific month
+export const calculateSleepQualityStats = (state: HabitsState, year: number, month: number) => {
+  if (!state || !state.days) {
+    return { goodSleep: 0, averageSleep: 0, badSleep: 0 };
+  }
+  
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+  const today = new Date();
+  
+  let goodSleep = 0;
+  let averageSleep = 0;
+  let badSleep = 0;
+  
+  // Filter days for the specific month
+  const days = Object.values(state.days).filter(day => {
+    const dayDate = new Date(day.date);
+    return dayDate >= monthStart && dayDate <= monthEnd && dayDate <= today;
+  });
+  
+  for (const day of days) {
+    const sleepHours = day.sleep?.sleepHours || 0;
+    
+    if (sleepHours >= 7) {
+      goodSleep++;
+    } else if (sleepHours >= 5) {
+      averageSleep++;
+    } else if (sleepHours > 0) {
+      badSleep++;
+    }
+  }
+  
+  return { goodSleep, averageSleep, badSleep };
 };
 
 // Create an empty day data structure

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -6,7 +7,7 @@ import { Dumbbell, Wine, Moon, Brain, ChevronLeft, ChevronRight } from "lucide-r
 import { habitColors } from "@/utils/chartUtils";
 import { Button } from "@/components/ui/button";
 import WeeklyChart from "./WeeklyChart";
-import { formatYearMonth, getMonthGoals } from "@/utils/habitUtils";
+import { calculateSleepQualityStats } from "@/utils/habitUtils";
 
 interface HabitStatsProps {
   habitType: HabitType;
@@ -16,6 +17,7 @@ interface HabitStatsProps {
   viewMonth: number;
   viewYear: number;
   onMonthChange?: (month: number, year: number) => void;
+  habitsState?: any; // Add this to pass the full habits state for sleep calculations
 }
 
 const HabitStats: React.FC<HabitStatsProps> = ({ 
@@ -25,13 +27,19 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   weeklyData,
   viewMonth,
   viewYear,
-  onMonthChange
+  onMonthChange,
+  habitsState
 }) => {
   // Track chart month/year locally if no callback is provided
   const [chartMonth, setChartMonth] = useState(viewMonth);
   const [chartYear, setChartYear] = useState(viewYear);
   
   const colors = habitColors[habitType];
+  
+  // Calculate sleep quality stats if this is sleep habit
+  const sleepQualityStats = habitType === 'sleep' && habitsState 
+    ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
+    : null;
   
   const getHabitIcon = () => {
     switch (habitType) {
@@ -110,26 +118,46 @@ const HabitStats: React.FC<HabitStatsProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-xs text-muted-foreground">Current Streak</p>
-            <h3 className="text-xl font-bold">{stats.currentStreak} days</h3>
+        {habitType === 'sleep' && sleepQualityStats ? (
+          // Special layout for sleep with quality stats
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-2 rounded-md bg-green-100">
+              <p className="text-xs text-muted-foreground">Good Sleep 😊</p>
+              <h3 className="text-xl font-bold">{sleepQualityStats.goodSleep}</h3>
+            </div>
+            <div className="p-2 rounded-md bg-yellow-100">
+              <p className="text-xs text-muted-foreground">Average Sleep 😐</p>
+              <h3 className="text-xl font-bold">{sleepQualityStats.averageSleep}</h3>
+            </div>
+            <div className="p-2 rounded-md bg-red-100">
+              <p className="text-xs text-muted-foreground">Bad Sleep 😔</p>
+              <h3 className="text-xl font-bold">{sleepQualityStats.badSleep}</h3>
+            </div>
           </div>
-          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-xs text-muted-foreground">Longest Streak</p>
-            <h3 className="text-xl font-bold">{stats.longestStreak} days</h3>
+        ) : (
+          // Original layout for other habits
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+              <p className="text-xs text-muted-foreground">Current Streak</p>
+              <h3 className="text-xl font-bold">{stats.currentStreak} days</h3>
+            </div>
+            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+              <p className="text-xs text-muted-foreground">Longest Streak</p>
+              <h3 className="text-xl font-bold">{stats.longestStreak} days</h3>
+            </div>
+            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+              <p className="text-xs text-muted-foreground">Total Completed</p>
+              <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
+            </div>
+            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+              <p className="text-xs text-muted-foreground">Completion Rate</p>
+              <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
+            </div>
           </div>
-          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-xs text-muted-foreground">Total Completed</p>
-            <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
-          </div>
-          <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-            <p className="text-xs text-muted-foreground">Completion Rate</p>
-            <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
-          </div>
-        </div>
+        )}
         
-        {goal && (
+        {/* Monthly goal progress - only show for non-sleep habits */}
+        {goal && habitType !== 'sleep' && (
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-xs">Monthly Goal Progress ({stats.totalCompleted}/{goal.frequency} days)</span>

@@ -285,6 +285,7 @@ const Index = () => {
               viewMonth={chartMonths.sleep.month}
               viewYear={chartMonths.sleep.year}
               onMonthChange={(month, year) => handleChartMonthChange("sleep", month, year)}
+              habitsState={habitsState}
             />
             
             {/* Gym */}
