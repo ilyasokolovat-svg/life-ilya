@@ -90,23 +90,25 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
             {subcategories.length > 0 ? (
               <Tabs defaultValue={subcategories[0]} className="w-full">
                 <div className="px-6 pt-4 pb-2">
-                  <div className="flex flex-wrap gap-1 border-b border-gray-200">
-                    {subcategories.map((subcategory) => (
-                      <TabsTrigger 
-                        key={subcategory} 
-                        value={subcategory} 
-                        className="px-4 py-2 text-xs font-medium rounded-t-lg border border-gray-200 border-b-0 bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-white data-[state=active]:border-gray-300 data-[state=active]:border-b-white data-[state=active]:text-blue-600 data-[state=active]:font-semibold whitespace-nowrap"
-                      >
-                        {subcategory}
-                      </TabsTrigger>
-                    ))}
-                  </div>
+                  <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-start">
+                    <div className="flex flex-wrap gap-1 w-full">
+                      {subcategories.map((subcategory) => (
+                        <TabsTrigger 
+                          key={subcategory} 
+                          value={subcategory} 
+                          className="px-4 py-2 text-xs font-medium rounded-t-lg border border-gray-200 border-b-0 bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-white data-[state=active]:border-gray-300 data-[state=active]:border-b-white data-[state=active]:text-blue-600 data-[state=active]:font-semibold whitespace-nowrap"
+                        >
+                          {subcategory}
+                        </TabsTrigger>
+                      ))}
+                    </div>
+                  </TabsList>
                 </div>
 
                 {subcategories.map((subcategory) => (
                   <TabsContent key={subcategory} value={subcategory} className="mt-0">
                     <div className="p-6">
-                      <div className="overflow-x-auto">
+                      <ScrollArea className="w-full">
                         <div className="min-w-max flex">
                           {/* Fixed subcategory label column */}
                           <div className="flex-shrink-0 w-32 mr-4">
@@ -185,7 +187,7 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                             ))}
                           </div>
                         </div>
-                      </div>
+                      </ScrollArea>
                     </div>
                   </TabsContent>
                 ))}
