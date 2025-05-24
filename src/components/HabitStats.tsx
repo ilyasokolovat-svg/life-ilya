@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { HabitStats as HabitStatsType, HabitType, HabitGoal, WeeklyStats } from "@/types/habit";
+import { HabitStats as HabitStatsType, HabitType, HabitGoal, WeeklyStats, DayData } from "@/types/habit";
 import { Dumbbell, Wine, Moon, Brain, ChevronLeft, ChevronRight } from "lucide-react";
 import { habitColors } from "@/utils/chartUtils";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     
     // Count days where alcohol was planned but not consumed
     for (const day of days) {
-      const alcoholData = day.alcohol;
+      const dayData = day as DayData;
+      const alcoholData = dayData.alcohol;
       if (alcoholData && alcoholData.planned && !alcoholData.completed) {
         moneySaved += 35;
       }
