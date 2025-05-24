@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,20 +66,31 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     return days[isoDate];
   };
 
-  const getHabitStatusClass = (dayData: DayData | undefined, habitType: HabitType): string => {
-    if (!dayData || !dayData[habitType]) {
-      return "bg-transparent";
-    }
+  const getCompletedHabitsCount = (dayData: DayData | undefined): number => {
+    if (!dayData) return 0;
     
-    if (habitType === 'sleep' && dayData[habitType].sleepHours && dayData[habitType].sleepHours >= 7) {
-      return "bg-success";
-    } else if (dayData[habitType].planned && dayData[habitType].completed) {
-      return "bg-success";
-    } else if (dayData[habitType].planned) {
-      return "bg-blue-light/50";
-    }
+    let count = 0;
+    const habitTypes: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
     
-    return "bg-transparent";
+    habitTypes.forEach(habitType => {
+      if (habitType === 'sleep' && dayData[habitType].sleepHours && dayData[habitType].sleepHours >= 7) {
+        count++;
+      } else if (dayData[habitType].completed) {
+        count++;
+      }
+    });
+    
+    return count;
+  };
+
+  const getProgressBarColor = (completedCount: number): string => {
+    switch (completedCount) {
+      case 1: return '#90EE90'; // Light green
+      case 2: return '#32CD32'; // Lime green  
+      case 3: return '#228B22'; // Forest green
+      case 4: return '#006400'; // Dark green
+      default: return 'transparent';
+    }
   };
 
   const renderDay = (date: Date) => {
@@ -86,6 +98,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     const isoDate = formatDateISO(date);
     const isToday = formatDateISO(today) === isoDate;
     const isPast = date < new Date(today.setHours(0, 0, 0, 0));
+    const completedCount = getCompletedHabitsCount(dayData);
+    const progressPercentage = (completedCount / 4) * 100;
+    const isAllCompleted = completedCount === 4;
     
     // Day style (highlight today)
     const dayStyle = isToday
@@ -103,27 +118,24 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         key={isoDate} 
         className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col`}
       >
-        <div className="p-1">
+        <div className="p-1 flex justify-between items-start">
           <span className={`text-sm font-medium ${isToday ? 'text-blue-dark' : ''}`}>
             {date.getDate()}
           </span>
+          {isAllCompleted && (
+            <span className="text-sm">😊</span>
+          )}
         </div>
         
-        {/* Habit mini-zones - display at the top with clear separation, reordered */}
-        <div className="flex w-full h-3 mb-1 border-t border-gray-100">
-          {habitOrder.map((habit) => (
-            <div 
-              key={`mini-${isoDate}-${habit}`}
-              className={`w-1/4 ${getHabitStatusClass(dayData, habit)}`}
-              style={{
-                backgroundColor: getHabitStatusClass(dayData, habit) === "bg-success" 
-                  ? habitColors[habit].primary 
-                  : getHabitStatusClass(dayData, habit) === "bg-blue-light/50"
-                    ? habitColors[habit].secondary
-                    : "transparent"
-              }}
-            ></div>
-          ))}
+        {/* Progress bar - unified green progress indicator */}
+        <div className="w-full h-3 mb-1 border-t border-gray-100 bg-gray-100">
+          <div 
+            className="h-full transition-all duration-300"
+            style={{
+              width: `${progressPercentage}%`,
+              backgroundColor: getProgressBarColor(completedCount)
+            }}
+          ></div>
         </div>
         
         {/* Habits for the day - reordered */}
@@ -184,15 +196,23 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         </>
       )}
 
-      {/* Legend for mini-zones */}
+      {/* Legend for progress bar */}
       <div className="flex flex-wrap items-center justify-end mb-2 text-xs">
         <div className="flex items-center mr-3">
-          <div className="w-3 h-3 mr-1" style={{ backgroundColor: habitColors.sleep.primary }}></div>
-          <span>Completed</span>
+          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#90EE90' }}></div>
+          <span>1/4</span>
+        </div>
+        <div className="flex items-center mr-3">
+          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#32CD32' }}></div>
+          <span>2/4</span>
+        </div>
+        <div className="flex items-center mr-3">
+          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#228B22' }}></div>
+          <span>3/4</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 mr-1" style={{ backgroundColor: habitColors.sleep.secondary }}></div>
-          <span>Planned</span>
+          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#006400' }}></div>
+          <span>4/4 😊</span>
         </div>
       </div>
       
