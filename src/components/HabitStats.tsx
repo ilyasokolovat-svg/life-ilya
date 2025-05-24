@@ -47,22 +47,43 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     let moneySaved = 0;
     const monthStart = new Date(viewYear, viewMonth, 1);
     const monthEnd = new Date(viewYear, viewMonth + 1, 0);
+    const today = new Date();
     
-    // Filter days for the specific month
+    console.log('Calculating money saved for alcohol category');
+    console.log('Month range:', monthStart, 'to', monthEnd);
+    console.log('Available days in habitsState:', Object.keys(habitsState.days));
+    
+    // Filter days for the specific month that are in the past (including today)
     const days = Object.values(habitsState.days).filter((day: any) => {
       const dayDate = new Date(day.date);
-      return dayDate >= monthStart && dayDate <= monthEnd;
+      return dayDate >= monthStart && dayDate <= monthEnd && dayDate <= today;
     });
     
-    // Count days where alcohol was planned but not consumed
+    console.log('Filtered days for calculation:', days.length);
+    
+    // Calculate money saved/lost based on the logic:
+    // - If planned but not completed: +$35 (saved money by not drinking)
+    // - If not planned but completed: -$35 (spent money on unexpected drinking)
     for (const day of days) {
       const dayData = day as DayData;
       const alcoholData = dayData.alcohol;
-      if (alcoholData && alcoholData.planned && !alcoholData.completed) {
-        moneySaved += 35;
+      
+      if (alcoholData) {
+        console.log(`Day ${dayData.date}: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
+        
+        if (alcoholData.planned && !alcoholData.completed) {
+          // Planned to drink but didn't - saved money
+          moneySaved += 35;
+          console.log(`Added $35 for day ${dayData.date} (planned but didn't drink)`);
+        } else if (!alcoholData.planned && alcoholData.completed) {
+          // Didn't plan to drink but did - spent unexpected money
+          moneySaved -= 35;
+          console.log(`Subtracted $35 for day ${dayData.date} (unplanned drinking)`);
+        }
       }
     }
     
+    console.log('Total money saved/lost:', moneySaved);
     return moneySaved;
   };
 
@@ -194,8 +215,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({
             </div>
           </div>
         ) : habitType === 'alcohol' ? (
-          // Special layout for alcohol with money saved
-          <div className="grid grid-cols-2 gap-2">
+          // Special layout for alcohol with money saved - all in one row
+          <div className="grid grid-cols-3 gap-2">
             <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
               <p className="text-xs text-muted-foreground">Total Completed</p>
               <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
@@ -204,13 +225,16 @@ const HabitStats: React.FC<HabitStatsProps> = ({
               <p className="text-xs text-muted-foreground">Completion Rate</p>
               <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
             </div>
-            <div className="p-2 rounded-md bg-green-100 col-span-2">
+            <div className="p-2 rounded-md bg-green-100">
               <p className="text-xs text-muted-foreground">Money Saved 💰</p>
-              <h3 className="text-xl font-bold">${moneySaved}</h3>
+              <h3 className={`text-xl font-bold ${moneySaved < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                ${Math.abs(moneySaved)}
+                {moneySaved < 0 && <span className="text-xs ml-1">(lost)</span>}
+              </h3>
             </div>
           </div>
         ) : (
-          // Layout for other habits (gym, meditation) - removed streaks
+          // Layout for other habits (gym, meditation)
           <div className="grid grid-cols-2 gap-2">
             <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
               <p className="text-xs text-muted-foreground">Total Completed</p>
