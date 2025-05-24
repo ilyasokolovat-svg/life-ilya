@@ -89,21 +89,25 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
           <CardContent className="p-0">
             {subcategories.length > 0 ? (
               <Tabs defaultValue={subcategories[0]} className="w-full">
-                <div className="px-6 pt-4">
-                  <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1">
+                <div className="px-6 pt-4 pb-2">
+                  <div className="flex flex-wrap gap-1 border-b border-gray-200">
                     {subcategories.map((subcategory) => (
-                      <TabsTrigger key={subcategory} value={subcategory} className="text-xs">
+                      <TabsTrigger 
+                        key={subcategory} 
+                        value={subcategory} 
+                        className="px-4 py-2 text-xs font-medium rounded-t-lg border border-gray-200 border-b-0 bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-white data-[state=active]:border-gray-300 data-[state=active]:border-b-white data-[state=active]:text-blue-600 data-[state=active]:font-semibold whitespace-nowrap"
+                      >
                         {subcategory}
                       </TabsTrigger>
                     ))}
-                  </TabsList>
+                  </div>
                 </div>
 
                 {subcategories.map((subcategory) => (
                   <TabsContent key={subcategory} value={subcategory} className="mt-0">
                     <div className="p-6">
-                      <ScrollArea className="w-full">
-                        <div className="flex min-w-max">
+                      <div className="overflow-x-auto">
+                        <div className="min-w-max flex">
                           {/* Fixed subcategory label column */}
                           <div className="flex-shrink-0 w-32 mr-4">
                             <div className="h-16 flex items-center border-b-2 border-gray-300 mb-4">
@@ -114,8 +118,8 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                             </div>
                           </div>
 
-                          {/* Scrollable periods */}
-                          <div className="flex space-x-4">
+                          {/* Horizontally scrollable periods */}
+                          <div className="flex gap-4">
                             {allPeriods.map((period) => (
                               <div key={period.key} className="flex-shrink-0 w-48">
                                 {/* Header */}
@@ -123,21 +127,30 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                                   <div className="font-bold text-sm text-gray-700 mb-2">
                                     {period.label}
                                   </div>
-                                  <div className="flex space-x-2">
+                                  <div className="flex gap-2">
                                     <div className="flex-1 text-xs text-gray-500 font-medium">Plan</div>
                                     <div className="flex-1 text-xs text-gray-500 font-medium">Fact</div>
                                   </div>
                                 </div>
 
                                 {/* Input fields */}
-                                <div className="flex space-x-2">
+                                <div className="flex gap-2">
                                   {/* Plan */}
                                   <div className="flex-1">
                                     <Textarea
                                       placeholder="Plan..."
                                       value={goals[subcategory]?.[period.key]?.planned || ""}
                                       onChange={(e) => updateGoal(subcategory, period.key, 'planned', e.target.value)}
-                                      className="min-h-[80px] text-xs resize-none"
+                                      className="min-h-[80px] text-xs resize-none overflow-hidden"
+                                      style={{
+                                        height: 'auto',
+                                        minHeight: '80px'
+                                      }}
+                                      onInput={(e) => {
+                                        const target = e.target as HTMLTextAreaElement;
+                                        target.style.height = 'auto';
+                                        target.style.height = Math.max(80, target.scrollHeight) + 'px';
+                                      }}
                                     />
                                   </div>
                                   {/* Fact */}
@@ -155,7 +168,16 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                                         years.some(y => y.key === period.key) ? 'goal' : 'fact', 
                                         e.target.value
                                       )}
-                                      className="min-h-[80px] text-xs resize-none"
+                                      className="min-h-[80px] text-xs resize-none overflow-hidden"
+                                      style={{
+                                        height: 'auto',
+                                        minHeight: '80px'
+                                      }}
+                                      onInput={(e) => {
+                                        const target = e.target as HTMLTextAreaElement;
+                                        target.style.height = 'auto';
+                                        target.style.height = Math.max(80, target.scrollHeight) + 'px';
+                                      }}
                                     />
                                   </div>
                                 </div>
@@ -163,7 +185,7 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                             ))}
                           </div>
                         </div>
-                      </ScrollArea>
+                      </div>
                     </div>
                   </TabsContent>
                 ))}
