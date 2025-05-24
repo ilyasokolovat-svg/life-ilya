@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar, Save } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface WeeklyTimelineProps {
   subcategories: string[];
@@ -16,6 +15,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
   const [weeklyData, setWeeklyData] = useState<Record<string, Record<string, { plan: string; fact: string }>>>({});
   const [monthlyReview, setMonthlyReview] = useState<Record<string, Record<string, string>>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentScrollRefs = useRef<HTMLDivElement[]>([]);
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -74,16 +74,25 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
     }));
   };
 
-  const scrollLeft = () => {
+  const handleScroll = (scrollLeft: number) => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+      scrollRef.current.scrollLeft = scrollLeft;
     }
+    contentScrollRefs.current.forEach(ref => {
+      if (ref) {
+        ref.scrollLeft = scrollLeft;
+      }
+    });
   };
 
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
-    }
+  const scrollLeftAction = () => {
+    const currentScrollLeft = scrollRef.current?.scrollLeft || 0;
+    handleScroll(currentScrollLeft - 200);
+  };
+
+  const scrollRightAction = () => {
+    const currentScrollLeft = scrollRef.current?.scrollLeft || 0;
+    handleScroll(currentScrollLeft + 200);
   };
 
   // Group subcategories for better visual separation
@@ -140,10 +149,10 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
               {months[selectedMonth]} {selectedYear} - Weekly Timeline
             </span>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={scrollLeft}>
+              <Button variant="outline" size="sm" onClick={scrollLeftAction}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={scrollRight}>
+              <Button variant="outline" size="sm" onClick={scrollRightAction}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -152,23 +161,31 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
         
         <CardContent>
           {/* Timeline Header */}
-          <div className="mb-4">
+          <div className="mb-4 border-b pb-4">
             <div className="flex items-center">
               <div className="w-48 flex-shrink-0 text-sm font-medium text-gray-600 pr-4">
                 Subcategory
               </div>
               <div 
                 ref={scrollRef}
-                className="flex overflow-x-auto scrollbar-hide space-x-1"
+                className="flex overflow-x-auto scrollbar-hide space-x-2"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  contentScrollRefs.current.forEach(ref => {
+                    if (ref && ref !== e.currentTarget) {
+                      ref.scrollLeft = scrollLeft;
+                    }
+                  });
+                }}
               >
                 {weeks.map((week, index) => (
-                  <div key={index} className="flex-shrink-0 w-32 text-center">
-                    <div className="text-xs font-medium text-gray-700 mb-1">{week.label}</div>
-                    <div className="text-xs text-gray-500 mb-2">{week.dateRange}</div>
-                    <div className="grid grid-cols-2 gap-1 text-xs">
-                      <div className="font-medium text-blue-600">Plan</div>
-                      <div className="font-medium text-green-600">Fact</div>
+                  <div key={index} className="flex-shrink-0 w-80 text-center border rounded-lg p-2 bg-gray-50">
+                    <div className="text-sm font-bold text-gray-800 mb-1">{week.label}</div>
+                    <div className="text-xs text-gray-600 mb-3">{week.dateRange}</div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="font-medium text-blue-700 bg-blue-50 py-1 rounded">Plan</div>
+                      <div className="font-medium text-green-700 bg-green-50 py-1 rounded">Fact</div>
                     </div>
                   </div>
                 ))}
@@ -177,46 +194,66 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
           </div>
 
           {/* Timeline Content */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {subcategoryGroups.map((group, groupIndex) => (
-              <div key={groupIndex} className={`p-4 rounded-lg border ${group.color}`}>
-                <h5 className="text-sm font-bold text-gray-800 mb-3">{group.name}</h5>
+              <div key={groupIndex} className={`p-4 rounded-lg border-2 ${group.color}`}>
+                <h5 className="text-base font-bold text-gray-800 mb-4 border-b pb-2">{group.name}</h5>
                 
-                {group.items.map((subcategory) => (
-                  <div key={subcategory} className="flex items-start mb-4 last:mb-0">
-                    <div className="w-48 flex-shrink-0 pr-4">
-                      <div className="text-sm font-medium text-gray-700 py-1">
-                        {group.items.length > 1 ? subcategory : ""}
+                {group.items.map((subcategory, itemIndex) => (
+                  <div key={subcategory} className="mb-6 last:mb-0">
+                    <div className="flex items-start">
+                      <div className="w-48 flex-shrink-0 pr-4">
+                        <div className="text-sm font-semibold text-gray-700 py-2 bg-white rounded px-3 border">
+                          {group.items.length > 1 ? subcategory : group.name}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div 
-                      className="flex overflow-x-auto scrollbar-hide space-x-1"
-                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    >
-                      {weeks.map((week, weekIndex) => {
-                        const weekKey = `${monthKey}-week-${weekIndex}`;
-                        const weekData = weeklyData[subcategory]?.[weekKey] || { plan: "", fact: "" };
-                        
-                        return (
-                          <div key={weekIndex} className="flex-shrink-0 w-32">
-                            <div className="grid grid-cols-2 gap-1">
-                              <Textarea
-                                placeholder="Plan..."
-                                value={weekData.plan}
-                                onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'plan', e.target.value)}
-                                className="min-h-[60px] text-xs bg-white resize-none"
-                              />
-                              <Textarea
-                                placeholder="Fact..."
-                                value={weekData.fact}
-                                onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'fact', e.target.value)}
-                                className="min-h-[60px] text-xs bg-white resize-none"
-                              />
+                      
+                      <div 
+                        ref={(el) => {
+                          if (el) contentScrollRefs.current[groupIndex * 10 + itemIndex] = el;
+                        }}
+                        className="flex overflow-x-auto scrollbar-hide space-x-2"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        onScroll={(e) => {
+                          const scrollLeft = e.currentTarget.scrollLeft;
+                          if (scrollRef.current) {
+                            scrollRef.current.scrollLeft = scrollLeft;
+                          }
+                          contentScrollRefs.current.forEach(ref => {
+                            if (ref && ref !== e.currentTarget) {
+                              ref.scrollLeft = scrollLeft;
+                            }
+                          });
+                        }}
+                      >
+                        {weeks.map((week, weekIndex) => {
+                          const weekKey = `${monthKey}-week-${weekIndex}`;
+                          const weekData = weeklyData[subcategory]?.[weekKey] || { plan: "", fact: "" };
+                          
+                          return (
+                            <div key={weekIndex} className="flex-shrink-0 w-80">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                                  <Textarea
+                                    placeholder="Plan..."
+                                    value={weekData.plan}
+                                    onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'plan', e.target.value)}
+                                    className="min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500"
+                                  />
+                                </div>
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+                                  <Textarea
+                                    placeholder="Fact..."
+                                    value={weekData.fact}
+                                    onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'fact', e.target.value)}
+                                    className="min-h-[100px] text-sm bg-white border-green-300 focus:border-green-500"
+                                  />
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -239,7 +276,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                       placeholder={`Monthly reflection for ${group.items.length === 1 ? group.name : subcategory}...`}
                       value={monthlyReview[subcategory]?.[monthKey] || ""}
                       onChange={(e) => updateMonthlyReview(subcategory, e.target.value)}
-                      className="min-h-[60px] bg-white"
+                      className="min-h-[80px] bg-white"
                     />
                   </div>
                 ))}
