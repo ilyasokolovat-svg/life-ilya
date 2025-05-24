@@ -3,6 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   TrendingUp, 
   Briefcase, 
@@ -10,10 +11,22 @@ import {
   GraduationCap,
   Calendar,
   Target,
-  Heart
+  Heart,
+  LogOut,
+  User
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   const categories = [
     {
       id: "career",
@@ -66,13 +79,52 @@ const Dashboard = () => {
       {/* Header */}
       <header className="bg-white shadow-lg">
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-              Goals and Habit Tracking 2025
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Track your journey across all areas of life and build the future you envision
-            </p>
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-center flex-1">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                Goals and Habit Tracking 2025
+              </h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Track your journey across all areas of life and build the future you envision
+              </p>
+            </div>
+            
+            {/* User controls */}
+            <div className="flex items-center gap-2">
+              {/* User info */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <User className="h-4 w-4" />
+                      <span className="hidden sm:inline">{user?.email}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Logged in as {user?.email}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Sign out */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSignOut}
+                      className="text-gray-600 hover:text-red-600"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sign out</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
         </div>
       </header>

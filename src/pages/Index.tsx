@@ -13,23 +13,16 @@ import {
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
-import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User, Save } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User, Save, ArrowLeft } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Index = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
   // Use our hybrid habits hook
   const { habitsState, updateDay, updateGoal, syncEnabled, toggleSync, isSyncing, forceSyncToCloud } = useHabits();
 
@@ -44,18 +37,6 @@ const Index = () => {
     alcohol: { month: viewMonth, year: viewYear },
     meditation: { month: viewMonth, year: viewYear }
   });
-
-  // Don't render if still loading auth or user not authenticated
-  if (authLoading || !user) {
-    return (
-      <div className="min-h-screen bg-blue-light/10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-dark mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
     updateDay(date, type, data);
@@ -132,6 +113,11 @@ const Index = () => {
     navigate('/auth');
   };
 
+  // Handle back to dashboard
+  const handleBackToDashboard = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
       <Toaster />
@@ -139,7 +125,28 @@ const Index = () => {
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-blue-dark">Habit Tracker</h1>
+          <div className="flex items-center gap-4">
+            {/* Back to Dashboard Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBackToDashboard}
+                    className="text-gray-600 hover:text-blue-600"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Back to Dashboard</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <h1 className="text-2xl md:text-3xl font-bold text-blue-dark">Habit Tracker</h1>
+          </div>
           
           <div className="flex items-center gap-2">
             {/* Save Changes Button */}
@@ -171,11 +178,11 @@ const Index = () => {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 text-sm text-gray-600">
                     <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">{user.email}</span>
+                    <span className="hidden sm:inline">{user?.email}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Logged in as {user.email}</p>
+                  <p>Logged in as {user?.email}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

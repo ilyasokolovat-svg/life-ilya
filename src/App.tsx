@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
@@ -23,7 +23,32 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+// Protected Route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-blue-light/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-dark mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// App Routes component that has access to auth context
+const AppRoutes = () => {
+  const { user, loading } = useAuth();
+  
   // Log connection status
   useEffect(() => {
     const checkConnection = async () => {
@@ -42,6 +67,44 @@ const App = () => {
     checkConnection();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-blue-light/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-dark mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      
+      {/* Protected routes */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/habits" element={
+        <ProtectedRoute>
+          <Index />
+        </ProtectedRoute>
+      } />
+      <Route path="/goals/:category" element={
+        <ProtectedRoute>
+          <Goals />
+        </ProtectedRoute>
+      } />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App = () => {
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -50,13 +113,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/habits" element={<Index />} />
-                <Route path="/goals/:category" element={<Goals />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
