@@ -39,7 +39,19 @@ export const getMonthGoals = (state: HabitsState, year: number, month: number): 
     return createDefaultGoals();
   }
   
-  return state.goals[monthKey];
+  // Ensure all habit types have goals with the updated defaults
+  const monthGoals = state.goals[monthKey];
+  const defaultGoals = createDefaultGoals();
+  const completeGoals: Record<HabitType, HabitGoal> = { ...defaultGoals };
+  
+  // Override with existing goals if they exist
+  Object.keys(monthGoals).forEach(habitType => {
+    if (monthGoals[habitType as HabitType]) {
+      completeGoals[habitType as HabitType] = monthGoals[habitType as HabitType];
+    }
+  });
+  
+  return completeGoals;
 };
 
 // Get day percentage completion
@@ -260,17 +272,17 @@ export const createEmptyDayData = (date: Date): DayData => {
   };
 };
 
-// Create default goals
+// Create default goals with updated values
 export const createDefaultGoals = () => {
   return {
-    gym: { frequency: 3, notes: "" },
-    alcohol: { frequency: 4, notes: "" },
-    sleep: { frequency: 7, notes: "7+ hours of sleep per day" },
-    meditation: { frequency: 5, notes: "" }
+    gym: { frequency: 12, notes: "" },
+    alcohol: { frequency: 25, notes: "" },
+    sleep: { frequency: 20, notes: "" },
+    meditation: { frequency: 25, notes: "" }
   };
 };
 
-// Create default monthly goals with the specified values
+// Create default monthly goals with the updated values
 export const createDefaultMonthlyGoals = (): MonthlyGoals => {
   const defaultGoals: Record<HabitType, HabitGoal> = {
     gym: { frequency: 12, notes: "" },

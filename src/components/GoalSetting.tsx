@@ -14,7 +14,7 @@ interface GoalSettingProps {
   onUpdateGoal: (type: HabitType, goal: HabitGoal) => void;
 }
 
-// Default goal with the new values
+// Updated default goal with the new values
 const createDefaultGoal = (habitType: HabitType): HabitGoal => {
   const defaultFrequencies = {
     gym: 12,
@@ -29,7 +29,7 @@ const createDefaultGoal = (habitType: HabitType): HabitGoal => {
   };
 };
 
-// Ensure all habit types have goals
+// Ensure all habit types have goals with updated defaults
 const ensureAllGoals = (goals: Record<HabitType, HabitGoal>): Record<HabitType, HabitGoal> => {
   const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
   const completeGoals = { ...goals };
@@ -49,9 +49,10 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
     ensureAllGoals(goals)
   );
   
-  // Update local state when props change, ensuring all goals exist
+  // Update local state when props change, ensuring all goals exist with updated defaults
   useEffect(() => {
-    setLocalGoals(ensureAllGoals(goals));
+    const ensuredGoals = ensureAllGoals(goals);
+    setLocalGoals(ensuredGoals);
   }, [goals, viewMonth, viewYear]);
 
   const getHabitIcon = (habitType: HabitType) => {
