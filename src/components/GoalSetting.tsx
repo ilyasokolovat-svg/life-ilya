@@ -29,30 +29,29 @@ const createDefaultGoal = (habitType: HabitType): HabitGoal => {
   };
 };
 
-// Ensure all habit types have goals with updated defaults
-const ensureAllGoals = (goals: Record<HabitType, HabitGoal>): Record<HabitType, HabitGoal> => {
-  const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
-  const completeGoals = { ...goals };
-  
-  habitTypes.forEach(type => {
-    if (!completeGoals[type]) {
-      completeGoals[type] = createDefaultGoal(type);
-    }
+const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, onUpdateGoal }) => {
+  // Local state to manage form values independently
+  const [localGoals, setLocalGoals] = useState<Record<HabitType, HabitGoal>>(() => {
+    const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
+    const initialGoals: Record<HabitType, HabitGoal> = {} as Record<HabitType, HabitGoal>;
+    
+    habitTypes.forEach(type => {
+      initialGoals[type] = goals[type] || createDefaultGoal(type);
+    });
+    
+    return initialGoals;
   });
   
-  return completeGoals;
-};
-
-const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, onUpdateGoal }) => {
-  // Ensure goals are properly initialized and local state for form values
-  const [localGoals, setLocalGoals] = useState<Record<HabitType, HabitGoal>>(() => 
-    ensureAllGoals(goals)
-  );
-  
-  // Update local state when props change, ensuring all goals exist with updated defaults
+  // Update local state when props change
   useEffect(() => {
-    const ensuredGoals = ensureAllGoals(goals);
-    setLocalGoals(ensuredGoals);
+    const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
+    const updatedGoals: Record<HabitType, HabitGoal> = {} as Record<HabitType, HabitGoal>;
+    
+    habitTypes.forEach(type => {
+      updatedGoals[type] = goals[type] || createDefaultGoal(type);
+    });
+    
+    setLocalGoals(updatedGoals);
   }, [goals, viewMonth, viewYear]);
 
   const getHabitIcon = (habitType: HabitType) => {
@@ -91,19 +90,20 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
   };
 
   const handleFrequencyChange = (type: HabitType, value: string) => {
+    const frequency = parseInt(value) || 0;
     const currentGoal = localGoals[type] || createDefaultGoal(type);
     const newGoal = {
       ...currentGoal,
-      frequency: parseInt(value) || 0
+      frequency
     };
     
-    // Update local state
-    setLocalGoals({
-      ...localGoals,
+    // Update local state immediately for UI responsiveness
+    setLocalGoals(prev => ({
+      ...prev,
       [type]: newGoal
-    });
+    }));
     
-    // Immediately update parent state
+    // Update parent state
     onUpdateGoal(type, newGoal);
   };
 
@@ -114,13 +114,13 @@ const GoalSetting: React.FC<GoalSettingProps> = ({ goals, viewMonth, viewYear, o
       notes: value
     };
     
-    // Update local state immediately
-    setLocalGoals({
-      ...localGoals,
+    // Update local state immediately for UI responsiveness
+    setLocalGoals(prev => ({
+      ...prev,
       [type]: newGoal
-    });
+    }));
     
-    // Also update parent state immediately so changes are saved
+    // Update parent state
     onUpdateGoal(type, newGoal);
   };
 

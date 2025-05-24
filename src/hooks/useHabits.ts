@@ -166,7 +166,7 @@ export default function useHabits() {
   // Update a goal for a specific habit type
   const updateGoal = async (type: HabitType, goal: HabitGoal, year: number, month: number) => {
     try {
-      const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+      const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
       
       // Get current goals or default
       const currentMonthGoals = habitsState.goals[monthKey] || createDefaultMonthlyGoals()[Object.keys(createDefaultMonthlyGoals())[0]];
@@ -209,10 +209,7 @@ export default function useHabits() {
         }
       }
 
-      // Only show toast for completed updates, not during typing
-      if (goal.frequency !== undefined) {
-        toast.success('Goal updated!', { duration: 1500 });
-      }
+      toast.success('Goal updated!', { duration: 1500 });
     } catch (error) {
       console.error('Error updating goal:', error);
       toast.error('Failed to save your goal');
@@ -242,15 +239,11 @@ export default function useHabits() {
       console.log('Force syncing all local data to cloud...');
       console.log('Current habits state:', habitsState);
       
-      // First, clear existing data for this user to avoid conflicts
-      await supabase.from('habit_days').delete().eq('user_id', user.id);
-      await supabase.from('habit_goals').delete().eq('user_id', user.id);
-      
-      // Sync all habit days using individual inserts to avoid batch conflicts
+      // Sync all habit days using upsert to avoid duplicate key errors
       for (const [dateISO, dayData] of Object.entries(habitsState.days)) {
         const { error } = await supabase
           .from('habit_days')
-          .insert({
+          .upsert({
             user_id: user.id,
             date: dateISO,
             habit_data: dayData as any
@@ -262,12 +255,12 @@ export default function useHabits() {
         }
       }
 
-      // Sync all goals using individual inserts
+      // Sync all goals using upsert to avoid duplicate key errors
       for (const [monthKey, monthGoals] of Object.entries(habitsState.goals)) {
         console.log(`Syncing goals for ${monthKey}:`, monthGoals);
         const { error } = await supabase
           .from('habit_goals')
-          .insert({
+          .upsert({
             user_id: user.id,
             month_key: monthKey,
             goals_data: monthGoals as any
