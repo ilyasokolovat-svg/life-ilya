@@ -1,19 +1,23 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar, Save } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { useGoalsData } from "@/hooks/useGoalsData";
 
 interface WeeklyTimelineProps {
   subcategories: string[];
 }
 
 const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
+  const { category } = useParams<{ category: string }>();
+  const { weeklyData, monthlyReviews, saveWeeklyData, saveMonthlyReview, isSaving } = useGoalsData(category || '');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [weeklyData, setWeeklyData] = useState<Record<string, Record<string, { plan: string; fact: string }>>>({});
-  const [monthlyReview, setMonthlyReview] = useState<Record<string, Record<string, string>>>({});
+  const [localWeeklyData, setLocalWeeklyData] = useState<Record<string, Record<string, { plan: string; fact: string }>>>({});
+  const [localMonthlyReview, setLocalMonthlyReview] = useState<Record<string, Record<string, string>>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRefs = useRef<HTMLDivElement[]>([]);
 
@@ -21,6 +25,39 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
+
+  // Load data from database into local state
+  useEffect(() => {
+    const monthKey = `${selectedYear}-${selectedMonth}`;
+    const loadedWeeklyData: Record<string, Record<string, { plan: string; fact: string }>> = {};
+    const loadedMonthlyData: Record<string, Record<string, string>> = {};
+    
+    subcategories.forEach(subcategory => {
+      loadedWeeklyData[subcategory] = {};
+      loadedMonthlyData[subcategory] = {};
+      
+      // Load weekly data
+      weeklyData.forEach(week => {
+        if (week.subcategory === subcategory && week.month_key === monthKey) {
+          const weekKey = `${monthKey}-week-${week.week_index}`;
+          loadedWeeklyData[subcategory][weekKey] = {
+            plan: week.plan_text || '',
+            fact: week.fact_text || ''
+          };
+        }
+      });
+      
+      // Load monthly reviews
+      monthlyReviews.forEach(review => {
+        if (review.subcategory === subcategory && review.month_key === monthKey) {
+          loadedMonthlyData[subcategory][monthKey] = review.review_text || '';
+        }
+      });
+    });
+    
+    setLocalWeeklyData(loadedWeeklyData);
+    setLocalMonthlyReview(loadedMonthlyData);
+  }, [weeklyData, monthlyReviews, subcategories, selectedMonth, selectedYear]);
 
   const getWeeksInMonth = (month: number, year: number) => {
     const weeks = [];
@@ -52,7 +89,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
 
   const updateWeeklyData = (subcategory: string, weekIndex: number, type: 'plan' | 'fact', value: string) => {
     const weekKey = `${monthKey}-week-${weekIndex}`;
-    setWeeklyData(prev => ({
+    setLocalWeeklyData(prev => ({
       ...prev,
       [subcategory]: {
         ...prev[subcategory],
@@ -65,13 +102,71 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
   };
 
   const updateMonthlyReview = (subcategory: string, value: string) => {
-    setMonthlyReview(prev => ({
+    setLocalMonthlyReview(prev => ({
       ...prev,
       [subcategory]: {
         ...prev[subcategory],
         [monthKey]: value
       }
     }));
+  };
+
+  const handleSaveProgress = async () => {
+    if (!category) return;
+    
+    const savePromises: Promise<void>[] = [];
+    
+    // Save weekly data
+    Object.entries(localWeeklyData).forEach(([subcategory, weeks]) => {
+      Object.entries(weeks).forEach(([weekKey, data]) => {
+        const weekIndex = parseInt(weekKey.split('-week-')[1]);
+        
+        if (data.plan || data.fact) {
+          savePromises.push(
+            new Promise<void>((resolve, reject) => {
+              saveWeeklyData({
+                category,
+                subcategory,
+                month_key: monthKey,
+                week_index: weekIndex,
+                plan_text: data.plan,
+                fact_text: data.fact,
+              }, {
+                onSuccess: () => resolve(),
+                onError: reject
+              });
+            })
+          );
+        }
+      });
+    });
+    
+    // Save monthly reviews
+    Object.entries(localMonthlyReview).forEach(([subcategory, reviews]) => {
+      Object.entries(reviews).forEach(([reviewMonthKey, reviewText]) => {
+        if (reviewText && reviewText.trim()) {
+          savePromises.push(
+            new Promise<void>((resolve, reject) => {
+              saveMonthlyReview({
+                category,
+                subcategory,
+                month_key: reviewMonthKey,
+                review_text: reviewText,
+              }, {
+                onSuccess: () => resolve(),
+                onError: reject
+              });
+            })
+          );
+        }
+      });
+    });
+    
+    try {
+      await Promise.all(savePromises);
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
   };
 
   const handleScroll = (scrollLeft: number) => {
@@ -228,7 +323,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                       >
                         {weeks.map((week, weekIndex) => {
                           const weekKey = `${monthKey}-week-${weekIndex}`;
-                          const weekData = weeklyData[subcategory]?.[weekKey] || { plan: "", fact: "" };
+                          const weekData = localWeeklyData[subcategory]?.[weekKey] || { plan: "", fact: "" };
                           
                           return (
                             <div key={weekIndex} className="flex-shrink-0 w-80">
@@ -274,7 +369,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                     )}
                     <Textarea
                       placeholder={`Monthly reflection for ${group.items.length === 1 ? group.name : subcategory}...`}
-                      value={monthlyReview[subcategory]?.[monthKey] || ""}
+                      value={localMonthlyReview[subcategory]?.[monthKey] || ""}
                       onChange={(e) => updateMonthlyReview(subcategory, e.target.value)}
                       className="min-h-[80px] bg-white"
                     />
@@ -285,9 +380,13 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
+            <Button 
+              onClick={handleSaveProgress}
+              disabled={isSaving}
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+            >
               <Save className="w-4 h-4 mr-2" />
-              Save Progress
+              {isSaving ? 'Saving...' : 'Save Progress'}
             </Button>
           </div>
         </CardContent>

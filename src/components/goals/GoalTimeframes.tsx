@@ -1,18 +1,22 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Save, Calendar, Target, Eye, EyeOff } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { useGoalsData } from "@/hooks/useGoalsData";
 
 interface GoalTimeframesProps {
   subcategories: string[];
 }
 
 const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
-  const [goals, setGoals] = useState<Record<string, Record<string, any>>>({});
+  const { category } = useParams<{ category: string }>();
+  const { goalsData, saveGoal, isSaving } = useGoalsData(category || '');
+  const [localGoals, setLocalGoals] = useState<Record<string, Record<string, any>>>({});
   const [hidePastQuarters, setHidePastQuarters] = useState(false);
 
   const currentDate = new Date();
@@ -32,8 +36,34 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
     { key: "year_2030", label: "2030", color: "border-gray-200 bg-gray-50" }
   ];
 
+  // Load data from database into local state
+  useEffect(() => {
+    const loadedGoals: Record<string, Record<string, any>> = {};
+    
+    subcategories.forEach(subcategory => {
+      loadedGoals[subcategory] = {};
+      
+      goalsData.forEach(goal => {
+        if (goal.subcategory === subcategory) {
+          if (!loadedGoals[subcategory][goal.period_key]) {
+            loadedGoals[subcategory][goal.period_key] = {};
+          }
+          
+          if (goal.period_type === 'year') {
+            loadedGoals[subcategory][goal.period_key].goal = goal.planned_goal || '';
+          } else {
+            loadedGoals[subcategory][goal.period_key].planned = goal.planned_goal || '';
+            loadedGoals[subcategory][goal.period_key].fact = goal.actual_result || '';
+          }
+        }
+      });
+    });
+    
+    setLocalGoals(loadedGoals);
+  }, [goalsData, subcategories]);
+
   const updateGoal = (subcategory: string, period: string, type: string, value: string) => {
-    setGoals(prev => ({
+    setLocalGoals(prev => ({
       ...prev,
       [subcategory]: {
         ...prev[subcategory],
@@ -43,6 +73,81 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
         }
       }
     }));
+  };
+
+  const handleSaveAllGoals = async () => {
+    if (!category) return;
+    
+    const savePromises: Promise<void>[] = [];
+    
+    Object.entries(localGoals).forEach(([subcategory, periods]) => {
+      Object.entries(periods).forEach(([periodKey, data]) => {
+        const isYear = years.some(y => y.key === periodKey);
+        
+        if (isYear) {
+          // For years, save as goal
+          if (data.goal && data.goal.trim()) {
+            savePromises.push(
+              new Promise<void>((resolve, reject) => {
+                saveGoal({
+                  category,
+                  subcategory,
+                  period_key: periodKey,
+                  period_type: 'year',
+                  planned_goal: data.goal,
+                }, {
+                  onSuccess: () => resolve(),
+                  onError: reject
+                });
+              })
+            );
+          }
+        } else {
+          // For quarters, save both planned and fact
+          if (data.planned && data.planned.trim()) {
+            savePromises.push(
+              new Promise<void>((resolve, reject) => {
+                saveGoal({
+                  category,
+                  subcategory,
+                  period_key: periodKey,
+                  period_type: 'quarter',
+                  planned_goal: data.planned,
+                  actual_result: data.fact || '',
+                }, {
+                  onSuccess: () => resolve(),
+                  onError: reject
+                });
+              })
+            );
+          }
+          
+          if (data.fact && data.fact.trim()) {
+            savePromises.push(
+              new Promise<void>((resolve, reject) => {
+                saveGoal({
+                  category,
+                  subcategory,
+                  period_key: periodKey,
+                  period_type: 'quarter',
+                  planned_goal: data.planned || '',
+                  actual_result: data.fact,
+                }, {
+                  onSuccess: () => resolve(),
+                  onError: reject
+                });
+              })
+            );
+          }
+        }
+      });
+    });
+    
+    try {
+      await Promise.all(savePromises);
+    } catch (error) {
+      console.error('Error saving goals:', error);
+    }
   };
 
   const isPastQuarter = (quarter: number, year: number) => {
@@ -140,7 +245,7 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                                 <div className="flex-1">
                                   <Textarea
                                     placeholder="Plan..."
-                                    value={goals[subcategory]?.[period.key]?.planned || ""}
+                                    value={localGoals[subcategory]?.[period.key]?.planned || ""}
                                     onChange={(e) => updateGoal(subcategory, period.key, 'planned', e.target.value)}
                                     className="min-h-[80px] text-xs resize-none overflow-hidden"
                                     style={{
@@ -160,8 +265,8 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
                                     placeholder="Fact..."
                                     value={
                                       years.some(y => y.key === period.key) 
-                                        ? goals[subcategory]?.[period.key]?.goal || ""
-                                        : goals[subcategory]?.[period.key]?.fact || ""
+                                        ? localGoals[subcategory]?.[period.key]?.goal || ""
+                                        : localGoals[subcategory]?.[period.key]?.fact || ""
                                     }
                                     onChange={(e) => updateGoal(
                                       subcategory, 
@@ -201,9 +306,13 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
       </div>
 
       <div className="flex justify-end pt-4">
-        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+        <Button 
+          onClick={handleSaveAllGoals}
+          disabled={isSaving}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+        >
           <Save className="w-4 h-4 mr-2" />
-          Save All Goals
+          {isSaving ? 'Saving...' : 'Save All Goals'}
         </Button>
       </div>
     </div>

@@ -1,13 +1,17 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WeeklyTimeline from "./WeeklyTimeline";
+import { useParams } from "react-router-dom";
+import { useGoalsData } from "@/hooks/useGoalsData";
 
 interface WeeklyTrackerProps {
   subcategories: string[];
 }
 
 const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
+  const { category } = useParams<{ category: string }>();
+  const { weeklyData } = useGoalsData(category || '');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [satisfactionData, setSatisfactionData] = useState<Record<string, Record<string, boolean>>>({});

@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      goals_data: {
+        Row: {
+          actual_result: string | null
+          category: string
+          created_at: string
+          id: string
+          period_key: string
+          period_type: string
+          planned_goal: string | null
+          subcategory: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_result?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          period_key: string
+          period_type: string
+          planned_goal?: string | null
+          subcategory: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_result?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          period_key?: string
+          period_type?: string
+          planned_goal?: string | null
+          subcategory?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habit_days: {
         Row: {
           created_at: string
@@ -60,6 +99,78 @@ export type Database = {
           month_key?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_reviews: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          month_key: string
+          review_text: string | null
+          subcategory: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          month_key: string
+          review_text?: string | null
+          subcategory: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          month_key?: string
+          review_text?: string | null
+          subcategory?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_tracking: {
+        Row: {
+          category: string
+          created_at: string
+          fact_text: string | null
+          id: string
+          month_key: string
+          plan_text: string | null
+          subcategory: string
+          updated_at: string
+          user_id: string
+          week_index: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          fact_text?: string | null
+          id?: string
+          month_key: string
+          plan_text?: string | null
+          subcategory: string
+          updated_at?: string
+          user_id: string
+          week_index: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          fact_text?: string | null
+          id?: string
+          month_key?: string
+          plan_text?: string | null
+          subcategory?: string
+          updated_at?: string
+          user_id?: string
+          week_index?: number
         }
         Relationships: []
       }
