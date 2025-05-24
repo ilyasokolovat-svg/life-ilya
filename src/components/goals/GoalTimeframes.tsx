@@ -95,7 +95,7 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="space-y-6">
           {filteredQuarters.map((quarter) => (
             <Card key={quarter.key} className={`${quarter.color} border-2`}>
               <CardHeader className="pb-3">

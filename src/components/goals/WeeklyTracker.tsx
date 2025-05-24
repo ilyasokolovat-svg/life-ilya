@@ -112,31 +112,40 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-1">
-                    {weeks.map((week, weekIndex) => {
-                      const weekKey = `${selectedYear}-${selectedMonth}-${week.weekNumber}`;
-                      const isSatisfied = satisfactionData[subcategory]?.[weekKey] || false;
-                      
-                      return (
-                        <div key={weekIndex} className="flex flex-col items-center space-y-1">
-                          <div className="text-xs text-gray-500 text-center mb-1">
-                            W{week.weekNumber}
-                          </div>
+                  <div className="w-full">
+                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mb-2">
+                      {weeks.map((week, weekIndex) => (
+                        <div key={weekIndex} className="text-xs text-gray-500 text-center">
+                          W{week.weekNumber}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mb-2">
+                      {weeks.map((week, weekIndex) => {
+                        const weekKey = `${selectedYear}-${selectedMonth}-${week.weekNumber}`;
+                        const isSatisfied = satisfactionData[subcategory]?.[weekKey] || false;
+                        
+                        return (
                           <button
+                            key={weekIndex}
                             onClick={() => handleSatisfactionToggle(subcategory, weekKey)}
-                            className={`w-12 h-1 transition-all duration-200 hover:h-1.5 ${
+                            className={`h-2 w-full transition-all duration-200 hover:h-3 rounded-sm ${
                               isSatisfied 
                                 ? 'bg-green-500 hover:bg-green-600' 
                                 : 'bg-gray-300 hover:bg-gray-400'
                             }`}
                             title={`Week ${week.weekNumber} (${week.dateRange}) - ${isSatisfied ? 'Satisfied' : 'Not marked'}`}
                           />
-                          <div className="text-xs text-gray-400 text-center" style={{ fontSize: '10px' }}>
-                            {week.dateRange}
-                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                      {weeks.map((week, weekIndex) => (
+                        <div key={weekIndex} className="text-xs text-gray-400 text-center" style={{ fontSize: '10px' }}>
+                          {week.dateRange}
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
