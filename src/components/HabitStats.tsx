@@ -40,49 +40,70 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
     : null;
 
-  // Calculate money saved for alcohol category
+  // Calculate money saved for alcohol category - completely rewritten
   const calculateMoneySaved = () => {
-    if (habitType !== 'alcohol' || !habitsState || !habitsState.days) return 0;
+    if (habitType !== 'alcohol' || !habitsState?.days) {
+      console.log('Not alcohol habit or no habits data available');
+      return 0;
+    }
     
     let moneySaved = 0;
-    const monthStart = new Date(viewYear, viewMonth, 1);
-    const monthEnd = new Date(viewYear, viewMonth + 1, 0);
     const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today for comparison
     
-    console.log('Calculating money saved for alcohol category');
-    console.log('Month range:', monthStart, 'to', monthEnd);
-    console.log('Available days in habitsState:', Object.keys(habitsState.days));
+    console.log('=== MONEY SAVED CALCULATION START ===');
+    console.log('Current date:', today);
+    console.log('View month/year:', viewMonth, viewYear);
+    console.log('Available habit days:', Object.keys(habitsState.days));
     
-    // Iterate through all days in the habits state
-    Object.entries(habitsState.days).forEach(([dateKey, dayData]: [string, any]) => {
+    // Go through each day in the habits data
+    Object.keys(habitsState.days).forEach(dateKey => {
       const dayDate = new Date(dateKey);
+      const dayData = habitsState.days[dateKey];
       
       // Check if this day is in our target month and is in the past (including today)
-      if (dayDate >= monthStart && dayDate <= monthEnd && dayDate <= today) {
-        const alcoholData = dayData.alcohol;
+      if (dayDate.getMonth() === viewMonth && 
+          dayDate.getFullYear() === viewYear && 
+          dayDate <= today) {
+        
+        console.log(`Checking day ${dateKey}:`, dayData);
+        
+        // Get alcohol data for this day
+        const alcoholData = dayData?.alcohol;
         
         if (alcoholData) {
-          console.log(`Day ${dateKey}: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
+          const planned = alcoholData.planned;
+          const completed = alcoholData.completed;
           
-          if (alcoholData.planned && !alcoholData.completed) {
-            // Planned to drink but didn't - saved money
+          console.log(`  Alcohol data - planned: ${planned}, completed: ${completed}`);
+          
+          // Logic: 
+          // - If planned but not completed: +$35 (saved money by not drinking as planned)
+          // - If not planned but completed: -$35 (spent money on unexpected drinking)
+          if (planned && !completed) {
             moneySaved += 35;
-            console.log(`Added $35 for day ${dateKey} (planned but didn't drink)`);
-          } else if (!alcoholData.planned && alcoholData.completed) {
-            // Didn't plan to drink but did - spent unexpected money
+            console.log(`  +$35 added (planned but didn't drink)`);
+          } else if (!planned && completed) {
             moneySaved -= 35;
-            console.log(`Subtracted $35 for day ${dateKey} (unplanned drinking)`);
+            console.log(`  -$35 deducted (unplanned drinking)`);
+          } else {
+            console.log(`  No money change (planned=${planned}, completed=${completed})`);
           }
+        } else {
+          console.log(`  No alcohol data for this day`);
         }
+      } else {
+        console.log(`Skipping day ${dateKey} - not in target month or in future`);
       }
     });
     
-    console.log('Total money saved/lost:', moneySaved);
+    console.log('=== FINAL MONEY SAVED TOTAL:', moneySaved, '===');
     return moneySaved;
   };
 
   const moneySaved = calculateMoneySaved();
   
+  // Get habit icon
   const getHabitIcon = () => {
     switch (habitType) {
       case "gym":
@@ -98,6 +119,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     }
   };
 
+  // Get habit title
   const getHabitTitle = () => {
     switch (habitType) {
       case "gym":
