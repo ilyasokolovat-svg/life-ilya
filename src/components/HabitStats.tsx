@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { HabitStats as HabitStatsType, HabitType, HabitGoal, WeeklyStats, DayData } from "@/types/habit";
@@ -41,8 +42,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
     : null;
 
-  // Calculate money saved for alcohol category - fixed version
-  const calculateMoneySaved = () => {
+  // Calculate money saved for alcohol category using useMemo to ensure reactivity
+  const moneySaved = useMemo(() => {
     console.log('=== MONEY SAVED CALCULATION DEBUG ===');
     console.log('Habit type:', habitType);
     console.log('Habits state:', habitsState);
@@ -58,7 +59,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({
       return 0;
     }
     
-    let moneySaved = 0;
+    let totalMoneySaved = 0;
     const today = new Date();
     
     console.log('Processing days for month/year:', viewMonth, viewYear);
@@ -98,10 +99,10 @@ const HabitStats: React.FC<HabitStatsProps> = ({
           // - If left checkbox (planned) is unticked AND right checkbox (completed) is ticked: +$35 (saved money)
           // - If left checkbox (planned) is ticked AND right checkbox (completed) is unticked: -$35 (lost money)
           if (!planned && completed) {
-            moneySaved += 35;
+            totalMoneySaved += 35;
             console.log(`+$35 added (didn't plan to drink but did)`);
           } else if (planned && !completed) {
-            moneySaved -= 35;
+            totalMoneySaved -= 35;
             console.log(`-$35 deducted (planned to not drink but drank anyway)`);
           } else {
             console.log(`No money change (planned=${planned}, completed=${completed})`);
@@ -114,11 +115,9 @@ const HabitStats: React.FC<HabitStatsProps> = ({
       }
     });
     
-    console.log('=== FINAL MONEY SAVED TOTAL:', moneySaved, '===');
-    return moneySaved;
-  };
-
-  const moneySaved = calculateMoneySaved();
+    console.log('=== FINAL MONEY SAVED TOTAL:', totalMoneySaved, '===');
+    return totalMoneySaved;
+  }, [habitType, habitsState, viewMonth, viewYear]); // Dependencies to trigger recalculation
   
   // Get habit icon
   const getHabitIcon = () => {
@@ -321,3 +320,4 @@ const HabitStats: React.FC<HabitStatsProps> = ({
 };
 
 export default HabitStats;
+
