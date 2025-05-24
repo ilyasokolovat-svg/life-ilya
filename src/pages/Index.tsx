@@ -13,7 +13,7 @@ import {
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
-import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User, Save } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ const Index = () => {
   }, [user, authLoading, navigate]);
 
   // Use our hybrid habits hook
-  const { habitsState, updateDay, updateGoal, syncEnabled, toggleSync, isSyncing } = useHabits();
+  const { habitsState, updateDay, updateGoal, syncEnabled, toggleSync, isSyncing, forceSyncToCloud } = useHabits();
 
   // Track current view month/year for charts and calendar
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
@@ -121,6 +121,11 @@ const Index = () => {
     toggleSync(!syncEnabled);
   };
 
+  // Handle save changes
+  const handleSaveChanges = () => {
+    forceSyncToCloud();
+  };
+
   // Handle sign out
   const handleSignOut = async () => {
     await signOut();
@@ -137,6 +142,29 @@ const Index = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-blue-dark">Habit Tracker</h1>
           
           <div className="flex items-center gap-2">
+            {/* Save Changes Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleSaveChanges}
+                    disabled={!syncEnabled || isSyncing}
+                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {isSyncing ? 'Saving...' : 'Save Changes'}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Save all changes from this device to cloud</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             {/* User info */}
             <TooltipProvider>
               <Tooltip>

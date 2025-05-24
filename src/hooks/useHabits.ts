@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { HabitsState, DayData, HabitType, HabitData, HabitGoal } from "@/types/habit";
 import { formatDateISO, createEmptyDayData, createDefaultMonthlyGoals } from "@/utils/habitUtils";
@@ -227,6 +226,62 @@ export default function useHabits() {
     }
   };
 
+  // Force sync all local data to cloud (overrides cloud data)
+  const forceSyncToCloud = async () => {
+    if (!user || !syncEnabled) {
+      toast.error('Cloud sync is not enabled');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      console.log('Force syncing all local data to cloud...');
+      
+      // Sync all habit days
+      const dayPromises = Object.entries(habitsState.days).map(async ([dateISO, dayData]) => {
+        const { error } = await supabase
+          .from('habit_days')
+          .upsert({
+            user_id: user.id,
+            date: dateISO,
+            habit_data: dayData as any
+          });
+          
+        if (error) {
+          console.error(`Error syncing day ${dateISO}:`, error);
+          throw error;
+        }
+      });
+
+      // Sync all goals
+      const goalPromises = Object.entries(habitsState.goals).map(async ([monthKey, monthGoals]) => {
+        const { error } = await supabase
+          .from('habit_goals')
+          .upsert({
+            user_id: user.id,
+            month_key: monthKey,
+            goals_data: monthGoals as any
+          });
+          
+        if (error) {
+          console.error(`Error syncing goals for ${monthKey}:`, error);
+          throw error;
+        }
+      });
+
+      // Wait for all syncs to complete
+      await Promise.all([...dayPromises, ...goalPromises]);
+      
+      toast.success('All changes saved to cloud!', { duration: 2000 });
+      console.log('Force sync completed successfully');
+    } catch (error) {
+      console.error('Error during force sync:', error);
+      toast.error('Failed to save changes to cloud');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return {
     habitsState,
     updateDay,
@@ -234,6 +289,7 @@ export default function useHabits() {
     isSyncing,
     syncEnabled,
     toggleSync,
+    forceSyncToCloud,
     isLoading: false
   };
 }
