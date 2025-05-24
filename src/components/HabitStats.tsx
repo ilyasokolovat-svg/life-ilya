@@ -42,7 +42,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({
 
   // Calculate money saved for alcohol category
   const calculateMoneySaved = () => {
-    if (habitType !== 'alcohol' || !habitsState) return 0;
+    if (habitType !== 'alcohol' || !habitsState || !habitsState.days) return 0;
     
     let moneySaved = 0;
     const monthStart = new Date(viewYear, viewMonth, 1);
@@ -53,35 +53,29 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     console.log('Month range:', monthStart, 'to', monthEnd);
     console.log('Available days in habitsState:', Object.keys(habitsState.days));
     
-    // Filter days for the specific month that are in the past (including today)
-    const days = Object.values(habitsState.days).filter((day: any) => {
-      const dayDate = new Date(day.date);
-      return dayDate >= monthStart && dayDate <= monthEnd && dayDate <= today;
-    });
-    
-    console.log('Filtered days for calculation:', days.length);
-    
-    // Calculate money saved/lost based on the logic:
-    // - If planned but not completed: +$35 (saved money by not drinking)
-    // - If not planned but completed: -$35 (spent money on unexpected drinking)
-    for (const day of days) {
-      const dayData = day as DayData;
-      const alcoholData = dayData.alcohol;
+    // Iterate through all days in the habits state
+    Object.entries(habitsState.days).forEach(([dateKey, dayData]: [string, any]) => {
+      const dayDate = new Date(dateKey);
       
-      if (alcoholData) {
-        console.log(`Day ${dayData.date}: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
+      // Check if this day is in our target month and is in the past (including today)
+      if (dayDate >= monthStart && dayDate <= monthEnd && dayDate <= today) {
+        const alcoholData = dayData.alcohol;
         
-        if (alcoholData.planned && !alcoholData.completed) {
-          // Planned to drink but didn't - saved money
-          moneySaved += 35;
-          console.log(`Added $35 for day ${dayData.date} (planned but didn't drink)`);
-        } else if (!alcoholData.planned && alcoholData.completed) {
-          // Didn't plan to drink but did - spent unexpected money
-          moneySaved -= 35;
-          console.log(`Subtracted $35 for day ${dayData.date} (unplanned drinking)`);
+        if (alcoholData) {
+          console.log(`Day ${dateKey}: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
+          
+          if (alcoholData.planned && !alcoholData.completed) {
+            // Planned to drink but didn't - saved money
+            moneySaved += 35;
+            console.log(`Added $35 for day ${dateKey} (planned but didn't drink)`);
+          } else if (!alcoholData.planned && alcoholData.completed) {
+            // Didn't plan to drink but did - spent unexpected money
+            moneySaved -= 35;
+            console.log(`Subtracted $35 for day ${dateKey} (unplanned drinking)`);
+          }
         }
       }
-    }
+    });
     
     console.log('Total money saved/lost:', moneySaved);
     return moneySaved;
