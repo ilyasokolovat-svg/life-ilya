@@ -2,16 +2,9 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WeeklyTimeline from "./WeeklyTimeline";
-import GoalsWeeklyChart from "./GoalsWeeklyChart";
 
 interface WeeklyTrackerProps {
   subcategories: string[];
-}
-
-interface WeeklyGoalStats {
-  weekStart: Date;
-  planned: number;
-  completed: number;
 }
 
 const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
@@ -24,23 +17,24 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  // Generate mock data for subcategories
-  const generateMockData = (subcategory: string): WeeklyGoalStats[] => {
+  // Get weeks in the selected month
+  const getWeeksInMonth = (month: number, year: number) => {
     const weeks = [];
-    const firstDay = new Date(selectedYear, selectedMonth, 1);
-    const lastDay = new Date(selectedYear, selectedMonth + 1, 0);
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
     
     let currentWeekStart = new Date(firstDay);
     currentWeekStart.setDate(firstDay.getDate() - firstDay.getDay() + 1); // Start from Monday
     
     while (currentWeekStart <= lastDay) {
-      const planned = Math.floor(Math.random() * 5) + 3;
-      const completed = Math.floor(Math.random() * planned);
+      const weekEnd = new Date(currentWeekStart);
+      weekEnd.setDate(currentWeekStart.getDate() + 6);
       
       weeks.push({
         weekStart: new Date(currentWeekStart),
-        planned,
-        completed
+        weekEnd,
+        weekNumber: weeks.length + 1,
+        dateRange: `${currentWeekStart.getDate()}/${currentWeekStart.getMonth() + 1} - ${weekEnd.getDate()}/${weekEnd.getMonth() + 1}`
       });
       
       currentWeekStart.setDate(currentWeekStart.getDate() + 7);
@@ -59,16 +53,11 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
     }));
   };
 
+  const weeks = getWeeksInMonth(selectedMonth, selectedYear);
+
   // Generate color for each subcategory
   const getSubcategoryColor = (index: number) => {
-    const colors = [
-      { primary: '#3b82f6', secondary: '#dbeafe' }, // Blue
-      { primary: '#10b981', secondary: '#d1fae5' }, // Green
-      { primary: '#f59e0b', secondary: '#fef3c7' }, // Amber
-      { primary: '#ef4444', secondary: '#fee2e2' }, // Red
-      { primary: '#8b5cf6', secondary: '#ede9fe' }, // Violet
-      { primary: '#06b6d4', secondary: '#cffafe' }, // Cyan
-    ];
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
     return colors[index % colors.length];
   };
 
@@ -105,22 +94,59 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ subcategories }) => {
           <CardTitle className="text-base text-gray-800">
             Monthly Progress Overview - {months[selectedMonth]} {selectedYear}
           </CardTitle>
-          <p className="text-sm text-gray-600">Click on the bars to mark weeks where you're satisfied with your progress</p>
+          <p className="text-sm text-gray-600">Click on each week to mark if you're satisfied with your progress</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {subcategories.map((subcategory, index) => (
-              <GoalsWeeklyChart
-                key={subcategory}
-                subcategory={subcategory}
-                data={generateMockData(subcategory)}
-                viewMonth={selectedMonth}
-                viewYear={selectedYear}
-                satisfactionData={satisfactionData[subcategory]}
-                onSatisfactionToggle={(weekKey) => handleSatisfactionToggle(subcategory, weekKey)}
-                colors={getSubcategoryColor(index)}
-              />
-            ))}
+          <div className="space-y-4">
+            {subcategories.map((subcategory, index) => {
+              const color = getSubcategoryColor(index);
+              return (
+                <div key={subcategory} className="bg-white p-4 rounded-lg border shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-800">{subcategory}</h4>
+                    <div className="text-xs text-gray-500">
+                      {weeks.filter(week => {
+                        const weekKey = `${selectedYear}-${selectedMonth}-${week.weekNumber}`;
+                        return satisfactionData[subcategory]?.[weekKey];
+                      }).length} / {weeks.length} weeks satisfied
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    {weeks.map((week, weekIndex) => {
+                      const weekKey = `${selectedYear}-${selectedMonth}-${week.weekNumber}`;
+                      const isSatisfied = satisfactionData[subcategory]?.[weekKey] || false;
+                      
+                      return (
+                        <div key={weekIndex} className="flex flex-col items-center space-y-1">
+                          <div className="text-xs text-gray-500 text-center">
+                            W{week.weekNumber}
+                          </div>
+                          <button
+                            onClick={() => handleSatisfactionToggle(subcategory, weekKey)}
+                            className={`w-8 h-8 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
+                              isSatisfied 
+                                ? 'bg-green-500 border-green-600 shadow-md' 
+                                : 'bg-gray-200 border-gray-300 hover:border-gray-400'
+                            }`}
+                            title={`Week ${week.weekNumber} (${week.dateRange}) - ${isSatisfied ? 'Satisfied' : 'Not marked'}`}
+                          >
+                            {isSatisfied && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <div className="w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            )}
+                          </button>
+                          <div className="text-xs text-gray-400 text-center" style={{ fontSize: '10px' }}>
+                            {week.dateRange}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
