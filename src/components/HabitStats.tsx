@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -39,6 +40,33 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   const sleepQualityStats = habitType === 'sleep' && habitsState 
     ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
     : null;
+
+  // Calculate money saved for alcohol category
+  const calculateMoneySaved = () => {
+    if (habitType !== 'alcohol' || !habitsState) return 0;
+    
+    let moneySaved = 0;
+    const monthStart = new Date(viewYear, viewMonth, 1);
+    const monthEnd = new Date(viewYear, viewMonth + 1, 0);
+    
+    // Filter days for the specific month
+    const days = Object.values(habitsState.days).filter((day: any) => {
+      const dayDate = new Date(day.date);
+      return dayDate >= monthStart && dayDate <= monthEnd;
+    });
+    
+    // Count days where alcohol was planned but not consumed
+    for (const day of days) {
+      const alcoholData = day.alcohol;
+      if (alcoholData && alcoholData.planned && !alcoholData.completed) {
+        moneySaved += 35;
+      }
+    }
+    
+    return moneySaved;
+  };
+
+  const moneySaved = calculateMoneySaved();
   
   const getHabitIcon = () => {
     switch (habitType) {
@@ -129,6 +157,24 @@ const HabitStats: React.FC<HabitStatsProps> = ({
           {getHabitIcon()}
           {getHabitTitle()}
         </CardTitle>
+        
+        {/* Monthly goal progress - moved here under the title */}
+        {goal && progressLabel && (
+          <div className="mt-2">
+            <div className="flex justify-between mb-1">
+              <span className="text-xs">{progressLabel}</span>
+              <span className="text-xs font-semibold">{monthlyProgress}%</span>
+            </div>
+            <Progress 
+              value={monthlyProgress} 
+              className="h-2" 
+              style={{ 
+                "--progress-background": colors.secondary,
+                "--progress-foreground": colors.primary
+              } as React.CSSProperties}
+            />
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4 flex-1 flex flex-col">
         {habitType === 'sleep' && sleepQualityStats ? (
@@ -147,17 +193,9 @@ const HabitStats: React.FC<HabitStatsProps> = ({
               <h3 className="text-xl font-bold">{sleepQualityStats.badSleep}</h3>
             </div>
           </div>
-        ) : (
-          // Original layout for other habits
+        ) : habitType === 'alcohol' ? (
+          // Special layout for alcohol with money saved
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-              <p className="text-xs text-muted-foreground">Current Streak</p>
-              <h3 className="text-xl font-bold">{stats.currentStreak} days</h3>
-            </div>
-            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-              <p className="text-xs text-muted-foreground">Longest Streak</p>
-              <h3 className="text-xl font-bold">{stats.longestStreak} days</h3>
-            </div>
             <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
               <p className="text-xs text-muted-foreground">Total Completed</p>
               <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
@@ -166,24 +204,22 @@ const HabitStats: React.FC<HabitStatsProps> = ({
               <p className="text-xs text-muted-foreground">Completion Rate</p>
               <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
             </div>
-          </div>
-        )}
-        
-        {/* Monthly goal progress - now shown for all habits including sleep */}
-        {goal && progressLabel && (
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-xs">{progressLabel}</span>
-              <span className="text-xs font-semibold">{monthlyProgress}%</span>
+            <div className="p-2 rounded-md bg-green-100 col-span-2">
+              <p className="text-xs text-muted-foreground">Money Saved 💰</p>
+              <h3 className="text-xl font-bold">${moneySaved}</h3>
             </div>
-            <Progress 
-              value={monthlyProgress} 
-              className="h-2" 
-              style={{ 
-                "--progress-background": colors.secondary,
-                "--progress-foreground": colors.primary
-              } as React.CSSProperties}
-            />
+          </div>
+        ) : (
+          // Layout for other habits (gym, meditation) - removed streaks
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+              <p className="text-xs text-muted-foreground">Total Completed</p>
+              <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
+            </div>
+            <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
+              <p className="text-xs text-muted-foreground">Completion Rate</p>
+              <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
+            </div>
           </div>
         )}
         
