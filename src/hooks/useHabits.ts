@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { HabitsState, DayData, HabitType, HabitData, HabitGoal } from "@/types/habit";
 import { formatDateISO, createEmptyDayData, createDefaultMonthlyGoals } from "@/utils/habitUtils";
@@ -237,11 +238,15 @@ export default function useHabits() {
     try {
       console.log('Force syncing all local data to cloud...');
       
-      // Sync all habit days
-      const dayPromises = Object.entries(habitsState.days).map(async ([dateISO, dayData]) => {
+      // First, clear existing data for this user to avoid conflicts
+      await supabase.from('habit_days').delete().eq('user_id', user.id);
+      await supabase.from('habit_goals').delete().eq('user_id', user.id);
+      
+      // Sync all habit days using individual inserts to avoid batch conflicts
+      for (const [dateISO, dayData] of Object.entries(habitsState.days)) {
         const { error } = await supabase
           .from('habit_days')
-          .upsert({
+          .insert({
             user_id: user.id,
             date: dateISO,
             habit_data: dayData as any
@@ -251,13 +256,13 @@ export default function useHabits() {
           console.error(`Error syncing day ${dateISO}:`, error);
           throw error;
         }
-      });
+      }
 
-      // Sync all goals
-      const goalPromises = Object.entries(habitsState.goals).map(async ([monthKey, monthGoals]) => {
+      // Sync all goals using individual inserts
+      for (const [monthKey, monthGoals] of Object.entries(habitsState.goals)) {
         const { error } = await supabase
           .from('habit_goals')
-          .upsert({
+          .insert({
             user_id: user.id,
             month_key: monthKey,
             goals_data: monthGoals as any
@@ -267,10 +272,7 @@ export default function useHabits() {
           console.error(`Error syncing goals for ${monthKey}:`, error);
           throw error;
         }
-      });
-
-      // Wait for all syncs to complete
-      await Promise.all([...dayPromises, ...goalPromises]);
+      }
       
       toast.success('All changes saved to cloud!', { duration: 2000 });
       console.log('Force sync completed successfully');
