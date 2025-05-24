@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 import GoalTimeframes from "@/components/goals/GoalTimeframes";
 import WeeklyTracker from "@/components/goals/WeeklyTracker";
 import SubcategoryManager from "@/components/goals/SubcategoryManager";
@@ -34,7 +33,6 @@ const Goals = () => {
   const [subcategories, setSubcategories] = useState(
     categoryConfig[category as keyof typeof categoryConfig]?.subcategories || []
   );
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const currentConfig = categoryConfig[category as keyof typeof categoryConfig];
 
@@ -51,46 +49,36 @@ const Goals = () => {
     );
   }
 
-  const toggleSection = (subcategory: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [subcategory]: !prev[subcategory]
-    }));
-  };
-
   const addSubcategory = (name: string) => {
     setSubcategories(prev => [...prev, name]);
   };
 
   const removeSubcategory = (name: string) => {
     setSubcategories(prev => prev.filter(sub => sub !== name));
-    setExpandedSections(prev => {
-      const newState = { ...prev };
-      delete newState[name];
-      return newState;
-    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white shadow-lg">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Link to="/">
-                <Button variant="ghost" size="sm" className="mr-4">
+                <Button variant="ghost" size="sm" className="mr-4 hover:bg-gray-100">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">{currentConfig.title}</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {currentConfig.title}
+              </h1>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-8">
         {/* Subcategory Manager */}
         <SubcategoryManager
           subcategories={subcategories}
@@ -98,51 +86,27 @@ const Goals = () => {
           onRemove={removeSubcategory}
         />
 
-        {/* Goals Sections */}
-        <div className="space-y-6">
-          {subcategories.map((subcategory) => (
-            <Card key={subcategory} className="overflow-hidden">
-              <CardHeader 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => toggleSection(subcategory)}
-              >
-                <CardTitle className="flex items-center justify-between">
-                  <span>{subcategory}</span>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
-                      {expandedSections[subcategory] ? (
-                        <>
-                          <EyeOff className="w-4 h-4 mr-1" />
-                          Hide
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-4 h-4 mr-1" />
-                          Show
-                        </>
-                      )}
-                    </Button>
-                    {expandedSections[subcategory] ? (
-                      <ChevronDown className="w-5 h-5" />
-                    ) : (
-                      <ChevronRight className="w-5 h-5" />
-                    )}
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              
-              {expandedSections[subcategory] && (
-                <CardContent className="space-y-6">
-                  {/* Goal Timeframes */}
-                  <GoalTimeframes subcategory={subcategory} />
-                  
-                  {/* Weekly Tracker */}
-                  <WeeklyTracker subcategory={subcategory} />
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
+        {/* Combined Goal Timeframes for all subcategories */}
+        <Card className="mb-8 shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
+            <CardTitle className="text-xl font-bold text-gray-800">Goal Planning & Review</CardTitle>
+            <p className="text-gray-600">Set and track your goals across all timeframes</p>
+          </CardHeader>
+          <CardContent className="p-6">
+            <GoalTimeframes subcategories={subcategories} />
+          </CardContent>
+        </Card>
+
+        {/* Combined Weekly Tracker for all subcategories */}
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
+            <CardTitle className="text-xl font-bold text-gray-800">Weekly Progress Tracking</CardTitle>
+            <p className="text-gray-600">Monitor your weekly progress and monthly reviews</p>
+          </CardHeader>
+          <CardContent className="p-6">
+            <WeeklyTracker subcategories={subcategories} />
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
