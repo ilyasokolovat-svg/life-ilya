@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -40,57 +41,73 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
     : null;
 
-  // Calculate money saved for alcohol category - completely rewritten
+  // Calculate money saved for alcohol category - fixed version
   const calculateMoneySaved = () => {
-    if (habitType !== 'alcohol' || !habitsState?.days) {
-      console.log('Not alcohol habit or no habits data available');
+    console.log('=== MONEY SAVED CALCULATION DEBUG ===');
+    console.log('Habit type:', habitType);
+    console.log('Habits state:', habitsState);
+    console.log('Habits state days:', habitsState?.days);
+    
+    if (habitType !== 'alcohol') {
+      console.log('Not alcohol habit, returning 0');
+      return 0;
+    }
+    
+    if (!habitsState || !habitsState.days) {
+      console.log('No habits state or days data available');
       return 0;
     }
     
     let moneySaved = 0;
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today for comparison
     
-    console.log('=== MONEY SAVED CALCULATION START ===');
-    console.log('Current date:', today);
-    console.log('View month/year:', viewMonth, viewYear);
-    console.log('Available habit days:', Object.keys(habitsState.days));
+    console.log('Processing days for month/year:', viewMonth, viewYear);
+    console.log('Today:', today);
+    console.log('Available days:', Object.keys(habitsState.days));
     
     // Go through each day in the habits data
     Object.keys(habitsState.days).forEach(dateKey => {
-      const dayDate = new Date(dateKey);
+      const dayDate = new Date(dateKey + 'T00:00:00'); // Ensure proper date parsing
       const dayData = habitsState.days[dateKey];
       
-      // Check if this day is in our target month and is in the past (including today)
+      console.log(`\nProcessing day: ${dateKey}`);
+      console.log('Day date object:', dayDate);
+      console.log('Day month:', dayDate.getMonth(), 'vs view month:', viewMonth);
+      console.log('Day year:', dayDate.getFullYear(), 'vs view year:', viewYear);
+      console.log('Is past/today?', dayDate <= today);
+      
+      // Check if this day is in our target month and is past or today
       if (dayDate.getMonth() === viewMonth && 
           dayDate.getFullYear() === viewYear && 
           dayDate <= today) {
         
-        console.log(`Checking day ${dateKey}:`, dayData);
+        console.log(`Day ${dateKey} is in target month and past/today`);
+        console.log('Day data:', dayData);
         
         // Get alcohol data for this day
         const alcoholData = dayData?.alcohol;
+        console.log('Alcohol data:', alcoholData);
         
         if (alcoholData) {
           const planned = alcoholData.planned;
           const completed = alcoholData.completed;
           
-          console.log(`  Alcohol data - planned: ${planned}, completed: ${completed}`);
+          console.log(`Alcohol - planned: ${planned}, completed: ${completed}`);
           
-          // Logic: 
-          // - If planned but not completed: +$35 (saved money by not drinking as planned)
-          // - If not planned but completed: -$35 (spent money on unexpected drinking)
-          if (planned && !completed) {
+          // Updated logic based on user requirements:
+          // - If left checkbox (planned) is unticked AND right checkbox (completed) is ticked: +$35 (saved money)
+          // - If left checkbox (planned) is ticked AND right checkbox (completed) is unticked: -$35 (lost money)
+          if (!planned && completed) {
             moneySaved += 35;
-            console.log(`  +$35 added (planned but didn't drink)`);
-          } else if (!planned && completed) {
+            console.log(`+$35 added (didn't plan to drink but did)`);
+          } else if (planned && !completed) {
             moneySaved -= 35;
-            console.log(`  -$35 deducted (unplanned drinking)`);
+            console.log(`-$35 deducted (planned to not drink but drank anyway)`);
           } else {
-            console.log(`  No money change (planned=${planned}, completed=${completed})`);
+            console.log(`No money change (planned=${planned}, completed=${completed})`);
           }
         } else {
-          console.log(`  No alcohol data for this day`);
+          console.log('No alcohol data for this day');
         }
       } else {
         console.log(`Skipping day ${dateKey} - not in target month or in future`);
