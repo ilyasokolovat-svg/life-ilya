@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -72,7 +71,21 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   };
 
   // Calculate progress toward monthly goal
-  const monthlyProgress = goal?.frequency ? Math.min(100, Math.round((stats.totalCompleted / goal.frequency) * 100)) : 0;
+  let monthlyProgress = 0;
+  let progressLabel = "";
+  
+  if (habitType === 'sleep' && sleepQualityStats) {
+    // For sleep, calculate percentage of good sleep days vs days passed in month
+    const today = new Date();
+    const currentDate = new Date(viewYear, viewMonth, Math.min(today.getDate(), new Date(viewYear, viewMonth + 1, 0).getDate()));
+    const daysPassedInMonth = currentDate.getDate();
+    monthlyProgress = daysPassedInMonth > 0 ? Math.min(100, Math.round((sleepQualityStats.goodSleep / daysPassedInMonth) * 100)) : 0;
+    progressLabel = `Monthly Goal Progress (${sleepQualityStats.goodSleep}/${daysPassedInMonth} days)`;
+  } else if (goal?.frequency) {
+    // For other habits, use existing calculation
+    monthlyProgress = Math.min(100, Math.round((stats.totalCompleted / goal.frequency) * 100));
+    progressLabel = `Monthly Goal Progress (${stats.totalCompleted}/${goal.frequency} days)`;
+  }
   
   // Previous month function
   const prevMonth = () => {
@@ -156,11 +169,11 @@ const HabitStats: React.FC<HabitStatsProps> = ({
           </div>
         )}
         
-        {/* Monthly goal progress - only show for non-sleep habits */}
-        {goal && habitType !== 'sleep' && (
+        {/* Monthly goal progress - now shown for all habits including sleep */}
+        {goal && progressLabel && (
           <div>
             <div className="flex justify-between mb-1">
-              <span className="text-xs">Monthly Goal Progress ({stats.totalCompleted}/{goal.frequency} days)</span>
+              <span className="text-xs">{progressLabel}</span>
               <span className="text-xs font-semibold">{monthlyProgress}%</span>
             </div>
             <Progress 
@@ -173,21 +186,6 @@ const HabitStats: React.FC<HabitStatsProps> = ({
             />
           </div>
         )}
-        
-        <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-xs">Overall Completion</span>
-            <span className="text-xs font-semibold">{stats.completionRate}%</span>
-          </div>
-          <Progress 
-            value={stats.completionRate} 
-            className="h-2"
-            style={{ 
-              "--progress-background": colors.secondary,
-              "--progress-foreground": colors.primary
-            } as React.CSSProperties}
-          />
-        </div>
         
         {/* Chart section - positioned at the bottom with flex-1 to push it down */}
         <div className="flex-1 flex flex-col justify-end">
