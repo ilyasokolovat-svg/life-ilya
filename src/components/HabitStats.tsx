@@ -39,21 +39,6 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
     : null;
   
-  // Calculate progress toward monthly goal
-  let monthlyProgress = 0;
-  let progressLabel = "";
-  
-  if (habitType === 'sleep' && sleepQualityStats) {
-    const today = new Date();
-    const currentDate = new Date(viewYear, viewMonth, Math.min(today.getDate(), new Date(viewYear, viewMonth + 1, 0).getDate()));
-    const daysPassedInMonth = currentDate.getDate();
-    monthlyProgress = daysPassedInMonth > 0 ? Math.min(100, Math.round((sleepQualityStats.goodSleep / daysPassedInMonth) * 100)) : 0;
-    progressLabel = `Monthly Goal Progress (${sleepQualityStats.goodSleep}/${daysPassedInMonth} days)`;
-  } else if (goal?.frequency) {
-    monthlyProgress = Math.min(100, Math.round((stats.totalCompleted / goal.frequency) * 100));
-    progressLabel = `Monthly Goal Progress (${stats.totalCompleted}/${goal.frequency} days)`;
-  }
-  
   const prevMonth = () => {
     const newMonth = chartMonth === 0 ? 11 : chartMonth - 1;
     const newYear = chartMonth === 0 ? chartYear - 1 : chartYear;
@@ -82,9 +67,6 @@ const HabitStats: React.FC<HabitStatsProps> = ({
     <Card className="stats-card h-full flex flex-col" style={{ borderColor: colors.primary }}>
       <HabitStatsHeader
         habitType={habitType}
-        goal={goal}
-        monthlyProgress={monthlyProgress}
-        progressLabel={progressLabel}
       />
       
       <CardContent className="space-y-4 flex-1 flex flex-col">

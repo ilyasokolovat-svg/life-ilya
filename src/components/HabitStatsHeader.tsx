@@ -1,17 +1,15 @@
 
 import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
-import { HabitType, HabitGoal } from "@/types/habit";
+import { HabitType } from "@/types/habit";
 import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 
 interface HabitStatsHeaderProps {
   habitType: HabitType;
-  goal?: HabitGoal;
 }
 
 const HabitStatsHeader: React.FC<HabitStatsHeaderProps> = ({ 
-  habitType, 
-  goal
+  habitType
 }) => {
   const getHabitIcon = (type: HabitType) => {
     switch (type) {
@@ -48,11 +46,6 @@ const HabitStatsHeader: React.FC<HabitStatsHeaderProps> = ({
       <CardTitle className="text-lg flex items-center gap-2">
         {getHabitIcon(habitType)}
         {getHabitTitle(habitType)}
-        {goal && (
-          <span className="text-sm font-normal text-muted-foreground ml-auto">
-            Goal: {goal.frequency} days
-          </span>
-        )}
       </CardTitle>
     </CardHeader>
   );
