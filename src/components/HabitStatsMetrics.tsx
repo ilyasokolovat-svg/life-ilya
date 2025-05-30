@@ -42,14 +42,10 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 gap-2">
       <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
         <p className="text-xs text-muted-foreground">Total Completed</p>
         <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
-      </div>
-      <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-        <p className="text-xs text-muted-foreground">Completion Rate</p>
-        <h3 className="text-xl font-bold">{stats.completionRate}%</h3>
       </div>
     </div>
   );
