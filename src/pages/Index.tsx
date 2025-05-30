@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -90,6 +91,14 @@ const Index = () => {
   const gymStats = calculateHabitStats(habitsState, "gym", viewYear, viewMonth);
   const alcoholStats = calculateHabitStats(habitsState, "alcohol", viewYear, viewMonth);
   const meditationStats = calculateHabitStats(habitsState, "meditation", viewYear, viewMonth);
+
+  // Create habit stats object for GoalSetting
+  const habitStats = {
+    sleep: sleepStats,
+    gym: gymStats,
+    alcohol: alcoholStats,
+    meditation: meditationStats
+  };
   
   // Get weekly stats for each habit type with their respective months
   const sleepWeeklyStats = getMonthlyWeeklyStats(habitsState, "sleep", chartMonths.sleep.year, chartMonths.sleep.month);
@@ -262,6 +271,8 @@ const Index = () => {
             viewMonth={viewMonth}
             viewYear={viewYear}
             onUpdateGoal={handleUpdateGoal}
+            habitStats={habitStats}
+            habitsState={habitsState}
           />
         </div>
         
