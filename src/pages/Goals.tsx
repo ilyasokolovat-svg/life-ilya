@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import SubcategoryTree from "@/components/goals/SubcategoryTree";
+import GoalsTree from "@/components/goals/GoalsTree";
 
 const Goals = () => {
   const { category } = useParams<{ category: string }>();
@@ -62,9 +62,10 @@ const Goals = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <SubcategoryTree 
-          subcategories={currentConfig.subcategories}
+        <GoalsTree 
           category={category || ''}
+          categoryTitle={currentConfig.title}
+          subcategories={currentConfig.subcategories}
         />
       </main>
     </div>
