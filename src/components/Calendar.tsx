@@ -124,6 +124,22 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
       }
     };
 
+    const getHabitIcon = (habitType: HabitType) => {
+      const iconProps = { className: "h-3 w-3" };
+      switch (habitType) {
+        case "sleep":
+          return <Moon {...iconProps} />;
+        case "gym":
+          return <Dumbbell {...iconProps} />;
+        case "alcohol":
+          return <Wine {...iconProps} />;
+        case "meditation":
+          return <Brain {...iconProps} />;
+        default:
+          return null;
+      }
+    };
+
     return (
       <div 
         key={isoDate} 
@@ -151,14 +167,17 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           ></div>
         </div>
         
-        {/* Habits for the day with inline category names */}
+        {/* Habits for the day with restructured layout */}
         <div className="flex-1 p-2 space-y-1">
           {habitOrder.map((habitType) => (
             <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-600 min-w-0 flex-shrink-0 mr-2">
-                  {getHabitLabel(habitType)}
-                </span>
+                <div className="flex items-center gap-1 flex-1">
+                  {getHabitIcon(habitType)}
+                  <span className="text-xs font-medium text-gray-600">
+                    {getHabitLabel(habitType)}
+                  </span>
+                </div>
                 <HabitTracker
                   date={date}
                   habitType={habitType}

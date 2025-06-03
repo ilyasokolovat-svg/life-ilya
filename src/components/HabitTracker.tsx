@@ -1,9 +1,9 @@
 
+
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { HabitType, HabitData } from "@/types/habit";
-import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
 
 interface HabitTrackerProps {
   date: Date;
@@ -19,22 +19,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   onUpdate,
 }) => {
   const [sleepHours, setSleepHours] = useState(habitData.sleepHours?.toString() || "");
-
-  const getHabitIcon = () => {
-    const iconProps = { className: "h-3 w-3" };
-    switch (habitType) {
-      case "sleep":
-        return <Moon {...iconProps} />;
-      case "gym":
-        return <Dumbbell {...iconProps} />;
-      case "alcohol":
-        return <Wine {...iconProps} />;
-      case "meditation":
-        return <Brain {...iconProps} />;
-      default:
-        return null;
-    }
-  };
 
   const handlePlannedChange = (checked: boolean) => {
     onUpdate(habitType, { ...habitData, planned: checked });
@@ -53,41 +37,37 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between text-xs space-x-1">
-      <div className="flex items-center space-x-1">
-        {getHabitIcon()}
-        {/* Only show planned checkbox for non-sleep habits */}
-        {habitType !== "sleep" && (
-          <Checkbox
-            checked={habitData.planned}
-            onCheckedChange={handlePlannedChange}
-            className="h-3 w-3 border-gray-400"
-          />
-        )}
-      </div>
-      
-      <div className="flex items-center space-x-1">
-        {habitType === "sleep" ? (
+    <div className="flex items-center space-x-1">
+      {habitType === "sleep" ? (
+        <div className="flex items-center space-x-1">
           <Input
             type="number"
             value={sleepHours}
             onChange={(e) => handleSleepHoursChange(e.target.value)}
             placeholder="hrs"
-            className="w-8 h-4 text-xs p-0 text-center border-gray-300"
+            className="w-12 h-6 text-xs p-1 text-center border-gray-300"
             min="0"
             max="24"
             step="0.5"
           />
-        ) : (
+        </div>
+      ) : (
+        <div className="flex items-center space-x-1">
+          <Checkbox
+            checked={habitData.planned}
+            onCheckedChange={handlePlannedChange}
+            className="h-3 w-3 border-gray-400"
+          />
           <Checkbox
             checked={habitData.completed}
             onCheckedChange={handleCompletedChange}
             className="h-3 w-3 border-green-500"
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default HabitTracker;
+
