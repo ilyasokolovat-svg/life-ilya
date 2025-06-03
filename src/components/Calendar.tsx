@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -150,23 +151,23 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           ></div>
         </div>
         
-        {/* Habits for the day with category names */}
+        {/* Habits for the day with inline category names */}
         <div className="flex-1 p-2 space-y-1">
           {habitOrder.map((habitType) => (
             <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-gray-600">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-600 min-w-0 flex-shrink-0 mr-2">
                   {getHabitLabel(habitType)}
                 </span>
+                <HabitTracker
+                  date={date}
+                  habitType={habitType}
+                  habitData={
+                    dayData?.[habitType] || { planned: false, completed: false }
+                  }
+                  onUpdate={(type, data) => onUpdateHabit(date, type, data)}
+                />
               </div>
-              <HabitTracker
-                date={date}
-                habitType={habitType}
-                habitData={
-                  dayData?.[habitType] || { planned: false, completed: false }
-                }
-                onUpdate={(type, data) => onUpdateHabit(date, type, data)}
-              />
             </div>
           ))}
         </div>
@@ -280,3 +281,4 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
 };
 
 export default Calendar;
+
