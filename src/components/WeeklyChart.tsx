@@ -1,10 +1,11 @@
 
+
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WeeklyStats, HabitType } from "@/types/habit";
 import { formatWeekLabel, habitColors } from "@/utils/chartUtils";
-import { ChartContainer, ChartTooltipContent, ChartLegend } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 interface WeeklyChartProps {
   habitType: HabitType;
@@ -146,14 +147,6 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
       <div>
         <h4 className="text-xs font-medium mb-1">{chartTitle}</h4>
         {content}
-        <ChartLegend
-          className="mt-1"
-          payload={[
-            { value: "Completed", color: colors.primary, dataKey: "completed" },
-            { value: "Goal", color: colors.secondary, dataKey: "remaining" },
-            { value: "Satisfied", color: "#22c55e", dataKey: "satisfied" }
-          ]}
-        />
         {onSatisfactionToggle && (
           <p className="text-xs text-gray-500 mt-1">Click bars to mark satisfaction</p>
         )}
@@ -168,14 +161,6 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
       </CardHeader>
       <CardContent className="p-3 pt-0">
         {content}
-        <ChartLegend
-          className="mt-1"
-          payload={[
-            { value: "Completed", color: colors.primary, dataKey: "completed" },
-            { value: "Goal", color: colors.secondary, dataKey: "remaining" },
-            { value: "Satisfied", color: "#22c55e", dataKey: "satisfied" }
-          ]}
-        />
         {onSatisfactionToggle && (
           <p className="text-xs text-gray-500 mt-1">Click bars to mark satisfaction</p>
         )}
@@ -185,3 +170,4 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
 };
 
 export default WeeklyChart;
+
