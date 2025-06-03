@@ -5,15 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
-  TrendingUp, 
-  Briefcase, 
-  DollarSign, 
-  GraduationCap,
-  Calendar,
-  Target,
   Heart,
   LogOut,
-  User
+  User,
+  Target
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -26,53 +21,6 @@ const Dashboard = () => {
     await signOut();
     navigate('/auth');
   };
-
-  const categories = [
-    {
-      id: "career",
-      title: "Career",
-      icon: Briefcase,
-      color: "bg-blue-500",
-      hoverColor: "hover:bg-blue-600",
-      subcategories: ["Commission/Bonus/Dividends", "Quota Achievement", "Salary/Income", "Promotion", "Sales Skills"]
-    },
-    {
-      id: "business",
-      title: "Business",
-      icon: TrendingUp,
-      color: "bg-green-500",
-      hoverColor: "hover:bg-green-600",
-      subcategories: ["TT Website", "TT Instagram Organic", "TT Ads", "Selo Olive Oil", "Real Estate Projects"]
-    },
-    {
-      id: "investments",
-      title: "Investments",
-      icon: DollarSign,
-      color: "bg-purple-500",
-      hoverColor: "hover:bg-purple-600",
-      subcategories: ["Crypto", "ETFs", "Monthly Investment"]
-    },
-    {
-      id: "skills",
-      title: "Skills Development",
-      icon: GraduationCap,
-      color: "bg-orange-500",
-      hoverColor: "hover:bg-orange-600",
-      subcategories: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
-    }
-  ];
-
-  const summaryCategories = [
-    ...categories,
-    {
-      id: "sport-health",
-      title: "Sport & Health",
-      icon: Heart,
-      color: "bg-red-500",
-      hoverColor: "hover:bg-red-600",
-      subcategories: ["Gym", "Sleep", "Meditation", "Alcohol Abstinence"]
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -130,20 +78,21 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        {/* Navigation Cards */}
+        {/* Main Navigation Cards */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">Your Journey Areas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">Your Journey</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            
             {/* Healthy Life Card */}
             <Link to="/habits">
               <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 border-0 shadow-lg">
-                <CardHeader className="text-center pb-4">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                    <Heart className="w-8 h-8 text-white" />
+                <CardHeader className="text-center pb-6">
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Heart className="w-10 h-10 text-white" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-gray-800">Healthy Life</CardTitle>
+                  <CardTitle className="text-3xl font-bold text-gray-800">Healthy Life</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center">
+                <CardContent className="text-center pb-8">
                   <p className="text-gray-600 text-lg leading-relaxed">
                     Track your daily habits and build a foundation for lasting health and wellness
                   </p>
@@ -151,37 +100,22 @@ const Dashboard = () => {
               </Card>
             </Link>
 
-            {/* Goal Category Cards */}
-            {categories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <Link key={category.id} to={`/goals/${category.id}`}>
-                  <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 border-0 shadow-lg">
-                    <CardHeader className="text-center pb-4">
-                      <div className={`mx-auto w-16 h-16 ${category.color} ${category.hoverColor} rounded-2xl flex items-center justify-center mb-6 shadow-lg transition-colors duration-300`}>
-                        <IconComponent className="w-8 h-8 text-white" />
-                      </div>
-                      <CardTitle className="text-2xl font-bold text-gray-800">{category.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {category.subcategories.slice(0, 3).map((sub, index) => (
-                          <p key={index} className="text-sm text-gray-600 flex items-center">
-                            <span className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mr-3"></span>
-                            {sub}
-                          </p>
-                        ))}
-                        {category.subcategories.length > 3 && (
-                          <p className="text-sm text-gray-500 font-medium">
-                            +{category.subcategories.length - 3} more areas
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
+            {/* Goals Card */}
+            <Link to="/goals">
+              <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 border-0 shadow-lg">
+                <CardHeader className="text-center pb-6">
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Target className="w-10 h-10 text-white" />
+                  </div>
+                  <CardTitle className="text-3xl font-bold text-gray-800">Goals</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center pb-8">
+                  <p className="text-gray-600 text-lg leading-relaxed">
+                    Plan and track your goals across career, business, investments, and skills
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
 
@@ -190,34 +124,17 @@ const Dashboard = () => {
           <h2 className="text-3xl font-bold mb-8 flex items-center justify-center">
             <Target className="w-8 h-8 mr-3 text-blue-600" />
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              2025 Goals Overview
+              2025 Vision
             </span>
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            {summaryCategories.map((category) => (
-              <div key={category.id} className="group">
-                <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300 group-hover:border-blue-300">
-                  <div className="flex items-center mb-4">
-                    <div className={`w-10 h-10 ${category.color} rounded-lg flex items-center justify-center mr-3 shadow-md`}>
-                      <category.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="font-bold text-gray-900 text-sm">{category.title}</h3>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-                      <p className="text-xs font-medium text-blue-700 mb-1">2025 Goal</p>
-                      <p className="text-sm font-bold text-blue-900">To be defined</p>
-                    </div>
-                    <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-                      <p className="text-xs font-medium text-green-700 mb-1">Current Status</p>
-                      <p className="text-sm font-bold text-green-900">Getting Started</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="text-center">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              "The difference between who you are and who you want to be is what you do."
+            </p>
+            <p className="text-lg text-gray-500 mt-4">
+              Your journey starts with a single step. Take it today.
+            </p>
           </div>
         </div>
       </main>
