@@ -102,10 +102,10 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     const progressPercentage = (completedCount / 4) * 100;
     const isAllCompleted = completedCount === 4;
     
-    // Day style (highlight today)
+    // Enhanced day styling
     const dayStyle = isToday
-      ? 'border-2 border-blue shadow-sm'
-      : 'border border-gray-light';
+      ? 'border-2 border-blue-500 bg-blue-50 shadow-lg'
+      : 'border border-gray-200 bg-white hover:shadow-md transition-shadow duration-200';
 
     // Reordering habits to put sleep first, then gym, alcohol, and meditation
     const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
@@ -116,40 +116,43 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     return (
       <div 
         key={isoDate} 
-        className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col`}
+        className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col rounded-lg`}
       >
-        <div className="p-1 flex justify-between items-start">
-          <span className={`text-sm font-medium ${isToday ? 'text-blue-dark' : ''}`}>
+        {/* Enhanced day header */}
+        <div className="p-2 flex justify-between items-center bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+          <span className={`text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
             {date.getDate()}
           </span>
           {isAllCompleted && (
-            <span className="text-sm">😊</span>
+            <span className="text-lg animate-pulse">🎉</span>
           )}
         </div>
         
-        {/* Progress bar - unified green progress indicator */}
-        <div className="w-full h-3 mb-1 border-t border-gray-100 bg-gray-100">
+        {/* Enhanced progress bar */}
+        <div className="w-full h-1 bg-gray-100">
           <div 
-            className="h-full transition-all duration-300"
+            className="h-full transition-all duration-500 ease-out"
             style={{
               width: `${progressPercentage}%`,
-              backgroundColor: getProgressBarColor(completedCount)
+              backgroundColor: getProgressBarColor(completedCount),
+              boxShadow: progressPercentage > 0 ? '0 0 4px rgba(0,0,0,0.2)' : 'none'
             }}
           ></div>
         </div>
         
-        {/* Habits for the day - reordered */}
-        <div className="flex-1 p-1 space-y-1">
+        {/* Habits for the day - reordered with better spacing */}
+        <div className="flex-1 p-2 space-y-2">
           {habitOrder.map((habitType) => (
-            <HabitTracker
-              key={`${isoDate}-${habitType}`}
-              date={date}
-              habitType={habitType}
-              habitData={
-                dayData?.[habitType] || { planned: false, completed: false }
-              }
-              onUpdate={(type, data) => onUpdateHabit(date, type, data)}
-            />
+            <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
+              <HabitTracker
+                date={date}
+                habitType={habitType}
+                habitData={
+                  dayData?.[habitType] || { planned: false, completed: false }
+                }
+                onUpdate={(type, data) => onUpdateHabit(date, type, data)}
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -199,35 +202,35 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
       {/* Legend for progress bar */}
       <div className="flex flex-wrap items-center justify-end mb-2 text-xs">
         <div className="flex items-center mr-3">
-          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#90EE90' }}></div>
+          <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#90EE90' }}></div>
           <span>1/4</span>
         </div>
         <div className="flex items-center mr-3">
-          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#32CD32' }}></div>
+          <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#32CD32' }}></div>
           <span>2/4</span>
         </div>
         <div className="flex items-center mr-3">
-          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#228B22' }}></div>
+          <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#228B22' }}></div>
           <span>3/4</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 mr-1" style={{ backgroundColor: '#006400' }}></div>
-          <span>4/4 😊</span>
+          <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#006400' }}></div>
+          <span>4/4 🎉</span>
         </div>
       </div>
       
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-2">
         {/* Week day headers - now starting with Monday */}
         {weekDays.map((day) => (
-          <div key={day} className="text-center font-medium py-2">
+          <div key={day} className="text-center font-medium py-3 text-gray-600 bg-gray-50 rounded-t-lg">
             {day}
           </div>
         ))}
         
         {/* Empty cells for days before the 1st of the month */}
         {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-          <div key={`empty-${index}`} className="bg-gray-50 border border-gray-100" />
+          <div key={`empty-${index}`} className="bg-gray-50 border border-gray-100 rounded-lg opacity-50" />
         ))}
         
         {/* Actual days */}

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { HabitType, HabitGoal, HabitStats } from "@/types/habit";
 import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
-import { calculateSleepQualityStats } from "@/utils/habitUtils";
+import { calculateSleepQualityStats, getDaysInMonth, formatDateISO } from "@/utils/habitUtils";
 
 interface GoalSettingProps {
   goals: Record<HabitType, HabitGoal>;
@@ -17,21 +17,6 @@ interface GoalSettingProps {
   habitsState?: any;
 }
 
-// Updated default goal with the new values
-const createDefaultGoal = (habitType: HabitType): HabitGoal => {
-  const defaultFrequencies = {
-    gym: 12,
-    alcohol: 25,
-    sleep: 20,
-    meditation: 25
-  };
-  
-  return {
-    frequency: defaultFrequencies[habitType],
-    notes: ""
-  };
-};
-
 const GoalSetting: React.FC<GoalSettingProps> = ({ 
   goals, 
   viewMonth, 
@@ -40,30 +25,6 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   habitStats,
   habitsState 
 }) => {
-  // Local state to manage form values independently
-  const [localGoals, setLocalGoals] = useState<Record<HabitType, HabitGoal>>(() => {
-    const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
-    const initialGoals: Record<HabitType, HabitGoal> = {} as Record<HabitType, HabitGoal>;
-    
-    habitTypes.forEach(type => {
-      initialGoals[type] = goals[type] || createDefaultGoal(type);
-    });
-    
-    return initialGoals;
-  });
-  
-  // Update local state when props change
-  useEffect(() => {
-    const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
-    const updatedGoals: Record<HabitType, HabitGoal> = {} as Record<HabitType, HabitGoal>;
-    
-    habitTypes.forEach(type => {
-      updatedGoals[type] = goals[type] || createDefaultGoal(type);
-    });
-    
-    setLocalGoals(updatedGoals);
-  }, [goals, viewMonth, viewYear]);
-
   const getHabitIcon = (habitType: HabitType) => {
     switch (habitType) {
       case "gym":
@@ -99,53 +60,51 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
     return new Date(2000, month, 1).toLocaleString('default', { month: 'long' });
   };
 
-  const handleFrequencyChange = (type: HabitType, value: string) => {
-    const frequency = parseInt(value) || 0;
-    const currentGoal = localGoals[type] || createDefaultGoal(type);
-    const newGoal = {
-      ...currentGoal,
-      frequency
-    };
+  // Calculate planned days for a habit type in the current month
+  const getPlannedDaysCount = (habitType: HabitType) => {
+    if (!habitsState?.days) return 0;
     
-    // Update local state immediately for UI responsiveness
-    setLocalGoals(prev => ({
-      ...prev,
-      [type]: newGoal
-    }));
+    const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
+    let plannedCount = 0;
     
-    // Update parent state
-    onUpdateGoal(type, newGoal);
+    daysInCurrentMonth.forEach(date => {
+      const dateISO = formatDateISO(date);
+      const dayData = habitsState.days[dateISO];
+      
+      if (dayData && dayData[habitType] && dayData[habitType].planned) {
+        plannedCount++;
+      }
+    });
+    
+    return plannedCount;
   };
 
   // Calculate progress for each habit
   const getProgressData = (habitType: HabitType) => {
-    const goal = localGoals[habitType] || createDefaultGoal(habitType);
+    const plannedDays = getPlannedDaysCount(habitType);
     const stats = habitStats[habitType];
     
     if (habitType === 'sleep' && habitsState) {
       const sleepQualityStats = calculateSleepQualityStats(habitsState, viewYear, viewMonth);
-      const today = new Date();
-      const currentDate = new Date(viewYear, viewMonth, Math.min(today.getDate(), new Date(viewYear, viewMonth + 1, 0).getDate()));
-      const daysPassedInMonth = currentDate.getDate();
-      const progress = daysPassedInMonth > 0 ? Math.min(100, Math.round((sleepQualityStats.goodSleep / daysPassedInMonth) * 100)) : 0;
+      const progress = plannedDays > 0 ? Math.min(100, Math.round((sleepQualityStats.goodSleep / plannedDays) * 100)) : 0;
       
       return {
         completed: sleepQualityStats.goodSleep,
-        total: daysPassedInMonth,
+        total: plannedDays,
         progress
       };
     }
     
-    if (goal?.frequency && stats) {
-      const progress = Math.min(100, Math.round((stats.totalCompleted / goal.frequency) * 100));
+    if (stats && plannedDays > 0) {
+      const progress = Math.min(100, Math.round((stats.totalCompleted / plannedDays) * 100));
       return {
         completed: stats.totalCompleted,
-        total: goal.frequency,
+        total: plannedDays,
         progress
       };
     }
     
-    return { completed: 0, total: goal?.frequency || 0, progress: 0 };
+    return { completed: 0, total: plannedDays, progress: 0 };
   };
 
   // Define habit types to ensure consistent ordering
@@ -158,7 +117,6 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {habitTypes.map((habitType) => {
-          const localGoal = localGoals[habitType] || createDefaultGoal(habitType);
           const progressData = getProgressData(habitType);
           
           return (
@@ -170,14 +128,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
                     <span className="text-sm font-medium">{getHabitTitle(habitType)}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="31"
-                      value={localGoal.frequency}
-                      className="w-12 h-7 text-xs p-1 text-center"
-                      onChange={(e) => handleFrequencyChange(habitType, e.target.value)}
-                    />
+                    <span className="text-sm font-medium">{progressData.total}</span>
                     <span className="text-xs text-muted-foreground">days</span>
                   </div>
                 </div>

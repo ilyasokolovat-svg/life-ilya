@@ -1,11 +1,9 @@
 
 import React, { useState } from "react";
-import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { HabitData, HabitType } from "@/types/habit";
-import { toast } from "sonner";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { HabitType, HabitData } from "@/types/habit";
+import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
 
 interface HabitTrackerProps {
   date: Date;
@@ -20,160 +18,69 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   habitData,
   onUpdate,
 }) => {
-  const [showAnimation, setShowAnimation] = useState(false);
-  const [sleepHours, setSleepHours] = useState(
-    habitData.sleepHours !== undefined ? habitData.sleepHours.toString() : ""
-  );
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const [sleepHours, setSleepHours] = useState(habitData.sleepHours?.toString() || "");
 
-  const handlePlannedChange = (checked: boolean | string) => {
-    const isChecked = checked === true || checked === "true";
-    console.log(`Marking ${habitType} as ${isChecked ? 'planned' : 'not planned'}`);
-    
-    try {
-      onUpdate(habitType, {
-        ...habitData,
-        planned: isChecked,
-      });
-    } catch (error) {
-      console.error("Failed to update planned status:", error);
-      toast.error("Failed to save your progress");
-    }
-  };
-
-  const handleCompletedChange = (checked: boolean | string) => {
-    const isChecked = checked === true || checked === "true";
-    console.log(`Marking ${habitType} as ${isChecked ? 'completed' : 'not completed'}`);
-    
-    try {
-      // If marking as completed, show animation and toast
-      if (isChecked && !habitData.completed) {
-        setShowAnimation(true);
-        setTimeout(() => setShowAnimation(false), 1000);
-        toast(`Great job! You completed your ${habitType} goal!`, {
-          icon: "🎉",
-        });
-      }
-      
-      // When completing, automatically mark as planned too
-      onUpdate(habitType, {
-        ...habitData,
-        completed: isChecked,
-        planned: isChecked ? true : habitData.planned, // If completing, ensure it's also planned
-      });
-    } catch (error) {
-      console.error("Failed to update completion status:", error);
-      toast.error("Failed to save your progress");
-    }
-  };
-
-  const handleSleepHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSleepHours(value);
-    
-    try {
-      const hours = parseFloat(value);
-      const isCompleted = !isNaN(hours) && hours >= 7;
-      
-      if (isCompleted && !habitData.completed) {
-        setShowAnimation(true);
-        setTimeout(() => setShowAnimation(false), 1000);
-        toast(`Great job! You got enough sleep!`, {
-          icon: "🎉",
-        });
-      }
-      
-      console.log(`Updating sleep hours to ${hours}, completed: ${isCompleted}`);
-      onUpdate(habitType, {
-        ...habitData,
-        sleepHours: isNaN(hours) ? undefined : hours,
-        completed: isCompleted,
-        planned: true, // Always mark as planned when hours are entered
-      });
-    } catch (error) {
-      console.error("Failed to update sleep hours:", error);
-      toast.error("Failed to save your progress");
-    }
-  };
-
-  const isToday = new Date().toDateString() === date.toDateString();
-  const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-  const isFuture = date > new Date(new Date().setHours(23, 59, 59, 999));
-
-  const renderIcon = () => {
+  const getHabitIcon = () => {
+    const iconProps = { className: "h-3 w-3" };
     switch (habitType) {
-      case "gym":
-        return <Dumbbell className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
-      case "alcohol":
-        return <Wine className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
       case "sleep":
-        return <Moon className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Moon {...iconProps} />;
+      case "gym":
+        return <Dumbbell {...iconProps} />;
+      case "alcohol":
+        return <Wine {...iconProps} />;
       case "meditation":
-        return <Brain className={`h-3.5 w-3.5 ${habitData.completed ? "text-success" : ""}`} />;
+        return <Brain {...iconProps} />;
       default:
         return null;
     }
   };
-  
-  // Update the status class to color the entire row based on completion status
-  let habitStatusClass = "bg-transparent";
-  
-  if (habitData.planned && habitData.completed) {
-    habitStatusClass = "bg-success/20 border-success border text-success font-medium";
-  } else if (habitData.planned) {
-    habitStatusClass = "bg-blue-light/20 border-blue-light border";
-  }
+
+  const handlePlannedChange = (checked: boolean) => {
+    onUpdate(habitType, { ...habitData, planned: checked });
+  };
+
+  const handleCompletedChange = (checked: boolean) => {
+    onUpdate(habitType, { ...habitData, completed: checked });
+  };
+
+  const handleSleepHoursChange = (value: string) => {
+    setSleepHours(value);
+    const hours = parseFloat(value);
+    if (!isNaN(hours) && hours >= 0) {
+      onUpdate(habitType, { ...habitData, sleepHours: hours });
+    }
+  };
 
   return (
-    <div className={`flex items-center justify-between py-0.5 px-1 rounded ${showAnimation ? "animate-success-pulse" : ""} ${habitStatusClass}`}>
-      <div className="flex items-center">
-        {renderIcon()}
-        {!isMobile && (
-          <span className="ml-1 text-xs">
-            {habitType.charAt(0).toUpperCase() + habitType.slice(1)}
-          </span>
-        )}
+    <div className="flex items-center justify-between text-xs space-x-1">
+      <div className="flex items-center space-x-1">
+        {getHabitIcon()}
+        <Checkbox
+          checked={habitData.planned}
+          onCheckedChange={handlePlannedChange}
+          className="h-3 w-3 border-gray-400"
+        />
       </div>
       
-      <div className="flex items-center gap-1 ml-auto">
+      <div className="flex items-center space-x-1">
         {habitType === "sleep" ? (
-          <div className="flex items-center">
-            <Input
-              type="number"
-              value={sleepHours}
-              onChange={handleSleepHoursChange}
-              className="h-5 w-10 text-[10px] px-1 py-0"
-              placeholder="hrs"
-              min="0"
-              max="24"
-              step="0.5"
-              disabled={isFuture}
-            />
-          </div>
+          <Input
+            type="number"
+            value={sleepHours}
+            onChange={(e) => handleSleepHoursChange(e.target.value)}
+            placeholder="hrs"
+            className="w-8 h-4 text-xs p-0 text-center border-gray-300"
+            min="0"
+            max="24"
+            step="0.5"
+          />
         ) : (
-          <>
-            <div className="flex items-center">
-              <Checkbox
-                checked={habitData.planned}
-                onCheckedChange={handlePlannedChange}
-                // Allow planning for today and future dates, disable only for past dates that weren't planned
-                disabled={isPast && !habitData.planned}
-                className="h-3 w-3"
-                aria-label="Planned"
-              />
-            </div>
-            
-            <div className="flex items-center">
-              <Checkbox
-                checked={habitData.completed}
-                onCheckedChange={handleCompletedChange}
-                // Only disable completion for future dates
-                disabled={isFuture}
-                className={`h-3 w-3 ${habitData.completed ? "bg-success border-success" : ""}`}
-                aria-label="Completed"
-              />
-            </div>
-          </>
+          <Checkbox
+            checked={habitData.completed}
+            onCheckedChange={handleCompletedChange}
+            className="h-3 w-3 border-green-500"
+          />
         )}
       </div>
     </div>
