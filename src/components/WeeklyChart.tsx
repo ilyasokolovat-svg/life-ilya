@@ -96,7 +96,11 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
               domain={[0, 7]}
               ticks={[0, 1, 2, 3, 4, 5, 6, 7]}
             />
-            <Tooltip content={<ChartTooltipContent />} />
+            <Tooltip 
+              content={<ChartTooltipContent />}
+              offset={compact ? 30 : 20}
+              position={{ y: compact ? 80 : 100 }}
+            />
             
             {/* First render the "completed" part (darker color) */}
             <Bar 
