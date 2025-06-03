@@ -62,6 +62,12 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
 
   // Calculate planned days for a habit type in the current month
   const getPlannedDaysCount = (habitType: HabitType) => {
+    if (habitType === 'sleep') {
+      // For sleep, return total days in the month
+      const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
+      return daysInCurrentMonth.length;
+    }
+    
     if (!habitsState?.days) return 0;
     
     const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);

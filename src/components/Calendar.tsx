@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -199,7 +198,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         </>
       )}
 
-      {/* Legend for progress bar */}
+      {/* Legend for progress bar - removed green text indicators */}
       <div className="flex flex-wrap items-center justify-end mb-2 text-xs">
         <div className="flex items-center mr-3">
           <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#90EE90' }}></div>

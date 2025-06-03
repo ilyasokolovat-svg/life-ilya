@@ -56,11 +56,14 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     <div className="flex items-center justify-between text-xs space-x-1">
       <div className="flex items-center space-x-1">
         {getHabitIcon()}
-        <Checkbox
-          checked={habitData.planned}
-          onCheckedChange={handlePlannedChange}
-          className="h-3 w-3 border-gray-400"
-        />
+        {/* Only show planned checkbox for non-sleep habits */}
+        {habitType !== "sleep" && (
+          <Checkbox
+            checked={habitData.planned}
+            onCheckedChange={handlePlannedChange}
+            className="h-3 w-3 border-gray-400"
+          />
+        )}
       </div>
       
       <div className="flex items-center space-x-1">
