@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,16 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     // Adjust cell height based on screen size
     const cellHeight = isMobile ? 'min-h-[110px]' : 'min-h-[140px]';
 
+    const getHabitLabel = (habitType: HabitType) => {
+      switch (habitType) {
+        case 'sleep': return 'Sleep';
+        case 'gym': return 'Gym';
+        case 'alcohol': return 'No Alcohol';
+        case 'meditation': return 'Meditation';
+        default: return '';
+      }
+    };
+
     return (
       <div 
         key={isoDate} 
@@ -139,10 +150,15 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           ></div>
         </div>
         
-        {/* Habits for the day - reordered with better spacing */}
-        <div className="flex-1 p-2 space-y-2">
+        {/* Habits for the day with category names */}
+        <div className="flex-1 p-2 space-y-1">
           {habitOrder.map((habitType) => (
             <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-gray-600">
+                  {getHabitLabel(habitType)}
+                </span>
+              </div>
               <HabitTracker
                 date={date}
                 habitType={habitType}
@@ -198,7 +214,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         </>
       )}
 
-      {/* Legend for progress bar - removed green text indicators */}
+      {/* Legend for progress bar */}
       <div className="flex flex-wrap items-center justify-end mb-2 text-xs">
         <div className="flex items-center mr-3">
           <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#90EE90' }}></div>
