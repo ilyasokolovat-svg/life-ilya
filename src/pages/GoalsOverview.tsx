@@ -91,30 +91,8 @@ const GoalsOverview = () => {
     const categories = Object.keys(categoryConfig);
     const index = categories.indexOf(selectedCategory);
     const totalCategories = categories.length;
-    return 12.5 + (75 / (totalCategories - 1)) * index; // Distribute across 75% of width, starting at 12.5%
+    return 12.5 + (75 / (totalCategories - 1)) * index;
   };
-
-  // Calculate the position of the selected subcategory for line positioning  
-  const getSubcategoryPosition = () => {
-    if (!selectedSubcategory || !selectedConfig) return 50;
-    const index = selectedConfig.subcategories.indexOf(selectedSubcategory);
-    const totalSubcategories = selectedConfig.subcategories.length;
-    if (totalSubcategories === 1) return 50;
-    return 10 + (80 / (totalSubcategories - 1)) * index; // Distribute across 80% of width, starting at 10%
-  };
-
-  // Calculate the position of the selected period for line positioning
-  const getPeriodPosition = () => {
-    if (!selectedPeriod) return 50;
-    const index = allPeriods.findIndex(p => p.key === selectedPeriod);
-    const totalPeriods = allPeriods.length;
-    if (totalPeriods === 1) return 50;
-    return 5 + (90 / (totalPeriods - 1)) * index; // Distribute across 90% of width, starting at 5%
-  };
-
-  const categoryPosition = getCategoryPosition();
-  const subcategoryPosition = getSubcategoryPosition();
-  const periodPosition = getPeriodPosition();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -153,13 +131,13 @@ const GoalsOverview = () => {
           {selectedCategory && selectedConfig && (
             <div className="relative">
               {/* Connection lines from selected category to subcategories */}
-              <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 pointer-events-none" style={{ top: '-32px' }}>
                 {/* Vertical line down from selected category */}
                 <div 
-                  className="absolute w-0.5 h-4 bg-blue-500"
+                  className="absolute w-0.5 h-8 bg-blue-500"
                   style={{
-                    left: `${categoryPosition}%`,
-                    top: '-16px',
+                    left: `${getCategoryPosition()}%`,
+                    top: '0px',
                     transform: 'translateX(-50%)'
                   }}
                 />
@@ -167,23 +145,23 @@ const GoalsOverview = () => {
                 <div 
                   className="absolute h-0.5 bg-blue-500"
                   style={{
-                    left: '10%',
-                    right: '10%',
-                    top: '-12px'
+                    left: '5%',
+                    right: '5%',
+                    top: '8px'
                   }}
                 />
                 {/* Vertical lines down to each subcategory */}
                 {selectedConfig.subcategories.map((_, index) => {
                   const subcategoryPos = selectedConfig.subcategories.length === 1 
                     ? 50 
-                    : 10 + (80 / (selectedConfig.subcategories.length - 1)) * index;
+                    : 5 + (90 / (selectedConfig.subcategories.length - 1)) * index;
                   return (
                     <div
                       key={index}
-                      className="absolute w-0.5 h-4 bg-blue-500"
+                      className="absolute w-0.5 h-8 bg-blue-500"
                       style={{
                         left: `${subcategoryPos}%`,
-                        top: '-12px',
+                        top: '8px',
                         transform: 'translateX(-50%)'
                       }}
                     />
@@ -191,7 +169,7 @@ const GoalsOverview = () => {
                 })}
               </div>
               
-              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-8">
+              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-4">
                 {selectedConfig.subcategories.map((subcategory) => (
                   <Card 
                     key={subcategory}
@@ -215,45 +193,57 @@ const GoalsOverview = () => {
           {selectedSubcategory && selectedCategory && (
             <div className="relative">
               {/* Connection lines from selected subcategory to periods */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Vertical line down from selected subcategory */}
-                <div 
-                  className="absolute w-0.5 h-4 bg-green-500"
-                  style={{
-                    left: `${subcategoryPosition}%`,
-                    top: '-16px',
-                    transform: 'translateX(-50%)'
-                  }}
-                />
-                {/* Horizontal line across periods area */}
-                <div 
-                  className="absolute h-0.5 bg-green-500"
-                  style={{
-                    left: '5%',
-                    right: '5%',
-                    top: '-12px'
-                  }}
-                />
-                {/* Vertical lines down to each period */}
-                {allPeriods.map((_, index) => {
-                  const periodPos = allPeriods.length === 1 
+              <div className="absolute inset-0 pointer-events-none" style={{ top: '-32px' }}>
+                {/* Calculate position of selected subcategory */}
+                {(() => {
+                  const subcategoryIndex = selectedConfig!.subcategories.indexOf(selectedSubcategory);
+                  const subcategoryPosition = selectedConfig!.subcategories.length === 1 
                     ? 50 
-                    : 5 + (90 / (allPeriods.length - 1)) * index;
+                    : 5 + (90 / (selectedConfig!.subcategories.length - 1)) * subcategoryIndex;
+                  
                   return (
-                    <div
-                      key={index}
-                      className="absolute w-0.5 h-4 bg-green-500"
-                      style={{
-                        left: `${periodPos}%`,
-                        top: '-12px',
-                        transform: 'translateX(-50%)'
-                      }}
-                    />
+                    <>
+                      {/* Vertical line down from selected subcategory */}
+                      <div 
+                        className="absolute w-0.5 h-8 bg-green-500"
+                        style={{
+                          left: `${subcategoryPosition}%`,
+                          top: '0px',
+                          transform: 'translateX(-50%)'
+                        }}
+                      />
+                      {/* Horizontal line across periods area */}
+                      <div 
+                        className="absolute h-0.5 bg-green-500"
+                        style={{
+                          left: '2.5%',
+                          right: '2.5%',
+                          top: '8px'
+                        }}
+                      />
+                      {/* Vertical lines down to each period */}
+                      {allPeriods.map((_, index) => {
+                        const periodPos = allPeriods.length === 1 
+                          ? 50 
+                          : 2.5 + (95 / (allPeriods.length - 1)) * index;
+                        return (
+                          <div
+                            key={index}
+                            className="absolute w-0.5 h-8 bg-green-500"
+                            style={{
+                              left: `${periodPos}%`,
+                              top: '8px',
+                              transform: 'translateX(-50%)'
+                            }}
+                          />
+                        );
+                      })}
+                    </>
                   );
-                })}
+                })()}
               </div>
               
-              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-8">
+              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-4">
                 {allPeriods.map((period) => {
                   const goalData = getGoalData(selectedSubcategory, period.key);
                   const isQuarter = quarters.some(q => q.key === period.key);
@@ -300,45 +290,57 @@ const GoalsOverview = () => {
           {selectedPeriod && quarters.some(q => q.key === selectedPeriod) && (
             <div className="relative">
               {/* Connection lines from selected period to weeks */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Vertical line down from selected period */}
-                <div 
-                  className="absolute w-0.5 h-4 bg-purple-500"
-                  style={{
-                    left: `${periodPosition}%`,
-                    top: '-16px',
-                    transform: 'translateX(-50%)'
-                  }}
-                />
-                {/* Horizontal line across weeks area */}
-                <div 
-                  className="absolute h-0.5 bg-purple-500"
-                  style={{
-                    left: '25%',
-                    right: '25%',
-                    top: '-12px'
-                  }}
-                />
-                {/* Vertical lines down to each week */}
-                {weeks.map((_, index) => {
-                  const weekPos = weeks.length === 1 
+              <div className="absolute inset-0 pointer-events-none" style={{ top: '-32px' }}>
+                {/* Calculate position of selected period */}
+                {(() => {
+                  const periodIndex = allPeriods.findIndex(p => p.key === selectedPeriod);
+                  const periodPosition = allPeriods.length === 1 
                     ? 50 
-                    : 25 + (50 / (weeks.length - 1)) * index;
+                    : 2.5 + (95 / (allPeriods.length - 1)) * periodIndex;
+                  
                   return (
-                    <div
-                      key={index}
-                      className="absolute w-0.5 h-4 bg-purple-500"
-                      style={{
-                        left: `${weekPos}%`,
-                        top: '-12px',
-                        transform: 'translateX(-50%)'
-                      }}
-                    />
+                    <>
+                      {/* Vertical line down from selected period */}
+                      <div 
+                        className="absolute w-0.5 h-8 bg-purple-500"
+                        style={{
+                          left: `${periodPosition}%`,
+                          top: '0px',
+                          transform: 'translateX(-50%)'
+                        }}
+                      />
+                      {/* Horizontal line across weeks area */}
+                      <div 
+                        className="absolute h-0.5 bg-purple-500"
+                        style={{
+                          left: '25%',
+                          right: '25%',
+                          top: '8px'
+                        }}
+                      />
+                      {/* Vertical lines down to each week */}
+                      {weeks.map((_, index) => {
+                        const weekPos = weeks.length === 1 
+                          ? 50 
+                          : 25 + (50 / (weeks.length - 1)) * index;
+                        return (
+                          <div
+                            key={index}
+                            className="absolute w-0.5 h-8 bg-purple-500"
+                            style={{
+                              left: `${weekPos}%`,
+                              top: '8px',
+                              transform: 'translateX(-50%)'
+                            }}
+                          />
+                        );
+                      })}
+                    </>
                   );
-                })}
+                })()}
               </div>
               
-              <div className="flex justify-center items-start gap-4 pt-8">
+              <div className="flex justify-center items-start gap-4 pt-4">
                 {weeks.map((week) => (
                   <Card key={week} className="hover:shadow-lg transition-shadow min-w-[100px]">
                     <CardContent className="p-3 text-center">
