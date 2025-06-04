@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
-import Goals from "./pages/Goals";
 import GoalsOverview from "./pages/GoalsOverview";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -98,11 +97,6 @@ const AppRoutes = () => {
       <Route path="/goals" element={
         <ProtectedRoute>
           <GoalsOverview />
-        </ProtectedRoute>
-      } />
-      <Route path="/goals/:category" element={
-        <ProtectedRoute>
-          <Goals />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
