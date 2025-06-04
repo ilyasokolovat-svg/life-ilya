@@ -6,9 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Briefcase, TrendingUp, DollarSign, GraduationCap } from "lucide-react";
 import GoalTimelineView from "@/components/goals/GoalTimelineView";
+import SubcategoryManager from "@/components/goals/SubcategoryManager";
 
 const GoalsOverview = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const initialCategories = {
+    career: ["Commission/Bonus/Dividends", "Quota Achievement", "Salary/Income", "Promotion", "Sales Skills"],
+    business: ["TT Website", "TT Instagram Organic", "TT Ads", "Selo Olive Oil", "Real Estate Projects"],
+    investments: ["Crypto", "ETFs", "Monthly Investment"],
+    skills: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
+  };
+
+  const [categorySubcategories, setCategorySubcategories] = useState(initialCategories);
+  const [hiddenSubcategories, setHiddenSubcategories] = useState<Record<string, string[]>>({});
 
   const categories = [
     {
@@ -17,7 +28,7 @@ const GoalsOverview = () => {
       emoji: "💼",
       icon: Briefcase,
       color: "from-blue-500 to-blue-600",
-      subcategories: ["Commission/Bonus/Dividends", "Quota Achievement", "Salary/Income", "Promotion", "Sales Skills"]
+      subcategories: categorySubcategories.career
     },
     {
       id: "business",
@@ -25,7 +36,7 @@ const GoalsOverview = () => {
       emoji: "📈",
       icon: TrendingUp,
       color: "from-green-500 to-green-600",
-      subcategories: ["TT Website", "TT Instagram Organic", "TT Ads", "Selo Olive Oil", "Real Estate Projects"]
+      subcategories: categorySubcategories.business
     },
     {
       id: "investments",
@@ -33,7 +44,7 @@ const GoalsOverview = () => {
       emoji: "💰",
       icon: DollarSign,
       color: "from-purple-500 to-purple-600",
-      subcategories: ["Crypto", "ETFs", "Monthly Investment"]
+      subcategories: categorySubcategories.investments
     },
     {
       id: "skills",
@@ -41,9 +52,49 @@ const GoalsOverview = () => {
       emoji: "🎓",
       icon: GraduationCap,
       color: "from-orange-500 to-orange-600",
-      subcategories: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
+      subcategories: categorySubcategories.skills
     }
   ];
+
+  const handleAddSubcategory = (categoryId: string, name: string) => {
+    setCategorySubcategories(prev => ({
+      ...prev,
+      [categoryId]: [...prev[categoryId as keyof typeof prev], name]
+    }));
+  };
+
+  const handleRemoveSubcategory = (categoryId: string, name: string) => {
+    setCategorySubcategories(prev => ({
+      ...prev,
+      [categoryId]: prev[categoryId as keyof typeof prev].filter(sub => sub !== name)
+    }));
+    
+    // Also remove from hidden list if it was hidden
+    setHiddenSubcategories(prev => ({
+      ...prev,
+      [categoryId]: prev[categoryId]?.filter(sub => sub !== name) || []
+    }));
+  };
+
+  const handleToggleSubcategoryVisibility = (categoryId: string, name: string) => {
+    setHiddenSubcategories(prev => {
+      const currentHidden = prev[categoryId] || [];
+      const isHidden = currentHidden.includes(name);
+      
+      return {
+        ...prev,
+        [categoryId]: isHidden
+          ? currentHidden.filter(sub => sub !== name)
+          : [...currentHidden, name]
+      };
+    });
+  };
+
+  const getVisibleSubcategories = (categoryId: string) => {
+    const allSubcategories = categorySubcategories[categoryId as keyof typeof categorySubcategories] || [];
+    const hidden = hiddenSubcategories[categoryId] || [];
+    return allSubcategories.filter(sub => !hidden.includes(sub));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -87,7 +138,16 @@ const GoalsOverview = () => {
 
         {/* Expanded Category Content */}
         {selectedCategory && (
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Subcategory Manager */}
+            <SubcategoryManager
+              subcategories={categorySubcategories[selectedCategory as keyof typeof categorySubcategories] || []}
+              hiddenSubcategories={hiddenSubcategories[selectedCategory] || []}
+              onAdd={(name) => handleAddSubcategory(selectedCategory, name)}
+              onRemove={(name) => handleRemoveSubcategory(selectedCategory, name)}
+              onToggleVisibility={(name) => handleToggleSubcategoryVisibility(selectedCategory, name)}
+            />
+
             <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-gray-800 text-center">
@@ -95,10 +155,10 @@ const GoalsOverview = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <Tabs defaultValue={categories.find(c => c.id === selectedCategory)?.subcategories[0]} className="w-full">
+                <Tabs defaultValue={getVisibleSubcategories(selectedCategory)[0]} className="w-full">
                   <div className="overflow-x-auto mb-6">
                     <TabsList className="inline-flex h-auto items-center justify-start bg-transparent p-0 gap-2 min-w-full w-max">
-                      {categories.find(c => c.id === selectedCategory)?.subcategories.map((subcategory) => (
+                      {getVisibleSubcategories(selectedCategory).map((subcategory) => (
                         <TabsTrigger 
                           key={subcategory} 
                           value={subcategory} 
@@ -110,7 +170,7 @@ const GoalsOverview = () => {
                     </TabsList>
                   </div>
 
-                  {categories.find(c => c.id === selectedCategory)?.subcategories.map((subcategory) => (
+                  {getVisibleSubcategories(selectedCategory).map((subcategory) => (
                     <TabsContent key={subcategory} value={subcategory}>
                       <GoalTimelineView 
                         category={selectedCategory} 

@@ -3,18 +3,22 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Settings } from "lucide-react";
+import { Plus, Trash2, Settings, Eye, EyeOff } from "lucide-react";
 
 interface SubcategoryManagerProps {
   subcategories: string[];
+  hiddenSubcategories?: string[];
   onAdd: (name: string) => void;
   onRemove: (name: string) => void;
+  onToggleVisibility?: (name: string) => void;
 }
 
 const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
   subcategories,
+  hiddenSubcategories = [],
   onAdd,
-  onRemove
+  onRemove,
+  onToggleVisibility
 }) => {
   const [newSubcategory, setNewSubcategory] = useState("");
   const [showManager, setShowManager] = useState(false);
@@ -31,6 +35,8 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
       handleAdd();
     }
   };
+
+  const isHidden = (subcategory: string) => hiddenSubcategories.includes(subcategory);
 
   return (
     <Card className="mb-6">
@@ -74,17 +80,45 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
               {subcategories.map((subcategory) => (
                 <div
                   key={subcategory}
-                  className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                    isHidden(subcategory) 
+                      ? 'bg-gray-100 opacity-60' 
+                      : 'bg-gray-50'
+                  }`}
                 >
-                  <span className="text-sm">{subcategory}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onRemove(subcategory)}
-                    className="text-red-600 hover:text-red-800 h-6 w-6 p-0"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
+                  <span className={`text-sm ${isHidden(subcategory) ? 'line-through text-gray-500' : ''}`}>
+                    {subcategory}
+                  </span>
+                  <div className="flex items-center space-x-1">
+                    {onToggleVisibility && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onToggleVisibility(subcategory)}
+                        className={`h-6 w-6 p-0 ${
+                          isHidden(subcategory)
+                            ? 'text-gray-400 hover:text-gray-600'
+                            : 'text-blue-600 hover:text-blue-800'
+                        }`}
+                        title={isHidden(subcategory) ? 'Show subcategory' : 'Hide subcategory'}
+                      >
+                        {isHidden(subcategory) ? (
+                          <EyeOff className="w-3 h-3" />
+                        ) : (
+                          <Eye className="w-3 h-3" />
+                        )}
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRemove(subcategory)}
+                      className="text-red-600 hover:text-red-800 h-6 w-6 p-0"
+                      title="Delete subcategory"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -94,6 +128,14 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
             <p className="text-sm text-gray-500 text-center py-4">
               No subcategories yet. Add your first one above!
             </p>
+          )}
+
+          {hiddenSubcategories.length > 0 && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> {hiddenSubcategories.length} subcategory(ies) are currently hidden from the tabs.
+              </p>
+            </div>
           )}
         </CardContent>
       )}
