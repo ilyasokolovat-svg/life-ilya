@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { Edit2, ChevronLeft, ChevronRight, Target, TrendingUp } from "lucide-react";
 import { useGoalsData } from "@/hooks/useGoalsData";
 
@@ -23,6 +24,7 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
   const [weeklyInputs, setWeeklyInputs] = useState<Record<string, { plan_text: string; fact_text: string }>>({});
   const [currentStatus, setCurrentStatus] = useState("");
   const [editingStatus, setEditingStatus] = useState(false);
+  const [progressPercentage, setProgressPercentage] = useState(65);
 
   const { goalsData, weeklyData, saveGoal, saveWeeklyData } = useGoalsData(category);
 
@@ -205,6 +207,22 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
     element.style.height = Math.max(80, element.scrollHeight) + 'px';
   };
 
+  const getProgressLabel = (percentage: number) => {
+    if (percentage < 25) return "🚀 Just Started";
+    if (percentage < 50) return "📈 Building Momentum";
+    if (percentage < 75) return "⚡ Making Progress";
+    if (percentage < 90) return "🎯 Almost There";
+    return "✅ Goal Achieved";
+  };
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage < 25) return "from-red-400 to-red-500";
+    if (percentage < 50) return "from-orange-400 to-orange-500";
+    if (percentage < 75) return "from-yellow-400 to-yellow-500";
+    if (percentage < 90) return "from-blue-400 to-blue-500";
+    return "from-green-400 to-green-500";
+  };
+
   return (
     <div className="space-y-6">
       {/* Current Status Section */}
@@ -262,19 +280,35 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
               )}
             </div>
 
-            {/* Visual Progress Indicator */}
+            {/* Adjustable Progress Indicator */}
             <div className="space-y-4">
-              <label className="text-sm font-semibold text-gray-700">Overall Progress Feel</label>
+              <label className="text-sm font-semibold text-gray-700">Perceived Progress vs. 2025 Goal</label>
+              
+              {/* Progress Slider */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Just Started</span>
-                  <span>Making Progress</span>
-                  <span>Almost There</span>
+                <div className="flex items-center justify-between text-xs text-gray-600">
+                  <span>0%</span>
+                  <span className="font-medium">Current: {progressPercentage}%</span>
+                  <span>100%</span>
                 </div>
-                <Progress value={65} className="h-3 bg-gray-200" />
+                <Slider
+                  value={[progressPercentage]}
+                  onValueChange={(value) => setProgressPercentage(value[0])}
+                  max={100}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Visual Progress Bar */}
+              <div className="space-y-3">
+                <Progress 
+                  value={progressPercentage} 
+                  className={`h-4 bg-gray-200`}
+                />
                 <div className="text-center">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                    🎯 On Track
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r ${getProgressColor(progressPercentage)} text-white`}>
+                    {getProgressLabel(progressPercentage)}
                   </span>
                 </div>
               </div>
@@ -282,12 +316,16 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
               {/* Quick Stats */}
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="text-lg font-bold text-green-700">65%</div>
+                  <div className="text-lg font-bold text-green-700">{progressPercentage}%</div>
                   <div className="text-xs text-green-600">Progress</div>
                 </div>
                 <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-lg font-bold text-blue-700">📈</div>
-                  <div className="text-xs text-blue-600">Trending Up</div>
+                  <div className="text-lg font-bold text-blue-700">
+                    {progressPercentage >= 75 ? "📈" : progressPercentage >= 50 ? "➡️" : "📉"}
+                  </div>
+                  <div className="text-xs text-blue-600">
+                    {progressPercentage >= 75 ? "Trending Up" : progressPercentage >= 50 ? "Steady" : "Needs Focus"}
+                  </div>
                 </div>
               </div>
             </div>
