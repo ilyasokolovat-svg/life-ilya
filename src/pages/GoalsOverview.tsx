@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Briefcase, TrendingUp, DollarSign, GraduationCap, Edit2 } from "lucide-react";
+import { ArrowLeft, Briefcase, TrendingUp, DollarSign, GraduationCap } from "lucide-react";
 import GoalTimelineView from "@/components/goals/GoalTimelineView";
 
 const GoalsOverview = () => {
@@ -14,6 +14,7 @@ const GoalsOverview = () => {
     {
       id: "career",
       title: "Career",
+      emoji: "💼",
       icon: Briefcase,
       color: "from-blue-500 to-blue-600",
       subcategories: ["Commission/Bonus/Dividends", "Quota Achievement", "Salary/Income", "Promotion", "Sales Skills"]
@@ -21,6 +22,7 @@ const GoalsOverview = () => {
     {
       id: "business",
       title: "Business",
+      emoji: "📈",
       icon: TrendingUp,
       color: "from-green-500 to-green-600",
       subcategories: ["TT Website", "TT Instagram Organic", "TT Ads", "Selo Olive Oil", "Real Estate Projects"]
@@ -28,6 +30,7 @@ const GoalsOverview = () => {
     {
       id: "investments",
       title: "Investments",
+      emoji: "💰",
       icon: DollarSign,
       color: "from-purple-500 to-purple-600",
       subcategories: ["Crypto", "ETFs", "Monthly Investment"]
@@ -35,6 +38,7 @@ const GoalsOverview = () => {
     {
       id: "skills",
       title: "Skills & Growth",
+      emoji: "🎓",
       icon: GraduationCap,
       color: "from-orange-500 to-orange-600",
       subcategories: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
@@ -63,62 +67,33 @@ const GoalsOverview = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {!selectedCategory ? (
-          // Category Selection View
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {categories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <div
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className="group cursor-pointer"
-                >
-                  <Card className="h-full hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-0 shadow-lg">
-                    <CardHeader className="text-center pb-4">
-                      <div className={`mx-auto w-20 h-20 bg-gradient-to-br ${category.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                        <IconComponent className="w-10 h-10 text-white" />
-                      </div>
-                      <CardTitle className="text-2xl font-bold text-gray-800">{category.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {category.subcategories.slice(0, 3).map((sub, index) => (
-                          <p key={index} className="text-sm text-gray-600 flex items-center">
-                            <span className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mr-3"></span>
-                            {sub}
-                          </p>
-                        ))}
-                        {category.subcategories.length > 3 && (
-                          <p className="text-sm text-gray-500 font-medium">
-                            +{category.subcategories.length - 3} more areas
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+        {/* Category Bubbles */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
+          {categories.map((category) => (
+            <div
+              key={category.id}
+              onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
+              className="group cursor-pointer"
+            >
+              <div className={`w-32 h-32 bg-gradient-to-br ${category.color} rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl mx-auto ${selectedCategory === category.id ? 'ring-4 ring-blue-400 scale-105' : ''}`}>
+                <div className="text-center">
+                  <div className="text-4xl mb-1">{category.emoji}</div>
+                  <h2 className="text-sm font-bold text-white">{category.title}</h2>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          // Category Detail View
-          <div className="max-w-7xl mx-auto">
-            <div className="mb-6 flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedCategory(null)}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Categories
-              </Button>
-              <h2 className="text-2xl font-bold text-gray-800">
-                {categories.find(c => c.id === selectedCategory)?.title}
-              </h2>
+              </div>
             </div>
+          ))}
+        </div>
 
+        {/* Expanded Category Content */}
+        {selectedCategory && (
+          <div className="max-w-7xl mx-auto">
             <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold text-gray-800 text-center">
+                  {categories.find(c => c.id === selectedCategory)?.title}
+                </CardTitle>
+              </CardHeader>
               <CardContent className="p-6">
                 <Tabs defaultValue={categories.find(c => c.id === selectedCategory)?.subcategories[0]} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
