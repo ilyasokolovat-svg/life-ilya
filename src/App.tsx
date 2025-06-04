@@ -99,6 +99,11 @@ const AppRoutes = () => {
           <Goals />
         </ProtectedRoute>
       } />
+      <Route path="/goals-overview" element={
+        <ProtectedRoute>
+          <GoalsOverview />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
