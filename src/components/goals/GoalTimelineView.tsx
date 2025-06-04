@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,11 +74,47 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
   };
 
   const getWeeksInMonth = (month: string, year: string) => {
-    // Generate 4-5 weeks for the month
-    return Array.from({ length: 4 }, (_, i) => ({
-      weekIndex: i + 1,
-      label: `Week ${i + 1}`
-    }));
+    const monthIndex = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"].indexOf(month);
+    
+    const weeks = [];
+    const firstDay = new Date(parseInt(year), monthIndex, 1);
+    const lastDay = new Date(parseInt(year), monthIndex + 1, 0);
+    
+    // Start from the first Monday of the month or the Monday before if month doesn't start on Monday
+    let currentWeekStart = new Date(firstDay);
+    const dayOfWeek = firstDay.getDay();
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 0, Monday = 1
+    currentWeekStart.setDate(firstDay.getDate() - daysToMonday);
+    
+    while (currentWeekStart <= lastDay) {
+      const weekEnd = new Date(currentWeekStart);
+      weekEnd.setDate(currentWeekStart.getDate() + 6);
+      
+      // Format dates
+      const startDay = currentWeekStart.getDate();
+      const endDay = weekEnd.getDate();
+      const startMonth = currentWeekStart.toLocaleString('default', { month: 'short' });
+      const endMonth = weekEnd.toLocaleString('default', { month: 'short' });
+      
+      let dateRange;
+      if (startMonth === endMonth) {
+        dateRange = `${startMonth} ${startDay}-${endDay}`;
+      } else {
+        dateRange = `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+      }
+      
+      weeks.push({
+        weekIndex: weeks.length + 1,
+        label: dateRange,
+        startDate: new Date(currentWeekStart),
+        endDate: new Date(weekEnd)
+      });
+      
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
+    
+    return weeks;
   };
 
   const getWeeklyData = (monthKey: string, weekIndex: number) => {
@@ -196,41 +233,45 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
                 <TabsContent key={month} value={month} className="mt-6">
                   <div className="space-y-4">
                     <h4 className="font-semibold text-md">{month} Weekly Planning</h4>
-                    <div className="grid gap-4">
-                      {getWeeksInMonth(month, "2025").map((week) => {
-                        const weekData = getWeeklyData(month, week.weekIndex);
-                        return (
-                          <Card key={week.weekIndex} className="border-l-4 border-green-500">
-                            <CardContent className="p-4">
-                              <h5 className="font-medium mb-3">{week.label}</h5>
-                              <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                                    Plan
-                                  </label>
-                                  <Textarea
-                                    placeholder="What do you plan to achieve this week?"
-                                    value={weekData?.plan_text || ""}
-                                    onChange={(e) => handleWeeklyDataSave(month, week.weekIndex, "plan_text", e.target.value)}
-                                    className="min-h-[80px]"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                                    Fact
-                                  </label>
-                                  <Textarea
-                                    placeholder="What did you actually achieve?"
-                                    value={weekData?.fact_text || ""}
-                                    onChange={(e) => handleWeeklyDataSave(month, week.weekIndex, "fact_text", e.target.value)}
-                                    className="min-h-[80px]"
-                                  />
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                    <div className="relative">
+                      <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                        {getWeeksInMonth(month, "2025").map((week) => {
+                          const weekData = getWeeklyData(month, week.weekIndex);
+                          return (
+                            <div key={week.weekIndex} className="flex-shrink-0 min-w-[300px]">
+                              <Card className="border-l-4 border-green-500 h-full">
+                                <CardContent className="p-4">
+                                  <h5 className="font-medium mb-3 text-center">{week.label}</h5>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                        Plan
+                                      </label>
+                                      <Textarea
+                                        placeholder="What do you plan to achieve this week?"
+                                        value={weekData?.plan_text || ""}
+                                        onChange={(e) => handleWeeklyDataSave(month, week.weekIndex, "plan_text", e.target.value)}
+                                        className="min-h-[80px]"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                        Fact
+                                      </label>
+                                      <Textarea
+                                        placeholder="What did you actually achieve?"
+                                        value={weekData?.fact_text || ""}
+                                        onChange={(e) => handleWeeklyDataSave(month, week.weekIndex, "fact_text", e.target.value)}
+                                        className="min-h-[80px]"
+                                      />
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
