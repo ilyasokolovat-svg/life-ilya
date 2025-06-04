@@ -135,6 +135,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subcategory_preferences: {
+        Row: {
+          category: string
+          created_at: string
+          hidden_subcategories: Json
+          id: string
+          subcategories: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          hidden_subcategories?: Json
+          id?: string
+          subcategories?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          hidden_subcategories?: Json
+          id?: string
+          subcategories?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weekly_tracking: {
         Row: {
           category: string

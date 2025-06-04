@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Briefcase, TrendingUp, DollarSign, GraduationCap } from "lucide-react";
 import GoalTimelineView from "@/components/goals/GoalTimelineView";
 import SubcategoryManager from "@/components/goals/SubcategoryManager";
-import useLocalStorage from "@/hooks/useLocalStorage";
+import { useSubcategoryPreferences } from "@/hooks/useSubcategoryPreferences";
 
 const GoalsOverview = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -19,9 +19,15 @@ const GoalsOverview = () => {
     skills: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
   };
 
-  // Use localStorage to persist subcategories and hidden state
-  const [categorySubcategories, setCategorySubcategories] = useLocalStorage('goal-subcategories', initialCategories);
-  const [hiddenSubcategories, setHiddenSubcategories] = useLocalStorage<Record<string, string[]>>('hidden-subcategories', {});
+  // Use Supabase to persist subcategories and hidden state
+  const {
+    categorySubcategories,
+    hiddenSubcategories,
+    handleAddSubcategory,
+    handleRemoveSubcategory,
+    handleToggleSubcategoryVisibility,
+    loading
+  } = useSubcategoryPreferences(initialCategories);
 
   const categories = [
     {
@@ -58,45 +64,22 @@ const GoalsOverview = () => {
     }
   ];
 
-  const handleAddSubcategory = (categoryId: string, name: string) => {
-    setCategorySubcategories(prev => ({
-      ...prev,
-      [categoryId]: [...prev[categoryId as keyof typeof prev], name]
-    }));
-  };
-
-  const handleRemoveSubcategory = (categoryId: string, name: string) => {
-    setCategorySubcategories(prev => ({
-      ...prev,
-      [categoryId]: prev[categoryId as keyof typeof prev].filter(sub => sub !== name)
-    }));
-    
-    // Also remove from hidden list if it was hidden
-    setHiddenSubcategories(prev => ({
-      ...prev,
-      [categoryId]: prev[categoryId]?.filter(sub => sub !== name) || []
-    }));
-  };
-
-  const handleToggleSubcategoryVisibility = (categoryId: string, name: string) => {
-    setHiddenSubcategories(prev => {
-      const currentHidden = prev[categoryId] || [];
-      const isHidden = currentHidden.includes(name);
-      
-      return {
-        ...prev,
-        [categoryId]: isHidden
-          ? currentHidden.filter(sub => sub !== name)
-          : [...currentHidden, name]
-      };
-    });
-  };
-
   const getVisibleSubcategories = (categoryId: string) => {
     const allSubcategories = categorySubcategories[categoryId as keyof typeof categorySubcategories] || [];
     const hidden = hiddenSubcategories[categoryId] || [];
     return allSubcategories.filter(sub => !hidden.includes(sub));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your goals...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
