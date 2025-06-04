@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Briefcase, TrendingUp, DollarSign, GraduationCap } from "lucide-react";
 import GoalTimelineView from "@/components/goals/GoalTimelineView";
 import SubcategoryManager from "@/components/goals/SubcategoryManager";
+import useLocalStorage from "@/hooks/useLocalStorage";
 
 const GoalsOverview = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -18,8 +19,9 @@ const GoalsOverview = () => {
     skills: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
   };
 
-  const [categorySubcategories, setCategorySubcategories] = useState(initialCategories);
-  const [hiddenSubcategories, setHiddenSubcategories] = useState<Record<string, string[]>>({});
+  // Use localStorage to persist subcategories and hidden state
+  const [categorySubcategories, setCategorySubcategories] = useLocalStorage('goal-subcategories', initialCategories);
+  const [hiddenSubcategories, setHiddenSubcategories] = useLocalStorage<Record<string, string[]>>('hidden-subcategories', {});
 
   const categories = [
     {
