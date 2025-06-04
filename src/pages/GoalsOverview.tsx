@@ -97,7 +97,7 @@ const GoalsOverview = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="space-y-12">
+        <div className="space-y-8">
           {/* Main Categories */}
           <div className="flex justify-center items-center gap-8 flex-wrap">
             {Object.entries(categoryConfig).map(([key, config]) => (
@@ -118,141 +118,202 @@ const GoalsOverview = () => {
             ))}
           </div>
 
-          {/* Connecting Line to Subcategories */}
+          {/* Subcategories */}
           {selectedCategory && selectedConfig && (
-            <>
-              <div className="flex justify-center">
-                <div className="w-0.5 h-8 bg-gray-400"></div>
+            <div className="relative">
+              {/* Continuous connecting lines */}
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Vertical line down from selected category */}
+                <div 
+                  className="absolute w-0.5 h-6 bg-blue-500"
+                  style={{
+                    left: '50%',
+                    top: '-8px',
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+                {/* Horizontal line across subcategories */}
+                <div 
+                  className="absolute h-0.5 bg-blue-500"
+                  style={{
+                    left: '10%',
+                    right: '10%',
+                    top: '18px'
+                  }}
+                />
+                {/* Vertical lines down to each subcategory */}
+                {selectedConfig.subcategories.map((_, index) => (
+                  <div
+                    key={index}
+                    className="absolute w-0.5 h-6 bg-blue-500"
+                    style={{
+                      left: `${10 + (80 / (selectedConfig.subcategories.length - 1)) * index}%`,
+                      top: '18px',
+                      transform: 'translateX(-50%)'
+                    }}
+                  />
+                ))}
               </div>
-
-              {/* Subcategories */}
-              <div className="relative">
-                {/* Horizontal Line */}
-                <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-4/5 h-0.5 bg-gray-400"></div>
-                
-                <div className="flex justify-center items-start gap-4 overflow-x-auto pb-4">
-                  {selectedConfig.subcategories.map((subcategory) => (
-                    <div key={subcategory} className="flex flex-col items-center">
-                      {/* Vertical connection line */}
-                      <div className="w-0.5 h-6 bg-gray-400"></div>
-                      
-                      <Card 
-                        className={`cursor-pointer transition-all duration-300 hover:shadow-lg min-w-[150px] ${
-                          selectedSubcategory === subcategory 
-                            ? 'ring-2 ring-green-500 bg-green-50' 
-                            : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => handleSubcategoryClick(subcategory)}
-                      >
-                        <CardContent className="p-4 text-center">
-                          <h4 className="font-semibold text-sm">{subcategory}</h4>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
+              
+              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-12">
+                {selectedConfig.subcategories.map((subcategory) => (
+                  <Card 
+                    key={subcategory}
+                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg min-w-[150px] ${
+                      selectedSubcategory === subcategory 
+                        ? 'ring-2 ring-green-500 bg-green-50' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleSubcategoryClick(subcategory)}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <h4 className="font-semibold text-sm">{subcategory}</h4>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </>
+            </div>
           )}
 
           {/* Time Periods */}
           {selectedSubcategory && selectedCategory && (
-            <>
-              <div className="flex justify-center">
-                <div className="w-0.5 h-8 bg-gray-400"></div>
+            <div className="relative">
+              {/* Continuous connecting lines */}
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Vertical line down from selected subcategory */}
+                <div 
+                  className="absolute w-0.5 h-6 bg-green-500"
+                  style={{
+                    left: '50%',
+                    top: '-8px',
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+                {/* Horizontal line across periods */}
+                <div 
+                  className="absolute h-0.5 bg-green-500"
+                  style={{
+                    left: '5%',
+                    right: '5%',
+                    top: '18px'
+                  }}
+                />
+                {/* Vertical lines down to each period */}
+                {allPeriods.map((_, index) => (
+                  <div
+                    key={index}
+                    className="absolute w-0.5 h-6 bg-green-500"
+                    style={{
+                      left: `${5 + (90 / (allPeriods.length - 1)) * index}%`,
+                      top: '18px',
+                      transform: 'translateX(-50%)'
+                    }}
+                  />
+                ))}
               </div>
-
-              <div className="relative">
-                {/* Horizontal Line */}
-                <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-4/5 h-0.5 bg-gray-400"></div>
-                
-                <div className="flex justify-center items-start gap-4 overflow-x-auto pb-4">
-                  {allPeriods.map((period) => {
-                    const goalData = getGoalData(selectedSubcategory, period.key);
-                    const isQuarter = quarters.some(q => q.key === period.key);
-                    const periodType = isQuarter ? 'quarter' : 'year';
-                    
-                    return (
-                      <div key={period.key} className="flex flex-col items-center">
-                        {/* Vertical connection line */}
-                        <div className="w-0.5 h-6 bg-gray-400"></div>
-                        
-                        <Card 
-                          className={`cursor-pointer transition-all duration-300 hover:shadow-lg min-w-[120px] group ${
-                            selectedPeriod === period.key 
-                              ? 'ring-2 ring-purple-500 bg-purple-50' 
-                              : 'hover:bg-gray-50'
-                          }`}
-                          onClick={() => handlePeriodClick(period.key)}
-                          title={goalData ? `Plan: ${goalData.planned_goal || 'Not set'}\nFact: ${goalData.actual_result || 'Not set'}` : 'No data yet'}
+              
+              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-12">
+                {allPeriods.map((period) => {
+                  const goalData = getGoalData(selectedSubcategory, period.key);
+                  const isQuarter = quarters.some(q => q.key === period.key);
+                  const periodType = isQuarter ? 'quarter' : 'year';
+                  
+                  return (
+                    <Card 
+                      key={period.key}
+                      className={`cursor-pointer transition-all duration-300 hover:shadow-lg min-w-[120px] group ${
+                        selectedPeriod === period.key 
+                          ? 'ring-2 ring-purple-500 bg-purple-50' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => handlePeriodClick(period.key)}
+                      title={goalData ? `Plan: ${goalData.planned_goal || 'Not set'}\nFact: ${goalData.actual_result || 'Not set'}` : 'No data yet'}
+                    >
+                      <CardContent className="p-3 text-center relative">
+                        <h5 className="font-medium text-sm">{period.label}</h5>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditClick(selectedSubcategory, period.key, periodType);
+                          }}
                         >
-                          <CardContent className="p-3 text-center relative">
-                            <h5 className="font-medium text-sm">{period.label}</h5>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClick(selectedSubcategory, period.key, periodType);
-                              }}
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </Button>
-                            {goalData && (
-                              <div className="mt-1">
-                                <div className="text-xs text-green-600">✓ Has data</div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </div>
-                    );
-                  })}
-                </div>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        {goalData && (
+                          <div className="mt-1">
+                            <div className="text-xs text-green-600">✓ Has data</div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-            </>
+            </div>
           )}
 
           {/* Weekly Planning */}
           {selectedPeriod && quarters.some(q => q.key === selectedPeriod) && (
-            <>
-              <div className="flex justify-center">
-                <div className="w-0.5 h-8 bg-gray-400"></div>
+            <div className="relative">
+              {/* Continuous connecting lines */}
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Vertical line down from selected period */}
+                <div 
+                  className="absolute w-0.5 h-6 bg-purple-500"
+                  style={{
+                    left: '50%',
+                    top: '-8px',
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+                {/* Horizontal line across weeks */}
+                <div 
+                  className="absolute h-0.5 bg-purple-500"
+                  style={{
+                    left: '25%',
+                    right: '25%',
+                    top: '18px'
+                  }}
+                />
+                {/* Vertical lines down to each week */}
+                {weeks.map((_, index) => (
+                  <div
+                    key={index}
+                    className="absolute w-0.5 h-6 bg-purple-500"
+                    style={{
+                      left: `${25 + (50 / (weeks.length - 1)) * index}%`,
+                      top: '18px',
+                      transform: 'translateX(-50%)'
+                    }}
+                  />
+                ))}
               </div>
-
-              <div className="relative">
-                {/* Horizontal Line */}
-                <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-3/5 h-0.5 bg-gray-400"></div>
-                
-                <div className="flex justify-center items-start gap-4">
-                  {weeks.map((week) => (
-                    <div key={week} className="flex flex-col items-center">
-                      {/* Vertical connection line */}
-                      <div className="w-0.5 h-6 bg-gray-400"></div>
-                      
-                      <Card className="hover:shadow-lg transition-shadow min-w-[100px]">
-                        <CardContent className="p-3 text-center">
-                          <h6 className="font-medium text-sm mb-2">Week {week}</h6>
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              placeholder="Plan"
-                              className="w-full text-xs p-1 border rounded"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Fact"
-                              className="w-full text-xs p-1 border rounded"
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
+              
+              <div className="flex justify-center items-start gap-4 pt-12">
+                {weeks.map((week) => (
+                  <Card key={week} className="hover:shadow-lg transition-shadow min-w-[100px]">
+                    <CardContent className="p-3 text-center">
+                      <h6 className="font-medium text-sm mb-2">Week {week}</h6>
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Plan"
+                          className="w-full text-xs p-1 border rounded"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Fact"
+                          className="w-full text-xs p-1 border rounded"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </>
+            </div>
           )}
         </div>
 
