@@ -117,21 +117,53 @@ export function useGoalsData(category: string) {
     },
   });
 
-  // Save weekly data mutation
+  // Save weekly data mutation with better upsert logic
   const saveWeeklyMutation = useMutation({
     mutationFn: async (weeklyData: WeeklyData) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase
+      // First, try to find existing record
+      const { data: existingData } = await supabase
         .from('weekly_tracking')
-        .upsert({
-          ...weeklyData,
-          user_id: user.id,
-          updated_at: new Date().toISOString(),
-        });
-        
-      if (error) throw error;
-      return data;
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', weeklyData.category)
+        .eq('subcategory', weeklyData.subcategory)
+        .eq('month_key', weeklyData.month_key)
+        .eq('week_index', weeklyData.week_index)
+        .single();
+
+      let result;
+      if (existingData) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('weekly_tracking')
+          .update({
+            plan_text: weeklyData.plan_text,
+            fact_text: weeklyData.fact_text,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingData.id)
+          .select();
+          
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('weekly_tracking')
+          .insert({
+            ...weeklyData,
+            user_id: user.id,
+            updated_at: new Date().toISOString(),
+          })
+          .select();
+          
+        if (error) throw error;
+        result = data;
+      }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weekly_tracking', category, user?.id] });

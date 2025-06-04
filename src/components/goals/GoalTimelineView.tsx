@@ -20,6 +20,7 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [hidePastPeriods, setHidePastPeriods] = useState(false);
+  const [weeklyInputs, setWeeklyInputs] = useState<Record<string, { plan_text: string; fact_text: string }>>({});
 
   const { goalsData, weeklyData, saveGoal, saveWeeklyData } = useGoalsData(category);
 
@@ -125,15 +126,61 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
     );
   };
 
+  const getWeeklyInputKey = (monthKey: string, weekIndex: number) => {
+    return `${monthKey}-${weekIndex}`;
+  };
+
+  const getWeeklyInputValue = (monthKey: string, weekIndex: number, field: 'plan_text' | 'fact_text') => {
+    const inputKey = getWeeklyInputKey(monthKey, weekIndex);
+    const localValue = weeklyInputs[inputKey]?.[field];
+    if (localValue !== undefined) {
+      return localValue;
+    }
+    
+    const weekData = getWeeklyData(monthKey, weekIndex);
+    return weekData?.[field] || "";
+  };
+
+  const handleWeeklyInputChange = (monthKey: string, weekIndex: number, field: 'plan_text' | 'fact_text', value: string) => {
+    const inputKey = getWeeklyInputKey(monthKey, weekIndex);
+    
+    setWeeklyInputs(prev => ({
+      ...prev,
+      [inputKey]: {
+        ...prev[inputKey],
+        [field]: value
+      }
+    }));
+
+    // Debounced save - save after user stops typing
+    const timeoutKey = `${inputKey}-${field}`;
+    if ((window as any)[timeoutKey]) {
+      clearTimeout((window as any)[timeoutKey]);
+    }
+    
+    (window as any)[timeoutKey] = setTimeout(() => {
+      handleWeeklyDataSave(monthKey, weekIndex, field, value);
+    }, 1000);
+  };
+
   const handleWeeklyDataSave = (monthKey: string, weekIndex: number, field: string, value: string) => {
+    const existingData = getWeeklyData(monthKey, weekIndex);
+    
     const data = {
       category,
       subcategory,
       month_key: monthKey,
       week_index: weekIndex,
-      [field]: value
+      plan_text: field === 'plan_text' ? value : (existingData?.plan_text || ""),
+      fact_text: field === 'fact_text' ? value : (existingData?.fact_text || "")
     };
+    
     saveWeeklyData(data);
+  };
+
+  const autoResize = (element: HTMLTextAreaElement) => {
+    element.style.height = 'auto';
+    element.style.height = Math.max(80, element.scrollHeight) + 'px';
   };
 
   return (
@@ -236,7 +283,6 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
                     <div className="relative">
                       <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                         {getWeeksInMonth(month, "2025").map((week) => {
-                          const weekData = getWeeklyData(month, week.weekIndex);
                           return (
                             <div key={week.weekIndex} className="flex-shrink-0 min-w-[300px]">
                               <Card className="border-l-4 border-green-500 h-full">
@@ -249,9 +295,13 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
                                       </label>
                                       <Textarea
                                         placeholder="What do you plan to achieve this week?"
-                                        value={weekData?.plan_text || ""}
-                                        onChange={(e) => handleWeeklyDataSave(month, week.weekIndex, "plan_text", e.target.value)}
-                                        className="min-h-[80px]"
+                                        value={getWeeklyInputValue(month, week.weekIndex, 'plan_text')}
+                                        onChange={(e) => {
+                                          handleWeeklyInputChange(month, week.weekIndex, 'plan_text', e.target.value);
+                                          autoResize(e.target);
+                                        }}
+                                        onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
+                                        className="min-h-[80px] resize-none overflow-hidden"
                                       />
                                     </div>
                                     <div>
@@ -260,9 +310,13 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
                                       </label>
                                       <Textarea
                                         placeholder="What did you actually achieve?"
-                                        value={weekData?.fact_text || ""}
-                                        onChange={(e) => handleWeeklyDataSave(month, week.weekIndex, "fact_text", e.target.value)}
-                                        className="min-h-[80px]"
+                                        value={getWeeklyInputValue(month, week.weekIndex, 'fact_text')}
+                                        onChange={(e) => {
+                                          handleWeeklyInputChange(month, week.weekIndex, 'fact_text', e.target.value);
+                                          autoResize(e.target);
+                                        }}
+                                        onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
+                                        className="min-h-[80px] resize-none overflow-hidden"
                                       />
                                     </div>
                                   </div>
