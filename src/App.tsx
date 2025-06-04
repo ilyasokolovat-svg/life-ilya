@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
-import GoalsOverview from "./pages/GoalsOverview";
+import Goals from "./pages/Goals";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
@@ -94,9 +94,9 @@ const AppRoutes = () => {
           <Index />
         </ProtectedRoute>
       } />
-      <Route path="/goals" element={
+      <Route path="/goals/:category" element={
         <ProtectedRoute>
-          <GoalsOverview />
+          <Goals />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
