@@ -85,6 +85,37 @@ const GoalsOverview = () => {
 
   const selectedConfig = selectedCategory ? categoryConfig[selectedCategory as keyof typeof categoryConfig] : null;
 
+  // Calculate the position of the selected category for line positioning
+  const getCategoryPosition = () => {
+    if (!selectedCategory) return 50;
+    const categories = Object.keys(categoryConfig);
+    const index = categories.indexOf(selectedCategory);
+    const totalCategories = categories.length;
+    return 12.5 + (75 / (totalCategories - 1)) * index; // Distribute across 75% of width, starting at 12.5%
+  };
+
+  // Calculate the position of the selected subcategory for line positioning  
+  const getSubcategoryPosition = () => {
+    if (!selectedSubcategory || !selectedConfig) return 50;
+    const index = selectedConfig.subcategories.indexOf(selectedSubcategory);
+    const totalSubcategories = selectedConfig.subcategories.length;
+    if (totalSubcategories === 1) return 50;
+    return 10 + (80 / (totalSubcategories - 1)) * index; // Distribute across 80% of width, starting at 10%
+  };
+
+  // Calculate the position of the selected period for line positioning
+  const getPeriodPosition = () => {
+    if (!selectedPeriod) return 50;
+    const index = allPeriods.findIndex(p => p.key === selectedPeriod);
+    const totalPeriods = allPeriods.length;
+    if (totalPeriods === 1) return 50;
+    return 5 + (90 / (totalPeriods - 1)) * index; // Distribute across 90% of width, starting at 5%
+  };
+
+  const categoryPosition = getCategoryPosition();
+  const subcategoryPosition = getSubcategoryPosition();
+  const periodPosition = getPeriodPosition();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -121,41 +152,46 @@ const GoalsOverview = () => {
           {/* Subcategories */}
           {selectedCategory && selectedConfig && (
             <div className="relative">
-              {/* Continuous connecting lines */}
+              {/* Connection lines from selected category to subcategories */}
               <div className="absolute inset-0 pointer-events-none">
                 {/* Vertical line down from selected category */}
                 <div 
-                  className="absolute w-0.5 h-6 bg-blue-500"
+                  className="absolute w-0.5 h-4 bg-blue-500"
                   style={{
-                    left: '50%',
-                    top: '-8px',
+                    left: `${categoryPosition}%`,
+                    top: '-16px',
                     transform: 'translateX(-50%)'
                   }}
                 />
-                {/* Horizontal line across subcategories */}
+                {/* Horizontal line across subcategories area */}
                 <div 
                   className="absolute h-0.5 bg-blue-500"
                   style={{
                     left: '10%',
                     right: '10%',
-                    top: '18px'
+                    top: '-12px'
                   }}
                 />
                 {/* Vertical lines down to each subcategory */}
-                {selectedConfig.subcategories.map((_, index) => (
-                  <div
-                    key={index}
-                    className="absolute w-0.5 h-6 bg-blue-500"
-                    style={{
-                      left: `${10 + (80 / (selectedConfig.subcategories.length - 1)) * index}%`,
-                      top: '18px',
-                      transform: 'translateX(-50%)'
-                    }}
-                  />
-                ))}
+                {selectedConfig.subcategories.map((_, index) => {
+                  const subcategoryPos = selectedConfig.subcategories.length === 1 
+                    ? 50 
+                    : 10 + (80 / (selectedConfig.subcategories.length - 1)) * index;
+                  return (
+                    <div
+                      key={index}
+                      className="absolute w-0.5 h-4 bg-blue-500"
+                      style={{
+                        left: `${subcategoryPos}%`,
+                        top: '-12px',
+                        transform: 'translateX(-50%)'
+                      }}
+                    />
+                  );
+                })}
               </div>
               
-              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-12">
+              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-8">
                 {selectedConfig.subcategories.map((subcategory) => (
                   <Card 
                     key={subcategory}
@@ -178,41 +214,46 @@ const GoalsOverview = () => {
           {/* Time Periods */}
           {selectedSubcategory && selectedCategory && (
             <div className="relative">
-              {/* Continuous connecting lines */}
+              {/* Connection lines from selected subcategory to periods */}
               <div className="absolute inset-0 pointer-events-none">
                 {/* Vertical line down from selected subcategory */}
                 <div 
-                  className="absolute w-0.5 h-6 bg-green-500"
+                  className="absolute w-0.5 h-4 bg-green-500"
                   style={{
-                    left: '50%',
-                    top: '-8px',
+                    left: `${subcategoryPosition}%`,
+                    top: '-16px',
                     transform: 'translateX(-50%)'
                   }}
                 />
-                {/* Horizontal line across periods */}
+                {/* Horizontal line across periods area */}
                 <div 
                   className="absolute h-0.5 bg-green-500"
                   style={{
                     left: '5%',
                     right: '5%',
-                    top: '18px'
+                    top: '-12px'
                   }}
                 />
                 {/* Vertical lines down to each period */}
-                {allPeriods.map((_, index) => (
-                  <div
-                    key={index}
-                    className="absolute w-0.5 h-6 bg-green-500"
-                    style={{
-                      left: `${5 + (90 / (allPeriods.length - 1)) * index}%`,
-                      top: '18px',
-                      transform: 'translateX(-50%)'
-                    }}
-                  />
-                ))}
+                {allPeriods.map((_, index) => {
+                  const periodPos = allPeriods.length === 1 
+                    ? 50 
+                    : 5 + (90 / (allPeriods.length - 1)) * index;
+                  return (
+                    <div
+                      key={index}
+                      className="absolute w-0.5 h-4 bg-green-500"
+                      style={{
+                        left: `${periodPos}%`,
+                        top: '-12px',
+                        transform: 'translateX(-50%)'
+                      }}
+                    />
+                  );
+                })}
               </div>
               
-              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-12">
+              <div className="flex justify-center items-start gap-4 overflow-x-auto pt-8">
                 {allPeriods.map((period) => {
                   const goalData = getGoalData(selectedSubcategory, period.key);
                   const isQuarter = quarters.some(q => q.key === period.key);
@@ -258,41 +299,46 @@ const GoalsOverview = () => {
           {/* Weekly Planning */}
           {selectedPeriod && quarters.some(q => q.key === selectedPeriod) && (
             <div className="relative">
-              {/* Continuous connecting lines */}
+              {/* Connection lines from selected period to weeks */}
               <div className="absolute inset-0 pointer-events-none">
                 {/* Vertical line down from selected period */}
                 <div 
-                  className="absolute w-0.5 h-6 bg-purple-500"
+                  className="absolute w-0.5 h-4 bg-purple-500"
                   style={{
-                    left: '50%',
-                    top: '-8px',
+                    left: `${periodPosition}%`,
+                    top: '-16px',
                     transform: 'translateX(-50%)'
                   }}
                 />
-                {/* Horizontal line across weeks */}
+                {/* Horizontal line across weeks area */}
                 <div 
                   className="absolute h-0.5 bg-purple-500"
                   style={{
                     left: '25%',
                     right: '25%',
-                    top: '18px'
+                    top: '-12px'
                   }}
                 />
                 {/* Vertical lines down to each week */}
-                {weeks.map((_, index) => (
-                  <div
-                    key={index}
-                    className="absolute w-0.5 h-6 bg-purple-500"
-                    style={{
-                      left: `${25 + (50 / (weeks.length - 1)) * index}%`,
-                      top: '18px',
-                      transform: 'translateX(-50%)'
-                    }}
-                  />
-                ))}
+                {weeks.map((_, index) => {
+                  const weekPos = weeks.length === 1 
+                    ? 50 
+                    : 25 + (50 / (weeks.length - 1)) * index;
+                  return (
+                    <div
+                      key={index}
+                      className="absolute w-0.5 h-4 bg-purple-500"
+                      style={{
+                        left: `${weekPos}%`,
+                        top: '-12px',
+                        transform: 'translateX(-50%)'
+                      }}
+                    />
+                  );
+                })}
               </div>
               
-              <div className="flex justify-center items-start gap-4 pt-12">
+              <div className="flex justify-center items-start gap-4 pt-8">
                 {weeks.map((week) => (
                   <Card key={week} className="hover:shadow-lg transition-shadow min-w-[100px]">
                     <CardContent className="p-3 text-center">
