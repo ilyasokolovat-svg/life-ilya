@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useGoalsData } from "@/hooks/useGoalsData";
 
@@ -17,13 +18,22 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [hidePastPeriods, setHidePastPeriods] = useState(false);
 
   const { goalsData, weeklyData, saveGoal, saveWeeklyData } = useGoalsData(category);
 
-  // Updated timeline periods
-  const timelinePeriods = [
+  // All timeline periods
+  const allTimelinePeriods = [
     "Q1", "Q2", "Q3", "Q4", "2026", "2027", "2030"
   ];
+
+  // Define which periods are considered "past"
+  const pastPeriods = ["Q1", "Q2"]; // You can adjust this based on current time
+
+  // Filter timeline periods based on hide setting
+  const timelinePeriods = hidePastPeriods 
+    ? allTimelinePeriods.filter(period => !pastPeriods.includes(period))
+    : allTimelinePeriods;
 
   const quarters = {
     "Q1": { months: ["January", "February", "March"], key: "Q1" },
@@ -93,7 +103,19 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
     <div className="space-y-6">
       {/* Timeline Scrollable View */}
       <div className="relative">
-        <h3 className="text-lg font-semibold mb-4">Goal Timeline</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Goal Timeline</h3>
+          <div className="flex items-center space-x-2">
+            <label htmlFor="hide-past" className="text-sm text-gray-600">
+              Hide past periods
+            </label>
+            <Switch
+              id="hide-past"
+              checked={hidePastPeriods}
+              onCheckedChange={setHidePastPeriods}
+            />
+          </div>
+        </div>
         <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {timelinePeriods.map((period) => (
             <div
