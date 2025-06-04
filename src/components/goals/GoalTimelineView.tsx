@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Edit2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Edit2, ChevronLeft, ChevronRight, Target, TrendingUp } from "lucide-react";
 import { useGoalsData } from "@/hooks/useGoalsData";
 
 interface GoalTimelineViewProps {
@@ -20,6 +21,8 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
   const [editValue, setEditValue] = useState("");
   const [hidePastPeriods, setHidePastPeriods] = useState(false);
   const [weeklyInputs, setWeeklyInputs] = useState<Record<string, { plan_text: string; fact_text: string }>>({});
+  const [currentStatus, setCurrentStatus] = useState("");
+  const [editingStatus, setEditingStatus] = useState(false);
 
   const { goalsData, weeklyData, saveGoal, saveWeeklyData } = useGoalsData(category);
 
@@ -85,6 +88,12 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
     if (period.includes("Q")) {
       setSelectedQuarter(period);
     }
+  };
+
+  const handleStatusSave = () => {
+    // Here you could save the status to database if needed
+    // For now, we'll just update the local state
+    setEditingStatus(false);
   };
 
   const getWeeksInMonth = (month: string, year: string) => {
@@ -198,6 +207,94 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
 
   return (
     <div className="space-y-6">
+      {/* Current Status Section */}
+      <Card className="border-2 border-gradient-to-r from-blue-500 to-purple-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
+                <Target className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800">Current Status - {subcategory}</h3>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingStatus(!editingStatus)}
+              className="text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              {editingStatus ? "Cancel" : "Edit"}
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Status Text */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-700 flex items-center">
+                <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
+                Where I Stand Now
+              </label>
+              {editingStatus ? (
+                <div className="space-y-3">
+                  <Textarea
+                    value={currentStatus}
+                    onChange={(e) => setCurrentStatus(e.target.value)}
+                    placeholder="Describe your current progress, achievements, and status for this goal area..."
+                    className="min-h-[100px] border-2 border-blue-300 focus:border-blue-500 bg-white"
+                    onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
+                  />
+                  <Button
+                    onClick={handleStatusSave}
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                  >
+                    Save Status
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-4 bg-white rounded-lg border-2 border-blue-200 min-h-[100px]">
+                  {currentStatus || (
+                    <span className="text-gray-500 italic">
+                      Click edit to add your current status and progress...
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Visual Progress Indicator */}
+            <div className="space-y-4">
+              <label className="text-sm font-semibold text-gray-700">Overall Progress Feel</label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Just Started</span>
+                  <span>Making Progress</span>
+                  <span>Almost There</span>
+                </div>
+                <Progress value={65} className="h-3 bg-gray-200" />
+                <div className="text-center">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    🎯 On Track
+                  </span>
+                </div>
+              </div>
+              
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="text-lg font-bold text-green-700">65%</div>
+                  <div className="text-xs text-green-600">Progress</div>
+                </div>
+                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="text-lg font-bold text-blue-700">📈</div>
+                  <div className="text-xs text-blue-600">Trending Up</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Timeline Scrollable View */}
       <div className="relative">
         <div className="flex items-center justify-between mb-4">
@@ -246,9 +343,10 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
                         <Textarea
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="text-xs resize-none flex-1 min-h-[80px]"
+                          className="text-xs resize-none flex-1 min-h-[80px] overflow-hidden"
                           placeholder="Enter goals (one per line)..."
                           onClick={(e) => e.stopPropagation()}
+                          onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
                           autoFocus
                         />
                         <div className="flex gap-1">
