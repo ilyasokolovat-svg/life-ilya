@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,6 +72,11 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
       period_type: period.includes("Q") ? "quarter" : "year",
       planned_goal: editValue
     });
+    setEditingGoal(null);
+    setEditValue("");
+  };
+
+  const handleCancelEdit = () => {
     setEditingGoal(null);
     setEditValue("");
   };
@@ -213,16 +217,17 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
           {timelinePeriods.map((period) => {
             const goalText = getGoalForPeriod(period);
             const hasMultipleLines = goalText && goalText.split('\n').filter(line => line.trim()).length > 1;
+            const isEditing = editingGoal === period;
             
             return (
               <div
                 key={period}
-                className="flex-shrink-0 min-w-[200px] cursor-pointer"
-                onClick={() => handleQuarterClick(period)}
+                className="flex-shrink-0 min-w-[250px] cursor-pointer"
+                onClick={() => !isEditing && handleQuarterClick(period)}
               >
-                <Card className={`${hasMultipleLines ? 'min-h-[120px]' : 'h-24'} ${period.includes("Q") ? "hover:bg-blue-50 border-blue-200" : "hover:bg-gray-50"} transition-colors`}>
-                  <CardContent className="p-4 h-full flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
+                <Card className={`${hasMultipleLines || isEditing ? 'min-h-[160px]' : 'h-24'} ${period.includes("Q") ? "hover:bg-blue-50 border-blue-200" : "hover:bg-gray-50"} transition-colors ${isEditing ? 'ring-2 ring-blue-400' : ''}`}>
+                  <CardContent className="p-4 h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-sm">{period}</span>
                       <Button
                         variant="ghost"
@@ -236,24 +241,42 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
                         <Edit2 className="h-3 w-3" />
                       </Button>
                     </div>
-                    {editingGoal === period ? (
-                      <div className="flex flex-col gap-2 mt-2">
+                    {isEditing ? (
+                      <div className="flex flex-col gap-2 flex-1">
                         <Textarea
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="text-xs min-h-[60px] resize-none"
+                          className="text-xs resize-none flex-1 min-h-[80px]"
                           placeholder="Enter goals (one per line)..."
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
                         />
-                        <Button
-                          size="sm"
-                          onClick={() => handleSaveGoal(period)}
-                          className="h-6 px-2 text-xs"
-                        >
-                          Save
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSaveGoal(period);
+                            }}
+                            className="h-6 px-2 text-xs flex-1"
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelEdit();
+                            }}
+                            className="h-6 px-2 text-xs flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-600 mt-2">
+                      <div className="text-xs text-gray-600 flex-1">
                         {goalText ? (
                           <div className="whitespace-pre-line">
                             {formatGoalsDisplay(goalText)}
