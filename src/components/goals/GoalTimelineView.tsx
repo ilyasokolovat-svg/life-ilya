@@ -51,6 +51,15 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
     return goal?.planned_goal || "";
   };
 
+  const formatGoalsDisplay = (goalsText: string) => {
+    if (!goalsText.trim()) return "No goal set";
+    
+    const lines = goalsText.split('\n').filter(line => line.trim());
+    if (lines.length <= 1) return goalsText;
+    
+    return lines.map((line, index) => `${index + 1}. ${line.trim()}`).join('\n');
+  };
+
   const handleEditGoal = (period: string) => {
     setEditingGoal(period);
     setEditValue(getGoalForPeriod(period));
@@ -201,53 +210,64 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
           </div>
         </div>
         <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          {timelinePeriods.map((period) => (
-            <div
-              key={period}
-              className="flex-shrink-0 min-w-[200px] cursor-pointer"
-              onClick={() => handleQuarterClick(period)}
-            >
-              <Card className={`h-24 ${period.includes("Q") ? "hover:bg-blue-50 border-blue-200" : "hover:bg-gray-50"} transition-colors`}>
-                <CardContent className="p-4 h-full flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">{period}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditGoal(period);
-                      }}
-                      className="h-6 w-6 p-0"
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  {editingGoal === period ? (
-                    <div className="flex gap-1">
-                      <Input
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        className="h-6 text-xs"
-                        placeholder="Enter goal..."
-                      />
+          {timelinePeriods.map((period) => {
+            const goalText = getGoalForPeriod(period);
+            const hasMultipleLines = goalText && goalText.split('\n').filter(line => line.trim()).length > 1;
+            
+            return (
+              <div
+                key={period}
+                className="flex-shrink-0 min-w-[200px] cursor-pointer"
+                onClick={() => handleQuarterClick(period)}
+              >
+                <Card className={`${hasMultipleLines ? 'min-h-[120px]' : 'h-24'} ${period.includes("Q") ? "hover:bg-blue-50 border-blue-200" : "hover:bg-gray-50"} transition-colors`}>
+                  <CardContent className="p-4 h-full flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">{period}</span>
                       <Button
+                        variant="ghost"
                         size="sm"
-                        onClick={() => handleSaveGoal(period)}
-                        className="h-6 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditGoal(period);
+                        }}
+                        className="h-6 w-6 p-0"
                       >
-                        Save
+                        <Edit2 className="h-3 w-3" />
                       </Button>
                     </div>
-                  ) : (
-                    <p className="text-xs text-gray-600 line-clamp-2">
-                      {getGoalForPeriod(period) || "No goal set"}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          ))}
+                    {editingGoal === period ? (
+                      <div className="flex flex-col gap-2 mt-2">
+                        <Textarea
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="text-xs min-h-[60px] resize-none"
+                          placeholder="Enter goals (one per line)..."
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveGoal(period)}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-600 mt-2">
+                        {goalText ? (
+                          <div className="whitespace-pre-line">
+                            {formatGoalsDisplay(goalText)}
+                          </div>
+                        ) : (
+                          "No goal set"
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
         </div>
       </div>
 
