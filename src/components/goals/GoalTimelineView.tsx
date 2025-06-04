@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,14 +20,9 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
 
   const { goalsData, weeklyData, saveGoal, saveWeeklyData } = useGoalsData(category);
 
-  // Timeline periods
+  // Updated timeline periods
   const timelinePeriods = [
-    "2025", "Q1 2025", "Q2 2025", "Q3 2025", "Q4 2025",
-    "2026", "Q1 2026", "Q2 2026", "Q3 2026", "Q4 2026",
-    "2027", "Q1 2027", "Q2 2027", "Q3 2027", "Q4 2027",
-    "2028", "Q1 2028", "Q2 2028", "Q3 2028", "Q4 2028",
-    "2029", "Q1 2029", "Q2 2029", "Q3 2029", "Q4 2029",
-    "2030"
+    "Q1", "Q2", "Q3", "Q4", "2026", "2027", "2030"
   ];
 
   const quarters = {
@@ -64,8 +58,7 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
 
   const handleQuarterClick = (period: string) => {
     if (period.includes("Q")) {
-      const quarter = period.split(" ")[0];
-      setSelectedQuarter(quarter);
+      setSelectedQuarter(period);
     }
   };
 
