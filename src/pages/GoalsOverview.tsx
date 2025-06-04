@@ -96,13 +96,19 @@ const GoalsOverview = () => {
               </CardHeader>
               <CardContent className="p-6">
                 <Tabs defaultValue={categories.find(c => c.id === selectedCategory)?.subcategories[0]} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
-                    {categories.find(c => c.id === selectedCategory)?.subcategories.map((subcategory) => (
-                      <TabsTrigger key={subcategory} value={subcategory} className="text-xs px-2">
-                        {subcategory}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+                  <div className="overflow-x-auto mb-6">
+                    <TabsList className="inline-flex h-auto items-center justify-start bg-transparent p-0 gap-2 min-w-full w-max">
+                      {categories.find(c => c.id === selectedCategory)?.subcategories.map((subcategory) => (
+                        <TabsTrigger 
+                          key={subcategory} 
+                          value={subcategory} 
+                          className="flex-shrink-0 px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 data-[state=active]:bg-blue-50 data-[state=active]:border-blue-300 data-[state=active]:text-blue-700 data-[state=active]:shadow-md transition-all duration-200"
+                        >
+                          {subcategory}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
 
                   {categories.find(c => c.id === selectedCategory)?.subcategories.map((subcategory) => (
                     <TabsContent key={subcategory} value={subcategory}>
