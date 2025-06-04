@@ -23,7 +23,7 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
   const [hidePastPeriods, setHidePastPeriods] = useState(false);
   const [weeklyInputs, setWeeklyInputs] = useState<Record<string, { plan_text: string; fact_text: string }>>({});
   const [currentStatus, setCurrentStatus] = useState("");
-  const [editingStatus, setEditingStatus] = useState(false);
+  const [statusChanged, setStatusChanged] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState(65);
 
   const { goalsData, weeklyData, saveGoal, saveWeeklyData } = useGoalsData(category);
@@ -92,10 +92,15 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
     }
   };
 
+  const handleStatusChange = (value: string) => {
+    setCurrentStatus(value);
+    setStatusChanged(true);
+  };
+
   const handleStatusSave = () => {
     // Here you could save the status to database if needed
     // For now, we'll just update the local state
-    setEditingStatus(false);
+    setStatusChanged(false);
   };
 
   const getWeeksInMonth = (month: string, year: string) => {
@@ -228,22 +233,11 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
       {/* Current Status Section */}
       <Card className="border-2 border-gradient-to-r from-blue-500 to-purple-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-lg">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800">Current Status - {subcategory}</h3>
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
+              <Target className="h-5 w-5 text-white" />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditingStatus(!editingStatus)}
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              {editingStatus ? "Cancel" : "Edit"}
-            </Button>
+            <h3 className="text-lg font-bold text-gray-800">Current Status - {subcategory}</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -253,31 +247,23 @@ const GoalTimelineView: React.FC<GoalTimelineViewProps> = ({ category, subcatego
                 <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
                 Where I Stand Now
               </label>
-              {editingStatus ? (
-                <div className="space-y-3">
-                  <Textarea
-                    value={currentStatus}
-                    onChange={(e) => setCurrentStatus(e.target.value)}
-                    placeholder="Describe your current progress, achievements, and status for this goal area..."
-                    className="min-h-[100px] border-2 border-blue-300 focus:border-blue-500 bg-white"
-                    onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
-                  />
+              <div className="space-y-3">
+                <Textarea
+                  value={currentStatus}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  placeholder="Describe your current progress, achievements, and status for this goal area..."
+                  className="min-h-[100px] border-2 border-blue-300 focus:border-blue-500 bg-white"
+                  onInput={(e) => autoResize(e.target as HTMLTextAreaElement)}
+                />
+                {statusChanged && (
                   <Button
                     onClick={handleStatusSave}
                     className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                   >
                     Save Status
                   </Button>
-                </div>
-              ) : (
-                <div className="p-4 bg-white rounded-lg border-2 border-blue-200 min-h-[100px]">
-                  {currentStatus || (
-                    <span className="text-gray-500 italic">
-                      Click edit to add your current status and progress...
-                    </span>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Adjustable Progress Indicator */}
