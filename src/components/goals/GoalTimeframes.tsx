@@ -1,144 +1,80 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Save, Calendar, Target, Eye, EyeOff } from "lucide-react";
+import { EyeOff, Eye, Save } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useGoalsData } from "@/hooks/useGoalsData";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface GoalTimeframesProps {
   subcategories: string[];
 }
 
 const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
+  const { user } = useAuth();
   const { category } = useParams<{ category: string }>();
   const { goalsData, saveGoal, isSaving } = useGoalsData(category || '');
-  const [localGoals, setLocalGoals] = useState<Record<string, Record<string, any>>>({});
-  const [hidePastQuarters, setHidePastQuarters] = useState(false);
+  const [hidePastPeriods, setHidePastPeriods] = useState(false);
+  const [localData, setLocalData] = useState<Record<string, Record<string, { planned: string; actual: string }>>>({});
 
-  const currentDate = new Date();
-  const currentQuarter = Math.floor(currentDate.getMonth() / 3) + 1;
-  const currentYear = currentDate.getFullYear();
-
-  const quarters = [
-    { key: "q1_2025", label: "Q1 2025", color: "border-blue-200 bg-blue-50", quarter: 1, year: 2025 },
-    { key: "q2_2025", label: "Q2 2025", color: "border-green-200 bg-green-50", quarter: 2, year: 2025 },
-    { key: "q3_2025", label: "Q3 2025", color: "border-yellow-200 bg-yellow-50", quarter: 3, year: 2025 },
-    { key: "q4_2025", label: "Q4 2025", color: "border-purple-200 bg-purple-50", quarter: 4, year: 2025 }
-  ];
-
-  const years = [
-    { key: "year_2025", label: "2025", color: "border-indigo-200 bg-indigo-50" },
-    { key: "year_2026", label: "2026", color: "border-pink-200 bg-pink-50" },
-    { key: "year_2030", label: "2030", color: "border-gray-200 bg-gray-50" }
-  ];
-
-  // Load data from database into local state
-  useEffect(() => {
-    const loadedGoals: Record<string, Record<string, any>> = {};
+  // Initialize local data from database
+  React.useEffect(() => {
+    const loadedData: Record<string, Record<string, { planned: string; actual: string }>> = {};
     
     subcategories.forEach(subcategory => {
-      loadedGoals[subcategory] = {};
+      loadedData[subcategory] = {};
       
       goalsData.forEach(goal => {
         if (goal.subcategory === subcategory) {
-          if (!loadedGoals[subcategory][goal.period_key]) {
-            loadedGoals[subcategory][goal.period_key] = {};
-          }
-          
-          if (goal.period_type === 'year') {
-            loadedGoals[subcategory][goal.period_key].goal = goal.planned_goal || '';
-          } else {
-            loadedGoals[subcategory][goal.period_key].planned = goal.planned_goal || '';
-            loadedGoals[subcategory][goal.period_key].fact = goal.actual_result || '';
-          }
+          loadedData[subcategory][goal.period_key] = {
+            planned: goal.planned_goal || '',
+            actual: goal.actual_result || ''
+          };
         }
       });
     });
     
-    setLocalGoals(loadedGoals);
+    setLocalData(loadedData);
   }, [goalsData, subcategories]);
 
-  const updateGoal = (subcategory: string, period: string, type: string, value: string) => {
-    setLocalGoals(prev => ({
+  const updateData = (subcategory: string, period: string, field: 'planned' | 'actual', value: string) => {
+    setLocalData(prev => ({
       ...prev,
       [subcategory]: {
         ...prev[subcategory],
         [period]: {
           ...prev[subcategory]?.[period],
-          [type]: value
+          [field]: value
         }
       }
     }));
   };
 
-  const handleSaveAllGoals = async () => {
+  const handleSaveProgress = async () => {
     if (!category) return;
     
     const savePromises: Promise<void>[] = [];
     
-    Object.entries(localGoals).forEach(([subcategory, periods]) => {
+    Object.entries(localData).forEach(([subcategory, periods]) => {
       Object.entries(periods).forEach(([periodKey, data]) => {
-        const isYear = years.some(y => y.key === periodKey);
-        
-        if (isYear) {
-          // For years, save as goal
-          if (data.goal && data.goal.trim()) {
-            savePromises.push(
-              new Promise<void>((resolve, reject) => {
-                saveGoal({
-                  category,
-                  subcategory,
-                  period_key: periodKey,
-                  period_type: 'year',
-                  planned_goal: data.goal,
-                }, {
-                  onSuccess: () => resolve(),
-                  onError: reject
-                });
-              })
-            );
-          }
-        } else {
-          // For quarters, save both planned and fact
-          if (data.planned && data.planned.trim()) {
-            savePromises.push(
-              new Promise<void>((resolve, reject) => {
-                saveGoal({
-                  category,
-                  subcategory,
-                  period_key: periodKey,
-                  period_type: 'quarter',
-                  planned_goal: data.planned,
-                  actual_result: data.fact || '',
-                }, {
-                  onSuccess: () => resolve(),
-                  onError: reject
-                });
-              })
-            );
-          }
-          
-          if (data.fact && data.fact.trim()) {
-            savePromises.push(
-              new Promise<void>((resolve, reject) => {
-                saveGoal({
-                  category,
-                  subcategory,
-                  period_key: periodKey,
-                  period_type: 'quarter',
-                  planned_goal: data.planned || '',
-                  actual_result: data.fact,
-                }, {
-                  onSuccess: () => resolve(),
-                  onError: reject
-                });
-              })
-            );
-          }
+        if (data.planned || data.actual) {
+          savePromises.push(
+            new Promise<void>((resolve, reject) => {
+              saveGoal({
+                category,
+                subcategory,
+                period_key: periodKey,
+                period_type: periodKey.includes('Q') ? 'quarterly' : 'monthly',
+                planned_goal: data.planned,
+                actual_result: data.actual,
+              }, {
+                onSuccess: () => resolve(),
+                onError: reject
+              });
+            })
+          );
         }
       });
     });
@@ -150,170 +86,140 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
     }
   };
 
-  const isPastQuarter = (quarter: number, year: number) => {
-    if (year < currentYear) return true;
-    if (year === currentYear && quarter < currentQuarter) return true;
-    return false;
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1; // 1-12
+  const currentQuarter = Math.ceil(currentMonth / 3);
+
+  const timeframes = [
+    { key: "2024-Q4", label: "Q4 2024", type: "quarterly" },
+    { key: "2025-Q1", label: "Q1 2025", type: "quarterly" },
+    { key: "2025-Q2", label: "Q2 2025", type: "quarterly" },
+    { key: "2025-Q3", label: "Q3 2025", type: "quarterly" },
+    { key: "2025-Q4", label: "Q4 2025", type: "quarterly" },
+    { key: "2025-05", label: "May 2025", type: "monthly" },
+    { key: "2025-06", label: "June 2025", type: "monthly" },
+    { key: "2025-07", label: "July 2025", type: "monthly" },
+    { key: "2025-08", label: "August 2025", type: "monthly" },
+    { key: "2025-09", label: "September 2025", type: "monthly" },
+    { key: "2025-10", label: "October 2025", type: "monthly" },
+    { key: "2025-11", label: "November 2025", type: "monthly" },
+    { key: "2025-12", label: "December 2025", type: "monthly" },
+  ];
+
+  const isCurrentOrFuturePeriod = (periodKey: string) => {
+    if (periodKey.includes('Q')) {
+      const year = parseInt(periodKey.split('-')[0]);
+      const quarter = parseInt(periodKey.split('Q')[1]);
+      
+      // Show current and future quarters
+      if (year > currentYear) return true;
+      if (year === currentYear && quarter >= currentQuarter) return true;
+      return false;
+    } else {
+      // Monthly periods
+      const [year, month] = periodKey.split('-').map(Number);
+      
+      // Show current and future months
+      if (year > currentYear) return true;
+      if (year === currentYear && month >= currentMonth) return true;
+      return false;
+    }
   };
 
-  const filteredQuarters = hidePastQuarters 
-    ? quarters.filter(q => !isPastQuarter(q.quarter, q.year))
-    : quarters;
-
-  const allPeriods = [...filteredQuarters, ...years];
+  const visibleTimeframes = hidePastPeriods 
+    ? timeframes.filter(tf => isCurrentOrFuturePeriod(tf.key))
+    : timeframes;
 
   return (
-    <div className="space-y-8">
-      {/* Goals Spreadsheet with Tabs */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold flex items-center">
-            <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-            Goal Planning & Review
-          </h3>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h4 className="font-semibold text-gray-800 border-b pb-2">Goal Planning & Review</h4>
+        <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setHidePastQuarters(!hidePastQuarters)}
+            onClick={() => setHidePastPeriods(!hidePastPeriods)}
             className="flex items-center space-x-2"
           >
-            {hidePastQuarters ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            <span>{hidePastQuarters ? "Show" : "Hide"} Past Quarters</span>
+            {hidePastPeriods ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            <span>{hidePastPeriods ? 'Show' : 'Hide'} Past Periods</span>
+          </Button>
+          <Button 
+            onClick={handleSaveProgress}
+            disabled={isSaving}
+            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? 'Saving...' : 'Save Progress'}
           </Button>
         </div>
-
-        <Card className="border-2 border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-base font-bold text-gray-800">
-              Goals Overview - All Time Periods
-            </CardTitle>
-            <p className="text-sm text-gray-600">
-              Switch between subcategories to view and edit goals across all quarters and years
-            </p>
-          </CardHeader>
-          <CardContent className="p-0">
-            {subcategories.length > 0 ? (
-              <Tabs defaultValue={subcategories[0]} className="w-full">
-                <div className="px-6 pt-4 pb-2">
-                  <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-start">
-                    <div className="flex flex-wrap gap-1 w-full">
-                      {subcategories.map((subcategory) => (
-                        <TabsTrigger 
-                          key={subcategory} 
-                          value={subcategory} 
-                          className="px-4 py-2 text-xs font-medium rounded-t-lg border border-gray-200 border-b-0 bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-white data-[state=active]:border-gray-300 data-[state=active]:border-b-white data-[state=active]:text-blue-600 data-[state=active]:font-semibold whitespace-nowrap"
-                        >
-                          {subcategory}
-                        </TabsTrigger>
-                      ))}
-                    </div>
-                  </TabsList>
-                </div>
-
-                {subcategories.map((subcategory) => (
-                  <TabsContent key={subcategory} value={subcategory} className="mt-0">
-                    <div className="p-6">
-                      <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                        <div className="flex w-max space-x-4 p-4">
-                          {/* Fixed subcategory label column */}
-                          <div className="flex-shrink-0 w-32">
-                            <div className="h-16 flex items-center border-b-2 border-gray-300 mb-4">
-                              <div className="font-bold text-sm text-gray-700">Period</div>
-                            </div>
-                            <div className="font-medium text-sm text-gray-800 bg-gray-50 p-3 rounded">
-                              {subcategory}
-                            </div>
-                          </div>
-
-                          {/* Horizontally scrollable periods */}
-                          {allPeriods.map((period) => (
-                            <div key={period.key} className="flex-shrink-0 w-48">
-                              {/* Header */}
-                              <div className="text-center border-b-2 border-gray-300 pb-2 mb-4">
-                                <div className="font-bold text-sm text-gray-700 mb-2">
-                                  {period.label}
-                                </div>
-                                <div className="flex gap-2">
-                                  <div className="flex-1 text-xs text-gray-500 font-medium">Plan</div>
-                                  <div className="flex-1 text-xs text-gray-500 font-medium">Fact</div>
-                                </div>
-                              </div>
-
-                              {/* Input fields */}
-                              <div className="flex gap-2">
-                                {/* Plan */}
-                                <div className="flex-1">
-                                  <Textarea
-                                    placeholder="Plan..."
-                                    value={localGoals[subcategory]?.[period.key]?.planned || ""}
-                                    onChange={(e) => updateGoal(subcategory, period.key, 'planned', e.target.value)}
-                                    className="min-h-[80px] text-xs resize-none overflow-hidden"
-                                    style={{
-                                      height: 'auto',
-                                      minHeight: '80px'
-                                    }}
-                                    onInput={(e) => {
-                                      const target = e.target as HTMLTextAreaElement;
-                                      target.style.height = 'auto';
-                                      target.style.height = Math.max(80, target.scrollHeight) + 'px';
-                                    }}
-                                  />
-                                </div>
-                                {/* Fact */}
-                                <div className="flex-1">
-                                  <Textarea
-                                    placeholder="Fact..."
-                                    value={
-                                      years.some(y => y.key === period.key) 
-                                        ? localGoals[subcategory]?.[period.key]?.goal || ""
-                                        : localGoals[subcategory]?.[period.key]?.fact || ""
-                                    }
-                                    onChange={(e) => updateGoal(
-                                      subcategory, 
-                                      period.key, 
-                                      years.some(y => y.key === period.key) ? 'goal' : 'fact', 
-                                      e.target.value
-                                    )}
-                                    className="min-h-[80px] text-xs resize-none overflow-hidden"
-                                    style={{
-                                      height: 'auto',
-                                      minHeight: '80px'
-                                    }}
-                                    onInput={(e) => {
-                                      const target = e.target as HTMLTextAreaElement;
-                                      target.style.height = 'auto';
-                                      target.style.height = Math.max(80, target.scrollHeight) + 'px';
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <ScrollBar orientation="horizontal" />
-                      </ScrollArea>
-                    </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            ) : (
-              <div className="p-6 text-center text-gray-500">
-                No subcategories available. Please add some subcategories first.
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="flex justify-end pt-4">
-        <Button 
-          onClick={handleSaveAllGoals}
-          disabled={isSaving}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? 'Saving...' : 'Save All Goals'}
-        </Button>
+      <div className="overflow-x-auto">
+        <div className="min-w-max space-y-6">
+          {/* Headers */}
+          <div className="flex items-center">
+            <div className="w-48 flex-shrink-0 text-sm font-medium text-gray-600 pr-4">
+              Subcategory
+            </div>
+            <div className="flex space-x-4">
+              {visibleTimeframes.map((timeframe) => (
+                <div key={timeframe.key} className="w-64 text-center">
+                  <div className={`text-sm font-bold p-2 rounded-lg ${
+                    timeframe.type === 'quarterly' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {timeframe.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Content */}
+          {subcategories.map((subcategory) => (
+            <div key={subcategory} className="border-b border-gray-200 pb-4">
+              <div className="flex items-start">
+                <div className="w-48 flex-shrink-0 pr-4">
+                  <div className="text-sm font-semibold text-gray-700 py-2 bg-gray-50 rounded px-3">
+                    {subcategory}
+                  </div>
+                </div>
+                
+                <div className="flex space-x-4">
+                  {visibleTimeframes.map((timeframe) => {
+                    const data = localData[subcategory]?.[timeframe.key] || { planned: "", actual: "" };
+                    
+                    return (
+                      <div key={timeframe.key} className="w-64 space-y-2">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+                          <div className="text-xs font-medium text-green-700 mb-1">Planned Goal</div>
+                          <Textarea
+                            placeholder="What do you want to achieve?"
+                            value={data.planned}
+                            onChange={(e) => updateData(subcategory, timeframe.key, 'planned', e.target.value)}
+                            className="min-h-[80px] text-sm bg-white border-green-300 focus:border-green-500"
+                          />
+                        </div>
+                        
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                          <div className="text-xs font-medium text-blue-700 mb-1">Actual Result</div>
+                          <Textarea
+                            placeholder="What did you actually achieve?"
+                            value={data.actual}
+                            onChange={(e) => updateData(subcategory, timeframe.key, 'actual', e.target.value)}
+                            className="min-h-[80px] text-sm bg-white border-blue-300 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

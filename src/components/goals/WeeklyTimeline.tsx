@@ -411,26 +411,23 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                           
                           return (
                             <div key={weekIndex} className="flex-shrink-0 w-80">
-                              {/* Week completion checkbox */}
-                              <div className="flex items-center justify-center mb-2">
-                                <Checkbox
-                                  checked={isCompleted}
-                                  onCheckedChange={() => toggleWeekCompletion(subcategory, weekIndex)}
-                                  className="mr-2"
-                                />
-                                <span className="text-xs text-gray-600">Mark week as done</span>
-                              </div>
-                              
-                              <div className={`${isCompleted ? 'opacity-60' : ''}`}>
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-                                  <Textarea
-                                    placeholder="Weekly plan..."
-                                    value={weekData.plan}
-                                    onChange={(e) => updateWeeklyData(subcategory, weekIndex, e.target.value)}
-                                    className={`min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500 ${isCompleted ? 'line-through' : ''}`}
-                                    disabled={isCompleted}
+                              <div className={`bg-blue-50 border border-blue-200 rounded-lg p-2 relative ${isCompleted ? 'opacity-60 bg-gray-100 border-gray-300' : ''}`}>
+                                {/* Week completion checkbox in top right */}
+                                <div className="absolute top-2 right-2 z-10">
+                                  <Checkbox
+                                    checked={isCompleted}
+                                    onCheckedChange={() => toggleWeekCompletion(subcategory, weekIndex)}
+                                    className="bg-white"
                                   />
                                 </div>
+                                
+                                <Textarea
+                                  placeholder="Weekly plan..."
+                                  value={weekData.plan}
+                                  onChange={(e) => updateWeeklyData(subcategory, weekIndex, e.target.value)}
+                                  className={`min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500 pr-8 ${isCompleted ? 'line-through text-gray-500' : ''}`}
+                                  disabled={isCompleted}
+                                />
                               </div>
                             </div>
                           );
