@@ -191,6 +191,24 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     });
   };
 
+  // Generate the period title without duplication
+  const getPeriodTitle = (period: TimelinePeriod) => {
+    if (period.type === 'quarter') {
+      return `${period.label} ${period.year} - Weekly Planning`;
+    } else {
+      return `${period.label} - Goals Planning`;
+    }
+  };
+
+  // Generate the strategic goals title without duplication
+  const getStrategicGoalsTitle = (period: TimelinePeriod) => {
+    if (period.type === 'quarter') {
+      return `${period.label} ${period.year} Strategic Goals`;
+    } else {
+      return `${period.label} Strategic Goals`;
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Timeline Controls */}
@@ -291,7 +309,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
           <CardHeader>
             <CardTitle className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {selectedPeriod.label} {selectedPeriod.year} - {selectedPeriod.type === 'quarter' ? 'Weekly Planning' : 'Goals Planning'}
+              {getPeriodTitle(selectedPeriod)}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
@@ -306,7 +324,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
                   <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
                     <Target className="w-4 h-4 text-white" />
                   </div>
-                  {selectedPeriod.label} {selectedPeriod.year} Strategic Goals
+                  {getStrategicGoalsTitle(selectedPeriod)}
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
                     <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse delay-75"></div>
