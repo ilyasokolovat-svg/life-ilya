@@ -111,7 +111,7 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
       const year = parseInt(periodKey.split('-')[0]);
       const quarter = parseInt(periodKey.split('Q')[1]);
       
-      // Show current and future quarters
+      // Only hide quarters that are fully past
       if (year > currentYear) return true;
       if (year === currentYear && quarter >= currentQuarter) return true;
       return false;

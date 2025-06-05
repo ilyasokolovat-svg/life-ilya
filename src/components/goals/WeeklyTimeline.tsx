@@ -352,7 +352,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                   });
                   
                   return (
-                    <div key={index} className={`flex-shrink-0 w-80 text-center border rounded-lg p-2 ${hasCompletedTasks ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}>
+                    <div key={index} className={`flex-shrink-0 w-80 text-center border rounded-lg p-2 relative ${hasCompletedTasks ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}>
                       <div className="text-sm font-bold text-gray-800 mb-1 flex items-center justify-center">
                         {week.label}
                         {hasCompletedTasks && (
