@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -287,12 +286,12 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         ))}
       </div>
 
-      {/* Weekly Planner */}
-      {selectedPeriod && selectedPeriod.type === 'quarter' && (
+      {/* Period Content */}
+      {selectedPeriod && (
         <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
           <CardHeader>
             <CardTitle className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {selectedPeriod.label} {selectedPeriod.year} - Weekly Planning
+              {selectedPeriod.label} {selectedPeriod.year} - {selectedPeriod.type === 'quarter' ? 'Weekly Planning' : 'Goals Planning'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
@@ -327,55 +326,57 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
               </CardContent>
             </Card>
 
-            {/* Weekly Planning Grid */}
-            <div className="overflow-x-auto">
-              <div className="flex gap-6 pb-4" style={{ minWidth: 'max-content' }}>
-                {generateWeeksForQuarter(selectedPeriod.year, selectedPeriod.quarter!).map((monthData) => (
-                  <div key={monthData.month} className="space-y-4">
-                    <h4 className="font-medium text-center text-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      {monthData.month}
-                    </h4>
-                    <div className="flex gap-4">
-                      {monthData.weeks.map((week) => {
-                        const isCompleted = getWeekCompleted(week.key);
-                        return (
-                          <div 
-                            key={week.key} 
-                            className={`w-64 border rounded-xl p-4 shadow-md transition-all duration-300 ${
-                              isCompleted 
-                                ? 'bg-gray-50 border-gray-300 opacity-75' 
-                                : 'bg-white border-gray-200 hover:shadow-lg'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500' : 'text-gray-800'}`}>
-                                {week.label} {monthData.month.slice(0, 3)}
-                              </span>
-                              <Checkbox
-                                checked={isCompleted}
-                                onCheckedChange={(checked) => toggleWeekCompletion(week.key, !!checked)}
-                                className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+            {/* Weekly Planning Grid - Only for quarters */}
+            {selectedPeriod.type === 'quarter' && (
+              <div className="overflow-x-auto">
+                <div className="flex gap-6 pb-4" style={{ minWidth: 'max-content' }}>
+                  {generateWeeksForQuarter(selectedPeriod.year, selectedPeriod.quarter!).map((monthData) => (
+                    <div key={monthData.month} className="space-y-4">
+                      <h4 className="font-medium text-center text-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        {monthData.month}
+                      </h4>
+                      <div className="flex gap-4">
+                        {monthData.weeks.map((week) => {
+                          const isCompleted = getWeekCompleted(week.key);
+                          return (
+                            <div 
+                              key={week.key} 
+                              className={`w-64 border rounded-xl p-4 shadow-md transition-all duration-300 ${
+                                isCompleted 
+                                  ? 'bg-gray-50 border-gray-300 opacity-75' 
+                                  : 'bg-white border-gray-200 hover:shadow-lg'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500' : 'text-gray-800'}`}>
+                                  {week.label} {monthData.month.slice(0, 3)}
+                                </span>
+                                <Checkbox
+                                  checked={isCompleted}
+                                  onCheckedChange={(checked) => toggleWeekCompletion(week.key, !!checked)}
+                                  className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                                />
+                              </div>
+                              <Textarea
+                                placeholder="Enter your plan for this week..."
+                                value={getWeekPlan(week.key)}
+                                onChange={(e) => saveWeekPlan(week.key, e.target.value)}
+                                className={`min-h-[100px] resize-none border-0 shadow-inner ${
+                                  isCompleted 
+                                    ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
+                                    : 'bg-gray-50 focus:bg-white'
+                                }`}
+                                style={{ minHeight: Math.max(100, getWeekPlan(week.key).split('\n').length * 20) + 'px' }}
                               />
                             </div>
-                            <Textarea
-                              placeholder="Enter your plan for this week..."
-                              value={getWeekPlan(week.key)}
-                              onChange={(e) => saveWeekPlan(week.key, e.target.value)}
-                              className={`min-h-[100px] resize-none border-0 shadow-inner ${
-                                isCompleted 
-                                  ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
-                                  : 'bg-gray-50 focus:bg-white'
-                              }`}
-                              style={{ minHeight: Math.max(100, getWeekPlan(week.key).split('\n').length * 20) + 'px' }}
-                            />
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}
