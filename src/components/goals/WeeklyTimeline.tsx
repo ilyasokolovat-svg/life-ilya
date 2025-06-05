@@ -1,23 +1,28 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Calendar, Save } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useGoalsData } from "@/hooks/useGoalsData";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface WeeklyTimelineProps {
   subcategories: string[];
 }
 
 const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
+  const { user } = useAuth();
   const { category } = useParams<{ category: string }>();
   const { weeklyData, monthlyReviews, saveWeeklyData, saveMonthlyReview, isSaving } = useGoalsData(category || '');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [localWeeklyData, setLocalWeeklyData] = useState<Record<string, Record<string, { plan: string; fact: string }>>>({});
   const [localMonthlyReview, setLocalMonthlyReview] = useState<Record<string, Record<string, string>>>({});
+  const [weekCompletionStatus, setWeekCompletionStatus] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRefs = useRef<HTMLDivElement[]>([]);
 
@@ -31,12 +36,13 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
     const monthKey = `${selectedYear}-${selectedMonth}`;
     const loadedWeeklyData: Record<string, Record<string, { plan: string; fact: string }>> = {};
     const loadedMonthlyData: Record<string, Record<string, string>> = {};
+    const loadedCompletionStatus: Record<string, boolean> = {};
     
     subcategories.forEach(subcategory => {
       loadedWeeklyData[subcategory] = {};
       loadedMonthlyData[subcategory] = {};
       
-      // Load weekly data
+      // Load weekly data and completion status
       weeklyData.forEach(week => {
         if (week.subcategory === subcategory && week.month_key === monthKey) {
           const weekKey = `${monthKey}-week-${week.week_index}`;
@@ -44,6 +50,10 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
             plan: week.plan_text || '',
             fact: week.fact_text || ''
           };
+          
+          // Check if this week is marked as completed
+          const completionKey = `${subcategory}-${weekKey}`;
+          loadedCompletionStatus[completionKey] = week.fact_text === 'COMPLETED';
         }
       });
       
@@ -57,6 +67,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
     
     setLocalWeeklyData(loadedWeeklyData);
     setLocalMonthlyReview(loadedMonthlyData);
+    setWeekCompletionStatus(loadedCompletionStatus);
   }, [weeklyData, monthlyReviews, subcategories, selectedMonth, selectedYear]);
 
   const getWeeksInMonth = (month: number, year: number) => {
@@ -111,6 +122,46 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
     }));
   };
 
+  const toggleWeekCompletion = async (subcategory: string, weekIndex: number) => {
+    if (!category || !user) return;
+
+    const weekKey = `${monthKey}-week-${weekIndex}`;
+    const completionKey = `${subcategory}-${weekKey}`;
+    const currentStatus = weekCompletionStatus[completionKey] || false;
+    const newStatus = !currentStatus;
+
+    try {
+      // Update in database using the fact_text field to store completion status
+      const weekData = localWeeklyData[subcategory]?.[weekKey];
+      const planText = weekData?.plan || '';
+      
+      await new Promise<void>((resolve, reject) => {
+        saveWeeklyData({
+          category,
+          subcategory,
+          month_key: monthKey,
+          week_index: weekIndex,
+          plan_text: planText,
+          fact_text: newStatus ? 'COMPLETED' : (weekData?.fact || ''), // Use 'COMPLETED' to mark as done
+        }, {
+          onSuccess: () => resolve(),
+          onError: reject
+        });
+      });
+
+      // Update local state
+      setWeekCompletionStatus(prev => ({
+        ...prev,
+        [completionKey]: newStatus
+      }));
+
+      toast.success(newStatus ? 'Week marked as completed!' : 'Week marked as incomplete');
+    } catch (error) {
+      console.error('Error updating completion status:', error);
+      toast.error('Failed to update completion status');
+    }
+  };
+
   const handleSaveProgress = async () => {
     if (!category) return;
     
@@ -120,8 +171,10 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
     Object.entries(localWeeklyData).forEach(([subcategory, weeks]) => {
       Object.entries(weeks).forEach(([weekKey, data]) => {
         const weekIndex = parseInt(weekKey.split('-week-')[1]);
+        const completionKey = `${subcategory}-${weekKey}`;
+        const isCompleted = weekCompletionStatus[completionKey];
         
-        if (data.plan || data.fact) {
+        if (data.plan || data.fact || isCompleted) {
           savePromises.push(
             new Promise<void>((resolve, reject) => {
               saveWeeklyData({
@@ -130,7 +183,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                 month_key: monthKey,
                 week_index: weekIndex,
                 plan_text: data.plan,
-                fact_text: data.fact,
+                fact_text: isCompleted ? 'COMPLETED' : data.fact,
               }, {
                 onSuccess: () => resolve(),
                 onError: reject
@@ -274,16 +327,29 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                   });
                 }}
               >
-                {weeks.map((week, index) => (
-                  <div key={index} className="flex-shrink-0 w-80 text-center border rounded-lg p-2 bg-gray-50">
-                    <div className="text-sm font-bold text-gray-800 mb-1">{week.label}</div>
-                    <div className="text-xs text-gray-600 mb-3">{week.dateRange}</div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="font-medium text-blue-700 bg-blue-50 py-1 rounded">Plan</div>
-                      <div className="font-medium text-green-700 bg-green-50 py-1 rounded">Fact</div>
+                {weeks.map((week, index) => {
+                  const weekKey = `${monthKey}-week-${index}`;
+                  const hasCompletedTasks = subcategories.some(subcategory => {
+                    const completionKey = `${subcategory}-${weekKey}`;
+                    return weekCompletionStatus[completionKey];
+                  });
+                  
+                  return (
+                    <div key={index} className={`flex-shrink-0 w-80 text-center border rounded-lg p-2 ${hasCompletedTasks ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}>
+                      <div className="text-sm font-bold text-gray-800 mb-1 flex items-center justify-center">
+                        {week.label}
+                        {hasCompletedTasks && (
+                          <div className="ml-2 w-2 h-2 bg-green-500 rounded-full"></div>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-600 mb-3">{week.dateRange}</div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="font-medium text-blue-700 bg-blue-50 py-1 rounded">Plan</div>
+                        <div className="font-medium text-green-700 bg-green-50 py-1 rounded">Fact</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -324,24 +390,38 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                         {weeks.map((week, weekIndex) => {
                           const weekKey = `${monthKey}-week-${weekIndex}`;
                           const weekData = localWeeklyData[subcategory]?.[weekKey] || { plan: "", fact: "" };
+                          const completionKey = `${subcategory}-${weekKey}`;
+                          const isCompleted = weekCompletionStatus[completionKey] || false;
                           
                           return (
                             <div key={weekIndex} className="flex-shrink-0 w-80">
-                              <div className="grid grid-cols-2 gap-2">
+                              {/* Week completion checkbox */}
+                              <div className="flex items-center justify-center mb-2">
+                                <Checkbox
+                                  checked={isCompleted}
+                                  onCheckedChange={() => toggleWeekCompletion(subcategory, weekIndex)}
+                                  className="mr-2"
+                                />
+                                <span className="text-xs text-gray-600">Mark week as done</span>
+                              </div>
+                              
+                              <div className={`grid grid-cols-2 gap-2 ${isCompleted ? 'opacity-60' : ''}`}>
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
                                   <Textarea
                                     placeholder="Plan..."
                                     value={weekData.plan}
                                     onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'plan', e.target.value)}
-                                    className="min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500"
+                                    className={`min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500 ${isCompleted ? 'line-through' : ''}`}
+                                    disabled={isCompleted}
                                   />
                                 </div>
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-2">
                                   <Textarea
                                     placeholder="Fact..."
-                                    value={weekData.fact}
+                                    value={weekData.fact === 'COMPLETED' ? '' : weekData.fact}
                                     onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'fact', e.target.value)}
-                                    className="min-h-[100px] text-sm bg-white border-green-300 focus:border-green-500"
+                                    className={`min-h-[100px] text-sm bg-white border-green-300 focus:border-green-500 ${isCompleted ? 'line-through' : ''}`}
+                                    disabled={isCompleted}
                                   />
                                 </div>
                               </div>

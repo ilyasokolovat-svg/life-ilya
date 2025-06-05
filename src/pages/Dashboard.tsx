@@ -3,108 +3,133 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
-  Target,
-  Heart,
-  LogOut,
-  User
-} from "lucide-react";
+import { ArrowRight, Target, TrendingUp, LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import WeeklyOverview from "@/components/WeeklyOverview";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <header className="bg-white shadow-lg">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-start mb-4">
-            <div className="text-center flex-1">
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                Goals and Habit Tracking 2025
-              </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Track your journey across all areas of life and build the future you envision
-              </p>
-            </div>
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Personal Growth Dashboard
+            </h1>
             
-            {/* User controls */}
-            <div className="flex items-center gap-2">
-              {/* User info */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <User className="h-4 w-4" />
-                      <span className="hidden sm:inline">{user?.email}</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Logged in as {user?.email}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Sign out */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSignOut}
-                      className="text-gray-600 hover:text-red-600"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Sign out</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <User className="w-4 h-4" />
+                <span>{user?.email}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </Button>
             </div>
           </div>
+          <p className="mt-2 text-gray-600">Track your habits and achieve your goals</p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-16">
-        {/* Main Navigation Bubbles */}
-        <div className="flex justify-center items-center gap-16">
-          {/* Healthy Life Bubble */}
+      <main className="container mx-auto px-4 py-8">
+        {/* Main Action Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
+          {/* Healthy Life Card */}
           <Link to="/habits">
-            <div className="group relative">
-              <div className="w-48 h-48 bg-gradient-to-br from-red-500 via-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
-                <div className="text-center">
-                  <Heart className="w-16 h-16 text-white mb-4 mx-auto" />
-                  <h2 className="text-2xl font-bold text-white">Healthy Life</h2>
+            <Card className="group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-2xl font-bold flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                      <Target className="w-6 h-6" />
+                    </div>
+                    Healthy Life
+                  </div>
+                  <ArrowRight className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-blue-100 mb-4">
+                  Track your daily habits: sleep, exercise, meditation, and mindful living
+                </p>
+                <div className="flex items-center text-sm text-blue-200">
+                  <span>Start tracking →</span>
                 </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
+              </CardContent>
+            </Card>
           </Link>
 
-          {/* Goals Bubble */}
+          {/* Goals Card */}
           <Link to="/goals-overview">
-            <div className="group relative">
-              <div className="w-48 h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
-                <div className="text-center">
-                  <Target className="w-16 h-16 text-white mb-4 mx-auto" />
-                  <h2 className="text-2xl font-bold text-white">Goals</h2>
+            <Card className="group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-2xl font-bold flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                      <TrendingUp className="w-6 h-6" />
+                    </div>
+                    Goals
+                  </div>
+                  <ArrowRight className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-purple-100 mb-4">
+                  Set and track your career, business, investment, and skill development goals
+                </p>
+                <div className="flex items-center text-sm text-purple-200">
+                  <span>Manage goals →</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Weekly Overview Section */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <WeeklyOverview />
+        </div>
+
+        {/* Additional Stats or Info */}
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-white shadow-lg border-0">
+            <CardHeader>
+              <CardTitle className="text-xl text-gray-800">Welcome Back!</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                Your personal growth journey continues. Use the tools above to track your daily habits 
+                and work towards your long-term goals.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2">Habit Tracking</h4>
+                  <p className="text-sm text-blue-600">
+                    Monitor sleep, exercise, meditation, and mindfulness daily
+                  </p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-purple-800 mb-2">Goal Management</h4>
+                  <p className="text-sm text-purple-600">
+                    Set quarterly and monthly targets across all life areas
+                  </p>
                 </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
