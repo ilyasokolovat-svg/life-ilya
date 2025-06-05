@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Eye, EyeOff, Target, TrendingUp } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Eye, EyeOff, Target, TrendingUp, Sparkles, Zap } from "lucide-react";
 import { useGoalsData } from "@/hooks/useGoalsData";
 
 interface SubcategoryTimelineProps {
@@ -192,7 +193,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Timeline Controls */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{subcategory} Timeline</h3>
@@ -207,44 +208,60 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         </Button>
       </div>
 
-      {/* Progress Tracking Section */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
-            <TrendingUp className="w-5 h-5" />
-            2025 Progress Tracker
+      {/* Enhanced Progress Tracking Section */}
+      <Card className="relative overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-400/20 to-purple-500/20 rounded-full blur-3xl transform translate-x-16 -translate-y-16" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-fuchsia-400/20 to-pink-500/20 rounded-full blur-2xl transform -translate-x-12 translate-y-12" />
+        
+        <CardHeader className="relative pb-6">
+          <CardTitle className="text-xl flex items-center gap-3 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+            2025 Progress Journey
+            <Sparkles className="w-5 h-5 text-fuchsia-500 animate-pulse" />
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+        
+        <CardContent className="relative space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Current Progress</span>
-              <span className="text-sm font-bold text-blue-600">{progressValue}%</span>
+              <span className="text-sm font-semibold text-violet-700 flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                Current Achievement
+              </span>
+              <span className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                {progressValue}%
+              </span>
             </div>
-            <Progress 
-              value={progressValue} 
-              className="h-3 bg-white"
-            />
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={progressValue}
-              onChange={(e) => setProgressValue(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
+            
+            <div className="space-y-3">
+              <Progress 
+                value={progressValue} 
+                className="h-4 bg-white/60 backdrop-blur-sm shadow-inner"
+              />
+              <Slider
+                value={[progressValue]}
+                onValueChange={(value) => setProgressValue(value[0])}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+          
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-violet-700 flex items-center gap-2">
               <Target className="w-4 h-4" />
-              Status Update
+              Journey Update & Reflections
             </label>
             <Textarea
-              placeholder="Describe your current progress and status..."
+              placeholder="Share your progress story, wins, challenges, and next steps..."
               value={progressText}
               onChange={(e) => setProgressText(e.target.value)}
-              className="bg-white border-blue-200 focus:border-blue-400 resize-none"
-              rows={3}
+              className="bg-white/80 backdrop-blur-sm border-violet-200 focus:border-violet-400 focus:ring-violet-400/20 resize-none shadow-sm"
+              rows={4}
             />
           </div>
         </CardContent>
@@ -256,8 +273,12 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
           <Button
             key={period.id}
             variant={selectedPeriod?.id === period.id ? "default" : "outline"}
-            className={`rounded-full px-6 py-2 ${
+            className={`rounded-full px-6 py-2 transition-all duration-300 ${
               period.isPast ? 'opacity-60' : ''
+            } ${
+              selectedPeriod?.id === period.id 
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg scale-105' 
+                : 'hover:shadow-md hover:scale-102'
             }`}
             onClick={() => setSelectedPeriod(period)}
           >
@@ -268,28 +289,40 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
       {/* Weekly Planner */}
       {selectedPeriod && selectedPeriod.type === 'quarter' && (
-        <Card>
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {selectedPeriod.label} {selectedPeriod.year} - Weekly Planning
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Period Goals Section */}
-            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base text-green-800 flex items-center gap-2">
-                  <Target className="w-4 h-4" />
-                  {selectedPeriod.label} {selectedPeriod.year} Goals
+          <CardContent className="space-y-8">
+            {/* Enhanced Period Goals Section */}
+            <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5" />
+              <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-br from-emerald-400/15 to-teal-500/15 rounded-full blur-2xl transform translate-x-12 -translate-y-12" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-cyan-400/15 to-blue-500/15 rounded-full blur-xl transform -translate-x-8 translate-y-8" />
+              
+              <CardHeader className="relative pb-4">
+                <CardTitle className="text-lg flex items-center gap-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+                    <Target className="w-4 h-4 text-white" />
+                  </div>
+                  {selectedPeriod.label} {selectedPeriod.year} Strategic Goals
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse delay-75"></div>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse delay-150"></div>
+                  </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              
+              <CardContent className="relative">
                 <Textarea
-                  placeholder="Enter your goals for this period (each line will become a bullet point)..."
+                  placeholder="✨ Define your ambitious goals for this period (each line becomes a focused objective)..."
                   value={getPeriodGoals(selectedPeriod.id)}
                   onChange={(e) => savePeriodGoals(selectedPeriod.id, e.target.value)}
-                  className="bg-white border-green-200 focus:border-green-400 min-h-[100px]"
-                  style={{ minHeight: Math.max(100, getPeriodGoals(selectedPeriod.id).split('\n').length * 24) + 'px' }}
+                  className="bg-white/80 backdrop-blur-sm border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400/20 min-h-[120px] shadow-sm"
+                  style={{ minHeight: Math.max(120, getPeriodGoals(selectedPeriod.id).split('\n').length * 28) + 'px' }}
                 />
               </CardContent>
             </Card>
@@ -299,17 +332,19 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
               <div className="flex gap-6 pb-4" style={{ minWidth: 'max-content' }}>
                 {generateWeeksForQuarter(selectedPeriod.year, selectedPeriod.quarter!).map((monthData) => (
                   <div key={monthData.month} className="space-y-4">
-                    <h4 className="font-medium text-center text-gray-700">{monthData.month}</h4>
+                    <h4 className="font-medium text-center text-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      {monthData.month}
+                    </h4>
                     <div className="flex gap-4">
                       {monthData.weeks.map((week) => {
                         const isCompleted = getWeekCompleted(week.key);
                         return (
                           <div 
                             key={week.key} 
-                            className={`w-64 border rounded-lg p-4 shadow-sm transition-all ${
+                            className={`w-64 border rounded-xl p-4 shadow-md transition-all duration-300 ${
                               isCompleted 
-                                ? 'bg-gray-100 border-gray-300' 
-                                : 'bg-white border-gray-200'
+                                ? 'bg-gray-50 border-gray-300 opacity-75' 
+                                : 'bg-white border-gray-200 hover:shadow-lg'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-3">
@@ -319,16 +354,17 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
                               <Checkbox
                                 checked={isCompleted}
                                 onCheckedChange={(checked) => toggleWeekCompletion(week.key, !!checked)}
+                                className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                             </div>
                             <Textarea
                               placeholder="Enter your plan for this week..."
                               value={getWeekPlan(week.key)}
                               onChange={(e) => saveWeekPlan(week.key, e.target.value)}
-                              className={`min-h-[100px] resize-none ${
+                              className={`min-h-[100px] resize-none border-0 shadow-inner ${
                                 isCompleted 
-                                  ? 'bg-gray-50 text-gray-600 border-gray-300' 
-                                  : 'bg-white'
+                                  ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
+                                  : 'bg-gray-50 focus:bg-white'
                               }`}
                               style={{ minHeight: Math.max(100, getWeekPlan(week.key).split('\n').length * 20) + 'px' }}
                             />
