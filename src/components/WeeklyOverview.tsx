@@ -35,7 +35,7 @@ const WeeklyOverview = () => {
 
   const { categorySubcategories } = useSubcategoryPreferences(initialCategories);
 
-  // Get current week info
+  // Get current week info - using a simpler approach
   const getCurrentWeekInfo = () => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -49,6 +49,8 @@ const WeeklyOverview = () => {
     // Calculate which week of the month we're in
     const currentDate = now.getDate();
     const weekIndex = Math.floor((currentDate + firstDayOfWeek - 1) / 7);
+    
+    console.log('Current week info:', { monthKey, weekIndex, currentDate, firstDayOfWeek });
     
     return { monthKey, weekIndex };
   };
@@ -68,18 +70,34 @@ const WeeklyOverview = () => {
     ...skillsData.weeklyData.map(item => ({ ...item, category: 'skills' }))
   ];
 
+  console.log('All weekly data:', allWeeklyData);
+  console.log('Looking for month:', currentMonthKey, 'week:', currentWeekIndex);
+
   useEffect(() => {
     if (!user) return;
 
     const loadWeeklyPlans = async () => {
       try {
-        // Get current week's plans
-        const currentWeekPlans = allWeeklyData.filter(
-          item => item.month_key === currentMonthKey && 
-                  item.week_index === currentWeekIndex &&
-                  item.plan_text && 
-                  item.plan_text.trim() !== ''
-        );
+        // Get current week's plans - more flexible filtering
+        const currentWeekPlans = allWeeklyData.filter(item => {
+          const matchesMonth = item.month_key === currentMonthKey;
+          const matchesWeek = item.week_index === currentWeekIndex;
+          const hasPlan = item.plan_text && item.plan_text.trim() !== '';
+          
+          console.log('Item check:', {
+            subcategory: item.subcategory,
+            monthKey: item.month_key,
+            weekIndex: item.week_index,
+            planText: item.plan_text,
+            matchesMonth,
+            matchesWeek,
+            hasPlan
+          });
+          
+          return matchesMonth && matchesWeek && hasPlan;
+        });
+
+        console.log('Filtered current week plans:', currentWeekPlans);
 
         const plans: WeeklyPlanItem[] = currentWeekPlans.map(item => ({
           category: item.category,
@@ -92,26 +110,45 @@ const WeeklyOverview = () => {
           id: item.id
         }));
 
+        console.log('Created plans:', plans);
+
         // Load completion status from database
-        const { data: completionData } = await supabase
-          .from('weekly_tracking')
-          .select('id, fact_text')
-          .eq('user_id', user.id)
-          .eq('month_key', currentMonthKey)
-          .eq('week_index', currentWeekIndex);
+        if (plans.length > 0) {
+          const planIds = plans.map(p => p.id).filter(Boolean);
+          if (planIds.length > 0) {
+            const { data: completionData } = await supabase
+              .from('weekly_tracking')
+              .select('id, fact_text')
+              .eq('user_id', user.id)
+              .in('id', planIds);
 
-        // Update completion status based on fact_text
-        const updatedPlans = plans.map(plan => {
-          const dbRecord = completionData?.find(record => 
-            record.id === plan.id
-          );
-          return {
-            ...plan,
-            isCompleted: dbRecord?.fact_text === 'COMPLETED'
-          };
-        });
+            console.log('Completion data:', completionData);
 
-        setWeeklyPlans(updatedPlans);
+            // Update completion status based on fact_text
+            const updatedPlans = plans.map(plan => {
+              const dbRecord = completionData?.find(record => 
+                record.id === plan.id
+              );
+              const isCompleted = dbRecord?.fact_text === 'COMPLETED';
+              console.log('Plan completion check:', {
+                planId: plan.id,
+                subcategory: plan.subcategory,
+                factText: dbRecord?.fact_text,
+                isCompleted
+              });
+              return {
+                ...plan,
+                isCompleted
+              };
+            });
+
+            setWeeklyPlans(updatedPlans);
+          } else {
+            setWeeklyPlans(plans);
+          }
+        } else {
+          setWeeklyPlans([]);
+        }
       } catch (error) {
         console.error('Error loading weekly plans:', error);
         toast.error('Failed to load weekly plans');
@@ -122,6 +159,8 @@ const WeeklyOverview = () => {
 
     if (allWeeklyData.length > 0) {
       loadWeeklyPlans();
+    } else {
+      setLoading(false);
     }
   }, [user, allWeeklyData, currentMonthKey, currentWeekIndex]);
 
