@@ -44,8 +44,17 @@ const WeeklySummaryDashboard: React.FC = () => {
         period_key: item.period_key,
         period_type: 'week',
         planned_goal: item.planned_goal,
-        actual_result: completed ? 'completed' : undefined
+        actual_result: completed ? 'completed' : null // Use null instead of undefined for unchecked
       });
+
+      // Update local state immediately for better UX
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === item.id 
+            ? { ...task, isCompleted: completed }
+            : task
+        )
+      );
     }
   };
 
