@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -359,7 +358,9 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                           <div className="ml-2 w-2 h-2 bg-green-500 rounded-full"></div>
                         )}
                       </div>
-                      <div className="text-xs text-gray-600 mb-3">{week.dateRange}</div>
+                      <div className="text-xs text-gray-600 mb-3 flex items-center justify-between">
+                        <span>{week.dateRange}</span>
+                      </div>
                       <div className="text-sm">
                         <div className="font-medium text-blue-700 bg-blue-50 py-1 rounded">Weekly Plan</div>
                       </div>
@@ -411,9 +412,9 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                           
                           return (
                             <div key={weekIndex} className="flex-shrink-0 w-80">
-                              <div className={`bg-blue-50 border border-blue-200 rounded-lg p-2 relative ${isCompleted ? 'opacity-60 bg-gray-100 border-gray-300' : ''}`}>
+                              <div className={`bg-blue-50 border border-blue-200 rounded-lg p-3 relative ${isCompleted ? 'opacity-60 bg-gray-100 border-gray-300' : ''}`}>
                                 {/* Week completion checkbox in top right */}
-                                <div className="absolute top-2 right-2 z-10">
+                                <div className="absolute top-2 right-2 z-10 flex items-center space-x-1">
                                   <Checkbox
                                     checked={isCompleted}
                                     onCheckedChange={() => toggleWeekCompletion(subcategory, weekIndex)}
@@ -421,11 +422,16 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                                   />
                                 </div>
                                 
+                                {/* Date range with checkbox */}
+                                <div className="text-xs text-gray-600 mb-2 pr-8">
+                                  {week.dateRange}
+                                </div>
+                                
                                 <Textarea
                                   placeholder="Weekly plan..."
                                   value={weekData.plan}
                                   onChange={(e) => updateWeeklyData(subcategory, weekIndex, e.target.value)}
-                                  className={`min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500 pr-8 ${isCompleted ? 'line-through text-gray-500' : ''}`}
+                                  className={`min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500 ${isCompleted ? 'line-through text-gray-500' : ''}`}
                                   disabled={isCompleted}
                                 />
                               </div>
