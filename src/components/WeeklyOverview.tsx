@@ -1,24 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronUp, ChevronDown, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useGoalsData } from '@/hooks/useGoalsData';
-import { useSubcategoryPreferences } from '@/hooks/useSubcategoryPreferences';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface WeeklyPlanItem {
+  id: string;
   category: string;
   subcategory: string;
   plan: string;
-  weekKey: string;
-  weekIndex: number;
-  monthKey: string;
   isCompleted: boolean;
-  id?: string;
 }
 
 const WeeklyOverview = () => {
@@ -26,76 +21,7 @@ const WeeklyOverview = () => {
   const [weeklyPlans, setWeeklyPlans] = useState<WeeklyPlanItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const initialCategories = {
-    career: ["Commission/Bonus/Dividends", "Quota Achievement", "Salary/Income", "Promotion", "Sales Skills"],
-    business: ["TT Website", "TT Instagram Organic", "TT Ads", "Selo Olive Oil", "Real Estate Projects"],
-    investments: ["Crypto", "ETFs", "Monthly Investment"],
-    skills: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
-  };
-
-  const { categorySubcategories } = useSubcategoryPreferences(initialCategories);
-
-  // Get current week info - properly matching WeeklyTimeline logic
-  const getCurrentWeekInfo = () => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    // Convert to month name format to match the data
-    const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const monthKey = months[currentMonth];
-    
-    // Calculate week index exactly like WeeklyTimeline
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    const startOfFirstWeek = new Date(firstDay);
-    startOfFirstWeek.setDate(firstDay.getDate() - firstDay.getDay()); // Start from Sunday
-    
-    const currentDate = now.getDate();
-    const currentFullDate = new Date(currentYear, currentMonth, currentDate);
-    
-    // Find which week the current date falls into
-    let weekIndex = 0;
-    let weekStart = new Date(startOfFirstWeek);
-    
-    while (weekStart.getTime() <= currentFullDate.getTime()) {
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      
-      // Check if current date falls within this week's range within the month
-      const weekStartInMonth = Math.max(1, weekStart.getDate());
-      const weekEndInMonth = Math.min(new Date(currentYear, currentMonth + 1, 0).getDate(), weekEnd.getDate());
-      
-      if (currentDate >= weekStartInMonth && currentDate <= weekEndInMonth && 
-          weekStart.getMonth() <= currentMonth && weekEnd.getMonth() >= currentMonth) {
-        break;
-      }
-      
-      weekIndex++;
-      weekStart.setDate(weekStart.getDate() + 7);
-      
-      // Safety check to prevent infinite loop
-      if (weekIndex > 5) break;
-    }
-    
-    console.log('Current week calculation:', { 
-      monthKey, 
-      weekIndex, 
-      currentDate, 
-      currentMonth, 
-      currentYear,
-      firstDay: firstDay.toDateString(),
-      startOfFirstWeek: startOfFirstWeek.toDateString()
-    });
-    
-    return { monthKey, weekIndex };
-  };
-
-  const { monthKey: currentMonthKey, weekIndex: currentWeekIndex } = getCurrentWeekInfo();
-
-  // Fetch weekly data for all categories
+  // Get all weekly data from all categories
   const careerData = useGoalsData('career');
   const businessData = useGoalsData('business');
   const investmentsData = useGoalsData('investments');
@@ -108,85 +34,107 @@ const WeeklyOverview = () => {
     ...skillsData.weeklyData.map(item => ({ ...item, category: 'skills' }))
   ];
 
-  console.log('All weekly data:', allWeeklyData);
-  console.log('Looking for month:', currentMonthKey, 'week:', currentWeekIndex);
+  // Calculate current week exactly like WeeklyTimeline does
+  const getCurrentWeek = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-based (0 = January, 5 = June)
+    
+    // Month names array to match the data format
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    
+    const monthKey = monthNames[currentMonth];
+    
+    // Get the first day of the current month
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+    const startOfFirstWeek = new Date(firstDayOfMonth);
+    startOfFirstWeek.setDate(firstDayOfMonth.getDate() - firstDayOfMonth.getDay());
+    
+    // Current date
+    const today = now.getDate();
+    
+    // Calculate which week we're in
+    let weekIndex = 0;
+    let weekStart = new Date(startOfFirstWeek);
+    
+    while (weekIndex < 6) { // Maximum 6 weeks in a month view
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
+      // Check if today falls within this week
+      const weekStartDate = Math.max(1, weekStart.getDate());
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const weekEndDate = Math.min(lastDayOfMonth, weekEnd.getDate());
+      
+      // If today is within this week's range AND the week overlaps with current month
+      if (today >= weekStartDate && today <= weekEndDate && 
+          weekStart.getMonth() <= currentMonth && weekEnd.getMonth() >= currentMonth) {
+        break;
+      }
+      
+      weekIndex++;
+      weekStart.setDate(weekStart.getDate() + 7);
+    }
+    
+    console.log('WeeklyOverview - Current week calculation:', {
+      today: now.toDateString(),
+      monthKey,
+      weekIndex,
+      currentMonth,
+      firstDayOfMonth: firstDayOfMonth.toDateString(),
+      startOfFirstWeek: startOfFirstWeek.toDateString()
+    });
+    
+    return { monthKey, weekIndex };
+  };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || allWeeklyData.length === 0) {
+      setLoading(false);
+      return;
+    }
 
-    const loadWeeklyPlans = async () => {
+    const loadCurrentWeekPlans = async () => {
       try {
-        // Get current week's plans - more flexible filtering
+        const { monthKey, weekIndex } = getCurrentWeek();
+        
+        console.log('WeeklyOverview - Looking for plans:', { monthKey, weekIndex });
+        console.log('WeeklyOverview - Available data:', allWeeklyData);
+        
+        // Filter data for current week with non-empty plans
         const currentWeekPlans = allWeeklyData.filter(item => {
-          const matchesMonth = item.month_key === currentMonthKey;
-          const matchesWeek = item.week_index === currentWeekIndex;
+          const monthMatch = item.month_key === monthKey;
+          const weekMatch = item.week_index === weekIndex;
           const hasPlan = item.plan_text && item.plan_text.trim() !== '';
           
-          console.log('Item check:', {
+          console.log('WeeklyOverview - Checking item:', {
             subcategory: item.subcategory,
-            monthKey: item.month_key,
-            weekIndex: item.week_index,
+            itemMonth: item.month_key,
+            itemWeek: item.week_index,
             planText: item.plan_text,
-            matchesMonth,
-            matchesWeek,
+            monthMatch,
+            weekMatch,
             hasPlan
           });
           
-          return matchesMonth && matchesWeek && hasPlan;
+          return monthMatch && weekMatch && hasPlan;
         });
 
-        console.log('Filtered current week plans:', currentWeekPlans);
+        console.log('WeeklyOverview - Filtered plans:', currentWeekPlans);
 
+        // Transform to our component format
         const plans: WeeklyPlanItem[] = currentWeekPlans.map(item => ({
+          id: item.id!,
           category: item.category,
           subcategory: item.subcategory,
-          plan: item.plan_text || '',
-          weekKey: `${item.month_key}-week-${item.week_index}`,
-          weekIndex: item.week_index,
-          monthKey: item.month_key,
-          isCompleted: false, // Will be updated from database
-          id: item.id
+          plan: item.plan_text!,
+          isCompleted: item.fact_text === 'COMPLETED'
         }));
 
-        console.log('Created plans:', plans);
-
-        // Load completion status from database
-        if (plans.length > 0) {
-          const planIds = plans.map(p => p.id).filter(Boolean);
-          if (planIds.length > 0) {
-            const { data: completionData } = await supabase
-              .from('weekly_tracking')
-              .select('id, fact_text')
-              .eq('user_id', user.id)
-              .in('id', planIds);
-
-            console.log('Completion data:', completionData);
-
-            // Update completion status based on fact_text
-            const updatedPlans = plans.map(plan => {
-              const dbRecord = completionData?.find(record => 
-                record.id === plan.id
-              );
-              const isCompleted = dbRecord?.fact_text === 'COMPLETED';
-              console.log('Plan completion check:', {
-                planId: plan.id,
-                subcategory: plan.subcategory,
-                factText: dbRecord?.fact_text,
-                isCompleted
-              });
-              return {
-                ...plan,
-                isCompleted
-              };
-            });
-
-            setWeeklyPlans(updatedPlans);
-          } else {
-            setWeeklyPlans(plans);
-          }
-        } else {
-          setWeeklyPlans([]);
-        }
+        setWeeklyPlans(plans);
       } catch (error) {
         console.error('Error loading weekly plans:', error);
         toast.error('Failed to load weekly plans');
@@ -195,12 +143,8 @@ const WeeklyOverview = () => {
       }
     };
 
-    if (allWeeklyData.length > 0) {
-      loadWeeklyPlans();
-    } else {
-      setLoading(false);
-    }
-  }, [user, allWeeklyData, currentMonthKey, currentWeekIndex]);
+    loadCurrentWeekPlans();
+  }, [user, allWeeklyData]);
 
   const toggleCompletion = async (planId: string, currentStatus: boolean) => {
     if (!user) return;
@@ -208,7 +152,6 @@ const WeeklyOverview = () => {
     const newStatus = !currentStatus;
     
     try {
-      // Update in database - use fact_text to store completion status
       const { error } = await supabase
         .from('weekly_tracking')
         .update({
@@ -231,16 +174,6 @@ const WeeklyOverview = () => {
     } catch (error) {
       console.error('Error updating completion status:', error);
       toast.error('Failed to update completion status');
-    }
-  };
-
-  const movePlan = (index: number, direction: 'up' | 'down') => {
-    const newPlans = [...weeklyPlans];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    
-    if (targetIndex >= 0 && targetIndex < newPlans.length) {
-      [newPlans[index], newPlans[targetIndex]] = [newPlans[targetIndex], newPlans[index]];
-      setWeeklyPlans(newPlans);
     }
   };
 
@@ -276,9 +209,9 @@ const WeeklyOverview = () => {
           </p>
         ) : (
           <div className="space-y-3">
-            {weeklyPlans.map((plan, index) => (
+            {weeklyPlans.map((plan) => (
               <div
-                key={`${plan.category}-${plan.subcategory}-${plan.weekKey}`}
+                key={plan.id}
                 className={`flex items-start space-x-3 p-3 rounded-lg border transition-all duration-200 ${
                   plan.isCompleted 
                     ? 'bg-gray-100 border-gray-300 opacity-60' 
@@ -287,7 +220,7 @@ const WeeklyOverview = () => {
               >
                 <Checkbox
                   checked={plan.isCompleted}
-                  onCheckedChange={() => plan.id && toggleCompletion(plan.id, plan.isCompleted)}
+                  onCheckedChange={() => toggleCompletion(plan.id, plan.isCompleted)}
                   className="mt-1"
                 />
                 
@@ -304,27 +237,6 @@ const WeeklyOverview = () => {
                   <p className={`text-sm ${plan.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
                     {plan.plan}
                   </p>
-                </div>
-
-                <div className="flex flex-col space-y-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => movePlan(index, 'up')}
-                    disabled={index === 0}
-                    className="h-6 w-6 p-0"
-                  >
-                    <ChevronUp className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => movePlan(index, 'down')}
-                    disabled={index === weeklyPlans.length - 1}
-                    className="h-6 w-6 p-0"
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </Button>
                 </div>
               </div>
             ))}
