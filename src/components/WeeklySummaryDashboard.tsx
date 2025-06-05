@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -73,24 +74,44 @@ const WeeklySummaryDashboard: React.FC = () => {
 
   const saveEdit = (item: any) => {
     const hook = getHookForCategory(item.category);
-    if (hook && editText.trim()) {
-      hook.saveGoal({
-        category: item.category,
-        subcategory: item.subcategory,
-        period_key: item.period_key,
-        period_type: 'week',
-        planned_goal: editText.trim(),
-        actual_result: item.isCompleted ? 'completed' : null
-      });
+    if (hook) {
+      const trimmedText = editText.trim();
+      
+      if (trimmedText) {
+        // If there's text, update the goal
+        hook.saveGoal({
+          category: item.category,
+          subcategory: item.subcategory,
+          period_key: item.period_key,
+          period_type: 'week',
+          planned_goal: trimmedText,
+          actual_result: item.isCompleted ? 'completed' : null
+        });
 
-      // Update local state immediately for better UX
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === item.id 
-            ? { ...task, planned_goal: editText.trim() }
-            : task
-        )
-      );
+        // Update local state immediately for better UX
+        setTasks(prevTasks => 
+          prevTasks.map(task => 
+            task.id === item.id 
+              ? { ...task, planned_goal: trimmedText }
+              : task
+          )
+        );
+      } else {
+        // If text is empty, delete the goal by setting planned_goal to empty string
+        hook.saveGoal({
+          category: item.category,
+          subcategory: item.subcategory,
+          period_key: item.period_key,
+          period_type: 'week',
+          planned_goal: '',
+          actual_result: null
+        });
+
+        // Remove from local state immediately
+        setTasks(prevTasks => 
+          prevTasks.filter(task => task.id !== item.id)
+        );
+      }
     }
     setEditingTask(null);
     setEditText('');
@@ -177,7 +198,7 @@ const WeeklySummaryDashboard: React.FC = () => {
         {tasks.map((item, index) => (
           <div 
             key={item.id} 
-            className={`flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 cursor-move ${
+            className={`group flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 cursor-move ${
               draggedItem === item.id ? 'opacity-50 scale-95' : 'hover:shadow-md'
             }`}
             draggable={editingTask !== item.id}
@@ -214,7 +235,6 @@ const WeeklySummaryDashboard: React.FC = () => {
                     <Button 
                       size="sm" 
                       onClick={() => saveEdit(item)}
-                      disabled={!editText.trim()}
                     >
                       <Check className="w-3 h-3 mr-1" />
                       Save
