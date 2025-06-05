@@ -35,7 +35,7 @@ const WeeklyOverview = () => {
 
   const { categorySubcategories } = useSubcategoryPreferences(initialCategories);
 
-  // Get current week info - matching the format used in WeeklyTimeline
+  // Get current week info - properly matching WeeklyTimeline logic
   const getCurrentWeekInfo = () => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -48,31 +48,47 @@ const WeeklyOverview = () => {
     ];
     const monthKey = months[currentMonth];
     
-    // Calculate week index similar to WeeklyTimeline component
+    // Calculate week index exactly like WeeklyTimeline
     const firstDay = new Date(currentYear, currentMonth, 1);
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const startOfFirstWeek = new Date(firstDay);
+    startOfFirstWeek.setDate(firstDay.getDate() - firstDay.getDay()); // Start from Sunday
     
-    let currentWeekStart = new Date(firstDay);
-    currentWeekStart.setDate(firstDay.getDate() - firstDay.getDay());
-    
-    let weekIndex = 0;
     const currentDate = now.getDate();
+    const currentFullDate = new Date(currentYear, currentMonth, currentDate);
     
-    while (currentWeekStart <= lastDay) {
-      const weekEnd = new Date(currentWeekStart);
-      weekEnd.setDate(currentWeekStart.getDate() + 6);
+    // Find which week the current date falls into
+    let weekIndex = 0;
+    let weekStart = new Date(startOfFirstWeek);
+    
+    while (weekStart.getTime() <= currentFullDate.getTime()) {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
       
-      // Check if current date falls within this week
-      if (currentDate >= Math.max(1, currentWeekStart.getDate()) && 
-          currentDate <= Math.min(lastDay.getDate(), weekEnd.getDate())) {
+      // Check if current date falls within this week's range within the month
+      const weekStartInMonth = Math.max(1, weekStart.getDate());
+      const weekEndInMonth = Math.min(new Date(currentYear, currentMonth + 1, 0).getDate(), weekEnd.getDate());
+      
+      if (currentDate >= weekStartInMonth && currentDate <= weekEndInMonth && 
+          weekStart.getMonth() <= currentMonth && weekEnd.getMonth() >= currentMonth) {
         break;
       }
       
       weekIndex++;
-      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+      weekStart.setDate(weekStart.getDate() + 7);
+      
+      // Safety check to prevent infinite loop
+      if (weekIndex > 5) break;
     }
     
-    console.log('Current week info:', { monthKey, weekIndex, currentDate, currentMonth, currentYear });
+    console.log('Current week calculation:', { 
+      monthKey, 
+      weekIndex, 
+      currentDate, 
+      currentMonth, 
+      currentYear,
+      firstDay: firstDay.toDateString(),
+      startOfFirstWeek: startOfFirstWeek.toDateString()
+    });
     
     return { monthKey, weekIndex };
   };
