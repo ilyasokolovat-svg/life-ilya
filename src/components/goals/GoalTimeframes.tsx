@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Save, Calendar, Target, Eye, EyeOff } from "lucide-react";
+import { Save, Calendar, Target } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useGoalsData } from "@/hooks/useGoalsData";
 
@@ -17,26 +17,12 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   const { category } = useParams<{ category: string }>();
   const { goalsData, saveGoal, isSaving } = useGoalsData(category || '');
   const [localGoals, setLocalGoals] = useState<Record<string, Record<string, any>>>({});
-  const [hidePastQuarters, setHidePastQuarters] = useState(false);
-
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth(); // 0-based (0 = January, 5 = June)
-  const currentQuarter = Math.floor(currentMonth / 3) + 1; // 1-based (1 = Q1, 2 = Q2)
-  const currentYear = currentDate.getFullYear();
-
-  // Enhanced logging
-  console.log('=== DATE DEBUGGING ===');
-  console.log('Current date:', currentDate.toISOString());
-  console.log('Current month (0-based):', currentMonth);
-  console.log('Current quarter:', currentQuarter);
-  console.log('Current year:', currentYear);
-  console.log('Hide past quarters setting:', hidePastQuarters);
 
   const quarters = [
-    { key: "q1_2025", label: "Q1 2025", color: "border-blue-200 bg-blue-50", quarter: 1, year: 2025 },
-    { key: "q2_2025", label: "Q2 2025", color: "border-green-200 bg-green-50", quarter: 2, year: 2025 },
-    { key: "q3_2025", label: "Q3 2025", color: "border-yellow-200 bg-yellow-50", quarter: 3, year: 2025 },
-    { key: "q4_2025", label: "Q4 2025", color: "border-purple-200 bg-purple-50", quarter: 4, year: 2025 }
+    { key: "q1_2025", label: "Q1 2025", color: "border-blue-200 bg-blue-50" },
+    { key: "q2_2025", label: "Q2 2025", color: "border-green-200 bg-green-50" },
+    { key: "q3_2025", label: "Q3 2025", color: "border-yellow-200 bg-yellow-50" },
+    { key: "q4_2025", label: "Q4 2025", color: "border-purple-200 bg-purple-50" }
   ];
 
   const years = [
@@ -159,55 +145,7 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
     }
   };
 
-  const isPastQuarter = (quarter: number, year: number) => {
-    console.log(`\n--- Checking Q${quarter} ${year} ---`);
-    console.log(`Current state: Q${currentQuarter} ${currentYear}`);
-    
-    // If the year is in the past, it's definitely past
-    if (year < currentYear) {
-      console.log(`✓ Past year: ${year} < ${currentYear}`);
-      return true;
-    }
-    
-    // If it's a future year, it's definitely not past
-    if (year > currentYear) {
-      console.log(`✗ Future year: ${year} > ${currentYear}`);
-      return false;
-    }
-    
-    // Same year - compare quarters
-    // A quarter is past if it's completely finished
-    const isPast = quarter < currentQuarter;
-    console.log(`Same year comparison: Q${quarter} < Q${currentQuarter} = ${isPast}`);
-    
-    return isPast;
-  };
-
-  // Create filtered quarters with detailed logging
-  const filteredQuarters = React.useMemo(() => {
-    console.log('\n=== FILTERING QUARTERS ===');
-    console.log('Hide past quarters:', hidePastQuarters);
-    
-    if (!hidePastQuarters) {
-      console.log('Not hiding past quarters, showing all');
-      return quarters;
-    }
-    
-    const filtered = quarters.filter(q => {
-      const isPast = isPastQuarter(q.quarter, q.year);
-      console.log(`${q.label}: isPast=${isPast}, will be ${isPast ? 'HIDDEN' : 'SHOWN'}`);
-      return !isPast;
-    });
-    
-    console.log('Final filtered quarters:', filtered.map(q => q.label));
-    return filtered;
-  }, [quarters, hidePastQuarters, currentQuarter, currentYear]);
-
-  console.log('\n=== FINAL RESULTS ===');
-  console.log('All quarters:', quarters.map(q => q.label));
-  console.log('Filtered quarters:', filteredQuarters.map(q => q.label));
-
-  const allPeriods = [...filteredQuarters, ...years];
+  const allPeriods = [...quarters, ...years];
 
   return (
     <div className="space-y-8">
@@ -218,19 +156,6 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
             <Calendar className="w-5 h-5 mr-2 text-blue-600" />
             Goal Planning & Review
           </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              console.log('Toggle clicked! Current value:', hidePastQuarters);
-              setHidePastQuarters(!hidePastQuarters);
-              console.log('New value will be:', !hidePastQuarters);
-            }}
-            className="flex items-center space-x-2"
-          >
-            {hidePastQuarters ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            <span>{hidePastQuarters ? "Show" : "Hide"} Past Quarters</span>
-          </Button>
         </div>
 
         <Card className="border-2 border-gray-200">

@@ -3,9 +3,8 @@ import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import GoalTimeframes from "@/components/goals/GoalTimeframes";
-import WeeklyTracker from "@/components/goals/WeeklyTracker";
 import SubcategoryManager from "@/components/goals/SubcategoryManager";
 
 const Goals = () => {
@@ -94,17 +93,6 @@ const Goals = () => {
           </CardHeader>
           <CardContent className="p-6">
             <GoalTimeframes subcategories={subcategories} />
-          </CardContent>
-        </Card>
-
-        {/* Combined Weekly Tracker for all subcategories */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
-            <CardTitle className="text-xl font-bold text-gray-800">Weekly Progress Tracking</CardTitle>
-            <p className="text-gray-600">Monitor your weekly progress and monthly reviews</p>
-          </CardHeader>
-          <CardContent className="p-6">
-            <WeeklyTracker subcategories={subcategories} />
           </CardContent>
         </Card>
       </main>
