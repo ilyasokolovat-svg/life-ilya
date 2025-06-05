@@ -20,7 +20,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
   const { weeklyData, monthlyReviews, saveWeeklyData, saveMonthlyReview, isSaving } = useGoalsData(category || '');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [localWeeklyData, setLocalWeeklyData] = useState<Record<string, Record<string, { plan: string; fact: string }>>>({});
+  const [localWeeklyData, setLocalWeeklyData] = useState<Record<string, Record<string, { plan: string }>>>({});
   const [localMonthlyReview, setLocalMonthlyReview] = useState<Record<string, Record<string, string>>>({});
   const [weekCompletionStatus, setWeekCompletionStatus] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -34,7 +34,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
   // Load data from database into local state
   useEffect(() => {
     const monthKey = `${selectedYear}-${selectedMonth}`;
-    const loadedWeeklyData: Record<string, Record<string, { plan: string; fact: string }>> = {};
+    const loadedWeeklyData: Record<string, Record<string, { plan: string }>> = {};
     const loadedMonthlyData: Record<string, Record<string, string>> = {};
     const loadedCompletionStatus: Record<string, boolean> = {};
     
@@ -47,8 +47,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
         if (week.subcategory === subcategory && week.month_key === monthKey) {
           const weekKey = `${monthKey}-week-${week.week_index}`;
           loadedWeeklyData[subcategory][weekKey] = {
-            plan: week.plan_text || '',
-            fact: week.fact_text || ''
+            plan: week.plan_text || ''
           };
           
           // Check if this week is marked as completed
@@ -98,15 +97,14 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
   const monthKey = `${selectedYear}-${selectedMonth}`;
   const weeks = getWeeksInMonth(selectedMonth, selectedYear);
 
-  const updateWeeklyData = (subcategory: string, weekIndex: number, type: 'plan' | 'fact', value: string) => {
+  const updateWeeklyData = (subcategory: string, weekIndex: number, value: string) => {
     const weekKey = `${monthKey}-week-${weekIndex}`;
     setLocalWeeklyData(prev => ({
       ...prev,
       [subcategory]: {
         ...prev[subcategory],
         [weekKey]: {
-          ...prev[subcategory]?.[weekKey],
-          [type]: value
+          plan: value
         }
       }
     }));
@@ -142,7 +140,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
           month_key: monthKey,
           week_index: weekIndex,
           plan_text: planText,
-          fact_text: newStatus ? 'COMPLETED' : (weekData?.fact || ''), // Use 'COMPLETED' to mark as done
+          fact_text: newStatus ? 'COMPLETED' : '', // Use 'COMPLETED' to mark as done
         }, {
           onSuccess: () => resolve(),
           onError: reject
@@ -174,7 +172,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
         const completionKey = `${subcategory}-${weekKey}`;
         const isCompleted = weekCompletionStatus[completionKey];
         
-        if (data.plan || data.fact || isCompleted) {
+        if (data.plan || isCompleted) {
           savePromises.push(
             new Promise<void>((resolve, reject) => {
               saveWeeklyData({
@@ -183,7 +181,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                 month_key: monthKey,
                 week_index: weekIndex,
                 plan_text: data.plan,
-                fact_text: isCompleted ? 'COMPLETED' : data.fact,
+                fact_text: isCompleted ? 'COMPLETED' : '',
               }, {
                 onSuccess: () => resolve(),
                 onError: reject
@@ -343,9 +341,8 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                         )}
                       </div>
                       <div className="text-xs text-gray-600 mb-3">{week.dateRange}</div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="font-medium text-blue-700 bg-blue-50 py-1 rounded">Plan</div>
-                        <div className="font-medium text-green-700 bg-green-50 py-1 rounded">Fact</div>
+                      <div className="text-sm">
+                        <div className="font-medium text-blue-700 bg-blue-50 py-1 rounded">Weekly Plan</div>
                       </div>
                     </div>
                   );
@@ -389,7 +386,7 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                       >
                         {weeks.map((week, weekIndex) => {
                           const weekKey = `${monthKey}-week-${weekIndex}`;
-                          const weekData = localWeeklyData[subcategory]?.[weekKey] || { plan: "", fact: "" };
+                          const weekData = localWeeklyData[subcategory]?.[weekKey] || { plan: "" };
                           const completionKey = `${subcategory}-${weekKey}`;
                           const isCompleted = weekCompletionStatus[completionKey] || false;
                           
@@ -405,22 +402,13 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
                                 <span className="text-xs text-gray-600">Mark week as done</span>
                               </div>
                               
-                              <div className={`grid grid-cols-2 gap-2 ${isCompleted ? 'opacity-60' : ''}`}>
+                              <div className={`${isCompleted ? 'opacity-60' : ''}`}>
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
                                   <Textarea
-                                    placeholder="Plan..."
+                                    placeholder="Weekly plan..."
                                     value={weekData.plan}
-                                    onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'plan', e.target.value)}
+                                    onChange={(e) => updateWeeklyData(subcategory, weekIndex, e.target.value)}
                                     className={`min-h-[100px] text-sm bg-white border-blue-300 focus:border-blue-500 ${isCompleted ? 'line-through' : ''}`}
-                                    disabled={isCompleted}
-                                  />
-                                </div>
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-                                  <Textarea
-                                    placeholder="Fact..."
-                                    value={weekData.fact === 'COMPLETED' ? '' : weekData.fact}
-                                    onChange={(e) => updateWeeklyData(subcategory, weekIndex, 'fact', e.target.value)}
-                                    className={`min-h-[100px] text-sm bg-white border-green-300 focus:border-green-500 ${isCompleted ? 'line-through' : ''}`}
                                     disabled={isCompleted}
                                   />
                                 </div>

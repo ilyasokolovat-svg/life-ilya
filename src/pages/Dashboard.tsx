@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Target, TrendingUp, LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import WeeklyDashboard from "@/components/WeeklyDashboard";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -95,6 +96,11 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </Link>
+        </div>
+
+        {/* Weekly Dashboard */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <WeeklyDashboard />
         </div>
 
         {/* Additional Stats or Info */}
