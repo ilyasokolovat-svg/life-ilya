@@ -150,7 +150,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     });
   };
 
-  // Toggle week completion - Fixed to allow unticking
+  // Toggle week completion - Fixed to properly handle unticking
   const toggleWeekCompletion = (weekKey: string, completed: boolean) => {
     saveGoal({
       category,
@@ -158,7 +158,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
       period_key: weekKey,
       period_type: 'week',
       planned_goal: getWeekPlan(weekKey),
-      actual_result: completed ? 'completed' : undefined
+      actual_result: completed ? 'completed' : null // Use null instead of undefined for unchecked
     });
   };
 
