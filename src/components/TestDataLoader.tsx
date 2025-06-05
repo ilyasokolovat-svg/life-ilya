@@ -8,13 +8,13 @@ const TestDataLoader: React.FC = () => {
   const { saveGoal } = useGoalsData('investments');
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !saveGoal) return;
 
     // Add sample data for testing - ETF subcategory, Q2, week 2-8 June
     const addSampleData = () => {
       const now = new Date();
       const currentYear = now.getFullYear();
-      const currentMonth = 6; // June (0-indexed, so 5 = June)
+      const currentMonth = 6; // June
       
       // Calculate the week key for June 2-8
       const weekKey = `${currentYear}-${currentMonth}-2`;

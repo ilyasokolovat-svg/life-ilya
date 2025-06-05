@@ -10,13 +10,25 @@ const WeeklySummaryDashboard: React.FC = () => {
 
   // Get unique categories to handle updates
   const categories = [...new Set(weeklySummary.map(item => item.category))];
-  const goalDataHooks = categories.reduce((acc, category) => {
-    acc[category] = useGoalsData(category);
-    return acc;
-  }, {} as Record<string, ReturnType<typeof useGoalsData>>);
+  
+  // Create hooks for each category
+  const careerHook = useGoalsData('career');
+  const businessHook = useGoalsData('business');
+  const investmentsHook = useGoalsData('investments');
+  const skillsHook = useGoalsData('skills');
+
+  const getHookForCategory = (category: string) => {
+    switch (category) {
+      case 'career': return careerHook;
+      case 'business': return businessHook;
+      case 'investments': return investmentsHook;
+      case 'skills': return skillsHook;
+      default: return null;
+    }
+  };
 
   const toggleTaskCompletion = (item: any, completed: boolean) => {
-    const hook = goalDataHooks[item.category];
+    const hook = getHookForCategory(item.category);
     if (hook) {
       hook.saveGoal({
         category: item.category,

@@ -19,26 +19,25 @@ export function useWeeklySummary() {
   // Get current week key
   const getCurrentWeekKey = () => {
     const now = new Date();
-    const currentDate = now.getDate();
-    const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11, so add 1
     
     // Find the start of the current week (Monday)
     const dayOfWeek = now.getDay();
     const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const weekStart = new Date(now);
-    weekStart.setDate(currentDate - daysToMonday);
+    weekStart.setDate(now.getDate() - daysToMonday);
     
     const weekKey = `${currentYear}-${currentMonth}-${weekStart.getDate()}`;
     return weekKey;
   };
 
+  const currentWeekKey = getCurrentWeekKey();
+
   const { data: weeklySummary = [], isLoading } = useQuery({
-    queryKey: ['weekly_summary', user?.id],
+    queryKey: ['weekly_summary', user?.id, currentWeekKey],
     queryFn: async (): Promise<WeeklySummaryItem[]> => {
       if (!user?.id) return [];
-      
-      const currentWeekKey = getCurrentWeekKey();
       
       const { data, error } = await supabase
         .from('goals_data')
@@ -67,6 +66,6 @@ export function useWeeklySummary() {
   return {
     weeklySummary,
     isLoading,
-    currentWeekKey: getCurrentWeekKey()
+    currentWeekKey
   };
 }
