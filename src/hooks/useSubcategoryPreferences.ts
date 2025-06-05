@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +11,14 @@ export const useSubcategoryPreferences = (initialCategories: SubcategoryPreferen
   const [categorySubcategories, setCategorySubcategories] = useState<SubcategoryPreferences>(initialCategories);
   const [hiddenSubcategories, setHiddenSubcategories] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
+
+  // Helper function to convert Json to string array
+  const jsonToStringArray = (json: any): string[] => {
+    if (Array.isArray(json)) {
+      return json.filter(item => typeof item === 'string');
+    }
+    return [];
+  };
 
   // Load preferences from Supabase
   useEffect(() => {
@@ -38,9 +45,9 @@ export const useSubcategoryPreferences = (initialCategories: SubcategoryPreferen
         const loadedHidden: Record<string, string[]> = {};
 
         data?.forEach((pref) => {
-          // Ensure we handle the JSON arrays correctly
-          const subcategories = Array.isArray(pref.subcategories) ? pref.subcategories : [];
-          const hiddenSubs = Array.isArray(pref.hidden_subcategories) ? pref.hidden_subcategories : [];
+          // Convert JSON to string arrays with proper type checking
+          const subcategories = jsonToStringArray(pref.subcategories);
+          const hiddenSubs = jsonToStringArray(pref.hidden_subcategories);
           
           loadedSubcategories[pref.category] = subcategories;
           loadedHidden[pref.category] = hiddenSubs;
