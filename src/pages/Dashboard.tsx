@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import WeeklySummaryDashboard from "@/components/WeeklySummaryDashboard";
+import TestDataLoader from "@/components/TestDataLoader";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -24,6 +26,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <TestDataLoader />
+      
       {/* Header */}
       <header className="bg-white shadow-lg">
         <div className="container mx-auto px-4 py-8">
@@ -78,6 +82,11 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-16">
+        {/* Weekly Summary Dashboard */}
+        <div className="mb-12 max-w-4xl mx-auto">
+          <WeeklySummaryDashboard />
+        </div>
+
         {/* Main Navigation Bubbles */}
         <div className="flex justify-center items-center gap-16">
           {/* Healthy Life Bubble */}

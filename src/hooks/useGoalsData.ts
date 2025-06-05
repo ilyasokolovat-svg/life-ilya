@@ -37,7 +37,7 @@ export function useGoalsData(category: string) {
     enabled: !!user?.id,
   });
 
-  // Save goal mutation with better upsert logic
+  // Save goal mutation
   const saveGoalMutation = useMutation({
     mutationFn: async (goalData: GoalData) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -87,7 +87,7 @@ export function useGoalsData(category: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals_data', category, user?.id] });
-      toast.success('Goal saved successfully!');
+      queryClient.invalidateQueries({ queryKey: ['weekly_summary'] });
     },
     onError: (error) => {
       console.error('Error saving goal:', error);
