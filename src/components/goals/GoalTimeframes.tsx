@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,10 +24,13 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   const currentQuarter = Math.floor(currentMonth / 3) + 1; // 1-based (1 = Q1, 2 = Q2)
   const currentYear = currentDate.getFullYear();
 
+  // Enhanced logging
+  console.log('=== DATE DEBUGGING ===');
   console.log('Current date:', currentDate.toISOString());
   console.log('Current month (0-based):', currentMonth);
   console.log('Current quarter:', currentQuarter);
   console.log('Current year:', currentYear);
+  console.log('Hide past quarters setting:', hidePastQuarters);
 
   const quarters = [
     { key: "q1_2025", label: "Q1 2025", color: "border-blue-200 bg-blue-50", quarter: 1, year: 2025 },
@@ -156,42 +160,52 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   };
 
   const isPastQuarter = (quarter: number, year: number) => {
-    console.log(`Checking if Q${quarter} ${year} is past. Current: Q${currentQuarter} ${currentYear}`);
+    console.log(`\n--- Checking Q${quarter} ${year} ---`);
+    console.log(`Current state: Q${currentQuarter} ${currentYear}`);
     
     // If the year is in the past, it's definitely past
     if (year < currentYear) {
-      console.log(`${year} < ${currentYear}, so Q${quarter} ${year} is past`);
+      console.log(`✓ Past year: ${year} < ${currentYear}`);
       return true;
     }
     
     // If it's a future year, it's definitely not past
     if (year > currentYear) {
-      console.log(`${year} > ${currentYear}, so Q${quarter} ${year} is future`);
+      console.log(`✗ Future year: ${year} > ${currentYear}`);
       return false;
     }
     
     // Same year - compare quarters
     // A quarter is past if it's completely finished
-    if (year === currentYear && quarter < currentQuarter) {
-      console.log(`Same year (${year}) and Q${quarter} < Q${currentQuarter}, so Q${quarter} ${year} is past`);
-      return true;
-    }
+    const isPast = quarter < currentQuarter;
+    console.log(`Same year comparison: Q${quarter} < Q${currentQuarter} = ${isPast}`);
     
-    console.log(`Q${quarter} ${year} is current or future`);
-    return false;
+    return isPast;
   };
 
-  const filteredQuarters = hidePastQuarters 
-    ? quarters.filter(q => {
-        const isPast = isPastQuarter(q.quarter, q.year);
-        console.log(`Q${q.quarter} ${q.year} isPast: ${isPast}, will be ${isPast ? 'hidden' : 'shown'}`);
-        return !isPast;
-      })
-    : quarters;
+  // Create filtered quarters with detailed logging
+  const filteredQuarters = React.useMemo(() => {
+    console.log('\n=== FILTERING QUARTERS ===');
+    console.log('Hide past quarters:', hidePastQuarters);
+    
+    if (!hidePastQuarters) {
+      console.log('Not hiding past quarters, showing all');
+      return quarters;
+    }
+    
+    const filtered = quarters.filter(q => {
+      const isPast = isPastQuarter(q.quarter, q.year);
+      console.log(`${q.label}: isPast=${isPast}, will be ${isPast ? 'HIDDEN' : 'SHOWN'}`);
+      return !isPast;
+    });
+    
+    console.log('Final filtered quarters:', filtered.map(q => q.label));
+    return filtered;
+  }, [quarters, hidePastQuarters, currentQuarter, currentYear]);
 
+  console.log('\n=== FINAL RESULTS ===');
   console.log('All quarters:', quarters.map(q => q.label));
   console.log('Filtered quarters:', filteredQuarters.map(q => q.label));
-  console.log('Hide past quarters setting:', hidePastQuarters);
 
   const allPeriods = [...filteredQuarters, ...years];
 
@@ -207,7 +221,11 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setHidePastQuarters(!hidePastQuarters)}
+            onClick={() => {
+              console.log('Toggle clicked! Current value:', hidePastQuarters);
+              setHidePastQuarters(!hidePastQuarters);
+              console.log('New value will be:', !hidePastQuarters);
+            }}
             className="flex items-center space-x-2"
           >
             {hidePastQuarters ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
