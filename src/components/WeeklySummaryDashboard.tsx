@@ -1,8 +1,9 @@
-
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { GripVertical, Edit, Check, X } from "lucide-react";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
 import { useGoalsData } from "@/hooks/useGoalsData";
 
@@ -10,6 +11,8 @@ const WeeklySummaryDashboard: React.FC = () => {
   const { weeklySummary, isLoading, currentWeekKey } = useWeeklySummary();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [tasks, setTasks] = useState(weeklySummary);
+  const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [editText, setEditText] = useState<string>('');
 
   // Update tasks when weeklySummary changes
   React.useEffect(() => {
@@ -56,6 +59,41 @@ const WeeklySummaryDashboard: React.FC = () => {
         )
       );
     }
+  };
+
+  const startEditing = (task: any) => {
+    setEditingTask(task.id);
+    setEditText(task.planned_goal);
+  };
+
+  const cancelEditing = () => {
+    setEditingTask(null);
+    setEditText('');
+  };
+
+  const saveEdit = (item: any) => {
+    const hook = getHookForCategory(item.category);
+    if (hook && editText.trim()) {
+      hook.saveGoal({
+        category: item.category,
+        subcategory: item.subcategory,
+        period_key: item.period_key,
+        period_type: 'week',
+        planned_goal: editText.trim(),
+        actual_result: item.isCompleted ? 'completed' : null
+      });
+
+      // Update local state immediately for better UX
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === item.id 
+            ? { ...task, planned_goal: editText.trim() }
+            : task
+        )
+      );
+    }
+    setEditingTask(null);
+    setEditText('');
   };
 
   const handleDragStart = useCallback((e: React.DragEvent, itemId: string) => {
@@ -142,7 +180,7 @@ const WeeklySummaryDashboard: React.FC = () => {
             className={`flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 cursor-move ${
               draggedItem === item.id ? 'opacity-50 scale-95' : 'hover:shadow-md'
             }`}
-            draggable
+            draggable={editingTask !== item.id}
             onDragStart={(e) => handleDragStart(e, item.id)}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, item.id)}
@@ -163,9 +201,49 @@ const WeeklySummaryDashboard: React.FC = () => {
                   #{index + 1}
                 </span>
               </div>
-              <p className={`text-sm break-words ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                {item.planned_goal}
-              </p>
+              
+              {editingTask === item.id ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="min-h-[60px] resize-none text-sm"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={() => saveEdit(item)}
+                      disabled={!editText.trim()}
+                    >
+                      <Check className="w-3 h-3 mr-1" />
+                      Save
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={cancelEditing}
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-2">
+                  <p className={`text-sm break-words flex-1 ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                    {item.planned_goal}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => startEditing(item)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+                  >
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         ))}
