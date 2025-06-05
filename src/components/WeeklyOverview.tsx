@@ -35,22 +35,44 @@ const WeeklyOverview = () => {
 
   const { categorySubcategories } = useSubcategoryPreferences(initialCategories);
 
-  // Get current week info - using a simpler approach
+  // Get current week info - matching the format used in WeeklyTimeline
   const getCurrentWeekInfo = () => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const monthKey = `${currentYear}-${currentMonth}`;
     
-    // Get the first day of the month
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    const firstDayOfWeek = firstDayOfMonth.getDay();
+    // Convert to month name format to match the data
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const monthKey = months[currentMonth];
     
-    // Calculate which week of the month we're in
+    // Calculate week index similar to WeeklyTimeline component
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    
+    let currentWeekStart = new Date(firstDay);
+    currentWeekStart.setDate(firstDay.getDate() - firstDay.getDay());
+    
+    let weekIndex = 0;
     const currentDate = now.getDate();
-    const weekIndex = Math.floor((currentDate + firstDayOfWeek - 1) / 7);
     
-    console.log('Current week info:', { monthKey, weekIndex, currentDate, firstDayOfWeek });
+    while (currentWeekStart <= lastDay) {
+      const weekEnd = new Date(currentWeekStart);
+      weekEnd.setDate(currentWeekStart.getDate() + 6);
+      
+      // Check if current date falls within this week
+      if (currentDate >= Math.max(1, currentWeekStart.getDate()) && 
+          currentDate <= Math.min(lastDay.getDate(), weekEnd.getDate())) {
+        break;
+      }
+      
+      weekIndex++;
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
+    
+    console.log('Current week info:', { monthKey, weekIndex, currentDate, currentMonth, currentYear });
     
     return { monthKey, weekIndex };
   };
