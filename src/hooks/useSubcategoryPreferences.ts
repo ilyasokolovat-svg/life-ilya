@@ -38,8 +38,12 @@ export const useSubcategoryPreferences = (initialCategories: SubcategoryPreferen
         const loadedHidden: Record<string, string[]> = {};
 
         data?.forEach((pref) => {
-          loadedSubcategories[pref.category] = pref.subcategories || [];
-          loadedHidden[pref.category] = pref.hidden_subcategories || [];
+          // Ensure we handle the JSON arrays correctly
+          const subcategories = Array.isArray(pref.subcategories) ? pref.subcategories : [];
+          const hiddenSubs = Array.isArray(pref.hidden_subcategories) ? pref.hidden_subcategories : [];
+          
+          loadedSubcategories[pref.category] = subcategories;
+          loadedHidden[pref.category] = hiddenSubs;
         });
 
         setCategorySubcategories(loadedSubcategories);

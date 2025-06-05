@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +21,10 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   const currentDate = new Date();
   const currentQuarter = Math.floor(currentDate.getMonth() / 3) + 1;
   const currentYear = currentDate.getFullYear();
+
+  console.log('Current date:', currentDate);
+  console.log('Current quarter:', currentQuarter);
+  console.log('Current year:', currentYear);
 
   const quarters = [
     { key: "q1_2025", label: "Q1 2025", color: "border-blue-200 bg-blue-50", quarter: 1, year: 2025 },
@@ -151,14 +154,31 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   };
 
   const isPastQuarter = (quarter: number, year: number) => {
-    if (year < currentYear) return true;
-    if (year === currentYear && quarter < currentQuarter) return true;
+    console.log(`Checking if Q${quarter} ${year} is past. Current: Q${currentQuarter} ${currentYear}`);
+    
+    if (year < currentYear) {
+      console.log(`${year} < ${currentYear}, so it's past`);
+      return true;
+    }
+    
+    if (year === currentYear && quarter < currentQuarter) {
+      console.log(`Same year (${year}) but Q${quarter} < Q${currentQuarter}, so it's past`);
+      return true;
+    }
+    
+    console.log(`Q${quarter} ${year} is current or future`);
     return false;
   };
 
   const filteredQuarters = hidePastQuarters 
-    ? quarters.filter(q => !isPastQuarter(q.quarter, q.year))
+    ? quarters.filter(q => {
+        const isPast = isPastQuarter(q.quarter, q.year);
+        console.log(`Q${q.quarter} ${q.year} isPast: ${isPast}`);
+        return !isPast;
+      })
     : quarters;
+
+  console.log('Filtered quarters:', filteredQuarters.map(q => q.label));
 
   const allPeriods = [...filteredQuarters, ...years];
 
