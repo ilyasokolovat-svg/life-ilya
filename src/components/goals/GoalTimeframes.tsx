@@ -19,10 +19,12 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   const [hidePastQuarters, setHidePastQuarters] = useState(false);
 
   const currentDate = new Date();
-  const currentQuarter = Math.floor(currentDate.getMonth() / 3) + 1;
+  const currentMonth = currentDate.getMonth(); // 0-based (0 = January, 5 = June)
+  const currentQuarter = Math.floor(currentMonth / 3) + 1; // 1-based (1 = Q1, 2 = Q2)
   const currentYear = currentDate.getFullYear();
 
-  console.log('Current date:', currentDate);
+  console.log('Current date:', currentDate.toISOString());
+  console.log('Current month (0-based):', currentMonth);
   console.log('Current quarter:', currentQuarter);
   console.log('Current year:', currentYear);
 
@@ -156,13 +158,22 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   const isPastQuarter = (quarter: number, year: number) => {
     console.log(`Checking if Q${quarter} ${year} is past. Current: Q${currentQuarter} ${currentYear}`);
     
+    // If the year is in the past, it's definitely past
     if (year < currentYear) {
-      console.log(`${year} < ${currentYear}, so it's past`);
+      console.log(`${year} < ${currentYear}, so Q${quarter} ${year} is past`);
       return true;
     }
     
+    // If it's a future year, it's definitely not past
+    if (year > currentYear) {
+      console.log(`${year} > ${currentYear}, so Q${quarter} ${year} is future`);
+      return false;
+    }
+    
+    // Same year - compare quarters
+    // A quarter is past if it's completely finished
     if (year === currentYear && quarter < currentQuarter) {
-      console.log(`Same year (${year}) but Q${quarter} < Q${currentQuarter}, so it's past`);
+      console.log(`Same year (${year}) and Q${quarter} < Q${currentQuarter}, so Q${quarter} ${year} is past`);
       return true;
     }
     
@@ -173,12 +184,14 @@ const GoalTimeframes: React.FC<GoalTimeframesProps> = ({ subcategories }) => {
   const filteredQuarters = hidePastQuarters 
     ? quarters.filter(q => {
         const isPast = isPastQuarter(q.quarter, q.year);
-        console.log(`Q${q.quarter} ${q.year} isPast: ${isPast}`);
+        console.log(`Q${q.quarter} ${q.year} isPast: ${isPast}, will be ${isPast ? 'hidden' : 'shown'}`);
         return !isPast;
       })
     : quarters;
 
+  console.log('All quarters:', quarters.map(q => q.label));
   console.log('Filtered quarters:', filteredQuarters.map(q => q.label));
+  console.log('Hide past quarters setting:', hidePastQuarters);
 
   const allPeriods = [...filteredQuarters, ...years];
 
