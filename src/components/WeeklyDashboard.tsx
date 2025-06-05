@@ -24,32 +24,58 @@ const WeeklyDashboard: React.FC = () => {
   const [weeklyPlans, setWeeklyPlans] = useState<WeeklyPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate current week properly (matching WeeklyTimeline logic)
+  // Calculate current week using the EXACT same logic as WeeklyTimeline
   const getCurrentWeek = () => {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     
     // Get first day of current month
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
     
-    // Calculate which week of the month today falls into
-    const dayOfMonth = today.getDate();
-    const firstDayWeekday = firstDayOfMonth.getDay(); // 0 = Sunday
+    // Calculate weeks in month the same way as WeeklyTimeline
+    const weeks = [];
+    let currentWeekStart = new Date(firstDay);
+    currentWeekStart.setDate(firstDay.getDate() - firstDay.getDay()); // Go to Sunday
+
+    while (currentWeekStart <= lastDay) {
+      const weekEnd = new Date(currentWeekStart);
+      weekEnd.setDate(currentWeekStart.getDate() + 6); // Go to Saturday
+      
+      weeks.push({
+        start: new Date(currentWeekStart),
+        end: weekEnd,
+        index: weeks.length
+      });
+      
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
     
-    // Calculate week index (0-based)
-    const weekIndex = Math.floor((dayOfMonth + firstDayWeekday - 1) / 7);
+    // Find which week today falls into
+    let currentWeekIndex = 0;
+    for (let i = 0; i < weeks.length; i++) {
+      if (today >= weeks[i].start && today <= weeks[i].end) {
+        currentWeekIndex = i;
+        break;
+      }
+    }
     
-    const monthNames = [
+    const months = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
     ];
     
+    const monthKey = `${currentYear}-${currentMonth}`;
+    
     return {
-      monthKey: monthNames[currentMonth],
-      weekIndex,
+      monthKey,
+      weekIndex: currentWeekIndex,
       year: currentYear,
-      month: currentMonth
+      month: currentMonth,
+      monthName: months[currentMonth],
+      weekStart: weeks[currentWeekIndex].start,
+      weekEnd: weeks[currentWeekIndex].end
     };
   };
 
@@ -57,6 +83,13 @@ const WeeklyDashboard: React.FC = () => {
     if (!user) return;
     
     const currentWeek = getCurrentWeek();
+    
+    console.log('Fetching plans for:', {
+      monthKey: currentWeek.monthKey,
+      weekIndex: currentWeek.weekIndex,
+      weekStart: currentWeek.weekStart,
+      weekEnd: currentWeek.weekEnd
+    });
     
     try {
       const { data, error } = await supabase
@@ -70,6 +103,8 @@ const WeeklyDashboard: React.FC = () => {
         console.error('Error fetching weekly plans:', error);
         return;
       }
+
+      console.log('Fetched data:', data);
 
       // Filter out empty plans and format data
       const formattedPlans: WeeklyPlan[] = (data || [])
@@ -86,6 +121,7 @@ const WeeklyDashboard: React.FC = () => {
         }))
         .sort((a, b) => (a.priority_order || 0) - (b.priority_order || 0));
 
+      console.log('Formatted plans:', formattedPlans);
       setWeeklyPlans(formattedPlans);
     } catch (error) {
       console.error('Error fetching weekly plans:', error);
@@ -156,16 +192,14 @@ const WeeklyDashboard: React.FC = () => {
 
   const getCurrentWeekInfo = () => {
     const currentWeek = getCurrentWeek();
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Go to Sunday
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Go to Saturday
+    const startDate = currentWeek.weekStart.getDate();
+    const startMonth = currentWeek.weekStart.getMonth() + 1;
+    const endDate = currentWeek.weekEnd.getDate();
+    const endMonth = currentWeek.weekEnd.getMonth() + 1;
     
     return {
       ...currentWeek,
-      dateRange: `${startOfWeek.getDate()}/${startOfWeek.getMonth() + 1} - ${endOfWeek.getDate()}/${endOfWeek.getMonth() + 1}`
+      dateRange: `${startDate}/${startMonth} - ${endDate}/${endMonth}`
     };
   };
 

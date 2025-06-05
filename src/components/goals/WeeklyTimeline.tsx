@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -258,6 +259,24 @@ const WeeklyTimeline: React.FC<WeeklyTimelineProps> = ({ subcategories }) => {
     
     return groups;
   };
+
+  // Add test data for ETFs subcategory when viewing June 2025
+  useEffect(() => {
+    if (selectedMonth === 5 && selectedYear === 2025 && category === 'investments') {
+      const testWeekKey = `${monthKey}-week-0`; // Week 2-8 June should be week index 0
+      const etfSubcategory = 'ETFs';
+      
+      setLocalWeeklyData(prev => ({
+        ...prev,
+        [etfSubcategory]: {
+          ...prev[etfSubcategory],
+          [testWeekKey]: {
+            plan: 'I am testing this week\'s plan'
+          }
+        }
+      }));
+    }
+  }, [selectedMonth, selectedYear, category, monthKey]);
 
   const subcategoryGroups = groupSubcategories(subcategories);
 
