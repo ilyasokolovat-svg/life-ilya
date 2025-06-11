@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -19,6 +18,7 @@ import useHabits from "@/hooks/useHabits";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import GymPlanning from "@/components/GymPlanning";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -45,6 +45,18 @@ const Index = () => {
 
   const handleUpdateGoal = (type: HabitType, goal: HabitGoal) => {
     updateGoal(type, goal, viewYear, viewMonth);
+  };
+  
+  // Add new handler for gym planning updates
+  const handleUpdateGymPlan = (dateISO: string, workoutType: string, location: string) => {
+    const date = new Date(dateISO);
+    const existingData = habitsState.days[dateISO]?.gym || { planned: false, completed: false };
+    
+    updateDay(date, 'gym', {
+      ...existingData,
+      workoutType,
+      location
+    });
   };
   
   // Handle month change for charts and calendar with better bounds checking
@@ -341,6 +353,16 @@ const Index = () => {
           </div>
         </div>
         
+        {/* Gym Planning Section */}
+        <div className="mt-8 mb-8">
+          <GymPlanning 
+            habitsState={habitsState}
+            viewMonth={viewMonth}
+            viewYear={viewYear}
+            onUpdateGymPlan={handleUpdateGymPlan}
+          />
+        </div>
+        
         {/* Motivational section */}
         <div className="mt-12 bg-white rounded-lg shadow-md p-6 text-center">
           <h2 className="text-xl md:text-2xl font-bold mb-6">Your Habits Shape Your Future</h2>
@@ -380,3 +402,5 @@ const Index = () => {
 };
 
 export default Index;
+
+}
