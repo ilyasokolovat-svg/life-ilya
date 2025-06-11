@@ -37,16 +37,20 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
             <Sparkles className="w-5 h-5 text-fuchsia-500 animate-pulse" />
           </CardTitle>
           
-          {/* Q4 Goals Mini Box */}
+          {/* 2025 Ultimate Goal Mini Box */}
           {q4Goals && (
-            <div className="bg-gradient-to-br from-indigo-100 to-purple-200 border border-indigo-300 rounded-lg p-3 max-w-xs shadow-md">
-              <div className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
-                <Target className="w-3 h-3" />
-                Q4 Goals Snapshot
+            <div className="bg-gradient-to-br from-indigo-100 to-purple-200 border border-indigo-300 rounded-lg p-4 max-w-sm shadow-md">
+              <div className="text-sm font-semibold text-indigo-700 mb-3 flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                2025 Ultimate Goal
               </div>
-              <div className="text-xs text-indigo-600 line-clamp-3 leading-relaxed">
-                {q4Goals.split('\n').slice(0, 2).join(' ').replace(/•/g, '').trim()}
-                {q4Goals.split('\n').length > 2 && '...'}
+              <div className="text-sm text-indigo-600 leading-relaxed space-y-1">
+                {q4Goals.split('\n').filter(line => line.trim()).map((line, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <span className="text-indigo-500 mt-0.5">•</span>
+                    <span>{line.replace(/^•\s*/, '').trim()}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
