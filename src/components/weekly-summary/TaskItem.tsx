@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { GripVertical, Edit, Check, X } from "lucide-react";
 import { WeeklySummaryItem } from "@/hooks/useWeeklySummary";
+import BulletPointTask from "./BulletPointTask";
 
 interface TaskItemProps {
   item: WeeklySummaryItem;
@@ -21,6 +22,7 @@ interface TaskItemProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, targetItemId: string) => void;
   onDragEnd: () => void;
+  onToggleBulletPoint?: (item: WeeklySummaryItem, bulletIndex: number, completed: boolean) => void;
 }
 
 const getCategoryColorClass = (category: string) => {
@@ -56,8 +58,24 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDragStart,
   onDragOver,
   onDrop,
-  onDragEnd
+  onDragEnd,
+  onToggleBulletPoint
 }) => {
+  // Parse bullet points from planned_goal
+  const bulletPoints = item.planned_goal
+    .split('\n')
+    .filter(line => line.trim())
+    .map(line => line.trim());
+
+  // Track completion state for individual bullet points
+  const bulletPointCompletions = item.bullet_point_completions || [];
+
+  const handleBulletPointToggle = (bulletIndex: number, completed: boolean) => {
+    if (onToggleBulletPoint) {
+      onToggleBulletPoint(item, bulletIndex, completed);
+    }
+  };
+
   return (
     <div 
       key={item.id} 
@@ -97,6 +115,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
               onChange={(e) => onEditTextChange(e.target.value)}
               className="min-h-[60px] resize-none text-sm"
               autoFocus
+              placeholder="Enter each task on a new line...&#10;• Each line will become a bullet point"
             />
             <div className="flex gap-2">
               <Button 
@@ -117,18 +136,38 @@ const TaskItem: React.FC<TaskItemProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex items-start justify-between gap-2">
-            <p className={`text-sm break-words flex-1 ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-              {item.planned_goal}
-            </p>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onStartEditing(item)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
-            >
-              <Edit className="w-3 h-3" />
-            </Button>
+          <div className="space-y-2">
+            {bulletPoints.length > 1 ? (
+              // Multiple bullet points - show as individual checkable items
+              <div className="space-y-1">
+                {bulletPoints.map((bulletPoint, bulletIndex) => (
+                  <BulletPointTask
+                    key={bulletIndex}
+                    task={bulletPoint}
+                    isCompleted={bulletPointCompletions[bulletIndex] || false}
+                    onToggle={(completed) => handleBulletPointToggle(bulletIndex, completed)}
+                  />
+                ))}
+              </div>
+            ) : (
+              // Single item - show as regular task
+              <div className="flex items-start justify-between gap-2">
+                <p className={`text-sm break-words flex-1 ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                  {bulletPoints[0]?.replace(/^•\s*/, '') || item.planned_goal}
+                </p>
+              </div>
+            )}
+            
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onStartEditing(item)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+              >
+                <Edit className="w-3 h-3" />
+              </Button>
+            </div>
           </div>
         )}
       </div>

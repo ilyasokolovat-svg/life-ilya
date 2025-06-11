@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
@@ -28,7 +27,7 @@ const WeeklySummaryDashboard: React.FC = () => {
         period_key: item.period_key,
         period_type: 'week',
         planned_goal: item.planned_goal,
-        actual_result: completed ? 'completed' : null // Use null instead of undefined for unchecked
+        actual_result: completed ? 'completed' : null
       });
 
       // Update local state immediately for better UX
@@ -36,6 +35,47 @@ const WeeklySummaryDashboard: React.FC = () => {
         prevTasks.map(task => 
           task.id === item.id 
             ? { ...task, isCompleted: completed }
+            : task
+        )
+      );
+    }
+  };
+
+  const toggleBulletPointCompletion = (item: any, bulletIndex: number, completed: boolean) => {
+    const hook = getHookForCategory(item.category);
+    if (hook) {
+      // Update bullet point completions array
+      const currentCompletions = item.bullet_point_completions || [];
+      const updatedCompletions = [...currentCompletions];
+      updatedCompletions[bulletIndex] = completed;
+
+      // Check if all bullet points are completed
+      const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
+      const allCompleted = bulletPoints.every((_, index) => updatedCompletions[index]);
+
+      // Save to database
+      const actualResult = allCompleted ? 'completed' : JSON.stringify({
+        bullet_completions: updatedCompletions
+      });
+
+      hook.saveGoal({
+        category: item.category,
+        subcategory: item.subcategory,
+        period_key: item.period_key,
+        period_type: 'week',
+        planned_goal: item.planned_goal,
+        actual_result: actualResult
+      });
+
+      // Update local state immediately for better UX
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === item.id 
+            ? { 
+                ...task, 
+                bullet_point_completions: updatedCompletions,
+                isCompleted: allCompleted
+              }
             : task
         )
       );
@@ -58,13 +98,22 @@ const WeeklySummaryDashboard: React.FC = () => {
       const trimmedText = editText.trim();
       
       if (trimmedText) {
-        // If there's text, update the goal
+        // Format with bullet points
+        const formattedText = trimmedText
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => {
+            const trimmed = line.trim();
+            return trimmed.startsWith('•') ? line : `• ${trimmed}`;
+          })
+          .join('\n');
+
         hook.saveGoal({
           category: item.category,
           subcategory: item.subcategory,
           period_key: item.period_key,
           period_type: 'week',
-          planned_goal: trimmedText,
+          planned_goal: formattedText,
           actual_result: item.isCompleted ? 'completed' : null
         });
 
@@ -72,7 +121,7 @@ const WeeklySummaryDashboard: React.FC = () => {
         setTasks(prevTasks => 
           prevTasks.map(task => 
             task.id === item.id 
-              ? { ...task, planned_goal: trimmedText }
+              ? { ...task, planned_goal: formattedText }
               : task
           )
         );
@@ -188,6 +237,7 @@ const WeeklySummaryDashboard: React.FC = () => {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onDragEnd={handleDragEnd}
+        onToggleBulletPoint={toggleBulletPointCompletion}
       />
     </Card>
   );

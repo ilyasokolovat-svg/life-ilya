@@ -11,6 +11,7 @@ export interface WeeklySummaryItem {
   planned_goal: string;
   actual_result?: string;
   isCompleted: boolean;
+  bullet_point_completions?: boolean[];
 }
 
 export function useWeeklySummary() {
@@ -50,15 +51,31 @@ export function useWeeklySummary() {
         
       if (error) throw error;
       
-      return (data || []).map(item => ({
-        id: item.id,
-        category: item.category,
-        subcategory: item.subcategory,
-        period_key: item.period_key,
-        planned_goal: item.planned_goal || '',
-        actual_result: item.actual_result,
-        isCompleted: item.actual_result === 'completed'
-      }));
+      return (data || []).map(item => {
+        // Parse bullet point completions from actual_result if it exists
+        let bulletPointCompletions: boolean[] = [];
+        if (item.actual_result && item.actual_result !== 'completed') {
+          try {
+            const parsed = JSON.parse(item.actual_result);
+            if (Array.isArray(parsed.bullet_completions)) {
+              bulletPointCompletions = parsed.bullet_completions;
+            }
+          } catch (e) {
+            // If parsing fails, assume no bullet point completions
+          }
+        }
+
+        return {
+          id: item.id,
+          category: item.category,
+          subcategory: item.subcategory,
+          period_key: item.period_key,
+          planned_goal: item.planned_goal || '',
+          actual_result: item.actual_result,
+          isCompleted: item.actual_result === 'completed',
+          bullet_point_completions: bulletPointCompletions
+        };
+      });
     },
     enabled: !!user?.id,
   });

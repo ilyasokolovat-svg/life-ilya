@@ -67,6 +67,20 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
     return weeks;
   };
 
+  const handleWeekPlanChange = (weekKey: string, newValue: string) => {
+    // Format with bullet points automatically
+    const formattedValue = newValue
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        const trimmed = line.trim();
+        return trimmed.startsWith('•') ? line : `• ${trimmed}`;
+      })
+      .join('\n');
+    
+    onWeekPlanChange(weekKey, formattedValue);
+  };
+
   return (
     <div className="overflow-x-auto">
       <div className="flex gap-6 pb-4" style={{ minWidth: 'max-content' }}>
@@ -99,9 +113,9 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
                       />
                     </div>
                     <Textarea
-                      placeholder="Enter your plan for this week..."
+                      placeholder="Enter your plan for this week...&#10;• Each line will become a bullet point"
                       value={weekPlan}
-                      onChange={(e) => onWeekPlanChange(week.key, e.target.value)}
+                      onChange={(e) => handleWeekPlanChange(week.key, e.target.value)}
                       className={`min-h-[100px] resize-none border-0 shadow-inner ${
                         isCompleted 
                           ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
