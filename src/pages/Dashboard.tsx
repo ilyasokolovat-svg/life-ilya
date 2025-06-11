@@ -8,7 +8,8 @@ import {
   Target,
   Heart,
   LogOut,
-  User
+  User,
+  Utensils
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -88,27 +89,40 @@ const Dashboard = () => {
         </div>
 
         {/* Main Navigation Bubbles */}
-        <div className="flex justify-center items-center gap-16">
+        <div className="flex justify-center items-center gap-12">
           {/* Healthy Life Bubble */}
           <Link to="/habits">
             <div className="group relative">
-              <div className="w-48 h-48 bg-gradient-to-br from-red-500 via-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
+              <div className="w-44 h-44 bg-gradient-to-br from-red-500 via-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
                 <div className="text-center">
-                  <Heart className="w-16 h-16 text-white mb-4 mx-auto" />
-                  <h2 className="text-2xl font-bold text-white">Healthy Life</h2>
+                  <Heart className="w-14 h-14 text-white mb-3 mx-auto" />
+                  <h2 className="text-xl font-bold text-white">Healthy Life</h2>
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
 
+          {/* Meal Planning Bubble */}
+          <Link to="/meal-planning">
+            <div className="group relative">
+              <div className="w-44 h-44 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
+                <div className="text-center">
+                  <Utensils className="w-14 h-14 text-white mb-3 mx-auto" />
+                  <h2 className="text-xl font-bold text-white">Meal Planning</h2>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            </div>
+          </Link>
+
           {/* Goals Bubble */}
           <Link to="/goals-overview">
             <div className="group relative">
-              <div className="w-48 h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
+              <div className="w-44 h-44 bg-gradient-to-br from-blue-500 via-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
                 <div className="text-center">
-                  <Target className="w-16 h-16 text-white mb-4 mx-auto" />
-                  <h2 className="text-2xl font-bold text-white">Goals</h2>
+                  <Target className="w-14 h-14 text-white mb-3 mx-auto" />
+                  <h2 className="text-xl font-bold text-white">Goals</h2>
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>

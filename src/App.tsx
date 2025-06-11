@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import GoalsOverview from "./pages/GoalsOverview";
+import MealPlanning from "./pages/MealPlanning";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
@@ -93,6 +94,11 @@ const AppRoutes = () => {
       <Route path="/habits" element={
         <ProtectedRoute>
           <Index />
+        </ProtectedRoute>
+      } />
+      <Route path="/meal-planning" element={
+        <ProtectedRoute>
+          <MealPlanning />
         </ProtectedRoute>
       } />
       <Route path="/goals/:category" element={
