@@ -1,12 +1,9 @@
 
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { GripVertical, Edit, Check, X } from "lucide-react";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
-import { useGoalsData } from "@/hooks/useGoalsData";
+import { useWeeklySummaryHooks } from "./weekly-summary/useWeeklySummaryHooks";
+import TaskList from "./weekly-summary/TaskList";
 
 const WeeklySummaryDashboard: React.FC = () => {
   const { weeklySummary, isLoading, currentWeekKey } = useWeeklySummary();
@@ -20,40 +17,7 @@ const WeeklySummaryDashboard: React.FC = () => {
     setTasks(weeklySummary);
   }, [weeklySummary]);
 
-  // Get unique categories to handle updates
-  const categories = [...new Set(weeklySummary.map(item => item.category))];
-  
-  // Create hooks for each category
-  const careerHook = useGoalsData('career');
-  const businessHook = useGoalsData('business');
-  const investmentsHook = useGoalsData('investments');
-  const skillsHook = useGoalsData('skills');
-
-  const getHookForCategory = (category: string) => {
-    switch (category) {
-      case 'career': return careerHook;
-      case 'business': return businessHook;
-      case 'investments': return investmentsHook;
-      case 'skills': return skillsHook;
-      default: return null;
-    }
-  };
-
-  // Get category color classes
-  const getCategoryColorClass = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'career':
-        return 'text-blue-600';
-      case 'business':
-        return 'text-green-600';
-      case 'investments':
-        return 'text-purple-600';
-      case 'skills':
-        return 'text-orange-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
+  const { getHookForCategory } = useWeeklySummaryHooks();
 
   const toggleTaskCompletion = (item: any, completed: boolean) => {
     const hook = getHookForCategory(item.category);
@@ -210,84 +174,21 @@ const WeeklySummaryDashboard: React.FC = () => {
         <CardTitle>This Week's Tasks</CardTitle>
         <p className="text-sm text-gray-600">Week of {currentWeekKey} • Drag to reorder by priority</p>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {tasks.map((item, index) => (
-          <div 
-            key={item.id} 
-            className={`group flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 cursor-move ${
-              draggedItem === item.id ? 'opacity-50 scale-95' : 'hover:shadow-md'
-            }`}
-            draggable={editingTask !== item.id}
-            onDragStart={(e) => handleDragStart(e, item.id)}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, item.id)}
-            onDragEnd={handleDragEnd}
-          >
-            <GripVertical className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-            <Checkbox
-              checked={item.isCompleted}
-              onCheckedChange={(checked) => toggleTaskCompletion(item, !!checked)}
-              className="mt-1 flex-shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className={`text-base font-bold ${getCategoryColorClass(item.category)}`}>
-                  {item.category}
-                </span>
-                <span className="text-sm text-gray-400">•</span>
-                <span className={`text-sm ${getCategoryColorClass(item.category)}`}>
-                  {item.subcategory}
-                </span>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                  #{index + 1}
-                </span>
-              </div>
-              
-              {editingTask === item.id ? (
-                <div className="space-y-2">
-                  <Textarea
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    className="min-h-[60px] resize-none text-sm"
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      onClick={() => saveEdit(item)}
-                    >
-                      <Check className="w-3 h-3 mr-1" />
-                      Save
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={cancelEditing}
-                    >
-                      <X className="w-3 h-3 mr-1" />
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-start justify-between gap-2">
-                  <p className={`text-sm break-words flex-1 ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                    {item.planned_goal}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => startEditing(item)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
-                  >
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </CardContent>
+      <TaskList
+        tasks={tasks}
+        draggedItem={draggedItem}
+        editingTask={editingTask}
+        editText={editText}
+        onToggleCompletion={toggleTaskCompletion}
+        onStartEditing={startEditing}
+        onCancelEditing={cancelEditing}
+        onSaveEdit={saveEdit}
+        onEditTextChange={setEditText}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onDragEnd={handleDragEnd}
+      />
     </Card>
   );
 };
