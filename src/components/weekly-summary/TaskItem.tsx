@@ -38,6 +38,10 @@ const getCategoryColorClass = (category: string) => {
   }
 };
 
+const capitalizeFirst = (text: string) => {
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+};
+
 const TaskItem: React.FC<TaskItemProps> = ({
   item,
   index,
@@ -74,8 +78,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className={`text-base font-bold ${getCategoryColorClass(item.category)}`}>
-            {item.category}
+          <span className={`text-lg font-bold ${getCategoryColorClass(item.category)}`}>
+            {capitalizeFirst(item.category)}
           </span>
           <span className="text-sm text-gray-400">•</span>
           <span className={`text-sm ${getCategoryColorClass(item.category)}`}>
