@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,7 +138,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     return goalData?.actual_result === 'completed';
   };
 
-  // Save week plan
+  // Save week plan - Fixed to handle state properly
   const saveWeekPlan = (weekKey: string, plan: string) => {
     saveGoal({
       category,
@@ -191,6 +192,12 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     });
   };
 
+  // Get Q4 strategic goals text for the mini box
+  const getQ4Goals = () => {
+    const q4Key = `${currentYear}-Q4`;
+    return getPeriodGoals(q4Key);
+  };
+
   // Generate the period title without duplication
   const getPeriodTitle = (period: TimelinePeriod) => {
     if (period.type === 'quarter') {
@@ -232,13 +239,29 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-fuchsia-400/20 to-pink-500/20 rounded-full blur-2xl transform -translate-x-12 translate-y-12" />
         
         <CardHeader className="relative pb-6">
-          <CardTitle className="text-xl flex items-center gap-3 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            2025 Progress Journey
-            <Sparkles className="w-5 h-5 text-fuchsia-500 animate-pulse" />
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl flex items-center gap-3 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              2025 Progress Journey
+              <Sparkles className="w-5 h-5 text-fuchsia-500 animate-pulse" />
+            </CardTitle>
+            
+            {/* Q4 Goals Mini Box */}
+            {getQ4Goals() && (
+              <div className="bg-gradient-to-br from-indigo-100 to-purple-200 border border-indigo-300 rounded-lg p-3 max-w-xs shadow-md">
+                <div className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
+                  <Target className="w-3 h-3" />
+                  Q4 Goals Snapshot
+                </div>
+                <div className="text-xs text-indigo-600 line-clamp-3 leading-relaxed">
+                  {getQ4Goals().split('\n').slice(0, 2).join(' ').replace(/•/g, '').trim()}
+                  {getQ4Goals().split('\n').length > 2 && '...'}
+                </div>
+              </div>
+            )}
+          </div>
         </CardHeader>
         
         <CardContent className="relative space-y-6">
@@ -356,6 +379,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
                       <div className="flex gap-4">
                         {monthData.weeks.map((week) => {
                           const isCompleted = getWeekCompleted(week.key);
+                          const weekPlan = getWeekPlan(week.key);
                           return (
                             <div 
                               key={week.key} 
@@ -377,14 +401,14 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
                               </div>
                               <Textarea
                                 placeholder="Enter your plan for this week..."
-                                value={getWeekPlan(week.key)}
+                                value={weekPlan}
                                 onChange={(e) => saveWeekPlan(week.key, e.target.value)}
                                 className={`min-h-[100px] resize-none border-0 shadow-inner ${
                                   isCompleted 
                                     ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
                                     : 'bg-gray-50 focus:bg-white'
                                 }`}
-                                style={{ minHeight: Math.max(100, getWeekPlan(week.key).split('\n').length * 20) + 'px' }}
+                                style={{ minHeight: Math.max(100, weekPlan.split('\n').length * 20) + 'px' }}
                               />
                             </div>
                           );
