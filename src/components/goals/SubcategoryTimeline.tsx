@@ -1,12 +1,12 @@
+
 import React, { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
-import { Eye, EyeOff, Target, TrendingUp, Sparkles, Zap } from "lucide-react";
 import { useGoalsData } from "@/hooks/useGoalsData";
+import ProgressTracking from "./ProgressTracking";
+import TimelineControls from "./TimelineControls";
+import TimelineBubbles from "./TimelineBubbles";
+import PeriodGoals from "./PeriodGoals";
+import WeeklyPlanning from "./WeeklyPlanning";
 
 interface SubcategoryTimelineProps {
   category: string;
@@ -83,53 +83,6 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
   const timeline = generateTimeline();
   const visiblePeriods = hidePastPeriods ? timeline.filter(p => !p.isPast) : timeline;
-
-  // Generate weeks for a quarter
-  const generateWeeksForQuarter = (year: number, quarter: number) => {
-    const weeks = [];
-    const startMonth = (quarter - 1) * 3; // 0, 3, 6, 9
-    
-    for (let month = 0; month < 3; month++) {
-      const currentMonth = startMonth + month;
-      const monthName = new Date(year, currentMonth, 1).toLocaleDateString('en-US', { month: 'long' });
-      
-      // Get all weeks in this month
-      const firstDay = new Date(year, currentMonth, 1);
-      const lastDay = new Date(year, currentMonth + 1, 0);
-      
-      // Find the start of the first week (Monday)
-      let weekStart = new Date(firstDay);
-      weekStart.setDate(firstDay.getDate() - ((firstDay.getDay() + 6) % 7));
-      
-      const monthWeeks = [];
-      while (weekStart <= lastDay) {
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        
-        // Only include weeks that overlap with this month
-        if (weekEnd >= firstDay) {
-          const weekKey = `${year}-${currentMonth + 1}-${weekStart.getDate()}`;
-          monthWeeks.push({
-            key: weekKey,
-            start: new Date(weekStart),
-            end: new Date(weekEnd),
-            label: `${weekStart.getDate()}-${weekEnd.getDate()}`
-          });
-        }
-        
-        weekStart.setDate(weekStart.getDate() + 7);
-      }
-      
-      if (monthWeeks.length > 0) {
-        weeks.push({
-          month: monthName,
-          weeks: monthWeeks
-        });
-      }
-    }
-    
-    return weeks;
-  };
 
   // Get plan data for a specific week
   const getWeekPlan = (weekKey: string) => {
@@ -246,15 +199,6 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     }
   };
 
-  // Generate the strategic goals title without duplication
-  const getStrategicGoalsTitle = (period: TimelinePeriod) => {
-    if (period.type === 'quarter') {
-      return `${period.label} ${period.year} Strategic Goals`;
-    } else {
-      return `${period.label} Strategic Goals`;
-    }
-  };
-
   // Initialize local state when goalsData changes
   useEffect(() => {
     const weekPlans: Record<string, string> = {};
@@ -277,113 +221,27 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
   return (
     <div className="space-y-8">
       {/* Timeline Controls */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{subcategory} Timeline</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setHidePastPeriods(!hidePastPeriods)}
-          className="flex items-center gap-2"
-        >
-          {hidePastPeriods ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-          {hidePastPeriods ? 'Show Past' : 'Hide Past'}
-        </Button>
-      </div>
+      <TimelineControls
+        subcategory={subcategory}
+        hidePastPeriods={hidePastPeriods}
+        onToggleHidePast={() => setHidePastPeriods(!hidePastPeriods)}
+      />
 
       {/* Enhanced Progress Tracking Section */}
-      <Card className="relative overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10" />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-400/20 to-purple-500/20 rounded-full blur-3xl transform translate-x-16 -translate-y-16" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-fuchsia-400/20 to-pink-500/20 rounded-full blur-2xl transform -translate-x-12 translate-y-12" />
-        
-        <CardHeader className="relative pb-6">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl flex items-center gap-3 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-              2025 Progress Journey
-              <Sparkles className="w-5 h-5 text-fuchsia-500 animate-pulse" />
-            </CardTitle>
-            
-            {/* Q4 Goals Mini Box */}
-            {getQ4Goals() && (
-              <div className="bg-gradient-to-br from-indigo-100 to-purple-200 border border-indigo-300 rounded-lg p-3 max-w-xs shadow-md">
-                <div className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
-                  <Target className="w-3 h-3" />
-                  Q4 Goals Snapshot
-                </div>
-                <div className="text-xs text-indigo-600 line-clamp-3 leading-relaxed">
-                  {getQ4Goals().split('\n').slice(0, 2).join(' ').replace(/•/g, '').trim()}
-                  {getQ4Goals().split('\n').length > 2 && '...'}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        
-        <CardContent className="relative space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-violet-700 flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                Current Achievement
-              </span>
-              <span className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                {progressValue}%
-              </span>
-            </div>
-            
-            <div className="space-y-3">
-              <Progress 
-                value={progressValue} 
-                className="h-4 bg-white/60 backdrop-blur-sm shadow-inner"
-              />
-              <Slider
-                value={[progressValue]}
-                onValueChange={(value) => setProgressValue(value[0])}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <label className="text-sm font-semibold text-violet-700 flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Journey Update & Reflections
-            </label>
-            <Textarea
-              placeholder="Share your progress story, wins, challenges, and next steps..."
-              value={progressText}
-              onChange={(e) => setProgressText(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border-violet-200 focus:border-violet-400 focus:ring-violet-400/20 resize-none shadow-sm"
-              rows={4}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <ProgressTracking
+        progressValue={progressValue}
+        progressText={progressText}
+        q4Goals={getQ4Goals()}
+        onProgressValueChange={setProgressValue}
+        onProgressTextChange={setProgressText}
+      />
 
       {/* Timeline Bubbles */}
-      <div className="flex flex-wrap gap-3">
-        {visiblePeriods.map((period) => (
-          <Button
-            key={period.id}
-            variant={selectedPeriod?.id === period.id ? "default" : "outline"}
-            className={`rounded-full px-6 py-2 transition-all duration-300 ${
-              period.isPast ? 'opacity-60' : ''
-            } ${
-              selectedPeriod?.id === period.id 
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg scale-105' 
-                : 'hover:shadow-md hover:scale-102'
-            }`}
-            onClick={() => setSelectedPeriod(period)}
-          >
-            {period.label}
-          </Button>
-        ))}
-      </div>
+      <TimelineBubbles
+        periods={visiblePeriods}
+        selectedPeriod={selectedPeriod}
+        onPeriodSelect={setSelectedPeriod}
+      />
 
       {/* Period Content */}
       {selectedPeriod && (
@@ -395,87 +253,22 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
           </CardHeader>
           <CardContent className="space-y-8">
             {/* Enhanced Period Goals Section */}
-            <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5" />
-              <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-br from-emerald-400/15 to-teal-500/15 rounded-full blur-2xl transform translate-x-12 -translate-y-12" />
-              <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-cyan-400/15 to-blue-500/15 rounded-full blur-xl transform -translate-x-8 translate-y-8" />
-              
-              <CardHeader className="relative pb-4">
-                <CardTitle className="text-lg flex items-center gap-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
-                    <Target className="w-4 h-4 text-white" />
-                  </div>
-                  {getStrategicGoalsTitle(selectedPeriod)}
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse delay-75"></div>
-                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse delay-150"></div>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              
-              <CardContent className="relative">
-                <Textarea
-                  placeholder="✨ Define your ambitious goals for this period (each line becomes a focused objective)..."
-                  value={getPeriodGoals(selectedPeriod.id)}
-                  onChange={(e) => handlePeriodGoalsChange(selectedPeriod.id, e.target.value)}
-                  className="bg-white/80 backdrop-blur-sm border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400/20 min-h-[120px] shadow-sm"
-                  style={{ minHeight: Math.max(120, getPeriodGoals(selectedPeriod.id).split('\n').length * 28) + 'px' }}
-                />
-              </CardContent>
-            </Card>
+            <PeriodGoals
+              period={selectedPeriod}
+              goals={getPeriodGoals(selectedPeriod.id)}
+              onGoalsChange={(goals) => handlePeriodGoalsChange(selectedPeriod.id, goals)}
+            />
 
             {/* Weekly Planning Grid - Only for quarters */}
             {selectedPeriod.type === 'quarter' && (
-              <div className="overflow-x-auto">
-                <div className="flex gap-6 pb-4" style={{ minWidth: 'max-content' }}>
-                  {generateWeeksForQuarter(selectedPeriod.year, selectedPeriod.quarter!).map((monthData) => (
-                    <div key={monthData.month} className="space-y-4">
-                      <h4 className="font-medium text-center text-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        {monthData.month}
-                      </h4>
-                      <div className="flex gap-4">
-                        {monthData.weeks.map((week) => {
-                          const isCompleted = getWeekCompleted(week.key);
-                          const weekPlan = getWeekPlan(week.key);
-                          return (
-                            <div 
-                              key={week.key} 
-                              className={`w-64 border rounded-xl p-4 shadow-md transition-all duration-300 ${
-                                isCompleted 
-                                  ? 'bg-gray-50 border-gray-300 opacity-75' 
-                                  : 'bg-white border-gray-200 hover:shadow-lg'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-3">
-                                <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500' : 'text-gray-800'}`}>
-                                  {week.label} {monthData.month.slice(0, 3)}
-                                </span>
-                                <Checkbox
-                                  checked={isCompleted}
-                                  onCheckedChange={(checked) => toggleWeekCompletion(week.key, !!checked)}
-                                  className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                                />
-                              </div>
-                              <Textarea
-                                placeholder="Enter your plan for this week..."
-                                value={weekPlan}
-                                onChange={(e) => handleWeekPlanChange(week.key, e.target.value)}
-                                className={`min-h-[100px] resize-none border-0 shadow-inner ${
-                                  isCompleted 
-                                    ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
-                                    : 'bg-gray-50 focus:bg-white'
-                                }`}
-                                style={{ minHeight: Math.max(100, weekPlan.split('\n').length * 20) + 'px' }}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <WeeklyPlanning
+                year={selectedPeriod.year}
+                quarter={selectedPeriod.quarter!}
+                getWeekPlan={getWeekPlan}
+                getWeekCompleted={getWeekCompleted}
+                onWeekPlanChange={handleWeekPlanChange}
+                onToggleWeekCompletion={toggleWeekCompletion}
+              />
             )}
           </CardContent>
         </Card>
