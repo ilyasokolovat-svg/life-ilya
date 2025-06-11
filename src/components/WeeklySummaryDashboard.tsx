@@ -39,6 +39,22 @@ const WeeklySummaryDashboard: React.FC = () => {
     }
   };
 
+  // Get category color classes
+  const getCategoryColorClass = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'career':
+        return 'text-blue-600';
+      case 'business':
+        return 'text-green-600';
+      case 'investments':
+        return 'text-purple-600';
+      case 'skills':
+        return 'text-orange-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   const toggleTaskCompletion = (item: any, completed: boolean) => {
     const hook = getHookForCategory(item.category);
     if (hook) {
@@ -215,9 +231,13 @@ const WeeklySummaryDashboard: React.FC = () => {
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="text-sm font-medium text-blue-600">{item.category}</span>
-                <span className="text-sm text-gray-500">•</span>
-                <span className="text-sm text-gray-700">{item.subcategory}</span>
+                <span className={`text-base font-bold ${getCategoryColorClass(item.category)}`}>
+                  {item.category}
+                </span>
+                <span className="text-sm text-gray-400">•</span>
+                <span className={`text-sm ${getCategoryColorClass(item.category)}`}>
+                  {item.subcategory}
+                </span>
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                   #{index + 1}
                 </span>
