@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -96,14 +95,14 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
         </p>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {plannedDays.map((day) => (
             <div
               key={day.dateISO}
-              className="border rounded-lg p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+              className="border rounded-lg p-2 bg-gray-50 hover:bg-gray-100 transition-colors"
             >
-              <div className="text-center mb-3">
-                <div className="text-sm font-semibold text-blue-600">
+              <div className="text-center mb-2">
+                <div className="text-xs font-semibold text-blue-600">
                   {formatDateDisplay(day.date)}
                 </div>
               </div>
@@ -115,7 +114,7 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
                     placeholder="Workout type"
                     value={day.workoutType}
                     onChange={(e) => handleWorkoutTypeChange(day.dateISO, e.target.value)}
-                    className="text-xs h-8 placeholder:text-gray-400"
+                    className="text-xs h-7 placeholder:text-gray-400"
                   />
                 </div>
                 
@@ -125,7 +124,7 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
                     placeholder="Location"
                     value={day.location}
                     onChange={(e) => handleLocationChange(day.dateISO, e.target.value)}
-                    className="text-xs h-8 placeholder:text-gray-400"
+                    className="text-xs h-7 placeholder:text-gray-400"
                   />
                 </div>
               </div>
