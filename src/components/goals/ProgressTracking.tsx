@@ -47,7 +47,7 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
               <div className="text-sm text-indigo-600 leading-relaxed space-y-1">
                 {q4Goals.split('\n').filter(line => line.trim()).map((line, index) => (
                   <div key={index} className="flex items-start gap-2">
-                    <span className="text-indigo-500 mt-0.5">•</span>
+                    <span className="text-yellow-500 text-xs animate-pulse">⭐</span>
                     <span>{line.replace(/^•\s*/, '').trim()}</span>
                   </div>
                 ))}
