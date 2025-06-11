@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGoalsData } from "@/hooks/useGoalsData";
 import ProgressTracking from "./ProgressTracking";
@@ -32,6 +32,10 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
   const [localWeekPlans, setLocalWeekPlans] = useState<Record<string, string>>({});
   const [localPeriodGoals, setLocalPeriodGoals] = useState<Record<string, string>>({});
   
+  // Track which items are currently being edited to prevent server overwrites
+  const editingRef = useRef<Set<string>>(new Set());
+  const timeoutRefs = useRef<Record<string, NodeJS.Timeout>>({});
+  
   const { goalsData, saveGoal } = useGoalsData(category);
 
   // Get current date info
@@ -40,12 +44,24 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
   const currentMonth = now.getMonth(); // 0-11
   const currentQuarter = Math.floor(currentMonth / 3) + 1; // 1-4
 
-  // Debounced save function
-  const debounce = useCallback((func: Function, wait: number) => {
-    let timeout: NodeJS.Timeout;
+  // Improved debounce function that tracks editing state
+  const debounce = useCallback((key: string, func: Function, wait: number) => {
     return (...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(null, args), wait);
+      // Clear existing timeout
+      if (timeoutRefs.current[key]) {
+        clearTimeout(timeoutRefs.current[key]);
+      }
+      
+      // Mark as editing
+      editingRef.current.add(key);
+      
+      // Set new timeout
+      timeoutRefs.current[key] = setTimeout(() => {
+        func.apply(null, args);
+        // Mark as no longer editing after save
+        editingRef.current.delete(key);
+        delete timeoutRefs.current[key];
+      }, wait);
     };
   }, []);
 
@@ -86,7 +102,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
   // Get plan data for a specific week
   const getWeekPlan = (weekKey: string) => {
-    // Check local state first, then fallback to saved data
+    // Always prioritize local state if it exists
     if (localWeekPlans[weekKey] !== undefined) {
       return localWeekPlans[weekKey];
     }
@@ -110,7 +126,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
   // Debounced save for week plans
   const debouncedSaveWeekPlan = useCallback(
-    debounce((weekKey: string, plan: string) => {
+    debounce('week', (weekKey: string, plan: string) => {
       saveGoal({
         category,
         subcategory,
@@ -119,11 +135,11 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         planned_goal: plan,
         actual_result: getWeekCompleted(weekKey) ? 'completed' : null
       });
-    }, 500),
+    }, 1000),
     [category, subcategory, saveGoal]
   );
 
-  // Handle week plan changes with local state
+  // Handle week plan changes with improved local state management
   const handleWeekPlanChange = (weekKey: string, plan: string) => {
     setLocalWeekPlans(prev => ({ ...prev, [weekKey]: plan }));
     debouncedSaveWeekPlan(weekKey, plan);
@@ -143,7 +159,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
   // Get period goals
   const getPeriodGoals = (periodKey: string) => {
-    // Check local state first, then fallback to saved data
+    // Always prioritize local state if it exists
     if (localPeriodGoals[periodKey] !== undefined) {
       return localPeriodGoals[periodKey];
     }
@@ -158,7 +174,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
   // Debounced save for period goals
   const debouncedSavePeriodGoals = useCallback(
-    debounce((periodKey: string, goals: string) => {
+    debounce('period', (periodKey: string, goals: string) => {
       // Format with bullet points
       const formattedGoals = goals
         .split('\n')
@@ -174,11 +190,11 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         planned_goal: formattedGoals,
         actual_result: undefined
       });
-    }, 500),
+    }, 1000),
     [category, subcategory, saveGoal]
   );
 
-  // Handle period goals changes with local state
+  // Handle period goals changes with improved local state management
   const handlePeriodGoalsChange = (periodKey: string, goals: string) => {
     setLocalPeriodGoals(prev => ({ ...prev, [periodKey]: goals }));
     debouncedSavePeriodGoals(periodKey, goals);
@@ -199,7 +215,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     }
   };
 
-  // Initialize local state when goalsData changes
+  // Initialize local state when goalsData changes, but only if not currently editing
   useEffect(() => {
     const weekPlans: Record<string, string> = {};
     const periodGoals: Record<string, string> = {};
@@ -207,16 +223,49 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     goalsData.forEach(goal => {
       if (goal.category === category && goal.subcategory === subcategory) {
         if (goal.period_type === 'week') {
-          weekPlans[goal.period_key] = goal.planned_goal || '';
+          // Only update if not currently editing this item
+          if (!editingRef.current.has(`week-${goal.period_key}`)) {
+            weekPlans[goal.period_key] = goal.planned_goal || '';
+          }
         } else if (goal.period_type === 'period_goals') {
-          periodGoals[goal.period_key] = goal.planned_goal || '';
+          // Only update if not currently editing this item
+          if (!editingRef.current.has(`period-${goal.period_key}`)) {
+            periodGoals[goal.period_key] = goal.planned_goal || '';
+          }
         }
       }
     });
     
-    setLocalWeekPlans(weekPlans);
-    setLocalPeriodGoals(periodGoals);
+    // Only update state for items that aren't being edited
+    setLocalWeekPlans(prev => {
+      const updated = { ...prev };
+      Object.entries(weekPlans).forEach(([key, value]) => {
+        if (!editingRef.current.has(`week-${key}`)) {
+          updated[key] = value;
+        }
+      });
+      return updated;
+    });
+    
+    setLocalPeriodGoals(prev => {
+      const updated = { ...prev };
+      Object.entries(periodGoals).forEach(([key, value]) => {
+        if (!editingRef.current.has(`period-${key}`)) {
+          updated[key] = value;
+        }
+      });
+      return updated;
+    });
   }, [goalsData, category, subcategory]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(timeoutRefs.current).forEach(timeout => {
+        clearTimeout(timeout);
+      });
+    };
+  }, []);
 
   return (
     <div className="space-y-8">
