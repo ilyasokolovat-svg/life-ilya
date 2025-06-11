@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -402,5 +403,3 @@ const Index = () => {
 };
 
 export default Index;
-
-}
