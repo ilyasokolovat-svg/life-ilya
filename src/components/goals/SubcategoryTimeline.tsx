@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +27,11 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
   const [selectedPeriod, setSelectedPeriod] = useState<TimelinePeriod | null>(null);
   const [progressValue, setProgressValue] = useState(0);
   const [progressText, setProgressText] = useState("");
+  
+  // Local state for text inputs to prevent slow typing
+  const [localWeekPlans, setLocalWeekPlans] = useState<Record<string, string>>({});
+  const [localPeriodGoals, setLocalPeriodGoals] = useState<Record<string, string>>({});
+  
   const { goalsData, saveGoal } = useGoalsData(category);
 
   // Get current date info
@@ -35,6 +39,15 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-11
   const currentQuarter = Math.floor(currentMonth / 3) + 1; // 1-4
+
+  // Debounced save function
+  const debounce = useCallback((func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(null, args), wait);
+    };
+  }, []);
 
   // Generate timeline periods
   const generateTimeline = (): TimelinePeriod[] => {
@@ -120,6 +133,10 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
   // Get plan data for a specific week
   const getWeekPlan = (weekKey: string) => {
+    // Check local state first, then fallback to saved data
+    if (localWeekPlans[weekKey] !== undefined) {
+      return localWeekPlans[weekKey];
+    }
     const goalData = goalsData.find(g => 
       g.category === category && 
       g.subcategory === subcategory && 
@@ -138,19 +155,28 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     return goalData?.actual_result === 'completed';
   };
 
-  // Save week plan - Fixed to handle state properly
-  const saveWeekPlan = (weekKey: string, plan: string) => {
-    saveGoal({
-      category,
-      subcategory,
-      period_key: weekKey,
-      period_type: 'week',
-      planned_goal: plan,
-      actual_result: getWeekCompleted(weekKey) ? 'completed' : undefined
-    });
+  // Debounced save for week plans
+  const debouncedSaveWeekPlan = useCallback(
+    debounce((weekKey: string, plan: string) => {
+      saveGoal({
+        category,
+        subcategory,
+        period_key: weekKey,
+        period_type: 'week',
+        planned_goal: plan,
+        actual_result: getWeekCompleted(weekKey) ? 'completed' : null
+      });
+    }, 500),
+    [category, subcategory, saveGoal]
+  );
+
+  // Handle week plan changes with local state
+  const handleWeekPlanChange = (weekKey: string, plan: string) => {
+    setLocalWeekPlans(prev => ({ ...prev, [weekKey]: plan }));
+    debouncedSaveWeekPlan(weekKey, plan);
   };
 
-  // Toggle week completion - Fixed to properly handle unticking
+  // Toggle week completion
   const toggleWeekCompletion = (weekKey: string, completed: boolean) => {
     saveGoal({
       category,
@@ -158,12 +184,16 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
       period_key: weekKey,
       period_type: 'week',
       planned_goal: getWeekPlan(weekKey),
-      actual_result: completed ? 'completed' : null // Use null instead of undefined for unchecked
+      actual_result: completed ? 'completed' : null
     });
   };
 
   // Get period goals
   const getPeriodGoals = (periodKey: string) => {
+    // Check local state first, then fallback to saved data
+    if (localPeriodGoals[periodKey] !== undefined) {
+      return localPeriodGoals[periodKey];
+    }
     const goalData = goalsData.find(g => 
       g.category === category && 
       g.subcategory === subcategory && 
@@ -173,23 +203,32 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
     return goalData?.planned_goal || '';
   };
 
-  // Save period goals
-  const savePeriodGoals = (periodKey: string, goals: string) => {
-    // Format with bullet points
-    const formattedGoals = goals
-      .split('\n')
-      .filter(line => line.trim())
-      .map(line => line.trim().startsWith('•') ? line : `• ${line}`)
-      .join('\n');
+  // Debounced save for period goals
+  const debouncedSavePeriodGoals = useCallback(
+    debounce((periodKey: string, goals: string) => {
+      // Format with bullet points
+      const formattedGoals = goals
+        .split('\n')
+        .filter(line => line.trim())
+        .map(line => line.trim().startsWith('•') ? line : `• ${line}`)
+        .join('\n');
 
-    saveGoal({
-      category,
-      subcategory,
-      period_key: periodKey,
-      period_type: 'period_goals',
-      planned_goal: formattedGoals,
-      actual_result: undefined
-    });
+      saveGoal({
+        category,
+        subcategory,
+        period_key: periodKey,
+        period_type: 'period_goals',
+        planned_goal: formattedGoals,
+        actual_result: undefined
+      });
+    }, 500),
+    [category, subcategory, saveGoal]
+  );
+
+  // Handle period goals changes with local state
+  const handlePeriodGoalsChange = (periodKey: string, goals: string) => {
+    setLocalPeriodGoals(prev => ({ ...prev, [periodKey]: goals }));
+    debouncedSavePeriodGoals(periodKey, goals);
   };
 
   // Get Q4 strategic goals text for the mini box
@@ -215,6 +254,25 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
       return `${period.label} Strategic Goals`;
     }
   };
+
+  // Initialize local state when goalsData changes
+  useEffect(() => {
+    const weekPlans: Record<string, string> = {};
+    const periodGoals: Record<string, string> = {};
+    
+    goalsData.forEach(goal => {
+      if (goal.category === category && goal.subcategory === subcategory) {
+        if (goal.period_type === 'week') {
+          weekPlans[goal.period_key] = goal.planned_goal || '';
+        } else if (goal.period_type === 'period_goals') {
+          periodGoals[goal.period_key] = goal.planned_goal || '';
+        }
+      }
+    });
+    
+    setLocalWeekPlans(weekPlans);
+    setLocalPeriodGoals(periodGoals);
+  }, [goalsData, category, subcategory]);
 
   return (
     <div className="space-y-8">
@@ -360,7 +418,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
                 <Textarea
                   placeholder="✨ Define your ambitious goals for this period (each line becomes a focused objective)..."
                   value={getPeriodGoals(selectedPeriod.id)}
-                  onChange={(e) => savePeriodGoals(selectedPeriod.id, e.target.value)}
+                  onChange={(e) => handlePeriodGoalsChange(selectedPeriod.id, e.target.value)}
                   className="bg-white/80 backdrop-blur-sm border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400/20 min-h-[120px] shadow-sm"
                   style={{ minHeight: Math.max(120, getPeriodGoals(selectedPeriod.id).split('\n').length * 28) + 'px' }}
                 />
@@ -402,7 +460,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
                               <Textarea
                                 placeholder="Enter your plan for this week..."
                                 value={weekPlan}
-                                onChange={(e) => saveWeekPlan(week.key, e.target.value)}
+                                onChange={(e) => handleWeekPlanChange(week.key, e.target.value)}
                                 className={`min-h-[100px] resize-none border-0 shadow-inner ${
                                   isCompleted 
                                     ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
