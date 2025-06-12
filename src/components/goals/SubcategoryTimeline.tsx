@@ -176,6 +176,8 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         progressValue={progressValue}
         progressText={progressText}
         q4Goals={getQ4Goals()}
+        selectedPeriod={selectedPeriod}
+        getPeriodGoals={getPeriodGoals}
         onProgressValueChange={setProgressValue}
         onProgressTextChange={setProgressText}
       />

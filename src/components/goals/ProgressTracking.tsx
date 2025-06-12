@@ -6,10 +6,21 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { TrendingUp, Sparkles, Zap, Target, Calendar } from "lucide-react";
 
+interface TimelinePeriod {
+  id: string;
+  label: string;
+  type: 'quarter' | 'year';
+  year: number;
+  quarter?: number;
+  isPast: boolean;
+}
+
 interface ProgressTrackingProps {
   progressValue: number;
   progressText: string;
   q4Goals: string;
+  selectedPeriod: TimelinePeriod | null;
+  getPeriodGoals: (periodKey: string) => string;
   onProgressValueChange: (value: number) => void;
   onProgressTextChange: (text: string) => void;
 }
@@ -18,6 +29,8 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
   progressValue,
   progressText,
   q4Goals,
+  selectedPeriod,
+  getPeriodGoals,
   onProgressValueChange,
   onProgressTextChange
 }) => {
@@ -25,6 +38,14 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
   const now = new Date();
   const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
   const currentYear = now.getFullYear();
+
+  // Get current quarter goals
+  const getCurrentQuarterGoals = () => {
+    if (selectedPeriod && selectedPeriod.type === 'quarter') {
+      return getPeriodGoals(selectedPeriod.id);
+    }
+    return '';
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -151,26 +172,43 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
           </div>
 
           {/* Current Quarter Goals */}
-          <div className="bg-gradient-to-br from-blue-100 to-indigo-200 border border-blue-300 rounded-lg p-3 shadow-md">
-            <div className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              Q{currentQuarter} Key Goals
-            </div>
-            <div className="text-xs text-blue-600 leading-relaxed space-y-1">
-              <div className="flex items-start gap-2">
-                <span className="text-blue-500 text-xs">🎯</span>
-                <span>Complete quarterly objectives</span>
+          {getCurrentQuarterGoals() ? (
+            <div className="bg-gradient-to-br from-blue-100 to-indigo-200 border border-blue-300 rounded-lg p-3 shadow-md">
+              <div className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Q{selectedPeriod?.quarter} Strategic Goals
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-blue-500 text-xs">📈</span>
-                <span>Track weekly progress</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-blue-500 text-xs">✅</span>
-                <span>Achieve milestone targets</span>
+              <div className="text-xs text-blue-600 leading-relaxed space-y-1">
+                {getCurrentQuarterGoals().split('\n').filter(line => line.trim()).slice(0, 3).map((line, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <span className="text-blue-500 text-xs">🎯</span>
+                    <span>{line.replace(/^•\s*/, '').trim()}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-gradient-to-br from-blue-100 to-indigo-200 border border-blue-300 rounded-lg p-3 shadow-md">
+              <div className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Q{currentQuarter} Key Goals
+              </div>
+              <div className="text-xs text-blue-600 leading-relaxed space-y-1">
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-500 text-xs">🎯</span>
+                  <span>Complete quarterly objectives</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-500 text-xs">📈</span>
+                  <span>Track weekly progress</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-500 text-xs">✅</span>
+                  <span>Achieve milestone targets</span>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
