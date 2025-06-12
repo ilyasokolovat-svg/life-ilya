@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -39,12 +38,10 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
   const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
   const currentYear = now.getFullYear();
 
-  // Get current quarter goals
+  // Get current quarter goals - ALWAYS for the actual current quarter, not selected period
   const getCurrentQuarterGoals = () => {
-    if (selectedPeriod && selectedPeriod.type === 'quarter') {
-      return getPeriodGoals(selectedPeriod.id);
-    }
-    return '';
+    const currentQuarterKey = `${currentYear}-Q${currentQuarter}`;
+    return getPeriodGoals(currentQuarterKey);
   };
 
   return (
@@ -171,12 +168,12 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
             />
           </div>
 
-          {/* Current Quarter Goals */}
+          {/* Current Quarter Goals - STATIC for current quarter only */}
           {getCurrentQuarterGoals() ? (
             <div className="bg-gradient-to-br from-blue-100 to-indigo-200 border border-blue-300 rounded-lg p-3 shadow-md">
               <div className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                Q{selectedPeriod?.quarter} Strategic Goals
+                Q{currentQuarter} Strategic Goals
               </div>
               <div className="text-xs text-blue-600 leading-relaxed space-y-1">
                 {getCurrentQuarterGoals().split('\n').filter(line => line.trim()).slice(0, 3).map((line, index) => (

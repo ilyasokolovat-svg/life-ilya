@@ -23,7 +23,7 @@ interface TimelinePeriod {
 }
 
 const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, subcategory }) => {
-  const [hidePastPeriods, setHidePastPeriods] = useState(false);
+  const [hidePastPeriods, setHidePastPeriods] = useState(true); // Changed to true by default
   const [selectedPeriod, setSelectedPeriod] = useState<TimelinePeriod | null>(null);
   const [progressValue, setProgressValue] = useState(0);
   const [progressText, setProgressText] = useState("");
