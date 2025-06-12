@@ -1,7 +1,7 @@
-
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGoalsData } from "@/hooks/useGoalsData";
+import { useLastUpdateDate } from "@/hooks/useLastUpdateDate";
 import ProgressTracking from "./ProgressTracking";
 import TimelineControls from "./TimelineControls";
 import TimelineBubbles from "./TimelineBubbles";
@@ -29,6 +29,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
   const [progressText, setProgressText] = useState("");
   
   const { goalsData, saveGoal } = useGoalsData(category);
+  const { formattedDate } = useLastUpdateDate(category, subcategory);
 
   // Get current date info
   const now = new Date();
@@ -167,6 +168,7 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
         subcategory={subcategory}
         hidePastPeriods={hidePastPeriods}
         onToggleHidePast={() => setHidePastPeriods(!hidePastPeriods)}
+        lastUpdateDate={formattedDate}
       />
 
       {/* Enhanced Progress Tracking Section */}
