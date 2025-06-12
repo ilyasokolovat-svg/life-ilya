@@ -1,8 +1,9 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Target, Save } from "lucide-react";
 
 interface TimelinePeriod {
   id: string;
@@ -17,13 +18,35 @@ interface PeriodGoalsProps {
   period: TimelinePeriod;
   goals: string;
   onGoalsChange: (goals: string) => void;
+  onSave: (goals: string) => void;
 }
 
 const PeriodGoals: React.FC<PeriodGoalsProps> = ({
   period,
   goals,
-  onGoalsChange
+  onGoalsChange,
+  onSave
 }) => {
+  const [localGoals, setLocalGoals] = useState(goals);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const handleChange = (value: string) => {
+    setLocalGoals(value);
+    setHasChanges(value !== goals);
+  };
+
+  const handleSave = () => {
+    onSave(localGoals);
+    setHasChanges(false);
+  };
+
+  // Update local state when props change (from external updates)
+  React.useEffect(() => {
+    if (!hasChanges) {
+      setLocalGoals(goals);
+    }
+  }, [goals, hasChanges]);
+
   const getStrategicGoalsTitle = (period: TimelinePeriod) => {
     if (period.type === 'quarter') {
       return `${period.label} ${period.year} Strategic Goals`;
@@ -52,14 +75,24 @@ const PeriodGoals: React.FC<PeriodGoalsProps> = ({
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="relative">
+      <CardContent className="relative space-y-4">
         <Textarea
           placeholder="✨ Define your ambitious goals for this period (each line becomes a focused objective)..."
-          value={goals}
-          onChange={(e) => onGoalsChange(e.target.value)}
+          value={localGoals}
+          onChange={(e) => handleChange(e.target.value)}
           className="bg-white/80 backdrop-blur-sm border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400/20 min-h-[120px] shadow-sm"
-          style={{ minHeight: Math.max(120, goals.split('\n').length * 28) + 'px' }}
+          style={{ minHeight: Math.max(120, localGoals.split('\n').length * 28) + 'px' }}
         />
+        {hasChanges && (
+          <Button 
+            onClick={handleSave}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-md"
+            size="sm"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save Goals
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

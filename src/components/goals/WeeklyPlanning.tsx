@@ -1,7 +1,9 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Save } from "lucide-react";
 
 interface WeeklyPlanningProps {
   year: number;
@@ -10,6 +12,7 @@ interface WeeklyPlanningProps {
   getWeekCompleted: (weekKey: string) => boolean;
   onWeekPlanChange: (weekKey: string, plan: string) => void;
   onToggleWeekCompletion: (weekKey: string, completed: boolean) => void;
+  onSaveWeekPlan: (weekKey: string, plan: string) => void;
 }
 
 const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
@@ -17,9 +20,12 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
   quarter,
   getWeekPlan,
   getWeekCompleted,
-  onWeekPlanChange,
-  onToggleWeekCompletion
+  onToggleWeekCompletion,
+  onSaveWeekPlan
 }) => {
+  const [localPlans, setLocalPlans] = useState<Record<string, string>>({});
+  const [changedWeeks, setChangedWeeks] = useState<Set<string>>(new Set());
+
   // Generate weeks for a quarter
   const generateWeeksForQuarter = (year: number, quarter: number) => {
     const weeks = [];
@@ -67,9 +73,20 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
     return weeks;
   };
 
+  const getCurrentPlanValue = (weekKey: string) => {
+    return localPlans[weekKey] !== undefined ? localPlans[weekKey] : getWeekPlan(weekKey);
+  };
+
   const handleWeekPlanChange = (weekKey: string, newValue: string) => {
+    setLocalPlans(prev => ({ ...prev, [weekKey]: newValue }));
+    setChangedWeeks(prev => new Set([...prev, weekKey]));
+  };
+
+  const handleSaveWeekPlan = (weekKey: string) => {
+    const currentValue = localPlans[weekKey] || '';
+    
     // Format with bullet points automatically
-    const formattedValue = newValue
+    const formattedValue = currentValue
       .split('\n')
       .filter(line => line.trim())
       .map(line => {
@@ -78,7 +95,12 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
       })
       .join('\n');
     
-    onWeekPlanChange(weekKey, formattedValue);
+    onSaveWeekPlan(weekKey, formattedValue);
+    setChangedWeeks(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(weekKey);
+      return newSet;
+    });
   };
 
   return (
@@ -92,7 +114,9 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
             <div className="flex gap-4">
               {monthData.weeks.map((week) => {
                 const isCompleted = getWeekCompleted(week.key);
-                const weekPlan = getWeekPlan(week.key);
+                const weekPlan = getCurrentPlanValue(week.key);
+                const hasChanges = changedWeeks.has(week.key);
+                
                 return (
                   <div 
                     key={week.key} 
@@ -116,13 +140,23 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
                       placeholder="Enter your plan for this week...&#10;• Each line will become a bullet point"
                       value={weekPlan}
                       onChange={(e) => handleWeekPlanChange(week.key, e.target.value)}
-                      className={`min-h-[100px] resize-none border-0 shadow-inner ${
+                      className={`min-h-[100px] resize-none border-0 shadow-inner mb-3 ${
                         isCompleted 
                           ? 'bg-gray-100 text-gray-600 placeholder:text-gray-400' 
                           : 'bg-gray-50 focus:bg-white'
                       }`}
                       style={{ minHeight: Math.max(100, weekPlan.split('\n').length * 20) + 'px' }}
                     />
+                    {hasChanges && (
+                      <Button 
+                        onClick={() => handleSaveWeekPlan(week.key)}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                        size="sm"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Plan
+                      </Button>
+                    )}
                   </div>
                 );
               })}
