@@ -45,6 +45,13 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
     return getPeriodGoals(currentQuarterKey);
   };
 
+  // Get 2025 strategic goals - check both Q4 and the year 2025
+  const get2025Goals = () => {
+    const q4Key = `${currentYear}-Q4`;
+    const year2025Key = '2025';
+    return q4Goals || getPeriodGoals(q4Key) || getPeriodGoals(year2025Key);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Current Quarter Progress Box - Now on the left */}
@@ -190,23 +197,38 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
             />
           </div>
 
-          {/* 2025 Ultimate Goal Mini Box */}
-          {q4Goals && (
-            <div className="bg-gradient-to-br from-indigo-100 to-purple-200 border border-indigo-300 rounded-lg p-3 shadow-md">
-              <div className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
-                <Target className="w-3 h-3" />
-                2025 Ultimate Goal
-              </div>
-              <div className="text-xs text-indigo-600 leading-relaxed space-y-1">
-                {q4Goals.split('\n').filter(line => line.trim()).slice(0, 3).map((line, index) => (
+          {/* 2025 Ultimate Goal Mini Box - Always show */}
+          <div className="bg-gradient-to-br from-indigo-100 to-purple-200 border border-indigo-300 rounded-lg p-3 shadow-md">
+            <div className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
+              <Target className="w-3 h-3" />
+              2025 Ultimate Goal
+            </div>
+            <div className="text-xs text-indigo-600 leading-relaxed space-y-1">
+              {get2025Goals() ? (
+                get2025Goals().split('\n').filter(line => line.trim()).slice(0, 3).map((line, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <span className="text-yellow-500 text-xs animate-pulse">⭐</span>
                     <span>{line.replace(/^•\s*/, '').trim()}</span>
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <>
+                  <div className="flex items-start gap-2">
+                    <span className="text-yellow-500 text-xs animate-pulse">⭐</span>
+                    <span>Define your 2025 vision</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-yellow-500 text-xs animate-pulse">🚀</span>
+                    <span>Set strategic milestones</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-yellow-500 text-xs animate-pulse">🎯</span>
+                    <span>Track annual progress</span>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
