@@ -67,34 +67,18 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      // Update local state immediately for better UX
-      const updatedTasks = tasks.map(task => 
-        task.id === item.id 
-          ? { 
-              ...task, 
-              bullet_point_completions: updatedCompletions,
-              isCompleted: allCompleted
-            }
-          : task
+      // Update local state immediately for better UX - NO SORTING
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === item.id 
+            ? { 
+                ...task, 
+                bullet_point_completions: updatedCompletions,
+                isCompleted: allCompleted
+              }
+            : task
+        )
       );
-
-      // Sort tasks: incomplete first, then completed at the bottom
-      const sortedTasks = [...updatedTasks].sort((a, b) => {
-        const aCompleted = a.isCompleted || (a.bullet_point_completions && 
-          a.planned_goal.split('\n').filter(line => line.trim()).every((_, index) => a.bullet_point_completions[index]));
-        const bCompleted = b.isCompleted || (b.bullet_point_completions && 
-          b.planned_goal.split('\n').filter(line => line.trim()).every((_, index) => b.bullet_point_completions[index]));
-        
-        // If completion status is different, incomplete tasks go first
-        if (aCompleted !== bCompleted) {
-          return aCompleted ? 1 : -1;
-        }
-        
-        // If both have same completion status, maintain original order
-        return 0;
-      });
-
-      setTasks(sortedTasks);
     }
   };
 
