@@ -11,9 +11,37 @@ const WeeklySummaryDashboard: React.FC = () => {
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
 
-  // Update tasks when weeklySummary changes
+  // Update tasks when weeklySummary changes, but preserve manual order
   React.useEffect(() => {
-    setTasks(weeklySummary);
+    if (tasks.length === 0) {
+      // Initial load - use the order from database
+      setTasks(weeklySummary);
+    } else {
+      // Preserve manual order but update task properties
+      setTasks(currentTasks => {
+        const updatedTasks = [...currentTasks];
+        
+        // Update existing tasks with new data
+        weeklySummary.forEach(newTask => {
+          const existingIndex = updatedTasks.findIndex(task => task.id === newTask.id);
+          if (existingIndex !== -1) {
+            // Update existing task while preserving its position
+            updatedTasks[existingIndex] = {
+              ...updatedTasks[existingIndex],
+              ...newTask
+            };
+          } else {
+            // Add new tasks at the end
+            updatedTasks.push(newTask);
+          }
+        });
+
+        // Remove tasks that no longer exist in the database
+        return updatedTasks.filter(task => 
+          weeklySummary.some(dbTask => dbTask.id === task.id)
+        );
+      });
+    }
   }, [weeklySummary]);
 
   const { getHookForCategory } = useWeeklySummaryHooks();
@@ -49,7 +77,7 @@ const WeeklySummaryDashboard: React.FC = () => {
       const updatedCompletions = [...currentCompletions];
       updatedCompletions[bulletIndex] = completed;
 
-      // Save bullet point completions but DON'T automatically mark entire task as completed
+      // Save bullet point completions
       const actualResult = JSON.stringify({
         bullet_completions: updatedCompletions
       });
@@ -64,14 +92,12 @@ const WeeklySummaryDashboard: React.FC = () => {
       });
 
       // Update local state - maintain exact order, only update bullet point completions
-      // Do NOT change isCompleted status automatically
       setTasks(currentTasks => {
         return currentTasks.map(task => 
           task.id === item.id 
             ? { 
                 ...task, 
                 bullet_point_completions: updatedCompletions
-                // Removed: isCompleted: allCompleted
               }
             : task
         );
