@@ -76,12 +76,16 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   };
 
+  // Check if all bullet points are completed
+  const allBulletPointsCompleted = bulletPoints.length > 1 && 
+    bulletPoints.every((_, index) => bulletPointCompletions[index] === true);
+
   return (
     <div 
       key={item.id} 
       className={`group flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 cursor-move ${
         draggedItem === item.id ? 'opacity-50 scale-95' : 'hover:shadow-md'
-      }`}
+      } ${allBulletPointsCompleted ? 'bg-green-50 border-green-200' : ''}`}
       draggable={editingTask !== item.id}
       onDragStart={(e) => onDragStart(e, item.id)}
       onDragOver={onDragOver}
@@ -89,11 +93,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
       onDragEnd={onDragEnd}
     >
       <GripVertical className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-      <Checkbox
-        checked={item.isCompleted}
-        onCheckedChange={(checked) => onToggleCompletion(item, !!checked)}
-        className="mt-1 flex-shrink-0"
-      />
+      
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className={`text-lg font-bold ${getCategoryColorClass(item.category)}`}>
@@ -106,6 +106,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
           <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
             #{index + 1}
           </span>
+          {allBulletPointsCompleted && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+              ✓ Completed
+            </span>
+          )}
         </div>
         
         {editingTask === item.id ? (
@@ -150,8 +155,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 ))}
               </div>
             ) : (
-              // Single item - show as regular task
-              <div className="flex items-start justify-between gap-2">
+              // Single item - show as regular task with checkbox
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  checked={item.isCompleted}
+                  onCheckedChange={(checked) => onToggleCompletion(item, !!checked)}
+                  className="mt-0.5 flex-shrink-0"
+                />
                 <p className={`text-sm break-words flex-1 ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
                   {bulletPoints[0]?.replace(/^•\s*/, '') || item.planned_goal}
                 </p>
