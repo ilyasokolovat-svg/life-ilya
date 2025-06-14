@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
@@ -50,12 +49,8 @@ const WeeklySummaryDashboard: React.FC = () => {
       const updatedCompletions = [...currentCompletions];
       updatedCompletions[bulletIndex] = completed;
 
-      // Check if all bullet points are completed
-      const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
-      const allCompleted = bulletPoints.every((_, index) => updatedCompletions[index]);
-
-      // Save to database
-      const actualResult = allCompleted ? 'completed' : JSON.stringify({
+      // Save bullet point completions but DON'T automatically mark entire task as completed
+      const actualResult = JSON.stringify({
         bullet_completions: updatedCompletions
       });
 
@@ -68,14 +63,15 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      // Update local state - maintain exact order, only update the specific task
+      // Update local state - maintain exact order, only update bullet point completions
+      // Do NOT change isCompleted status automatically
       setTasks(currentTasks => {
         return currentTasks.map(task => 
           task.id === item.id 
             ? { 
                 ...task, 
-                bullet_point_completions: updatedCompletions,
-                isCompleted: allCompleted
+                bullet_point_completions: updatedCompletions
+                // Removed: isCompleted: allCompleted
               }
             : task
         );
