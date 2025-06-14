@@ -2,7 +2,9 @@ import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
 import { useWeeklySummaryHooks } from "./weekly-summary/useWeeklySummaryHooks";
+import { useStandaloneTodos } from "@/hooks/useStandaloneTodos";
 import TaskList from "./weekly-summary/TaskList";
+import StandaloneTodos from "./weekly-summary/StandaloneTodos";
 
 const WeeklySummaryDashboard: React.FC = () => {
   const { weeklySummary, isLoading, currentWeekKey } = useWeeklySummary();
@@ -10,6 +12,15 @@ const WeeklySummaryDashboard: React.FC = () => {
   const [tasks, setTasks] = useState(weeklySummary);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
+
+  // Standalone todos hook
+  const {
+    todos: standaloneTodos,
+    addTodo: addStandaloneTodo,
+    toggleTodo: toggleStandaloneTodo,
+    editTodo: editStandaloneTodo,
+    deleteTodo: deleteStandaloneTodo
+  } = useStandaloneTodos();
 
   // Update tasks when weeklySummary changes, but preserve manual order
   React.useEffect(() => {
@@ -224,44 +235,49 @@ const WeeklySummaryDashboard: React.FC = () => {
     );
   }
 
-  if (tasks.length === 0) {
-    return (
+  return (
+    <div className="space-y-6">
+      {/* Category-based tasks */}
       <Card>
         <CardHeader>
           <CardTitle>This Week's Tasks</CardTitle>
+          <p className="text-sm text-gray-600">Week of {currentWeekKey} • Drag to reorder by priority</p>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-500 text-center py-4">
-            No tasks planned for this week. Start planning in your goal categories!
-          </p>
-        </CardContent>
+        {tasks.length === 0 ? (
+          <CardContent>
+            <p className="text-gray-500 text-center py-4">
+              No tasks planned for this week. Start planning in your goal categories!
+            </p>
+          </CardContent>
+        ) : (
+          <TaskList
+            tasks={tasks}
+            draggedItem={draggedItem}
+            editingTask={editingTask}
+            editText={editText}
+            onToggleCompletion={toggleTaskCompletion}
+            onStartEditing={startEditing}
+            onCancelEditing={cancelEditing}
+            onSaveEdit={saveEdit}
+            onEditTextChange={setEditText}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
+            onToggleBulletPoint={toggleBulletPointCompletion}
+          />
+        )}
       </Card>
-    );
-  }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>This Week's Tasks</CardTitle>
-        <p className="text-sm text-gray-600">Week of {currentWeekKey} • Drag to reorder by priority</p>
-      </CardHeader>
-      <TaskList
-        tasks={tasks}
-        draggedItem={draggedItem}
-        editingTask={editingTask}
-        editText={editText}
-        onToggleCompletion={toggleTaskCompletion}
-        onStartEditing={startEditing}
-        onCancelEditing={cancelEditing}
-        onSaveEdit={saveEdit}
-        onEditTextChange={setEditText}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onDragEnd={handleDragEnd}
-        onToggleBulletPoint={toggleBulletPointCompletion}
+      {/* Standalone todos */}
+      <StandaloneTodos
+        todos={standaloneTodos}
+        onAddTodo={addStandaloneTodo}
+        onToggleTodo={toggleStandaloneTodo}
+        onEditTodo={editStandaloneTodo}
+        onDeleteTodo={deleteStandaloneTodo}
       />
-    </Card>
+    </div>
   );
 };
 
