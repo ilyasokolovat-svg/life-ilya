@@ -30,14 +30,15 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: completed ? 'completed' : null
       });
 
-      // Update local state immediately for better UX - NO SORTING
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === item.id 
-            ? { ...task, isCompleted: completed }
-            : task
-        )
-      );
+      // Update local state - keep exact same order
+      setTasks(prevTasks => {
+        const newTasks = [...prevTasks];
+        const taskIndex = newTasks.findIndex(task => task.id === item.id);
+        if (taskIndex !== -1) {
+          newTasks[taskIndex] = { ...newTasks[taskIndex], isCompleted: completed };
+        }
+        return newTasks;
+      });
     }
   };
 
@@ -67,18 +68,19 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      // Update local state immediately for better UX - NO SORTING, PRESERVE ORDER
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === item.id 
-            ? { 
-                ...task, 
-                bullet_point_completions: updatedCompletions,
-                isCompleted: allCompleted
-              }
-            : task
-        )
-      );
+      // Update local state - keep exact same order
+      setTasks(prevTasks => {
+        const newTasks = [...prevTasks];
+        const taskIndex = newTasks.findIndex(task => task.id === item.id);
+        if (taskIndex !== -1) {
+          newTasks[taskIndex] = { 
+            ...newTasks[taskIndex], 
+            bullet_point_completions: updatedCompletions,
+            isCompleted: allCompleted
+          };
+        }
+        return newTasks;
+      });
     }
   };
 
@@ -117,14 +119,15 @@ const WeeklySummaryDashboard: React.FC = () => {
           actual_result: item.isCompleted ? 'completed' : null
         });
 
-        // Update local state immediately for better UX - NO SORTING
-        setTasks(prevTasks => 
-          prevTasks.map(task => 
-            task.id === item.id 
-              ? { ...task, planned_goal: formattedText }
-              : task
-          )
-        );
+        // Update local state - keep exact same order
+        setTasks(prevTasks => {
+          const newTasks = [...prevTasks];
+          const taskIndex = newTasks.findIndex(task => task.id === item.id);
+          if (taskIndex !== -1) {
+            newTasks[taskIndex] = { ...newTasks[taskIndex], planned_goal: formattedText };
+          }
+          return newTasks;
+        });
       } else {
         // If text is empty, delete the goal by setting planned_goal to empty string
         hook.saveGoal({
@@ -136,10 +139,8 @@ const WeeklySummaryDashboard: React.FC = () => {
           actual_result: null
         });
 
-        // Remove from local state immediately - NO SORTING
-        setTasks(prevTasks => 
-          prevTasks.filter(task => task.id !== item.id)
-        );
+        // Remove from local state - keep order of remaining items
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== item.id));
       }
     }
     setEditingTask(null);
