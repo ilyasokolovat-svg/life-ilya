@@ -13,7 +13,12 @@ export const useStandaloneTodos = () => {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsedTodos = JSON.parse(stored);
-        setTodos(parsedTodos);
+        // Convert deadline strings back to Date objects
+        const todosWithDates = parsedTodos.map((todo: any) => ({
+          ...todo,
+          deadline: todo.deadline ? new Date(todo.deadline) : undefined
+        }));
+        setTodos(todosWithDates);
       }
     } catch (error) {
       console.error("Error loading standalone todos:", error);
@@ -29,12 +34,13 @@ export const useStandaloneTodos = () => {
     }
   }, [todos]);
 
-  const addTodo = (text: string) => {
+  const addTodo = (text: string, deadline?: Date) => {
     const newTodo: StandaloneTodo = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       text,
       completed: false,
-      hidden: false
+      hidden: false,
+      deadline
     };
     setTodos(prev => [...prev, newTodo]);
   };
@@ -47,10 +53,10 @@ export const useStandaloneTodos = () => {
     );
   };
 
-  const editTodo = (id: string, newText: string) => {
+  const editTodo = (id: string, newText: string, deadline?: Date) => {
     setTodos(prev => 
       prev.map(todo => 
-        todo.id === id ? { ...todo, text: newText } : todo
+        todo.id === id ? { ...todo, text: newText, deadline } : todo
       )
     );
   };
