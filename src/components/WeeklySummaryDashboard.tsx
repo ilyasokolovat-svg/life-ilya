@@ -30,7 +30,7 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: completed ? 'completed' : null
       });
 
-      // Update local state immediately for better UX
+      // Update local state immediately for better UX - NO SORTING
       setTasks(prevTasks => 
         prevTasks.map(task => 
           task.id === item.id 
@@ -117,7 +117,7 @@ const WeeklySummaryDashboard: React.FC = () => {
           actual_result: item.isCompleted ? 'completed' : null
         });
 
-        // Update local state immediately for better UX
+        // Update local state immediately for better UX - NO SORTING
         setTasks(prevTasks => 
           prevTasks.map(task => 
             task.id === item.id 
@@ -136,7 +136,7 @@ const WeeklySummaryDashboard: React.FC = () => {
           actual_result: null
         });
 
-        // Remove from local state immediately
+        // Remove from local state immediately - NO SORTING
         setTasks(prevTasks => 
           prevTasks.filter(task => task.id !== item.id)
         );
