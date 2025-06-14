@@ -33,7 +33,8 @@ export const useStandaloneTodos = () => {
     const newTodo: StandaloneTodo = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       text,
-      completed: false
+      completed: false,
+      hidden: false
     };
     setTodos(prev => [...prev, newTodo]);
   };
@@ -58,11 +59,20 @@ export const useStandaloneTodos = () => {
     setTodos(prev => prev.filter(todo => todo.id !== id));
   };
 
+  const hideTodo = (id: string) => {
+    setTodos(prev => 
+      prev.map(todo => 
+        todo.id === id ? { ...todo, hidden: true } : todo
+      )
+    );
+  };
+
   return {
     todos,
     addTodo,
     toggleTodo,
     editTodo,
-    deleteTodo
+    deleteTodo,
+    hideTodo
   };
 };

@@ -82,14 +82,9 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-16">
-        {/* Weekly Summary Dashboard */}
-        <div className="mb-12 max-w-4xl mx-auto">
-          <WeeklySummaryDashboard />
-        </div>
-
-        {/* Main Navigation Bubbles */}
-        <div className="flex justify-center items-center gap-12">
+      <main className="container mx-auto px-4 py-8">
+        {/* Main Navigation Bubbles - Moved to top */}
+        <div className="flex justify-center items-center gap-12 mb-12">
           {/* Healthy Life Bubble */}
           <Link to="/habits">
             <div className="group relative">
@@ -128,6 +123,11 @@ const Dashboard = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
+        </div>
+
+        {/* Weekly Summary Dashboard */}
+        <div className="max-w-4xl mx-auto">
+          <WeeklySummaryDashboard />
         </div>
       </main>
     </div>

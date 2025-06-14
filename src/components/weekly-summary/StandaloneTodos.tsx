@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, X, Edit, Check } from "lucide-react";
+import { Plus, X, Edit, Check, EyeOff } from "lucide-react";
 
 export interface StandaloneTodo {
   id: string;
   text: string;
   completed: boolean;
+  hidden?: boolean;
 }
 
 interface StandaloneTodosProps {
@@ -18,6 +19,7 @@ interface StandaloneTodosProps {
   onToggleTodo: (id: string, completed: boolean) => void;
   onEditTodo: (id: string, newText: string) => void;
   onDeleteTodo: (id: string) => void;
+  onHideTodo: (id: string) => void;
 }
 
 const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
@@ -25,11 +27,15 @@ const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
   onAddTodo,
   onToggleTodo,
   onEditTodo,
-  onDeleteTodo
+  onDeleteTodo,
+  onHideTodo
 }) => {
   const [newTodoText, setNewTodoText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+
+  // Filter out hidden todos
+  const visibleTodos = todos.filter(todo => !todo.hidden);
 
   const handleAddTodo = () => {
     if (newTodoText.trim()) {
@@ -82,12 +88,12 @@ const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
         </div>
 
         {/* Todo list */}
-        {todos.length > 0 && (
+        {visibleTodos.length > 0 && (
           <div className="space-y-2">
-            {todos.map((todo) => (
+            {visibleTodos.map((todo) => (
               <div
                 key={todo.id}
-                className={`flex items-center gap-2 p-2 rounded border ${
+                className={`flex items-center gap-2 p-2 rounded border group ${
                   todo.completed 
                     ? 'bg-amber-100 border-amber-300' 
                     : 'bg-white border-amber-200'
@@ -144,6 +150,17 @@ const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
                     >
                       <Edit className="w-3 h-3" />
                     </Button>
+                    {todo.completed && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onHideTodo(todo.id)}
+                        className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Hide completed task"
+                      >
+                        <EyeOff className="w-3 h-3" />
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
@@ -159,7 +176,7 @@ const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
           </div>
         )}
 
-        {todos.length === 0 && (
+        {visibleTodos.length === 0 && (
           <p className="text-center text-amber-600 text-sm py-4">
             No personal to-do's yet. Add one above!
           </p>

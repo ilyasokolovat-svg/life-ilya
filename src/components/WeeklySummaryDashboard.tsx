@@ -19,7 +19,8 @@ const WeeklySummaryDashboard: React.FC = () => {
     addTodo: addStandaloneTodo,
     toggleTodo: toggleStandaloneTodo,
     editTodo: editStandaloneTodo,
-    deleteTodo: deleteStandaloneTodo
+    deleteTodo: deleteStandaloneTodo,
+    hideTodo: hideStandaloneTodo
   } = useStandaloneTodos();
 
   // Update tasks when weeklySummary changes, but preserve manual order
@@ -276,6 +277,7 @@ const WeeklySummaryDashboard: React.FC = () => {
         onToggleTodo={toggleStandaloneTodo}
         onEditTodo={editStandaloneTodo}
         onDeleteTodo={deleteStandaloneTodo}
+        onHideTodo={hideStandaloneTodo}
       />
     </div>
   );
