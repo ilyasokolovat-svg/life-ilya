@@ -67,7 +67,7 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      // Update local state immediately for better UX - NO SORTING
+      // Update local state immediately for better UX - NO SORTING, PRESERVE ORDER
       setTasks(prevTasks => 
         prevTasks.map(task => 
           task.id === item.id 
