@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
@@ -30,14 +31,13 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: completed ? 'completed' : null
       });
 
-      // Update local state - keep exact same order
-      setTasks(prevTasks => {
-        const newTasks = [...prevTasks];
-        const taskIndex = newTasks.findIndex(task => task.id === item.id);
-        if (taskIndex !== -1) {
-          newTasks[taskIndex] = { ...newTasks[taskIndex], isCompleted: completed };
-        }
-        return newTasks;
+      // Update local state - maintain exact order, only update the specific task
+      setTasks(currentTasks => {
+        return currentTasks.map(task => 
+          task.id === item.id 
+            ? { ...task, isCompleted: completed }
+            : task
+        );
       });
     }
   };
@@ -45,7 +45,7 @@ const WeeklySummaryDashboard: React.FC = () => {
   const toggleBulletPointCompletion = (item: any, bulletIndex: number, completed: boolean) => {
     const hook = getHookForCategory(item.category);
     if (hook) {
-      // Update bullet point completions array
+      // Get current bullet point completions
       const currentCompletions = item.bullet_point_completions || [];
       const updatedCompletions = [...currentCompletions];
       updatedCompletions[bulletIndex] = completed;
@@ -68,18 +68,17 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      // Update local state - keep exact same order
-      setTasks(prevTasks => {
-        const newTasks = [...prevTasks];
-        const taskIndex = newTasks.findIndex(task => task.id === item.id);
-        if (taskIndex !== -1) {
-          newTasks[taskIndex] = { 
-            ...newTasks[taskIndex], 
-            bullet_point_completions: updatedCompletions,
-            isCompleted: allCompleted
-          };
-        }
-        return newTasks;
+      // Update local state - maintain exact order, only update the specific task
+      setTasks(currentTasks => {
+        return currentTasks.map(task => 
+          task.id === item.id 
+            ? { 
+                ...task, 
+                bullet_point_completions: updatedCompletions,
+                isCompleted: allCompleted
+              }
+            : task
+        );
       });
     }
   };
@@ -119,17 +118,16 @@ const WeeklySummaryDashboard: React.FC = () => {
           actual_result: item.isCompleted ? 'completed' : null
         });
 
-        // Update local state - keep exact same order
-        setTasks(prevTasks => {
-          const newTasks = [...prevTasks];
-          const taskIndex = newTasks.findIndex(task => task.id === item.id);
-          if (taskIndex !== -1) {
-            newTasks[taskIndex] = { ...newTasks[taskIndex], planned_goal: formattedText };
-          }
-          return newTasks;
+        // Update local state - maintain exact order, only update the specific task
+        setTasks(currentTasks => {
+          return currentTasks.map(task => 
+            task.id === item.id 
+              ? { ...task, planned_goal: formattedText }
+              : task
+          );
         });
       } else {
-        // If text is empty, delete the goal by setting planned_goal to empty string
+        // If text is empty, delete the goal
         hook.saveGoal({
           category: item.category,
           subcategory: item.subcategory,
@@ -139,8 +137,8 @@ const WeeklySummaryDashboard: React.FC = () => {
           actual_result: null
         });
 
-        // Remove from local state - keep order of remaining items
-        setTasks(prevTasks => prevTasks.filter(task => task.id !== item.id));
+        // Remove from local state
+        setTasks(currentTasks => currentTasks.filter(task => task.id !== item.id));
       }
     }
     setEditingTask(null);
@@ -165,12 +163,13 @@ const WeeklySummaryDashboard: React.FC = () => {
       return;
     }
 
-    setTasks(prevTasks => {
-      const newTasks = [...prevTasks];
+    // Manual reordering only - when user drags and drops
+    setTasks(currentTasks => {
+      const newTasks = [...currentTasks];
       const draggedIndex = newTasks.findIndex(task => task.id === draggedItem);
       const targetIndex = newTasks.findIndex(task => task.id === targetItemId);
       
-      if (draggedIndex === -1 || targetIndex === -1) return prevTasks;
+      if (draggedIndex === -1 || targetIndex === -1) return currentTasks;
       
       // Remove the dragged item and insert it at the target position
       const [draggedTask] = newTasks.splice(draggedIndex, 1);
