@@ -76,16 +76,17 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   };
 
-  // Check if all bullet points are completed
-  const allBulletPointsCompleted = bulletPoints.length > 1 && 
-    bulletPoints.every((_, index) => bulletPointCompletions[index] === true);
+  // Check if task is completed
+  const isTaskCompleted = bulletPoints.length > 1 
+    ? bulletPoints.every((_, index) => bulletPointCompletions[index] === true)
+    : item.isCompleted;
 
   return (
     <div 
       key={item.id} 
       className={`group flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 cursor-move ${
         draggedItem === item.id ? 'opacity-50 scale-95' : 'hover:shadow-md'
-      } ${allBulletPointsCompleted ? 'bg-green-50 border-green-200' : ''}`}
+      } ${isTaskCompleted ? 'bg-green-50 border-green-200' : ''}`}
       draggable={editingTask !== item.id}
       onDragStart={(e) => onDragStart(e, item.id)}
       onDragOver={onDragOver}
@@ -106,7 +107,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
           <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
             #{index + 1}
           </span>
-          {allBulletPointsCompleted && (
+          {isTaskCompleted && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
               ✓ Completed
             </span>
