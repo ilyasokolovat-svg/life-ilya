@@ -86,7 +86,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
       key={item.id} 
       className={`group flex items-start gap-3 p-3 border rounded-lg transition-all duration-200 cursor-move ${
         draggedItem === item.id ? 'opacity-50 scale-95' : 'hover:shadow-md'
-      } ${isTaskCompleted ? 'bg-green-50 border-green-200' : ''}`}
+      } ${isTaskCompleted ? 'bg-green-50 border-green-200' : ''} ${
+        item.isOverdue ? 'bg-red-50 border-red-200' : ''
+      }`}
       draggable={editingTask !== item.id}
       onDragStart={(e) => onDragStart(e, item.id)}
       onDragOver={onDragOver}
@@ -107,9 +109,19 @@ const TaskItem: React.FC<TaskItemProps> = ({
           <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
             #{index + 1}
           </span>
+          {item.isOverdue && !isTaskCompleted && (
+            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+              🔥 Overdue
+            </span>
+          )}
           {isTaskCompleted && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
               ✓ Completed
+            </span>
+          )}
+          {item.period_key !== item.period_key && (
+            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
+              Week {item.period_key}
             </span>
           )}
         </div>

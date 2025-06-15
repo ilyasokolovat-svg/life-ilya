@@ -58,6 +58,20 @@ const WeeklySummaryDashboard: React.FC = () => {
 
   const { getHookForCategory } = useWeeklySummaryHooks();
 
+  // Helper function to check if a task is fully completed
+  const isTaskFullyCompleted = (item: any, completed: boolean): boolean => {
+    if (completed) return true;
+    
+    // Check bullet point completions
+    const bulletPoints = item.planned_goal.split('\n').filter((line: string) => line.trim());
+    if (bulletPoints.length > 1) {
+      const bulletPointCompletions = item.bullet_point_completions || [];
+      return bulletPoints.every((_: string, index: number) => bulletPointCompletions[index] === true);
+    }
+    
+    return completed;
+  };
+
   const toggleTaskCompletion = (item: any, completed: boolean) => {
     const hook = getHookForCategory(item.category);
     if (hook) {
@@ -70,14 +84,22 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: completed ? 'completed' : null
       });
 
-      // Update local state - maintain exact order, only update the specific task
-      setTasks(currentTasks => {
-        return currentTasks.map(task => 
-          task.id === item.id 
-            ? { ...task, isCompleted: completed }
-            : task
-        );
-      });
+      // Check if task is now fully completed and should be removed from dashboard
+      const isFullyCompleted = isTaskFullyCompleted(item, completed);
+      
+      if (isFullyCompleted) {
+        // Remove from local state immediately
+        setTasks(currentTasks => currentTasks.filter(task => task.id !== item.id));
+      } else {
+        // Update local state - maintain exact order, only update the specific task
+        setTasks(currentTasks => {
+          return currentTasks.map(task => 
+            task.id === item.id 
+              ? { ...task, isCompleted: completed }
+              : task
+          );
+        });
+      }
     }
   };
 
@@ -89,8 +111,12 @@ const WeeklySummaryDashboard: React.FC = () => {
       const updatedCompletions = [...currentCompletions];
       updatedCompletions[bulletIndex] = completed;
 
-      // Save bullet point completions
-      const actualResult = JSON.stringify({
+      // Check if all bullet points are now completed
+      const bulletPoints = item.planned_goal.split('\n').filter((line: string) => line.trim());
+      const allBulletsCompleted = bulletPoints.every((_: string, index: number) => updatedCompletions[index] === true);
+
+      // Save bullet point completions or mark as completed if all are done
+      const actualResult = allBulletsCompleted ? 'completed' : JSON.stringify({
         bullet_completions: updatedCompletions
       });
 
@@ -103,17 +129,22 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      // Update local state - maintain exact order, only update bullet point completions
-      setTasks(currentTasks => {
-        return currentTasks.map(task => 
-          task.id === item.id 
-            ? { 
-                ...task, 
-                bullet_point_completions: updatedCompletions
-              }
-            : task
-        );
-      });
+      if (allBulletsCompleted) {
+        // Remove from local state immediately
+        setTasks(currentTasks => currentTasks.filter(task => task.id !== item.id));
+      } else {
+        // Update local state - maintain exact order, only update bullet point completions
+        setTasks(currentTasks => {
+          return currentTasks.map(task => 
+            task.id === item.id 
+              ? { 
+                  ...task, 
+                  bullet_point_completions: updatedCompletions
+                }
+              : task
+          );
+        });
+      }
     }
   };
 

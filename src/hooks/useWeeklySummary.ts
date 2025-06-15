@@ -12,6 +12,7 @@ export interface WeeklySummaryItem {
   actual_result?: string;
   isCompleted: boolean;
   bullet_point_completions?: boolean[];
+  isOverdue?: boolean;
 }
 
 export function useWeeklySummary() {
@@ -35,12 +36,33 @@ export function useWeeklySummary() {
 
   const currentWeekKey = getCurrentWeekKey();
 
+  // Helper function to check if a task is fully completed
+  const isTaskFullyCompleted = (item: any): boolean => {
+    if (item.actual_result === 'completed') return true;
+    
+    // Check bullet point completions
+    if (item.actual_result && item.actual_result !== 'completed') {
+      try {
+        const parsed = JSON.parse(item.actual_result);
+        if (Array.isArray(parsed.bullet_completions)) {
+          const bulletPoints = (item.planned_goal || '').split('\n').filter(line => line.trim());
+          return bulletPoints.length > 1 && bulletPoints.every((_, index) => parsed.bullet_completions[index] === true);
+        }
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    return false;
+  };
+
   const { data: weeklySummary = [], isLoading } = useQuery({
     queryKey: ['weekly_summary', user?.id, currentWeekKey],
     queryFn: async (): Promise<WeeklySummaryItem[]> => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
+      // Fetch current week tasks
+      const { data: currentWeekData, error: currentWeekError } = await supabase
         .from('goals_data')
         .select('*')
         .eq('user_id', user.id)
@@ -49,9 +71,30 @@ export function useWeeklySummary() {
         .not('planned_goal', 'is', null)
         .not('planned_goal', 'eq', '');
         
-      if (error) throw error;
+      if (currentWeekError) throw currentWeekError;
+
+      // Fetch all previous week tasks that are not fully completed
+      const { data: allPreviousData, error: previousError } = await supabase
+        .from('goals_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('period_type', 'week')
+        .neq('period_key', currentWeekKey)
+        .not('planned_goal', 'is', null)
+        .not('planned_goal', 'eq', '');
+        
+      if (previousError) throw previousError;
+
+      // Filter previous tasks to only include uncompleted ones
+      const incompletePreviousTasks = (allPreviousData || []).filter(item => !isTaskFullyCompleted(item));
       
-      return (data || []).map(item => {
+      // Combine current and overdue tasks
+      const allTasks = [
+        ...(currentWeekData || []).map(item => ({ ...item, isOverdue: false })),
+        ...incompletePreviousTasks.map(item => ({ ...item, isOverdue: true }))
+      ];
+      
+      return allTasks.map(item => {
         // Parse bullet point completions from actual_result if it exists
         let bulletPointCompletions: boolean[] = [];
         if (item.actual_result && item.actual_result !== 'completed') {
@@ -73,7 +116,8 @@ export function useWeeklySummary() {
           planned_goal: item.planned_goal || '',
           actual_result: item.actual_result,
           isCompleted: item.actual_result === 'completed',
-          bullet_point_completions: bulletPointCompletions
+          bullet_point_completions: bulletPointCompletions,
+          isOverdue: item.isOverdue || false
         };
       });
     },
