@@ -34,6 +34,22 @@ export function useWeeklySummary() {
     return weekKey;
   };
 
+  // Helper function to check if a week has ended (past week)
+  const isWeekEnded = (weekKey: string) => {
+    const currentWeekKey = getCurrentWeekKey();
+    
+    // Parse the week key to get the date
+    const [year, month, day] = weekKey.split('-').map(Number);
+    const weekStartDate = new Date(year, month - 1, day); // month - 1 because Date constructor uses 0-based months
+    
+    // Parse current week key
+    const [currentYear, currentMonth, currentDay] = currentWeekKey.split('-').map(Number);
+    const currentWeekStartDate = new Date(currentYear, currentMonth - 1, currentDay);
+    
+    // A week has ended if its start date is before the current week's start date
+    return weekStartDate < currentWeekStartDate;
+  };
+
   const currentWeekKey = getCurrentWeekKey();
 
   // Helper function to check if a task is fully completed
@@ -85,8 +101,10 @@ export function useWeeklySummary() {
         
       if (previousError) throw previousError;
 
-      // Filter previous tasks to only include uncompleted ones
-      const incompletePreviousTasks = (allPreviousData || []).filter(item => !isTaskFullyCompleted(item));
+      // Filter previous tasks to only include uncompleted ones from weeks that have actually ended
+      const incompletePreviousTasks = (allPreviousData || []).filter(item => 
+        !isTaskFullyCompleted(item) && isWeekEnded(item.period_key)
+      );
       
       // Combine current and overdue tasks
       const allTasks = [
