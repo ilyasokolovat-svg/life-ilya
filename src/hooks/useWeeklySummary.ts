@@ -13,6 +13,7 @@ export interface WeeklySummaryItem {
   isCompleted: boolean;
   bullet_point_completions?: boolean[];
   isOverdue?: boolean;
+  weekDates?: string; // Added for displaying week dates
 }
 
 export function useWeeklySummary() {
@@ -32,6 +33,20 @@ export function useWeeklySummary() {
     
     const weekKey = `${currentYear}-${currentMonth}-${weekStart.getDate()}`;
     return weekKey;
+  };
+
+  // Helper function to get week date range from period_key
+  const getWeekDates = (periodKey: string) => {
+    const [year, month, day] = periodKey.split('-').map(Number);
+    const weekStart = new Date(year, month - 1, day); // month - 1 because Date constructor uses 0-based months
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    const formatDate = (date: Date) => {
+      return `${date.getDate()}/${date.getMonth() + 1}`;
+    };
+    
+    return `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
   };
 
   // Helper function to check if a week has ended (past week)
@@ -135,7 +150,8 @@ export function useWeeklySummary() {
           actual_result: item.actual_result,
           isCompleted: item.actual_result === 'completed',
           bullet_point_completions: bulletPointCompletions,
-          isOverdue: item.isOverdue || false
+          isOverdue: item.isOverdue || false,
+          weekDates: item.isOverdue ? getWeekDates(item.period_key) : undefined
         };
       });
     },

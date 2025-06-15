@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { GripVertical, Edit, Check, X } from "lucide-react";
+import { GripVertical, Edit, Check, X, Calendar } from "lucide-react";
 import { WeeklySummaryItem } from "@/hooks/useWeeklySummary";
 import BulletPointTask from "./BulletPointTask";
 
@@ -98,31 +98,36 @@ const TaskItem: React.FC<TaskItemProps> = ({
       <GripVertical className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className={`text-lg font-bold ${getCategoryColorClass(item.category)}`}>
-            {capitalizeFirst(item.category)}
-          </span>
-          <span className="text-sm text-gray-400">•</span>
-          <span className={`text-sm ${getCategoryColorClass(item.category)}`}>
-            {item.subcategory}
-          </span>
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-            #{index + 1}
-          </span>
-          {item.isOverdue && !isTaskCompleted && (
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
-              🔥 Overdue
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-lg font-bold ${getCategoryColorClass(item.category)}`}>
+              {capitalizeFirst(item.category)}
             </span>
-          )}
-          {isTaskCompleted && (
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-              ✓ Completed
+            <span className="text-sm text-gray-400">•</span>
+            <span className={`text-sm ${getCategoryColorClass(item.category)}`}>
+              {item.subcategory}
             </span>
-          )}
-          {item.period_key !== item.period_key && (
-            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
-              Week {item.period_key}
+            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+              #{index + 1}
             </span>
+            {item.isOverdue && !isTaskCompleted && (
+              <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                🔥 Overdue
+              </span>
+            )}
+            {isTaskCompleted && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                ✓ Completed
+              </span>
+            )}
+          </div>
+          
+          {/* Week dates for overdue tasks */}
+          {item.isOverdue && item.weekDates && (
+            <div className="flex items-center gap-1 text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full font-medium">
+              <Calendar className="w-3 h-3" />
+              <span>{item.weekDates}</span>
+            </div>
           )}
         </div>
         
