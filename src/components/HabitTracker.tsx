@@ -1,6 +1,5 @@
 
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { HabitType, HabitData } from "@/types/habit";
@@ -20,11 +19,18 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
 }) => {
   const [sleepHours, setSleepHours] = useState(habitData.sleepHours?.toString() || "");
 
+  // Update local state when habitData changes
+  useEffect(() => {
+    setSleepHours(habitData.sleepHours?.toString() || "");
+  }, [habitData.sleepHours]);
+
   const handlePlannedChange = (checked: boolean) => {
+    console.log(`HabitTracker: Planned change for ${habitType}:`, checked);
     onUpdate(habitType, { ...habitData, planned: checked });
   };
 
   const handleCompletedChange = (checked: boolean) => {
+    console.log(`HabitTracker: Completed change for ${habitType}:`, checked);
     onUpdate(habitType, { ...habitData, completed: checked });
   };
 
@@ -32,9 +38,26 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     setSleepHours(value);
     const hours = parseFloat(value);
     if (!isNaN(hours) && hours >= 0) {
-      onUpdate(habitType, { ...habitData, sleepHours: hours });
+      const updatedData = {
+        ...habitData,
+        sleepHours: hours,
+        planned: true,
+        completed: hours >= 7
+      };
+      console.log(`HabitTracker: Sleep hours change for ${habitType}:`, updatedData);
+      onUpdate(habitType, updatedData);
+    } else if (value === "") {
+      const updatedData = {
+        ...habitData,
+        sleepHours: undefined,
+        completed: false
+      };
+      console.log(`HabitTracker: Sleep hours cleared for ${habitType}:`, updatedData);
+      onUpdate(habitType, updatedData);
     }
   };
+
+  console.log(`HabitTracker: Rendering ${habitType} with data:`, habitData);
 
   return (
     <div className="flex items-center space-x-1">
@@ -54,12 +77,12 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
       ) : (
         <div className="flex items-center space-x-1">
           <Checkbox
-            checked={habitData.planned}
+            checked={habitData.planned || false}
             onCheckedChange={handlePlannedChange}
             className="h-3 w-3 border-gray-400"
           />
           <Checkbox
-            checked={habitData.completed}
+            checked={habitData.completed || false}
             onCheckedChange={handleCompletedChange}
             className="h-3 w-3 border-green-500"
           />
@@ -70,4 +93,3 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
 };
 
 export default HabitTracker;
-
