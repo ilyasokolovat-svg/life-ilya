@@ -111,7 +111,7 @@ export default function useSupabaseHabits() {
     enabled: !!userId && !isAuthChecking,
   });
   
-  // Update day mutation - fixed without using select() and with proper typing
+  // Update day mutation - ensure we don't create duplicates
   const updateDay = useMutation({
     mutationFn: async ({ 
       date, 
@@ -129,12 +129,12 @@ export default function useSupabaseHabits() {
       
       const dateISO = formatDateISO(date);
       
-      // Get or create the day data
+      // Get current day data from our local cache to ensure we have the latest state
       let dayData: DayData = habitDays[dateISO] 
         ? { ...habitDays[dateISO] } 
         : createEmptyDayData(date);
       
-      // Update the specific habit data
+      // Update ONLY the specific habit data, preserving all other habits
       dayData = {
         ...dayData,
         [habitType]: data
@@ -144,7 +144,9 @@ export default function useSupabaseHabits() {
         console.log('Upserting habit day with data:', {
           user_id: userId,
           date: dateISO,
-          habit_data: dayData
+          habit_data: dayData,
+          updated_habit: habitType,
+          updated_data: data
         });
         
         const { error } = await supabase
@@ -170,13 +172,11 @@ export default function useSupabaseHabits() {
     onSuccess: (result, variables) => {
       const dateISO = formatDateISO(variables.date);
       
-      // Update local cache
+      // Update local cache with the complete day data to prevent duplicates
       queryClient.setQueryData(['habit_days', userId], (oldData: any) => {
         const newData = { ...(oldData || {}) };
-        newData[dateISO] = result.data || {
-          ...createEmptyDayData(variables.date),
-          [variables.habitType]: variables.data
-        };
+        newData[dateISO] = result.data;
+        console.log('Updated local cache for date:', dateISO, 'with data:', result.data);
         return newData;
       });
       

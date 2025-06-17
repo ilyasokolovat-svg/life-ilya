@@ -18,8 +18,20 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
   const todayISO = formatDateISO(today);
 
   const handleHabitUpdate = (habitType: HabitType, updates: Partial<HabitData>) => {
+    // Get the current data for this specific habit type, preserving all existing fields
     const currentData = todayData?.[habitType] || { planned: false, completed: false };
-    const newData = { ...currentData, ...updates };
+    
+    // Merge updates with current data, preserving all existing fields
+    const newData: HabitData = {
+      planned: currentData.planned,
+      completed: currentData.completed,
+      ...(currentData.sleepHours !== undefined && { sleepHours: currentData.sleepHours }),
+      ...(currentData.workoutType !== undefined && { workoutType: currentData.workoutType }),
+      ...(currentData.location !== undefined && { location: currentData.location }),
+      ...updates
+    };
+    
+    console.log(`Updating ${habitType} habit:`, { currentData, updates, newData });
     onUpdateHabit(today, habitType, newData);
   };
 
@@ -27,6 +39,9 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     const hours = parseFloat(value);
     if (!isNaN(hours) && hours >= 0) {
       handleHabitUpdate('sleep', { sleepHours: hours });
+    } else if (value === "") {
+      // Handle empty input
+      handleHabitUpdate('sleep', { sleepHours: undefined });
     }
   };
 
