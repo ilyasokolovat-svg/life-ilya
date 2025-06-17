@@ -9,16 +9,17 @@ interface TaskListProps {
   draggedItem: string | null;
   editingTask: string | null;
   editText: string;
-  onToggleCompletion: (item: WeeklySummaryItem, completed: boolean) => void;
-  onStartEditing: (task: WeeklySummaryItem) => void;
+  onToggleCompletion: (item: any, completed: boolean) => void;
+  onStartEditing: (task: any) => void;
   onCancelEditing: () => void;
-  onSaveEdit: (item: WeeklySummaryItem) => void;
+  onSaveEdit: (item: any) => void;
   onEditTextChange: (text: string) => void;
   onDragStart: (e: React.DragEvent, itemId: string) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, targetItemId: string) => void;
   onDragEnd: () => void;
-  onToggleBulletPoint?: (item: WeeklySummaryItem, bulletIndex: number, completed: boolean) => void;
+  onToggleBulletPoint: (item: any, bulletIndex: number, completed: boolean) => void;
+  onJumpToWeeklyPlan: (category: string, subcategory: string, periodKey: string) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -35,15 +36,15 @@ const TaskList: React.FC<TaskListProps> = ({
   onDragOver,
   onDrop,
   onDragEnd,
-  onToggleBulletPoint
+  onToggleBulletPoint,
+  onJumpToWeeklyPlan
 }) => {
   return (
-    <CardContent className="space-y-2">
-      {tasks.map((item, index) => (
+    <CardContent className="space-y-3">
+      {tasks.map((item) => (
         <TaskItem
           key={item.id}
           item={item}
-          index={index}
           draggedItem={draggedItem}
           editingTask={editingTask}
           editText={editText}
@@ -57,6 +58,7 @@ const TaskList: React.FC<TaskListProps> = ({
           onDrop={onDrop}
           onDragEnd={onDragEnd}
           onToggleBulletPoint={onToggleBulletPoint}
+          onJumpToWeeklyPlan={onJumpToWeeklyPlan}
         />
       ))}
     </CardContent>

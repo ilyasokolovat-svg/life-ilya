@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -20,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import GymPlanning from "@/components/GymPlanning";
+import TodayHabits from "@/components/TodayHabits";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -139,6 +139,11 @@ const Index = () => {
   const handleBackToDashboard = () => {
     navigate('/');
   };
+
+  // Get today's data
+  const today = new Date();
+  const todayISO = formatDateISO(today);
+  const todayData = habitsState.days[todayISO] || null;
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
@@ -267,6 +272,12 @@ const Index = () => {
       
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
+        {/* Today's Habits Section - Mobile Friendly */}
+        <TodayHabits 
+          todayData={todayData}
+          onUpdateHabit={handleUpdateHabit}
+        />
+        
         {/* Month Slider for Charts and Calendar */}
         <div className="mb-4">
           <MonthSlider

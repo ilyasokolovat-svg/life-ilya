@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
@@ -5,8 +6,10 @@ import { useWeeklySummaryHooks } from "./weekly-summary/useWeeklySummaryHooks";
 import { useStandaloneTodos } from "@/hooks/useStandaloneTodos";
 import TaskList from "./weekly-summary/TaskList";
 import StandaloneTodos from "./weekly-summary/StandaloneTodos";
+import { useNavigate } from "react-router-dom";
 
 const WeeklySummaryDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { weeklySummary, isLoading, currentWeekKey } = useWeeklySummary();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [tasks, setTasks] = useState(weeklySummary);
@@ -77,6 +80,19 @@ const WeeklySummaryDashboard: React.FC = () => {
     }
     
     return completed;
+  };
+
+  // Navigation handler for jumping to weekly planning
+  const handleJumpToWeeklyPlan = (category: string, subcategory: string, periodKey: string) => {
+    // Navigate to Goals page with specific parameters
+    const searchParams = new URLSearchParams({
+      category,
+      subcategory,
+      view: 'week',
+      week: periodKey
+    });
+    
+    navigate(`/goals?${searchParams.toString()}`);
   };
 
   const toggleTaskCompletion = (item: any, completed: boolean) => {
@@ -304,6 +320,7 @@ const WeeklySummaryDashboard: React.FC = () => {
             onDrop={handleDrop}
             onDragEnd={handleDragEnd}
             onToggleBulletPoint={toggleBulletPointCompletion}
+            onJumpToWeeklyPlan={handleJumpToWeeklyPlan}
           />
         )}
       </Card>
