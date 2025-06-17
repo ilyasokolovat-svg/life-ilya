@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -169,26 +168,34 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         
         {/* Habits for the day with restructured layout */}
         <div className="flex-1 p-2 space-y-1">
-          {habitOrder.map((habitType) => (
-            <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 flex-1">
-                  {getHabitIcon(habitType)}
-                  <span className="text-xs font-medium text-gray-600">
-                    {getHabitLabel(habitType)}
-                  </span>
+          {habitOrder.map((habitType) => {
+            // Get the most up-to-date habit data, ensuring we have the latest state
+            const currentHabitData = dayData?.[habitType] || { planned: false, completed: false };
+            console.log(`Calendar: Rendering ${habitType} for ${isoDate}:`, currentHabitData);
+            
+            return (
+              <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 flex-1">
+                    {getHabitIcon(habitType)}
+                    <span className="text-xs font-medium text-gray-600">
+                      {getHabitLabel(habitType)}
+                    </span>
+                  </div>
+                  <HabitTracker
+                    key={`${isoDate}-${habitType}-${currentHabitData.completed}-${Date.now()}`}
+                    date={date}
+                    habitType={habitType}
+                    habitData={currentHabitData}
+                    onUpdate={(type, data) => {
+                      console.log(`Calendar: HabitTracker update for ${type}:`, data);
+                      onUpdateHabit(date, type, data);
+                    }}
+                  />
                 </div>
-                <HabitTracker
-                  date={date}
-                  habitType={habitType}
-                  habitData={
-                    dayData?.[habitType] || { planned: false, completed: false }
-                  }
-                  onUpdate={(type, data) => onUpdateHabit(date, type, data)}
-                />
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -300,4 +307,3 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
 };
 
 export default Calendar;
-
