@@ -14,26 +14,34 @@ interface TodayHabitsProps {
 
 const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) => {
   const today = new Date();
-  const todayISO = formatDateISO(today);
 
   const handleHabitUpdate = (habitType: HabitType, updates: Partial<HabitData>) => {
     // Get the current data for this specific habit type
     const currentData = todayData?.[habitType] || { planned: false, completed: false };
     
     // Create the complete habit data by merging current data with updates
+    // Always set planned to true when marking as completed
     const newData: HabitData = {
       ...currentData,
-      ...updates
+      ...updates,
+      // If we're marking as completed, also mark as planned
+      ...(updates.completed && { planned: true })
     };
     
-    console.log(`TodayHabits: Updating ${habitType} habit:`, { currentData, updates, newData });
+    console.log(`TodayHabits: Updating ${habitType} habit:`, { 
+      currentData, 
+      updates, 
+      newData,
+      todayData: todayData?.[habitType]
+    });
+    
     onUpdateHabit(today, habitType, newData);
   };
 
   const handleSleepHoursChange = (value: string) => {
     const hours = parseFloat(value);
     if (!isNaN(hours) && hours >= 0) {
-      handleHabitUpdate('sleep', { sleepHours: hours });
+      handleHabitUpdate('sleep', { sleepHours: hours, planned: true });
     } else if (value === "") {
       handleHabitUpdate('sleep', { sleepHours: undefined });
     }
@@ -91,6 +99,8 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
             const Icon = habit.icon;
             const habitData = todayData?.[habit.type] || { planned: false, completed: false };
             
+            console.log(`Rendering ${habit.type}:`, habitData);
+            
             return (
               <div
                 key={habit.type}
@@ -129,10 +139,11 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                   <div className="flex items-center justify-center">
                     <div className="flex items-center gap-2">
                       <Checkbox
-                        checked={habitData.completed}
-                        onCheckedChange={(checked) => 
-                          handleHabitUpdate(habit.type, { completed: !!checked })
-                        }
+                        checked={habitData.completed || false}
+                        onCheckedChange={(checked) => {
+                          console.log(`Checkbox changed for ${habit.type}:`, checked);
+                          handleHabitUpdate(habit.type, { completed: !!checked });
+                        }}
                         className="h-5 w-5 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
                       <label className="text-sm font-medium text-gray-700">Completed</label>
