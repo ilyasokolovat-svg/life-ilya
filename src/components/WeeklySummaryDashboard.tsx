@@ -20,8 +20,15 @@ const WeeklySummaryDashboard: React.FC = () => {
     toggleTodo: toggleStandaloneTodo,
     editTodo: editStandaloneTodo,
     deleteTodo: deleteStandaloneTodo,
-    hideTodo: hideStandaloneTodo
+    hideTodo: hideStandaloneTodo,
+    isLoaded: standaloneTodosLoaded
   } = useStandaloneTodos();
+
+  // Debug logging for standalone todos
+  React.useEffect(() => {
+    console.log("Standalone todos in dashboard:", standaloneTodos);
+    console.log("Standalone todos loaded:", standaloneTodosLoaded);
+  }, [standaloneTodos, standaloneTodosLoaded]);
 
   // Update tasks when weeklySummary changes, but preserve manual order
   React.useEffect(() => {
@@ -301,15 +308,17 @@ const WeeklySummaryDashboard: React.FC = () => {
         )}
       </Card>
 
-      {/* Standalone todos */}
-      <StandaloneTodos
-        todos={standaloneTodos}
-        onAddTodo={addStandaloneTodo}
-        onToggleTodo={toggleStandaloneTodo}
-        onEditTodo={editStandaloneTodo}
-        onDeleteTodo={deleteStandaloneTodo}
-        onHideTodo={hideStandaloneTodo}
-      />
+      {/* Standalone todos - only show if loaded */}
+      {standaloneTodosLoaded && (
+        <StandaloneTodos
+          todos={standaloneTodos}
+          onAddTodo={addStandaloneTodo}
+          onToggleTodo={toggleStandaloneTodo}
+          onEditTodo={editStandaloneTodo}
+          onDeleteTodo={deleteStandaloneTodo}
+          onHideTodo={hideStandaloneTodo}
+        />
+      )}
     </div>
   );
 };
