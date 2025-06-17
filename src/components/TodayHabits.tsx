@@ -3,7 +3,6 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
 import { formatDateISO } from "@/utils/habitUtils";
@@ -18,20 +17,16 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
   const todayISO = formatDateISO(today);
 
   const handleHabitUpdate = (habitType: HabitType, updates: Partial<HabitData>) => {
-    // Get the current data for this specific habit type, preserving all existing fields
+    // Get the current data for this specific habit type
     const currentData = todayData?.[habitType] || { planned: false, completed: false };
     
-    // Merge updates with current data, preserving all existing fields
+    // Create the complete habit data by merging current data with updates
     const newData: HabitData = {
-      planned: currentData.planned,
-      completed: currentData.completed,
-      ...(currentData.sleepHours !== undefined && { sleepHours: currentData.sleepHours }),
-      ...(currentData.workoutType !== undefined && { workoutType: currentData.workoutType }),
-      ...(currentData.location !== undefined && { location: currentData.location }),
+      ...currentData,
       ...updates
     };
     
-    console.log(`Updating ${habitType} habit:`, { currentData, updates, newData });
+    console.log(`TodayHabits: Updating ${habitType} habit:`, { currentData, updates, newData });
     onUpdateHabit(today, habitType, newData);
   };
 
@@ -40,7 +35,6 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     if (!isNaN(hours) && hours >= 0) {
       handleHabitUpdate('sleep', { sleepHours: hours });
     } else if (value === "") {
-      // Handle empty input
       handleHabitUpdate('sleep', { sleepHours: undefined });
     }
   };
@@ -131,25 +125,15 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                     </div>
                   </div>
                 ) : (
-                  // Regular checkboxes for other habits
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={habitData.planned}
-                        onCheckedChange={(checked) => 
-                          handleHabitUpdate(habit.type, { planned: !!checked })
-                        }
-                        className="h-4 w-4"
-                      />
-                      <label className="text-sm text-gray-600">Planned</label>
-                    </div>
+                  // Only completed checkbox for other habits
+                  <div className="flex items-center justify-center">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         checked={habitData.completed}
                         onCheckedChange={(checked) => 
                           handleHabitUpdate(habit.type, { completed: !!checked })
                         }
-                        className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                        className="h-5 w-5 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
                       <label className="text-sm font-medium text-gray-700">Completed</label>
                     </div>
