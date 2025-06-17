@@ -15,13 +15,12 @@ export const useStandaloneTodos = () => {
       console.log("Loading standalone todos from storage:", stored);
       if (stored) {
         const parsedTodos = JSON.parse(stored);
-        // Convert deadline strings back to Date objects and filter out hidden ones
-        const todosWithDates = parsedTodos
-          .filter((todo: any) => !todo.hidden) // Filter out hidden todos
-          .map((todo: any) => ({
-            ...todo,
-            deadline: todo.deadline ? new Date(todo.deadline) : undefined
-          }));
+        // Convert deadline strings back to Date objects
+        const todosWithDates = parsedTodos.map((todo: any) => ({
+          ...todo,
+          deadline: todo.deadline ? new Date(todo.deadline) : undefined,
+          hidden: todo.hidden || false // Ensure hidden property exists
+        }));
         console.log("Loaded standalone todos:", todosWithDates);
         setTodos(todosWithDates);
       }
