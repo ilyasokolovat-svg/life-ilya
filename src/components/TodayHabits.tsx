@@ -141,8 +141,9 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                       <Checkbox
                         checked={habitData.completed || false}
                         onCheckedChange={(checked) => {
-                          console.log(`Checkbox changed for ${habit.type}:`, checked);
-                          handleHabitUpdate(habit.type, { completed: !!checked });
+                          console.log(`TodayHabits: Checkbox changed for ${habit.type}:`, checked);
+                          const isCompleted = !!checked;
+                          handleHabitUpdate(habit.type, { completed: isCompleted, planned: true });
                         }}
                         className="h-5 w-5 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />

@@ -168,33 +168,63 @@ export default function useSupabaseHabits() {
         }
         
         console.log('Successfully updated habit day');
-        return { success: true, data: dayData };
+        return { success: true, data: dayData, dateISO };
       } catch (error) {
         console.error('Error in update day mutation:', error);
         throw error;
       }
     },
-    onSuccess: (result, variables) => {
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['habit_days', userId] });
+
+      // Snapshot the previous value
+      const previousHabitDays = queryClient.getQueryData(['habit_days', userId]);
+
       const dateISO = formatDateISO(variables.date);
       
-      console.log('Mutation success, updating cache for:', dateISO, 'with:', result.data);
-      
-      // Update local cache immediately with the complete day data
-      queryClient.setQueryData(['habit_days', userId], (oldData: Record<string, DayData> | undefined) => {
-        const newData = { ...(oldData || {}) };
-        newData[dateISO] = result.data;
-        console.log('Cache updated. New cache state:', newData[dateISO]);
-        return newData;
+      // Optimistically update to the new value
+      queryClient.setQueryData(['habit_days', userId], (old: Record<string, DayData> | undefined) => {
+        const currentDayData = old?.[dateISO];
+        let dayData: DayData;
+        
+        if (currentDayData) {
+          dayData = {
+            ...currentDayData,
+            [variables.habitType]: variables.data
+          };
+        } else {
+          dayData = createEmptyDayData(variables.date);
+          dayData[variables.habitType] = variables.data;
+        }
+        
+        console.log('Optimistic update for:', dateISO, 'with:', dayData);
+        
+        return {
+          ...(old || {}),
+          [dateISO]: dayData
+        };
       });
-      
-      // Force a re-render by invalidating the query
-      queryClient.invalidateQueries({ queryKey: ['habit_days', userId] });
-      
+
+      // Return a context object with the snapshotted value
+      return { previousHabitDays };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousHabitDays) {
+        queryClient.setQueryData(['habit_days', userId], context.previousHabitDays);
+      }
+      console.error('Update day mutation error:', err);
+      toast.error('Failed to save your progress');
+    },
+    onSuccess: (result, variables) => {
+      console.log('Mutation success for:', result.dateISO);
+      // No need to manually update cache here since onMutate handles optimistic updates
       toast.success('Progress saved!', { duration: 1500 });
     },
-    onError: (error) => {
-      console.error('Update day mutation error:', error);
-      toast.error('Failed to save your progress');
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey: ['habit_days', userId] });
     }
   });
   
