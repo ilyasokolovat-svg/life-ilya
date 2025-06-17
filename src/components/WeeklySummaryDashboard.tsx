@@ -13,7 +13,7 @@ const WeeklySummaryDashboard: React.FC = () => {
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
 
-  // Standalone todos hook
+  // Standalone todos hook - now using Supabase
   const {
     todos: standaloneTodos,
     addTodo: addStandaloneTodo,
@@ -21,14 +21,14 @@ const WeeklySummaryDashboard: React.FC = () => {
     editTodo: editStandaloneTodo,
     deleteTodo: deleteStandaloneTodo,
     hideTodo: hideStandaloneTodo,
-    isLoaded: standaloneTodosLoaded
+    isLoading: standaloneTodosLoading
   } = useStandaloneTodos();
 
   // Debug logging for standalone todos
   React.useEffect(() => {
     console.log("Standalone todos in dashboard:", standaloneTodos);
-    console.log("Standalone todos loaded:", standaloneTodosLoaded);
-  }, [standaloneTodos, standaloneTodosLoaded]);
+    console.log("Standalone todos loading:", standaloneTodosLoading);
+  }, [standaloneTodos, standaloneTodosLoading]);
 
   // Update tasks when weeklySummary changes, but preserve manual order
   React.useEffect(() => {
@@ -308,17 +308,15 @@ const WeeklySummaryDashboard: React.FC = () => {
         )}
       </Card>
 
-      {/* Standalone todos - only show if loaded */}
-      {standaloneTodosLoaded && (
-        <StandaloneTodos
-          todos={standaloneTodos}
-          onAddTodo={addStandaloneTodo}
-          onToggleTodo={toggleStandaloneTodo}
-          onEditTodo={editStandaloneTodo}
-          onDeleteTodo={deleteStandaloneTodo}
-          onHideTodo={hideStandaloneTodo}
-        />
-      )}
+      {/* Standalone todos - now loads from Supabase */}
+      <StandaloneTodos
+        todos={standaloneTodos}
+        onAddTodo={addStandaloneTodo}
+        onToggleTodo={toggleStandaloneTodo}
+        onEditTodo={editStandaloneTodo}
+        onDeleteTodo={deleteStandaloneTodo}
+        onHideTodo={hideStandaloneTodo}
+      />
     </div>
   );
 };

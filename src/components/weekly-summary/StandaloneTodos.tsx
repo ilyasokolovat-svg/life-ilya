@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,7 +81,7 @@ const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
     <Card className="border-amber-200 bg-amber-50/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg text-amber-800">Personal To-Do's</CardTitle>
-        <p className="text-sm text-amber-600">Add your own tasks that persist across weeks</p>
+        <p className="text-sm text-amber-600">Add your own tasks that persist across all devices</p>
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Add new todo input */}
@@ -145,9 +144,9 @@ const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
         </div>
 
         {/* Todo list */}
-        {visibleTodos.length > 0 && (
+        {todos.length > 0 && (
           <div className="space-y-2">
-            {visibleTodos.map((todo) => (
+            {todos.map((todo) => (
               <div
                 key={todo.id}
                 className={`flex items-center gap-2 p-2 rounded border group ${
@@ -294,7 +293,7 @@ const StandaloneTodos: React.FC<StandaloneTodosProps> = ({
           </div>
         )}
 
-        {visibleTodos.length === 0 && (
+        {todos.length === 0 && (
           <p className="text-center text-amber-600 text-sm py-4">
             No personal to-do's yet. Add one above!
           </p>
