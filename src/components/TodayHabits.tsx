@@ -13,7 +13,12 @@ interface TodayHabitsProps {
 }
 
 const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) => {
+  // Ensure we get today's date consistently
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day for consistency
+  const todayISO = formatDateISO(today);
+
+  console.log('TodayHabits: Using date:', todayISO, 'Date object:', today);
 
   const handleHabitComplete = (habitType: HabitType, completed: boolean) => {
     // Get current data for this habit or create default
@@ -26,7 +31,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
       planned: completed ? true : currentHabitData.planned // Keep planned true if it was already true
     };
     
-    console.log(`TodayHabits: Updating ${habitType}:`, { 
+    console.log(`TodayHabits: Updating ${habitType} for ${todayISO}:`, { 
       current: currentHabitData, 
       updated: updatedHabitData 
     });
@@ -46,6 +51,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
         planned: true,
         completed: hours >= 7 // Auto-complete if 7+ hours
       };
+      console.log(`TodayHabits: Sleep hours update for ${todayISO}:`, updatedHabitData);
       onUpdateHabit(today, 'sleep', updatedHabitData);
     } else if (value === "") {
       const updatedHabitData: HabitData = {
@@ -53,6 +59,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
         sleepHours: undefined,
         completed: false
       };
+      console.log(`TodayHabits: Sleep hours cleared for ${todayISO}:`, updatedHabitData);
       onUpdateHabit(today, 'sleep', updatedHabitData);
     }
   };
@@ -103,7 +110,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
               weekday: 'long', 
               month: 'short', 
               day: 'numeric' 
-            })}
+            })} ({todayISO})
           </span>
         </CardTitle>
       </CardHeader>
@@ -112,6 +119,8 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
           {habits.map((habit) => {
             const Icon = habit.icon;
             const habitData = todayData?.[habit.type] || { planned: false, completed: false };
+            
+            console.log(`TodayHabits: Rendering ${habit.type} with data:`, habitData);
             
             return (
               <div

@@ -140,10 +140,13 @@ const Index = () => {
     navigate('/');
   };
 
-  // Get today's data
+  // Get today's data - ensure consistent date handling
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset to start of day for consistency
   const todayISO = formatDateISO(today);
   const todayData = habitsState.days[todayISO] || null;
+
+  console.log('Index: Today is:', todayISO, 'Data:', todayData);
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
