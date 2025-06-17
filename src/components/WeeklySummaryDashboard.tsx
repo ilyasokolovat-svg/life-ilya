@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
@@ -82,17 +81,16 @@ const WeeklySummaryDashboard: React.FC = () => {
     return completed;
   };
 
-  // Navigation handler for jumping to weekly planning
+  // Navigation handler for jumping to weekly planning - fixed to use correct route format
   const handleJumpToWeeklyPlan = (category: string, subcategory: string, periodKey: string) => {
-    // Navigate to Goals page with specific parameters
+    // Navigate to Goals page using the correct route format /goals/:category with query params
     const searchParams = new URLSearchParams({
-      category,
       subcategory,
       view: 'week',
       week: periodKey
     });
     
-    navigate(`/goals?${searchParams.toString()}`);
+    navigate(`/goals/${encodeURIComponent(category)}?${searchParams.toString()}`);
   };
 
   const toggleTaskCompletion = (item: any, completed: boolean) => {
