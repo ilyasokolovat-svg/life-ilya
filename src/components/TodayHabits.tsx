@@ -15,35 +15,45 @@ interface TodayHabitsProps {
 const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) => {
   const today = new Date();
 
-  const handleHabitUpdate = (habitType: HabitType, updates: Partial<HabitData>) => {
-    // Get the current data for this specific habit type
-    const currentData = todayData?.[habitType] || { planned: false, completed: false };
+  const handleHabitComplete = (habitType: HabitType, completed: boolean) => {
+    // Get current data for this habit or create default
+    const currentHabitData = todayData?.[habitType] || { planned: false, completed: false };
     
-    // Create the complete habit data by merging current data with updates
-    // Always set planned to true when marking as completed
-    const newData: HabitData = {
-      ...currentData,
-      ...updates,
-      // If we're marking as completed, also mark as planned
-      ...(updates.completed && { planned: true })
+    // Create updated habit data - when completed, also mark as planned
+    const updatedHabitData: HabitData = {
+      ...currentHabitData,
+      completed,
+      planned: completed ? true : currentHabitData.planned // Keep planned true if it was already true
     };
     
-    console.log(`TodayHabits: Updating ${habitType} habit:`, { 
-      currentData, 
-      updates, 
-      newData,
-      todayData: todayData?.[habitType]
+    console.log(`TodayHabits: Updating ${habitType}:`, { 
+      current: currentHabitData, 
+      updated: updatedHabitData 
     });
     
-    onUpdateHabit(today, habitType, newData);
+    // Call the update function which will sync to calendar
+    onUpdateHabit(today, habitType, updatedHabitData);
   };
 
   const handleSleepHoursChange = (value: string) => {
+    const currentHabitData = todayData?.sleep || { planned: false, completed: false };
     const hours = parseFloat(value);
+    
     if (!isNaN(hours) && hours >= 0) {
-      handleHabitUpdate('sleep', { sleepHours: hours, planned: true });
+      const updatedHabitData: HabitData = {
+        ...currentHabitData,
+        sleepHours: hours,
+        planned: true,
+        completed: hours >= 7 // Auto-complete if 7+ hours
+      };
+      onUpdateHabit(today, 'sleep', updatedHabitData);
     } else if (value === "") {
-      handleHabitUpdate('sleep', { sleepHours: undefined });
+      const updatedHabitData: HabitData = {
+        ...currentHabitData,
+        sleepHours: undefined,
+        completed: false
+      };
+      onUpdateHabit(today, 'sleep', updatedHabitData);
     }
   };
 
@@ -51,9 +61,10 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     {
       type: 'sleep' as HabitType,
       icon: Moon,
-      name: 'Sleep',
+      name: 'Sleep (7+ hrs)',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
       isSpecial: true
     },
     {
@@ -61,21 +72,24 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
       icon: Dumbbell,
       name: 'Gym',
       color: 'text-green-600',
-      bgColor: 'bg-green-50'
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200'
     },
     {
       type: 'alcohol' as HabitType,
       icon: Wine,
       name: 'No Alcohol',
       color: 'text-red-600',
-      bgColor: 'bg-red-50'
+      bgColor: 'bg-red-50',
+      borderColor: 'border-red-200'
     },
     {
       type: 'meditation' as HabitType,
       icon: Brain,
       name: 'Meditation',
       color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200'
     }
   ];
 
@@ -94,60 +108,68 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {habits.map((habit) => {
             const Icon = habit.icon;
             const habitData = todayData?.[habit.type] || { planned: false, completed: false };
             
-            console.log(`Rendering ${habit.type}:`, habitData);
-            
             return (
               <div
                 key={habit.type}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-6 rounded-lg border-2 transition-all ${
                   habitData.completed 
-                    ? 'border-green-300 bg-green-50' 
-                    : 'border-gray-200 hover:border-gray-300'
-                } ${habit.bgColor}`}
+                    ? 'border-green-400 bg-green-50' 
+                    : `${habit.borderColor} ${habit.bgColor} hover:border-gray-300`
+                }`}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2 rounded-full ${habit.bgColor}`}>
-                    <Icon className={`h-5 w-5 ${habit.color}`} />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`p-3 rounded-full ${habit.bgColor}`}>
+                    <Icon className={`h-6 w-6 ${habit.color}`} />
                   </div>
-                  <span className="font-medium text-gray-900">{habit.name}</span>
+                  <span className="font-semibold text-gray-900 text-lg">{habit.name}</span>
                 </div>
                 
                 {habit.isSpecial ? (
                   // Sleep hours input
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Input
                       type="number"
                       value={habitData.sleepHours?.toString() || ""}
                       onChange={(e) => handleSleepHoursChange(e.target.value)}
                       placeholder="Hours slept"
-                      className="w-full"
+                      className="w-full text-center text-lg py-3"
                       min="0"
                       max="24"
                       step="0.5"
                     />
-                    <div className="text-xs text-gray-500 text-center">
-                      Hours: {habitData.sleepHours || 0}
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600 mb-2">
+                        Hours: {habitData.sleepHours || 0}
+                      </div>
+                      {habitData.completed && (
+                        <div className="text-green-600 font-medium flex items-center justify-center gap-1">
+                          ✓ Completed
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
-                  // Only completed checkbox for other habits
+                  // Completed checkbox for other habits
                   <div className="flex items-center justify-center">
-                    <div className="flex items-center gap-2">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors"
+                      onClick={() => handleHabitComplete(habit.type, !habitData.completed)}
+                    >
                       <Checkbox
                         checked={habitData.completed || false}
                         onCheckedChange={(checked) => {
-                          console.log(`TodayHabits: Checkbox changed for ${habit.type}:`, checked);
-                          const isCompleted = !!checked;
-                          handleHabitUpdate(habit.type, { completed: isCompleted, planned: true });
+                          handleHabitComplete(habit.type, !!checked);
                         }}
-                        className="h-5 w-5 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                        className="h-6 w-6 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
-                      <label className="text-sm font-medium text-gray-700">Completed</label>
+                      <label className="text-lg font-medium text-gray-700 cursor-pointer">
+                        Completed
+                      </label>
                     </div>
                   </div>
                 )}
