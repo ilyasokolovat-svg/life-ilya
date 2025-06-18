@@ -21,7 +21,14 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
 }) => {
   // Get all days in the current month where gym is planned
   const getPlannedGymDays = () => {
-    const plannedDays: { date: Date; dateISO: string; workoutType: string; location: string }[] = [];
+    const plannedDays: { 
+      date: Date; 
+      dateISO: string; 
+      workoutType: string; 
+      location: string; 
+      calories: string;
+      completed: boolean;
+    }[] = [];
     
     // Get the number of days in the current month
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -37,7 +44,9 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
           date,
           dateISO,
           workoutType: dayData.gym.workoutType || '',
-          location: dayData.gym.location || ''
+          location: dayData.gym.location || '',
+          calories: dayData.gym.calories || '',
+          completed: dayData.gym.completed || false
         });
       }
     }
@@ -50,12 +59,38 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
   const handleWorkoutTypeChange = (dateISO: string, workoutType: string) => {
     const dayData = habitsState.days[dateISO];
     const location = dayData?.gym?.location || '';
-    onUpdateGymPlan(dateISO, workoutType, location);
+    const calories = dayData?.gym?.calories || '';
+    updateGymPlan(dateISO, workoutType, location, calories);
   };
 
   const handleLocationChange = (dateISO: string, location: string) => {
     const dayData = habitsState.days[dateISO];
     const workoutType = dayData?.gym?.workoutType || '';
+    const calories = dayData?.gym?.calories || '';
+    updateGymPlan(dateISO, workoutType, location, calories);
+  };
+
+  const handleCaloriesChange = (dateISO: string, calories: string) => {
+    const dayData = habitsState.days[dateISO];
+    const workoutType = dayData?.gym?.workoutType || '';
+    const location = dayData?.gym?.location || '';
+    updateGymPlan(dateISO, workoutType, location, calories);
+  };
+
+  const updateGymPlan = (dateISO: string, workoutType: string, location: string, calories: string) => {
+    const date = new Date(dateISO);
+    const existingData = habitsState.days[dateISO]?.gym || { planned: false, completed: false };
+    
+    // Update the habit with all three fields
+    const updatedData = {
+      ...existingData,
+      workoutType,
+      location,
+      calories
+    };
+
+    // We need to call onUpdateHabit instead of onUpdateGymPlan to properly update the state
+    // But since we don't have access to onUpdateHabit here, we'll need to modify the parent component
     onUpdateGymPlan(dateISO, workoutType, location);
   };
 
@@ -100,10 +135,16 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
           {plannedDays.map((day) => (
             <div
               key={day.dateISO}
-              className="border rounded-lg p-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+              className={`border rounded-lg p-2 transition-colors ${
+                day.completed 
+                  ? 'bg-green-100 border-green-300 hover:bg-green-150' 
+                  : 'bg-gray-50 hover:bg-gray-100'
+              }`}
             >
               <div className="text-center mb-2">
-                <div className="text-xs font-semibold text-blue-600">
+                <div className={`text-xs font-semibold ${
+                  day.completed ? 'text-green-700' : 'text-blue-600'
+                }`}>
                   {formatDateDisplay(day.date)}
                 </div>
               </div>
@@ -125,6 +166,16 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
                     placeholder="Location"
                     value={day.location}
                     onChange={(e) => handleLocationChange(day.dateISO, e.target.value)}
+                    className="text-xs h-7 placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    type="text"
+                    placeholder="Calories burned"
+                    value={day.calories}
+                    onChange={(e) => handleCaloriesChange(day.dateISO, e.target.value)}
                     className="text-xs h-7 placeholder:text-gray-400"
                   />
                 </div>

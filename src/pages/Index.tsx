@@ -48,16 +48,19 @@ const Index = () => {
     updateGoal(type, goal, viewYear, viewMonth);
   };
   
-  // Add new handler for gym planning updates
-  const handleUpdateGymPlan = (dateISO: string, workoutType: string, location: string) => {
+  // Add new handler for gym planning updates including calories
+  const handleUpdateGymPlan = (dateISO: string, workoutType: string, location: string, calories?: string) => {
     const date = new Date(dateISO);
     const existingData = habitsState.days[dateISO]?.gym || { planned: false, completed: false };
     
-    updateDay(date, 'gym', {
+    const updatedData = {
       ...existingData,
       workoutType,
-      location
-    });
+      location,
+      ...(calories !== undefined && { calories })
+    };
+    
+    updateDay(date, 'gym', updatedData);
   };
   
   // Handle month change for charts and calendar with better bounds checking
