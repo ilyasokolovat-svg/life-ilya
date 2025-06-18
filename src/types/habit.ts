@@ -6,6 +6,7 @@ export interface HabitData {
   sleepHours?: number; // Optional field for tracking sleep hours
   workoutType?: string; // Optional field for gym workout type
   location?: string; // Optional field for gym location
+  calories?: string; // Optional field for gym calories burned
 }
 
 export interface DayData {

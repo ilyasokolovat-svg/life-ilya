@@ -10,7 +10,7 @@ interface GymPlanningProps {
   habitsState: HabitsState;
   viewMonth: number;
   viewYear: number;
-  onUpdateGymPlan: (date: string, workoutType: string, location: string) => void;
+  onUpdateGymPlan: (date: string, workoutType: string, location: string, calories?: string) => void;
 }
 
 const GymPlanning: React.FC<GymPlanningProps> = ({
@@ -60,38 +60,21 @@ const GymPlanning: React.FC<GymPlanningProps> = ({
     const dayData = habitsState.days[dateISO];
     const location = dayData?.gym?.location || '';
     const calories = dayData?.gym?.calories || '';
-    updateGymPlan(dateISO, workoutType, location, calories);
+    onUpdateGymPlan(dateISO, workoutType, location, calories);
   };
 
   const handleLocationChange = (dateISO: string, location: string) => {
     const dayData = habitsState.days[dateISO];
     const workoutType = dayData?.gym?.workoutType || '';
     const calories = dayData?.gym?.calories || '';
-    updateGymPlan(dateISO, workoutType, location, calories);
+    onUpdateGymPlan(dateISO, workoutType, location, calories);
   };
 
   const handleCaloriesChange = (dateISO: string, calories: string) => {
     const dayData = habitsState.days[dateISO];
     const workoutType = dayData?.gym?.workoutType || '';
     const location = dayData?.gym?.location || '';
-    updateGymPlan(dateISO, workoutType, location, calories);
-  };
-
-  const updateGymPlan = (dateISO: string, workoutType: string, location: string, calories: string) => {
-    const date = new Date(dateISO);
-    const existingData = habitsState.days[dateISO]?.gym || { planned: false, completed: false };
-    
-    // Update the habit with all three fields
-    const updatedData = {
-      ...existingData,
-      workoutType,
-      location,
-      calories
-    };
-
-    // We need to call onUpdateHabit instead of onUpdateGymPlan to properly update the state
-    // But since we don't have access to onUpdateHabit here, we'll need to modify the parent component
-    onUpdateGymPlan(dateISO, workoutType, location);
+    onUpdateGymPlan(dateISO, workoutType, location, calories);
   };
 
   const formatDateDisplay = (date: Date) => {
