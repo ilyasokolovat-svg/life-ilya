@@ -105,22 +105,14 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: completed ? 'completed' : null
       });
 
-      // Check if task is now fully completed and should be removed from dashboard
-      const isFullyCompleted = isTaskFullyCompleted(item, completed);
-      
-      if (isFullyCompleted) {
-        // Remove from local state immediately
-        setTasks(currentTasks => currentTasks.filter(task => task.id !== item.id));
-      } else {
-        // Update local state - maintain exact order, only update the specific task
-        setTasks(currentTasks => {
-          return currentTasks.map(task => 
-            task.id === item.id 
-              ? { ...task, isCompleted: completed }
-              : task
-          );
-        });
-      }
+      // Update local state - maintain exact order, only update the specific task
+      setTasks(currentTasks => {
+        return currentTasks.map(task => 
+          task.id === item.id 
+            ? { ...task, isCompleted: completed }
+            : task
+        );
+      });
     }
   };
 
@@ -150,22 +142,18 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      if (allBulletsCompleted) {
-        // Remove from local state immediately
-        setTasks(currentTasks => currentTasks.filter(task => task.id !== item.id));
-      } else {
-        // Update local state - maintain exact order, only update bullet point completions
-        setTasks(currentTasks => {
-          return currentTasks.map(task => 
-            task.id === item.id 
-              ? { 
-                  ...task, 
-                  bullet_point_completions: updatedCompletions
-                }
-              : task
-          );
-        });
-      }
+      // Update local state - maintain exact order, update bullet point completions and completion status
+      setTasks(currentTasks => {
+        return currentTasks.map(task => 
+          task.id === item.id 
+            ? { 
+                ...task, 
+                bullet_point_completions: updatedCompletions,
+                isCompleted: allBulletsCompleted
+              }
+            : task
+        );
+      });
     }
   };
 

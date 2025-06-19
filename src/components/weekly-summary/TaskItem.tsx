@@ -45,12 +45,21 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
   const hasBulletPoints = bulletPoints.length > 1;
 
+  // Check if task is fully completed (either marked as completed or all bullet points are checked)
+  const isFullyCompleted = item.isCompleted || (hasBulletPoints && 
+    bulletPoints.every((_, index) => item.bullet_point_completions?.[index] === true)
+  );
+
   return (
     <div
       className={`flex items-start gap-3 p-4 border rounded-lg transition-all cursor-move ${
         draggedItem === item.id ? 'opacity-50' : ''
       } ${
-        item.isOverdue ? 'border-orange-300 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
+        isFullyCompleted 
+          ? 'border-green-300 bg-green-50' 
+          : item.isOverdue 
+            ? 'border-orange-300 bg-orange-50' 
+            : 'border-gray-200 hover:border-gray-300'
       }`}
       draggable
       onDragStart={(e) => onDragStart(e, item.id)}
@@ -74,6 +83,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
               {item.isOverdue && (
                 <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded">
                   Overdue ({item.weekDates})
+                </span>
+              )}
+              {isFullyCompleted && (
+                <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded font-medium">
+                  Completed ✓
                 </span>
               )}
             </div>
@@ -143,7 +157,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   onCheckedChange={(checked) => onToggleCompletion(item, !!checked)}
                   className="mt-1 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                 />
-                <p className="text-gray-700 leading-relaxed flex-1">
+                <p className={`leading-relaxed flex-1 ${
+                  isFullyCompleted ? 'text-green-700 font-medium' : 'text-gray-700'
+                }`}>
                   {item.planned_goal}
                 </p>
               </div>
