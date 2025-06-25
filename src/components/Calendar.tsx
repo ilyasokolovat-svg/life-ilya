@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -153,8 +154,12 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         key={isoDate} 
         className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col rounded-lg relative`}
       >
-        {/* Enhanced day header */}
-        <div className="p-2 flex justify-between items-center bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+        {/* Enhanced day header with conditional yellowish background */}
+        <div className={`p-2 flex justify-between items-center border-b border-gray-200 ${
+          isAlcoholPlanned 
+            ? 'bg-gradient-to-r from-yellow-50 to-yellow-100' 
+            : 'bg-gradient-to-r from-gray-50 to-gray-100'
+        }`}>
           <span className={`text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
             {date.getDate()}
           </span>
