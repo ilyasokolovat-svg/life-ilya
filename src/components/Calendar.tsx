@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -160,9 +159,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
             {date.getDate()}
           </span>
           <div className="flex items-center gap-1">
-            {/* No alcohol icon indicator */}
+            {/* No alcohol icon indicator with yellow color */}
             {isAlcoholPlanned && (
-              <WineOff className="h-3 w-3 text-purple-600" />
+              <WineOff className="h-3 w-3 text-yellow-600" />
             )}
             {isAllCompleted && (
               <span className="text-lg animate-pulse">🎉</span>
@@ -274,10 +273,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         <div className="flex items-center mr-3">
           <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#006400' }}></div>
           <span>4/4 🎉</span>
-        </div>
-        <div className="flex items-center mr-3">
-          <WineOff className="h-3 w-3 mr-1 text-purple-600" />
-          <span>No alcohol</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 mr-1 rounded border-2 border-yellow-400 bg-white"></div>
