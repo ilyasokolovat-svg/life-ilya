@@ -105,10 +105,17 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     // Check if alcohol is planned (no alcohol day)
     const isAlcoholPlanned = dayData?.alcohol?.planned || false;
     
-    // Enhanced day styling
-    const dayStyle = isToday
-      ? 'border-2 border-blue-500 bg-blue-50 shadow-lg'
-      : 'border border-gray-200 bg-white hover:shadow-md transition-shadow duration-200';
+    // Enhanced day styling with yellow border for no alcohol days
+    let dayStyle = '';
+    if (isToday) {
+      dayStyle = isAlcoholPlanned 
+        ? 'border-2 border-yellow-400 bg-blue-50 shadow-lg ring-2 ring-yellow-300'
+        : 'border-2 border-blue-500 bg-blue-50 shadow-lg';
+    } else {
+      dayStyle = isAlcoholPlanned
+        ? 'border-2 border-yellow-400 bg-white hover:shadow-md transition-shadow duration-200'
+        : 'border border-gray-200 bg-white hover:shadow-md transition-shadow duration-200';
+    }
 
     // Reordering habits to put sleep first, then gym, alcohol, and meditation
     const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
@@ -268,9 +275,13 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#006400' }}></div>
           <span>4/4 🎉</span>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center mr-3">
           <WineOff className="h-3 w-3 mr-1 text-purple-600" />
           <span>No alcohol</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 mr-1 rounded border-2 border-yellow-400 bg-white"></div>
+          <span>No alcohol planned</span>
         </div>
       </div>
       
