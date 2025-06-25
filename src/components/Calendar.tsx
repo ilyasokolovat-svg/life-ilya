@@ -102,6 +102,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     const progressPercentage = (completedCount / 4) * 100;
     const isAllCompleted = completedCount === 4;
     
+    // Check if alcohol is planned (no alcohol day)
+    const isAlcoholPlanned = dayData?.alcohol?.planned || false;
+    
     // Enhanced day styling
     const dayStyle = isToday
       ? 'border-2 border-blue-500 bg-blue-50 shadow-lg'
@@ -142,16 +145,22 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     return (
       <div 
         key={isoDate} 
-        className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col rounded-lg`}
+        className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col rounded-lg relative`}
       >
         {/* Enhanced day header */}
         <div className="p-2 flex justify-between items-center bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
           <span className={`text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
             {date.getDate()}
           </span>
-          {isAllCompleted && (
-            <span className="text-lg animate-pulse">🎉</span>
-          )}
+          <div className="flex items-center gap-1">
+            {/* No alcohol icon indicator */}
+            {isAlcoholPlanned && (
+              <Wine className="h-3 w-3 text-purple-600" title="No alcohol planned" />
+            )}
+            {isAllCompleted && (
+              <span className="text-lg animate-pulse">🎉</span>
+            )}
+          </div>
         </div>
         
         {/* Enhanced progress bar */}
@@ -255,9 +264,13 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#228B22' }}></div>
           <span>3/4</span>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center mr-3">
           <div className="w-3 h-3 mr-1 rounded" style={{ backgroundColor: '#006400' }}></div>
           <span>4/4 🎉</span>
+        </div>
+        <div className="flex items-center">
+          <Wine className="h-3 w-3 mr-1 text-purple-600" />
+          <span>No alcohol</span>
         </div>
       </div>
       
