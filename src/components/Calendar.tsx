@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Moon, Dumbbell, Wine, Brain } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HabitType, DayData } from "@/types/habit";
 import HabitTracker from "./HabitTracker";
@@ -134,7 +134,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
         case "gym":
           return <Dumbbell {...iconProps} />;
         case "alcohol":
-          return <Wine {...iconProps} />;
+          return <WineOff {...iconProps} />;
         case "meditation":
           return <Brain {...iconProps} />;
         default:
@@ -155,7 +155,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           <div className="flex items-center gap-1">
             {/* No alcohol icon indicator */}
             {isAlcoholPlanned && (
-              <Wine className="h-3 w-3 text-purple-600" title="No alcohol planned" />
+              <WineOff className="h-3 w-3 text-purple-600" />
             )}
             {isAllCompleted && (
               <span className="text-lg animate-pulse">🎉</span>
@@ -269,7 +269,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           <span>4/4 🎉</span>
         </div>
         <div className="flex items-center">
-          <Wine className="h-3 w-3 mr-1 text-purple-600" />
+          <WineOff className="h-3 w-3 mr-1 text-purple-600" />
           <span>No alcohol</span>
         </div>
       </div>
@@ -305,7 +305,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
               <span>Gym</span>
             </div>
             <div className="flex items-center">
-              <Wine className="h-3.5 w-3.5 mr-1" />
+              <WineOff className="h-3.5 w-3.5 mr-1" />
               <span>No Alcohol</span>
             </div>
             <div className="flex items-center">
