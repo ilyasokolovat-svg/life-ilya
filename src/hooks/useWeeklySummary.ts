@@ -19,20 +19,20 @@ export interface WeeklySummaryItem {
 export function useWeeklySummary() {
   const { user } = useAuth();
 
-  // Get current week key
+  // Helper function to get Monday of any given date (consistent week start)
+  const getMondayOfWeek = (date: Date): Date => {
+    const result = new Date(date);
+    const day = result.getDay();
+    const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    result.setDate(diff);
+    return result;
+  };
+
+  // Get current week key using consistent Monday-based logic
   const getCurrentWeekKey = () => {
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11, so add 1
-    
-    // Find the start of the current week (Monday)
-    const dayOfWeek = now.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - daysToMonday);
-    
-    const weekKey = `${currentYear}-${currentMonth}-${weekStart.getDate()}`;
-    return weekKey;
+    const monday = getMondayOfWeek(now);
+    return `${monday.getFullYear()}-${monday.getMonth() + 1}-${monday.getDate()}`;
   };
 
   // Helper function to get week date range from period_key

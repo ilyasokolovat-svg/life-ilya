@@ -26,7 +26,21 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
   const [localPlans, setLocalPlans] = useState<Record<string, string>>({});
   const [changedWeeks, setChangedWeeks] = useState<Set<string>>(new Set());
 
-  // Generate weeks for a quarter
+  // Helper function to get Monday of any given date (consistent week start)
+  const getMondayOfWeek = (date: Date): Date => {
+    const result = new Date(date);
+    const day = result.getDay();
+    const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    result.setDate(diff);
+    return result;
+  };
+
+  // Generate consistent week key using Monday's date
+  const generateWeekKey = (monday: Date): string => {
+    return `${monday.getFullYear()}-${monday.getMonth() + 1}-${monday.getDate()}`;
+  };
+
+  // Generate weeks for a quarter with consistent keys
   const generateWeeksForQuarter = (year: number, quarter: number) => {
     const weeks = [];
     const startMonth = (quarter - 1) * 3; // 0, 3, 6, 9
@@ -39,9 +53,8 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
       const firstDay = new Date(year, currentMonth, 1);
       const lastDay = new Date(year, currentMonth + 1, 0);
       
-      // Find the start of the first week (Monday)
-      let weekStart = new Date(firstDay);
-      weekStart.setDate(firstDay.getDate() - ((firstDay.getDay() + 6) % 7));
+      // Find the start of the first week (Monday) - this might be in the previous month
+      let weekStart = getMondayOfWeek(firstDay);
       
       const monthWeeks = [];
       while (weekStart <= lastDay) {
@@ -50,7 +63,8 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
         
         // Only include weeks that overlap with this month
         if (weekEnd >= firstDay) {
-          const weekKey = `${year}-${currentMonth + 1}-${weekStart.getDate()}`;
+          // Use consistent week key based on Monday
+          const weekKey = generateWeekKey(weekStart);
           monthWeeks.push({
             key: weekKey,
             start: new Date(weekStart),
