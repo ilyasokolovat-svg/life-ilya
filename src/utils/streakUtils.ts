@@ -272,20 +272,23 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
     // - planned=true means "I plan to avoid alcohol"
     // - completed=true means "I successfully avoided alcohol"
     // So planned=true AND completed=true = successful no-alcohol day
-    if (dayData?.alcohol?.planned) {
-      if (dayData.alcohol.completed) {
+    if (dayData?.alcohol) {
+      if (dayData.alcohol.planned && dayData.alcohol.completed) {
         // Successfully avoided alcohol - continue streak
         streak++;
         console.log(`Successful no-alcohol day! Streak now: ${streak}`);
-      } else {
+      } else if (dayData.alcohol.planned && !dayData.alcohol.completed) {
         // Planned to avoid but didn't - alcohol was consumed, break streak
         console.log('Alcohol was consumed (planned but not completed), breaking streak');
         break;
+      } else if (!dayData.alcohol.planned) {
+        // No plan to avoid alcohol - this means we weren't actively avoiding it
+        console.log('No alcohol avoidance plan for this day, breaking streak');
+        break;
       }
     } else {
-      // If no alcohol plan for this day, we break the streak
-      // This indicates we weren't actively avoiding alcohol
-      console.log('No alcohol avoidance plan for this day, breaking streak');
+      // No alcohol data at all - break streak
+      console.log('No alcohol data for this day, breaking streak');
       break;
     }
 
@@ -303,8 +306,8 @@ export const getWeekStreakStyling = (weeks: number) => {
   
   if (weeks >= 5) {
     return {
-      backgroundColor: '#FFD700', // Gold
-      color: '#B8860B',
+      backgroundColor: '#FEF3C7', // Light golden yellow
+      color: '#92400E', // Dark amber
       stars: stars,
       label: `${weeks} weeks`
     };
@@ -336,8 +339,8 @@ export const getWeekStreakStyling = (weeks: number) => {
 export const getDayStreakStyling = (days: number) => {
   if (days >= 30) {
     return {
-      backgroundColor: '#FFD700', // Gold
-      color: '#B8860B',
+      backgroundColor: '#FEF3C7', // Light golden yellow
+      color: '#92400E', // Dark amber
       stars: 1,
       label: `${days} days`
     };
