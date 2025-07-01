@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -61,21 +62,6 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
 
   // Calculate planned days for a habit type in the current month
   const getPlannedDaysCount = (habitType: HabitType) => {
-    if (habitType === 'sleep') {
-      // For sleep, return total days in the month up to today
-      const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
-      const today = new Date();
-      const monthStart = new Date(viewYear, viewMonth, 1);
-      const monthEnd = new Date(viewYear, viewMonth + 1, 0);
-      
-      // Only count days up to today or end of month, whichever is earlier
-      const endDate = today < monthEnd ? today : monthEnd;
-      
-      if (endDate < monthStart) return 0;
-      
-      return Math.floor((endDate.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    }
-    
     if (!habitsState?.days) return 0;
     
     const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
@@ -88,8 +74,6 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
         const dateISO = formatDateISO(date);
         const dayData = habitsState.days[dateISO];
         
-        console.log(`GoalSetting: Checking ${habitType} for ${dateISO}:`, dayData?.[habitType]);
-        
         if (dayData && dayData[habitType] && dayData[habitType].planned) {
           plannedCount++;
         }
@@ -100,35 +84,79 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
     return plannedCount;
   };
 
-  // Calculate progress for each habit - use the corrected stats
+  // Calculate completed days for a habit type in the current month
+  const getCompletedDaysCount = (habitType: HabitType) => {
+    if (habitType === 'sleep') {
+      // For sleep, use the sleep quality stats
+      if (habitsState) {
+        const sleepQualityStats = calculateSleepQualityStats(habitsState, viewYear, viewMonth);
+        return sleepQualityStats.goodSleep;
+      }
+      return 0;
+    }
+    
+    if (!habitsState?.days) return 0;
+    
+    const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
+    const today = new Date();
+    let completedCount = 0;
+    
+    daysInCurrentMonth.forEach(date => {
+      // Only count days up to today
+      if (date <= today) {
+        const dateISO = formatDateISO(date);
+        const dayData = habitsState.days[dateISO];
+        
+        if (dayData && dayData[habitType] && dayData[habitType].planned && dayData[habitType].completed) {
+          completedCount++;
+        }
+      }
+    });
+    
+    console.log(`GoalSetting: Total completed days for ${habitType} in ${viewMonth}/${viewYear}:`, completedCount);
+    return completedCount;
+  };
+
+  // Get total days in month up to today (for sleep which is tracked every day)
+  const getTotalDaysInMonth = () => {
+    const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
+    const today = new Date();
+    
+    // Count days up to today
+    let dayCount = 0;
+    daysInCurrentMonth.forEach(date => {
+      if (date <= today) {
+        dayCount++;
+      }
+    });
+    
+    return dayCount;
+  };
+
+  // Calculate progress for each habit
   const getProgressData = (habitType: HabitType) => {
-    const plannedDays = getPlannedDaysCount(habitType);
-    const stats = habitStats[habitType];
+    let totalDays = 0;
+    let completed = 0;
     
-    console.log(`GoalSetting: Progress data for ${habitType}:`, { plannedDays, stats });
-    
-    if (habitType === 'sleep' && habitsState) {
-      const sleepQualityStats = calculateSleepQualityStats(habitsState, viewYear, viewMonth);
-      const progress = plannedDays > 0 ? Math.min(100, Math.round((sleepQualityStats.goodSleep / plannedDays) * 100)) : 0;
-      
-      return {
-        completed: sleepQualityStats.goodSleep,
-        total: plannedDays,
-        progress
-      };
+    if (habitType === 'sleep') {
+      // For sleep, total is all days in month up to today
+      totalDays = getTotalDaysInMonth();
+      completed = getCompletedDaysCount('sleep');
+    } else {
+      // For other habits, total is planned days, completed is completed planned days
+      totalDays = getPlannedDaysCount(habitType);
+      completed = getCompletedDaysCount(habitType);
     }
     
-    // For other habits, use the totalCompleted from stats
-    if (stats && plannedDays > 0) {
-      const progress = Math.min(100, Math.round((stats.totalCompleted / plannedDays) * 100));
-      return {
-        completed: stats.totalCompleted,
-        total: plannedDays,
-        progress
-      };
-    }
+    const progress = totalDays > 0 ? Math.min(100, Math.round((completed / totalDays) * 100)) : 0;
     
-    return { completed: 0, total: plannedDays, progress: 0 };
+    console.log(`GoalSetting: Progress data for ${habitType}:`, { completed, totalDays, progress });
+    
+    return {
+      completed,
+      total: totalDays,
+      progress
+    };
   };
 
   // Define habit types to ensure consistent ordering
