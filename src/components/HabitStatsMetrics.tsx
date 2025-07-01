@@ -23,24 +23,22 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Updated function to calculate alcohol streak across all months (fixed logic)
+// Fixed alcohol streak calculation - completely rebuilt to match gym logic
 const calculateAlcoholStreakAllTime = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK ALL TIME (FIXED) ===');
+  console.log('=== CALCULATING ALCOHOL STREAK ALL TIME (REBUILT) ===');
   
   if (!state || !state.days) {
     console.log('No state or days data available');
     return 0;
   }
 
-  // Get all dates with alcohol data, sorted from newest to oldest
+  console.log('Available days in state:', Object.keys(state.days));
+  
+  // Get all dates with data, sorted from newest to oldest
   const allDates = Object.keys(state.days)
-    .filter(dateISO => {
-      const dayData = state.days[dateISO];
-      return dayData && dayData.alcohol; // Only dates with alcohol data
-    })
     .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Newest first
   
-  console.log('All dates with alcohol data (newest first):', allDates);
+  console.log('All dates (newest first):', allDates);
   
   const today = new Date();
   let streak = 0;
@@ -56,23 +54,29 @@ const calculateAlcoholStreakAllTime = (state: HabitsState): number => {
     }
     
     const dayData = state.days[dateISO];
-    const alcoholData = dayData.alcohol;
     
     console.log(`\n=== Checking ${dateISO} ===`);
-    console.log('Alcohol data:', alcoholData);
-    console.log('Completed:', alcoholData?.completed);
+    console.log('Full day data:', dayData);
+    console.log('Alcohol data:', dayData?.alcohol);
     
-    if (alcoholData?.completed) {
-      // Successfully avoided alcohol (completed)
-      streak++;
-      console.log(`✅ Successfully avoided alcohol on ${dateISO}! Streak now: ${streak}`);
-    } else if (alcoholData && !alcoholData.completed) {
-      // Has alcohol data but not completed - this breaks the streak
-      console.log(`❌ Alcohol not avoided on ${dateISO}, breaking streak`);
-      break;
+    if (dayData?.alcohol) {
+      const alcoholData = dayData.alcohol;
+      console.log('Alcohol completed:', alcoholData.completed);
+      
+      if (alcoholData.completed) {
+        // Successfully avoided alcohol
+        streak++;
+        console.log(`✅ Successfully avoided alcohol on ${dateISO}! Streak now: ${streak}`);
+      } else {
+        // Has alcohol data but not completed - this breaks the streak
+        console.log(`❌ Alcohol not avoided on ${dateISO}, breaking streak`);
+        break;
+      }
+    } else {
+      // No alcohol data for this day - continue checking without breaking streak
+      console.log(`⚪ No alcohol data for ${dateISO}, continuing`);
+      continue;
     }
-    // If no alcohol data for this day, we continue (don't break streak)
-    // This matches how gym streak works - it skips days without gym data
   }
   
   console.log('=== FINAL ALCOHOL STREAK ALL TIME:', streak, 'DAYS ===');
