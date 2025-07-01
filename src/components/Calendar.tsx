@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HabitType, DayData } from "@/types/habit";
 import HabitTracker from "./HabitTracker";
 import { formatDateISO, getDaysInMonth, getDayCompletionPercentage } from "@/utils/habitUtils";
-import { getDubaiDate } from "@/utils/dateUtils";
+import { getDubaiDate, getTodayISO } from "@/utils/dateUtils";
 import { Separator } from "@/components/ui/separator";
 import { habitColors } from "@/utils/chartUtils";
 import { useMediaQuery } from "@/hooks/use-mobile";
@@ -102,7 +103,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
   const renderDay = (date: Date) => {
     const dayData = getDayData(date);
     const isoDate = formatDateISO(date);
-    const todayISO = formatDateISO(dubaiToday);
+    const todayISO = getTodayISO();
     const isToday = todayISO === isoDate;
     const isPast = date < new Date(dubaiToday.setHours(0, 0, 0, 0));
     const completedCount = getCompletedHabitsCount(dayData);
@@ -113,6 +114,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     if (isToday) {
       console.log(`Calendar: Rendering TODAY (${isoDate}). DayData:`, dayData);
       console.log(`Calendar: Dubai today calculated as:`, todayISO);
+      console.log(`Calendar: Date comparison - todayISO: ${todayISO}, isoDate: ${isoDate}, match: ${todayISO === isoDate}`);
     }
     
     // Check if alcohol is planned (no alcohol day)
