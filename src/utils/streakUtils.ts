@@ -1,3 +1,4 @@
+
 import { HabitsState, HabitType } from "@/types/habit";
 import { formatDateISO, getDaysInMonth } from "./habitUtils";
 
@@ -22,10 +23,11 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
     return 0;
   }
 
+  // Use current date properly
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayISO = formatDateISO(today);
   console.log('Today date object:', today);
-  console.log('Today ISO:', formatDateISO(today));
+  console.log('Today ISO:', todayISO);
   
   let streak = 0;
   
@@ -33,45 +35,6 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
   let currentWeekStart = getMondayOfWeek(today);
   console.log('Starting from week beginning:', formatDateISO(currentWeekStart));
   
-  // If we're in the middle of the current week, check if it's complete first
-  const currentWeekEnd = new Date(currentWeekStart);
-  currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
-  
-  const dayOfWeek = today.getDay();
-  const isCurrentWeekIncomplete = currentWeekEnd >= today && dayOfWeek >= 3; // Wednesday or later
-  
-  console.log('Current week end:', formatDateISO(currentWeekEnd));
-  console.log('Day of week:', dayOfWeek);
-  console.log('Is current week incomplete?', isCurrentWeekIncomplete);
-  
-  if (isCurrentWeekIncomplete) {
-    // Check if current week has any incomplete planned sessions
-    let hasIncompleteCurrentWeek = false;
-    for (let i = 0; i < 7; i++) {
-      const checkDate = new Date(currentWeekStart);
-      checkDate.setDate(currentWeekStart.getDate() + i);
-      
-      if (checkDate > today) continue;
-      
-      const dateISO = formatDateISO(checkDate);
-      const dayData = state.days[dateISO];
-      
-      console.log(`Checking current week day ${dateISO}:`, dayData?.gym);
-      
-      if (dayData?.gym?.planned && !dayData.gym.completed) {
-        hasIncompleteCurrentWeek = true;
-        break;
-      }
-    }
-    
-    console.log('Has incomplete current week?', hasIncompleteCurrentWeek);
-    
-    if (hasIncompleteCurrentWeek) {
-      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-      console.log('Skipping current week, starting from:', formatDateISO(currentWeekStart));
-    }
-  }
-
   // Go back up to 2 years to find streaks (prevent infinite loop)
   let weeksChecked = 0;
   const maxWeeksToCheck = 104; // 2 years
@@ -79,7 +42,6 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
   while (weeksChecked < maxWeeksToCheck) {
     const weekEnd = new Date(currentWeekStart);
     weekEnd.setDate(currentWeekStart.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
 
     console.log(`\n--- Checking gym week ${weeksChecked + 1} ---`);
     console.log('Week start:', formatDateISO(currentWeekStart));
@@ -87,13 +49,14 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
 
     let plannedDays = 0;
     let completedDays = 0;
+    let hasAnyGymData = false;
 
     // Check each day of the week
     for (let i = 0; i < 7; i++) {
       const checkDate = new Date(currentWeekStart);
       checkDate.setDate(currentWeekStart.getDate() + i);
       
-      // Don't check future days
+      // Don't check future days beyond today
       if (checkDate > today) {
         console.log(`Skipping future date: ${formatDateISO(checkDate)}`);
         continue;
@@ -104,31 +67,63 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
       
       console.log(`Day ${formatDateISO(checkDate)}:`, dayData?.gym || 'NO GYM DATA');
 
-      if (dayData?.gym?.planned) {
-        plannedDays++;
-        if (dayData.gym.completed) {
-          completedDays++;
+      if (dayData?.gym) {
+        hasAnyGymData = true;
+        if (dayData.gym.planned) {
+          plannedDays++;
+          if (dayData.gym.completed) {
+            completedDays++;
+          }
         }
       }
     }
 
-    console.log(`Week summary: planned=${plannedDays}, completed=${completedDays}`);
+    console.log(`Week summary: planned=${plannedDays}, completed=${completedDays}, hasAnyGymData=${hasAnyGymData}`);
 
-    // If no gym was planned this week, skip it (don't break streak)
-    if (plannedDays === 0) {
-      console.log('No gym planned this week, skipping without breaking streak');
-      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-      weeksChecked++;
-      continue;
-    }
-
-    // If all planned gym sessions were completed, continue streak
-    if (plannedDays === completedDays && plannedDays > 0) {
-      streak++;
-      console.log(`Perfect gym week! Streak now: ${streak}`);
+    // If this is the current week and we're early in the week, check if we should count it
+    const isCurrentWeek = currentWeekStart <= today && weekEnd >= today;
+    
+    if (isCurrentWeek) {
+      console.log('This is the current week');
+      // For current week, only count if we have some gym activity planned and it's not too early in the week
+      const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      if (dayOfWeek >= 1 && plannedDays > 0) { // From Monday onwards
+        // Check if we have any incomplete planned sessions
+        let hasIncompleteThisWeek = false;
+        for (let i = 0; i < 7; i++) {
+          const checkDate = new Date(currentWeekStart);
+          checkDate.setDate(currentWeekStart.getDate() + i);
+          
+          if (checkDate > today) continue;
+          
+          const dateISO = formatDateISO(checkDate);
+          const dayData = state.days[dateISO];
+          
+          if (dayData?.gym?.planned && !dayData.gym.completed) {
+            hasIncompleteThisWeek = true;
+            break;
+          }
+        }
+        
+        if (hasIncompleteThisWeek) {
+          console.log('Current week has incomplete gym sessions, not counting');
+        } else if (plannedDays === completedDays && plannedDays > 0) {
+          streak++;
+          console.log(`Perfect current gym week! Streak now: ${streak}`);
+        }
+      }
     } else {
-      console.log('Gym streak broken - not all planned sessions completed');
-      break;
+      // For past weeks
+      if (!hasAnyGymData || plannedDays === 0) {
+        console.log('No gym data for this past week, skipping without breaking streak');
+      } else if (plannedDays === completedDays && plannedDays > 0) {
+        streak++;
+        console.log(`Perfect past gym week! Streak now: ${streak}`);
+      } else {
+        console.log('Past gym week was incomplete, breaking streak');
+        break;
+      }
     }
 
     currentWeekStart.setDate(currentWeekStart.getDate() - 7);
@@ -149,7 +144,6 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
   }
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
   let streak = 0;
   
   // Start from the Monday of this week and go backwards
@@ -169,6 +163,7 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
 
     let plannedDays = 0;
     let completedDays = 0;
+    let hasAnyMeditationData = false;
 
     // Check each day of the week
     for (let i = 0; i < 7; i++) {
@@ -183,31 +178,57 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
 
       console.log(`Day ${formatDateISO(checkDate)}:`, dayData?.meditation || 'NO MEDITATION DATA');
 
-      if (dayData?.meditation?.planned) {
-        plannedDays++;
-        if (dayData.meditation.completed) {
-          completedDays++;
+      if (dayData?.meditation) {
+        hasAnyMeditationData = true;
+        if (dayData.meditation.planned) {
+          plannedDays++;
+          if (dayData.meditation.completed) {
+            completedDays++;
+          }
         }
       }
     }
 
-    console.log(`Meditation week summary: planned=${plannedDays}, completed=${completedDays}`);
+    console.log(`Meditation week summary: planned=${plannedDays}, completed=${completedDays}, hasAnyMeditationData=${hasAnyMeditationData}`);
 
-    // If no meditation was planned this week, skip it
-    if (plannedDays === 0) {
-      console.log('No meditation planned this week, skipping');
-      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-      weeksChecked++;
-      continue;
-    }
-
-    // If all planned meditation sessions were completed, continue streak
-    if (plannedDays === completedDays && plannedDays > 0) {
-      streak++;
-      console.log(`Perfect meditation week! Streak now: ${streak}`);
+    // Similar logic to gym
+    const isCurrentWeek = currentWeekStart <= today && weekEnd >= today;
+    
+    if (isCurrentWeek) {
+      const dayOfWeek = today.getDay();
+      
+      if (dayOfWeek >= 1 && plannedDays > 0) {
+        let hasIncompleteThisWeek = false;
+        for (let i = 0; i < 7; i++) {
+          const checkDate = new Date(currentWeekStart);
+          checkDate.setDate(currentWeekStart.getDate() + i);
+          
+          if (checkDate > today) continue;
+          
+          const dateISO = formatDateISO(checkDate);
+          const dayData = state.days[dateISO];
+          
+          if (dayData?.meditation?.planned && !dayData.meditation.completed) {
+            hasIncompleteThisWeek = true;
+            break;
+          }
+        }
+        
+        if (!hasIncompleteThisWeek && plannedDays === completedDays && plannedDays > 0) {
+          streak++;
+          console.log(`Perfect current meditation week! Streak now: ${streak}`);
+        }
+      }
     } else {
-      console.log('Meditation streak broken');
-      break;
+      if (!hasAnyMeditationData || plannedDays === 0) {
+        console.log('No meditation data for this past week, skipping');
+      } else if (plannedDays === completedDays && plannedDays > 0) {
+        streak++;
+        console.log(`Perfect past meditation week! Streak now: ${streak}`);
+      } else {
+        console.log('Past meditation week was incomplete, breaking streak');
+        break;
+      }
     }
 
     currentWeekStart.setDate(currentWeekStart.getDate() - 7);
@@ -230,7 +251,6 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
   }
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
   let streak = 0;
   let currentDate = new Date(today);
 
@@ -248,26 +268,25 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
     console.log('Day data:', dayData);
     console.log('Alcohol data:', dayData?.alcohol);
 
-    // For alcohol: planned=true and completed=true means NO alcohol was consumed (goal achieved)
+    // For alcohol: 
+    // - planned=true means "I plan to avoid alcohol"
+    // - completed=true means "I successfully avoided alcohol"
+    // So planned=true AND completed=true = successful no-alcohol day
     if (dayData?.alcohol?.planned) {
       if (dayData.alcohol.completed) {
-        // No alcohol consumed - continue streak
+        // Successfully avoided alcohol - continue streak
         streak++;
-        console.log(`No alcohol day found! Streak now: ${streak}`);
+        console.log(`Successful no-alcohol day! Streak now: ${streak}`);
       } else {
-        // Alcohol was consumed - break streak
-        console.log('Alcohol consumed, breaking streak');
+        // Planned to avoid but didn't - alcohol was consumed, break streak
+        console.log('Alcohol was consumed (planned but not completed), breaking streak');
         break;
       }
     } else {
-      // If no alcohol plan for this day, we should probably break the streak
-      // as it indicates we weren't tracking alcohol that day
-      console.log('No alcohol plan for this day - should we count it?');
-      // For now, let's break the streak if there's no plan
-      if (daysChecked > 0) { // Don't break on the first day if no plan
-        console.log('No alcohol tracking for this day, breaking streak');
-        break;
-      }
+      // If no alcohol plan for this day, we break the streak
+      // This indicates we weren't actively avoiding alcohol
+      console.log('No alcohol avoidance plan for this day, breaking streak');
+      break;
     }
 
     currentDate.setDate(currentDate.getDate() - 1);
