@@ -22,17 +22,7 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Helper function to get Monday of any given date (copied from streakUtils)
-const getMondayOfWeek = (date: Date): Date => {
-  const result = new Date(date);
-  const day = result.getDay();
-  const diff = result.getDate() - day + (day === 0 ? -6 : 1);
-  result.setDate(diff);
-  result.setHours(0, 0, 0, 0);
-  return result;
-};
-
-// Calculate alcohol streak (consecutive days) - MODIFIED FROM GYM LOGIC
+// Calculate alcohol streak (consecutive days) - COMPLETELY REWRITTEN FOR DAILY LOGIC
 const calculateAlcoholStreakDays = (state: HabitsState): number => {
   console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS) ===');
   console.log('Full habits state:', state);
