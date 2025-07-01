@@ -1,33 +1,14 @@
 
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { HabitType, HabitData, DayData, HabitStats, HabitsState, HabitGoal, MonthlyGoals } from "@/types/habit";
+import { getDubaiDate, formatDateISO, getTodayISO, parseISODate, getDaysInMonth, formatYearMonth } from "./dateUtils";
 
-// Get all days in a month
-export const getDaysInMonth = (year: number, month: number): Date[] => {
-  const days: Date[] = [];
-  const date = new Date(year, month, 1);
-  
-  while (date.getMonth() === month) {
-    days.push(new Date(date));
-    date.setDate(date.getDate() + 1);
-  }
-  
-  return days;
-};
+// Export the universal date functions
+export { getDubaiDate, formatDateISO, getTodayISO, parseISODate, getDaysInMonth, formatYearMonth };
 
-// Format date as ISO string (YYYY-MM-DD)
-export const formatDateISO = (date: Date): string => {
-  return date.toISOString().split('T')[0];
-};
-
-// Format month as YYYY-MM
-export const formatYearMonth = (year: number, month: number): string => {
-  return `${year}-${String(month + 1).padStart(2, '0')}`;
-};
-
-// Get current month key
+// Get current month key using Dubai timezone
 export const getCurrentMonthKey = (): string => {
-  const date = new Date();
+  const date = getDubaiDate();
   return formatYearMonth(date.getFullYear(), date.getMonth());
 };
 
@@ -82,7 +63,7 @@ export const getStartOfWeek = (date: Date): Date => {
   return result;
 };
 
-// Calculate habit statistics for a specific month
+// Calculate habit statistics for a specific month using Dubai timezone
 export const calculateHabitStats = (state: HabitsState, habitType: HabitType, year?: number, month?: number): HabitStats => {
   // Ensure state and days exist
   if (!state || !state.days) {
@@ -101,7 +82,7 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
   if (year !== undefined && month !== undefined) {
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0); // Last day of month
-    const today = new Date();
+    const today = getDubaiDate(); // Use Dubai timezone
     
     // Get all days in the month up to today
     const daysInMonth = getDaysInMonth(year, month);
@@ -131,10 +112,10 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
   let totalCompleted = 0;
   let currentWeekCompleted = 0;
   
-  const today = new Date();
+  const today = getDubaiDate(); // Use Dubai timezone
   const weekStart = getStartOfWeek(today);
   
-  console.log(`calculateHabitStats: Processing ${habitType} for ${relevantDays.length} days`);
+  console.log(`calculateHabitStats: Processing ${habitType} for ${relevantDays.length} days using Dubai timezone`);
   
   // For sleep, calculate based on sleep hours instead of planned/completed
   if (habitType === 'sleep') {
@@ -237,7 +218,7 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
   };
 };
 
-// New function to calculate sleep quality stats for a specific month
+// Calculate sleep quality stats for a specific month using Dubai timezone
 export const calculateSleepQualityStats = (state: HabitsState, year: number, month: number) => {
   if (!state || !state.days) {
     return { goodSleep: 0, averageSleep: 0, badSleep: 0 };
@@ -245,7 +226,7 @@ export const calculateSleepQualityStats = (state: HabitsState, year: number, mon
   
   const monthStart = new Date(year, month, 1);
   const monthEnd = new Date(year, month + 1, 0);
-  const today = new Date();
+  const today = getDubaiDate(); // Use Dubai timezone
   
   let goodSleep = 0;
   let averageSleep = 0;
@@ -303,7 +284,7 @@ export const createDefaultMonthlyGoals = (): MonthlyGoals => {
   };
   
   return {
-    // Start with current month
-    [formatYearMonth(new Date().getFullYear(), new Date().getMonth())]: defaultGoals
+    // Start with current month using Dubai timezone
+    [formatYearMonth(getDubaiDate().getFullYear(), getDubaiDate().getMonth())]: defaultGoals
   };
 };

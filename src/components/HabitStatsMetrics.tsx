@@ -1,5 +1,4 @@
 
-
 import React from "react";
 import { HabitType, HabitStats, HabitsState } from "@/types/habit";
 import { habitColors } from "@/utils/chartUtils";
@@ -9,7 +8,7 @@ import {
   getWeekStreakStyling,
   getDayStreakStyling 
 } from "@/utils/streakUtils";
-import { formatDateISO, getDaysInMonth } from "@/utils/habitUtils";
+import { getDubaiDate, getTodayISO, getDaysInMonth } from "@/utils/habitUtils";
 
 interface SleepQualityStats {
   goodSleep: number;
@@ -24,9 +23,9 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Calculate alcohol streak (consecutive days) - FIXED DATE HANDLING
+// Calculate alcohol streak (consecutive days) - UNIVERSAL DUBAI TIMEZONE
 const calculateAlcoholStreakDays = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS) - FIXED DATE HANDLING ===');
+  console.log('=== CALCULATING ALCOHOL STREAK (DUBAI TIMEZONE) ===');
   console.log('Full habits state:', state);
   console.log('Available days in state:', Object.keys(state?.days || {}));
   
@@ -35,13 +34,22 @@ const calculateAlcoholStreakDays = (state: HabitsState): number => {
     return 0;
   }
 
-  // Find the most recent day with alcohol data instead of assuming today
+  // Use Dubai timezone consistently
+  const todayISO = getTodayISO();
+  console.log('Today in Dubai timezone:', todayISO);
+
+  // Find all dates with alcohol data, sorted from newest to oldest
   const availableDates = Object.keys(state.days)
-    .filter(dateStr => state.days[dateStr]?.alcohol?.planned)
+    .filter(dateStr => {
+      const dayData = state.days[dateStr];
+      const hasAlcoholData = dayData?.alcohol?.planned;
+      console.log(`Date ${dateStr} has alcohol data:`, hasAlcoholData, dayData?.alcohol);
+      return hasAlcoholData;
+    })
     .sort()
     .reverse(); // Most recent first
   
-  console.log('Available dates with alcohol data:', availableDates);
+  console.log('Available dates with alcohol data (newest first):', availableDates);
   
   if (availableDates.length === 0) {
     console.log('No alcohol data found in any day');
@@ -85,10 +93,11 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
 }) => {
   const colors = habitColors[habitType];
 
-  // Add debugging
-  console.log(`=== HabitStatsMetrics Debug for ${habitType} ===`);
+  // Add debugging with Dubai timezone
+  console.log(`=== HabitStatsMetrics Debug for ${habitType} (Dubai timezone) ===`);
   console.log('habitsState received:', habitsState);
   console.log('habitsState.days keys:', habitsState ? Object.keys(habitsState.days) : 'NO HABITS STATE');
+  console.log('Current Dubai time:', getTodayISO());
 
   if (habitType === 'sleep' && sleepQualityStats) {
     return (
@@ -130,7 +139,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'alcohol') {
-      console.log('Calling calculateAlcoholStreakDays (consecutive days)...');
+      console.log('Calling calculateAlcoholStreakDays (consecutive days with Dubai timezone)...');
       streakValue = calculateAlcoholStreakDays(habitsState);
       console.log('Alcohol streak result:', streakValue);
       streakLabel = "Current streak (consecutive days)";
@@ -175,4 +184,3 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
 };
 
 export default HabitStatsMetrics;
-

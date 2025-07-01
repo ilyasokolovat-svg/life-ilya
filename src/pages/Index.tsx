@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -8,7 +9,8 @@ import GoalSetting from "@/components/GoalSetting";
 import { HabitType, HabitData, HabitGoal } from "@/types/habit";
 import { 
   calculateHabitStats, 
-  formatDateISO, 
+  getDubaiDate,
+  getTodayISO,
   formatYearMonth,
   getMonthGoals
 } from "@/utils/habitUtils";
@@ -28,9 +30,10 @@ const Index = () => {
   // Use our hybrid habits hook
   const { habitsState, updateDay, updateGoal, syncEnabled, toggleSync, isSyncing, forceSyncToCloud } = useHabits();
 
-  // Track current view month/year for charts and calendar
-  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
-  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  // Track current view month/year for charts and calendar using Dubai timezone
+  const dubaiDate = getDubaiDate();
+  const [viewMonth, setViewMonth] = useState(dubaiDate.getMonth());
+  const [viewYear, setViewYear] = useState(dubaiDate.getFullYear());
   
   // Track individual chart months/years
   const [chartMonths, setChartMonths] = useState({
@@ -67,7 +70,7 @@ const Index = () => {
   const handleMonthChange = (month: number, year: number) => {
     // Ensure we don't go beyond reasonable bounds
     const minYear = 2020;
-    const maxYear = new Date().getFullYear() + 1;
+    const maxYear = getDubaiDate().getFullYear() + 1;
     
     if (year < minYear || year > maxYear) {
       console.warn(`Year ${year} is out of bounds (${minYear}-${maxYear})`);
@@ -143,13 +146,11 @@ const Index = () => {
     navigate('/');
   };
 
-  // Get today's data - ensure consistent date handling
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Reset to start of day for consistency
-  const todayISO = formatDateISO(today);
+  // Get today's data using Dubai timezone consistently
+  const todayISO = getTodayISO();
   const todayData = habitsState.days[todayISO] || null;
 
-  console.log('Index: Today is:', todayISO, 'Data:', todayData);
+  console.log('Index: Today is (Dubai timezone):', todayISO, 'Data:', todayData);
 
   return (
     <div className="min-h-screen bg-blue-light/10 pb-12">
@@ -273,6 +274,12 @@ const Index = () => {
         
         <div className="container mx-auto px-4 pb-2">
           <p className="text-center text-gray-600 text-sm md:text-base">Track your journey to become a better version of yourself</p>
+          <p className="text-center text-gray-500 text-xs">Dubai Time (GMT+4): {dubaiDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric',
+            year: 'numeric'
+          })}</p>
         </div>
       </header>
       
