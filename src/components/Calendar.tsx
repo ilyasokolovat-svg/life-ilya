@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,13 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
 
   const getDayData = (date: Date): DayData | undefined => {
     const isoDate = formatDateISO(date);
-    return days[isoDate];
+    const dayData = days[isoDate];
+    
+    // Add debug logging to see what's happening
+    console.log(`Calendar: getDayData for ${isoDate}:`, dayData);
+    console.log(`Calendar: Available days keys:`, Object.keys(days));
+    
+    return dayData;
   };
 
   const getCompletedHabitsCount = (dayData: DayData | undefined): number => {
@@ -103,6 +108,12 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     const completedCount = getCompletedHabitsCount(dayData);
     const progressPercentage = (completedCount / 4) * 100;
     const isAllCompleted = completedCount === 4;
+    
+    // Add debug logging for today's date
+    if (isToday) {
+      console.log(`Calendar: Rendering TODAY (${isoDate}). DayData:`, dayData);
+      console.log(`Calendar: Dubai today calculated as:`, todayISO);
+    }
     
     // Check if alcohol is planned (no alcohol day)
     const isAlcoholPlanned = dayData?.alcohol?.planned || false;
