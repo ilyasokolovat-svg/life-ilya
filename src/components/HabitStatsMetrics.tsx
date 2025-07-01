@@ -1,3 +1,4 @@
+
 import React from "react";
 import { HabitType, HabitStats, HabitsState } from "@/types/habit";
 import { habitColors } from "@/utils/chartUtils";
@@ -22,9 +23,9 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Calculate alcohol streak (consecutive days) - COMPLETELY REWRITTEN FOR DAILY LOGIC
+// Calculate alcohol streak (consecutive days) - FIXED VERSION
 const calculateAlcoholStreakDays = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS) ===');
+  console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS) - FIXED ===');
   console.log('Full habits state:', state);
   console.log('Available days in state:', Object.keys(state?.days || {}));
   
@@ -53,11 +54,16 @@ const calculateAlcoholStreakDays = (state: HabitsState): number => {
     console.log(`\n--- Checking alcohol day ${daysChecked + 1}: ${dateISO} ---`);
 
     const dayData = state.days[dateISO];
-    console.log(`Day data for ${dateISO}:`, dayData?.alcohol || 'NO ALCOHOL DATA');
+    console.log(`Day data for ${dateISO}:`, dayData);
+    
+    if (dayData) {
+      console.log(`Full day data structure:`, JSON.stringify(dayData, null, 2));
+      console.log(`Alcohol data:`, dayData.alcohol);
+    }
 
     if (dayData?.alcohol) {
       const alcoholData = dayData.alcohol;
-      console.log(`Alcohol data: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
+      console.log(`Alcohol data details: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
       
       if (alcoholData.planned) {
         if (alcoholData.completed) {
