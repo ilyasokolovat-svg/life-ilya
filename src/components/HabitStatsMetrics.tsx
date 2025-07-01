@@ -31,6 +31,11 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
 }) => {
   const colors = habitColors[habitType];
 
+  // Add debugging
+  console.log(`=== HabitStatsMetrics Debug for ${habitType} ===`);
+  console.log('habitsState received:', habitsState);
+  console.log('habitsState.days keys:', habitsState ? Object.keys(habitsState.days) : 'NO HABITS STATE');
+
   if (habitType === 'sleep' && sleepQualityStats) {
     return (
       <div className="grid grid-cols-3 gap-2">
@@ -55,21 +60,33 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   let streakLabel = "";
   let styling = { backgroundColor: '#F8F9FA', color: '#6C757D', stars: 0, label: '0' };
 
+  console.log(`Calculating streak for ${habitType}, habitsState exists:`, !!habitsState);
+
   if (habitsState) {
     if (habitType === 'gym') {
+      console.log('Calling calculateGymStreakWeeks...');
       streakValue = calculateGymStreakWeeks(habitsState);
+      console.log('Gym streak result:', streakValue);
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'meditation') {
+      console.log('Calling calculateMeditationStreakWeeks...');
       streakValue = calculateMeditationStreakWeeks(habitsState);
+      console.log('Meditation streak result:', streakValue);
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'alcohol') {
+      console.log('Calling calculateAlcoholStreakDays...');
       streakValue = calculateAlcoholStreakDays(habitsState);
+      console.log('Alcohol streak result:', streakValue);
       streakLabel = "Current streak (days in a row)";
       styling = getDayStreakStyling(streakValue);
     }
+  } else {
+    console.log(`No habitsState provided for ${habitType}`);
   }
+
+  console.log(`Final styling for ${habitType}:`, styling);
 
   // Render stars if applicable
   const renderStars = () => {

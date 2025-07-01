@@ -34,6 +34,12 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   
   const colors = habitColors[habitType];
   
+  // Add debugging to see what's being passed
+  console.log(`=== HabitStats Debug for ${habitType} ===`);
+  console.log('habitsState prop:', habitsState);
+  console.log('habitsState type:', typeof habitsState);
+  console.log('habitsState keys:', habitsState ? Object.keys(habitsState) : 'null/undefined');
+  
   // Calculate sleep quality stats if this is sleep habit
   const sleepQualityStats = habitType === 'sleep' && habitsState 
     ? calculateSleepQualityStats(habitsState, viewYear, viewMonth)
