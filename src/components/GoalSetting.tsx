@@ -60,23 +60,20 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
     return new Date(2000, month, 1).toLocaleString('default', { month: 'long' });
   };
 
-  // Calculate planned days for a habit type in the current month
+  // Calculate planned days for a habit type in the entire month
   const getPlannedDaysCount = (habitType: HabitType) => {
     if (!habitsState?.days) return 0;
     
     const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
-    const today = new Date();
     let plannedCount = 0;
     
+    // Count ALL planned days in the month, not just up to today
     daysInCurrentMonth.forEach(date => {
-      // Only count days up to today
-      if (date <= today) {
-        const dateISO = formatDateISO(date);
-        const dayData = habitsState.days[dateISO];
-        
-        if (dayData && dayData[habitType] && dayData[habitType].planned) {
-          plannedCount++;
-        }
+      const dateISO = formatDateISO(date);
+      const dayData = habitsState.days[dateISO];
+      
+      if (dayData && dayData[habitType] && dayData[habitType].planned) {
+        plannedCount++;
       }
     });
     
@@ -84,7 +81,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
     return plannedCount;
   };
 
-  // Calculate completed days for a habit type in the current month
+  // Calculate completed days for a habit type in the current month (only up to today)
   const getCompletedDaysCount = (habitType: HabitType) => {
     if (habitType === 'sleep') {
       // For sleep, use the sleep quality stats
@@ -102,7 +99,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
     let completedCount = 0;
     
     daysInCurrentMonth.forEach(date => {
-      // Only count days up to today
+      // Only count days up to today for completed
       if (date <= today) {
         const dateISO = formatDateISO(date);
         const dayData = habitsState.days[dateISO];
@@ -143,7 +140,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
       totalDays = getTotalDaysInMonth();
       completed = getCompletedDaysCount('sleep');
     } else {
-      // For other habits, total is planned days, completed is completed planned days
+      // For other habits, total is ALL planned days in month, completed is completed planned days up to today
       totalDays = getPlannedDaysCount(habitType);
       completed = getCompletedDaysCount(habitType);
     }
