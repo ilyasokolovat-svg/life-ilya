@@ -5,10 +5,8 @@ import { habitColors } from "@/utils/chartUtils";
 import { 
   calculateGymStreakWeeks, 
   calculateMeditationStreakWeeks, 
-  getWeekStreakStyling,
-  getDayStreakStyling 
+  getWeekStreakStyling
 } from "@/utils/streakUtils";
-import { getDubaiDate, getTodayISO, formatDateISO } from "@/utils/dateUtils";
 
 interface SleepQualityStats {
   goodSleep: number;
@@ -23,70 +21,6 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Calculate alcohol streak (consecutive days) - COPIED FROM GYM LOGIC BUT FOR DAYS
-const calculateAlcoholStreakDays = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS - COPIED FROM GYM LOGIC) ===');
-  console.log('Full habits state:', state);
-  console.log('Available days in state:', Object.keys(state?.days || {}));
-  
-  if (!state || !state.days) {
-    console.log('No state or days data available');
-    return 0;
-  }
-
-  // Use Dubai timezone consistently
-  const today = getDubaiDate();
-  const todayISO = getTodayISO();
-  console.log('Today in Dubai timezone:', todayISO);
-  console.log('Today date object:', today);
-
-  let streak = 0;
-  
-  // Start from today and go backwards day by day (like gym logic but for days instead of weeks)
-  let currentDate = new Date(today);
-  console.log('Starting from date:', formatDateISO(currentDate));
-  
-  // Go back up to 60 days to find streaks (prevent infinite loop)
-  let daysChecked = 0;
-  const maxDaysToCheck = 60;
-
-  while (daysChecked < maxDaysToCheck) {
-    const dateISO = formatDateISO(currentDate);
-    console.log(`\n--- Checking alcohol day ${daysChecked + 1}: ${dateISO} ---`);
-
-    const dayData = state.days[dateISO];
-    console.log(`Day data for ${dateISO}:`, dayData);
-    
-    if (dayData?.alcohol) {
-      const alcoholData = dayData.alcohol;
-      console.log(`Alcohol data details: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
-      
-      if (alcoholData.planned) {
-        if (alcoholData.completed) {
-          streak++;
-          console.log(`✅ Completed alcohol avoidance on ${dateISO}! Streak now: ${streak}`);
-        } else {
-          console.log(`❌ Failed alcohol avoidance on ${dateISO}, breaking streak`);
-          break; // Break the streak like in gym logic
-        }
-      } else {
-        // No alcohol planned for this day - skip but don't break streak (like gym logic)
-        console.log(`⚪ Alcohol avoidance not planned for ${dateISO}, skipping without breaking streak`);
-      }
-    } else {
-      // No alcohol data for this day - skip but don't break streak (like gym logic)
-      console.log(`⚫ No alcohol data for ${dateISO}, skipping without breaking streak`);
-    }
-
-    // Move to previous day
-    currentDate.setDate(currentDate.getDate() - 1);
-    daysChecked++;
-  }
-
-  console.log('=== FINAL ALCOHOL STREAK:', streak, 'DAYS ===');
-  return streak;
-};
-
 const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   habitType,
   stats,
@@ -94,12 +28,6 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   habitsState
 }) => {
   const colors = habitColors[habitType];
-
-  // Add debugging with Dubai timezone
-  console.log(`=== HabitStatsMetrics Debug for ${habitType} (Dubai timezone) ===`);
-  console.log('habitsState received:', habitsState);
-  console.log('habitsState.days keys:', habitsState ? Object.keys(habitsState.days) : 'NO HABITS STATE');
-  console.log('Current Dubai time:', getTodayISO());
 
   if (habitType === 'sleep' && sleepQualityStats) {
     return (
@@ -120,46 +48,34 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     );
   }
 
-  // Calculate streaks for other habit types
+  // For alcohol, just show basic completion stats without streak
+  if (habitType === 'alcohol') {
+    return (
+      <div className="grid grid-cols-1 gap-2">
+        <div className="p-2 rounded-md bg-red-100">
+          <p className="text-xs text-muted-foreground">Days Completed</p>
+          <h3 className="text-xl font-bold">{stats.completed}</h3>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate streaks for gym and meditation only
   let streakValue = 0;
   let streakLabel = "";
   let styling = { backgroundColor: '#F8F9FA', color: '#6C757D', stars: 0, label: '0' };
 
-  console.log(`🔥🔥🔥 STARTING CALCULATION FOR ${habitType}, habitsState exists:`, !!habitsState);
-
   if (habitsState) {
     if (habitType === 'gym') {
-      console.log('Calling calculateGymStreakWeeks...');
       streakValue = calculateGymStreakWeeks(habitsState);
-      console.log('Gym streak result:', streakValue);
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'meditation') {
-      console.log('Calling calculateMeditationStreakWeeks...');
       streakValue = calculateMeditationStreakWeeks(habitsState);
-      console.log('Meditation streak result:', streakValue);
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
-    } else if (habitType === 'alcohol') {
-      console.log('🍷🍷🍷 CALLING calculateAlcoholStreakDays...');
-      streakValue = calculateAlcoholStreakDays(habitsState);
-      console.log('🍷🍷🍷 ALCOHOL STREAK RESULT:', streakValue, 'days');
-      streakLabel = "Current streak (consecutive days)";
-      
-      // Force the styling but override the label
-      styling = getDayStreakStyling(streakValue);
-      styling.label = `${streakValue} days`; // Force correct label
-      
-      console.log('🍷🍷🍷 FORCED STYLING LABEL:', styling.label);
     }
-  } else {
-    console.log(`❌❌❌ No habitsState provided for ${habitType}`);
   }
-
-  console.log(`🎯🎯🎯 FINAL VALUES FOR ${habitType.toUpperCase()}:`);
-  console.log('- streakValue:', streakValue);
-  console.log('- styling.label:', styling.label);
-  console.log('- styling object:', styling);
 
   // Render stars if applicable
   const renderStars = () => {
@@ -174,11 +90,6 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     );
   };
 
-  // ALWAYS use the calculated streakValue for alcohol
-  const displayLabel = habitType === 'alcohol' ? `${streakValue} days` : styling.label;
-  
-  console.log(`🚀🚀🚀 FINAL DISPLAY LABEL FOR ${habitType.toUpperCase()}:`, displayLabel);
-
   return (
     <div className="grid grid-cols-1 gap-2">
       <div 
@@ -190,7 +101,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       >
         <p className="text-xs opacity-80">{streakLabel}</p>
         <div className="flex items-center gap-2">
-          <h3 className="text-xl font-bold">{displayLabel}</h3>
+          <h3 className="text-xl font-bold">{styling.label}</h3>
           {renderStars()}
         </div>
       </div>

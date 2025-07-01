@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
-import { getDubaiDate, getTodayISO } from "@/utils/habitUtils";
+import { formatDateISO } from "@/utils/habitUtils";
 
 interface TodayHabitsProps {
   todayData: DayData | null;
@@ -13,11 +13,12 @@ interface TodayHabitsProps {
 }
 
 const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) => {
-  // Use universal Dubai timezone
-  const today = getDubaiDate();
-  const todayISO = getTodayISO();
+  // Use standard date handling that matches the calendar
+  const today = new Date();
+  const todayISO = formatDateISO(today);
 
-  console.log('TodayHabits: Using Dubai timezone date:', todayISO, 'Date object:', today);
+  console.log('TodayHabits: Using date:', todayISO, 'Date object:', today);
+  console.log('TodayHabits: Received todayData:', todayData);
 
   const handleHabitComplete = (habitType: HabitType, completed: boolean) => {
     // Get current data for this habit or create default
@@ -109,7 +110,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
               weekday: 'long', 
               month: 'short', 
               day: 'numeric' 
-            })} ({todayISO}) - Dubai Time
+            })} ({todayISO})
           </span>
         </CardTitle>
       </CardHeader>
