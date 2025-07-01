@@ -282,14 +282,15 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
         console.log('Alcohol was consumed (planned but not completed), breaking streak');
         break;
       } else if (!dayData.alcohol.planned) {
-        // No plan to avoid alcohol - this means we weren't actively avoiding it
-        console.log('No alcohol avoidance plan for this day, breaking streak');
-        break;
+        // No plan to avoid alcohol - but if we have no data about alcohol consumption, 
+        // we should continue the streak (assume no alcohol was consumed)
+        console.log('No alcohol avoidance plan for this day, but continuing streak (assuming no alcohol)');
+        streak++;
       }
     } else {
-      // No alcohol data at all - break streak
-      console.log('No alcohol data for this day, breaking streak');
-      break;
+      // No alcohol data at all - assume no alcohol was consumed, continue streak
+      console.log('No alcohol data for this day, continuing streak (assuming no alcohol)');
+      streak++;
     }
 
     currentDate.setDate(currentDate.getDate() - 1);

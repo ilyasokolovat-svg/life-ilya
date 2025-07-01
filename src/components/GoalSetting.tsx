@@ -63,25 +63,41 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   // Calculate planned days for a habit type in the current month
   const getPlannedDaysCount = (habitType: HabitType) => {
     if (habitType === 'sleep') {
-      // For sleep, return total days in the month
+      // For sleep, return total days in the month up to today
       const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
-      return daysInCurrentMonth.length;
+      const today = new Date();
+      const monthStart = new Date(viewYear, viewMonth, 1);
+      const monthEnd = new Date(viewYear, viewMonth + 1, 0);
+      
+      // Only count days up to today or end of month, whichever is earlier
+      const endDate = today < monthEnd ? today : monthEnd;
+      
+      if (endDate < monthStart) return 0;
+      
+      return Math.floor((endDate.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     }
     
     if (!habitsState?.days) return 0;
     
     const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
+    const today = new Date();
     let plannedCount = 0;
     
     daysInCurrentMonth.forEach(date => {
-      const dateISO = formatDateISO(date);
-      const dayData = habitsState.days[dateISO];
-      
-      if (dayData && dayData[habitType] && dayData[habitType].planned) {
-        plannedCount++;
+      // Only count days up to today
+      if (date <= today) {
+        const dateISO = formatDateISO(date);
+        const dayData = habitsState.days[dateISO];
+        
+        console.log(`GoalSetting: Checking ${habitType} for ${dateISO}:`, dayData?.[habitType]);
+        
+        if (dayData && dayData[habitType] && dayData[habitType].planned) {
+          plannedCount++;
+        }
       }
     });
     
+    console.log(`GoalSetting: Total planned days for ${habitType} in ${viewMonth}/${viewYear}:`, plannedCount);
     return plannedCount;
   };
 
@@ -89,6 +105,8 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   const getProgressData = (habitType: HabitType) => {
     const plannedDays = getPlannedDaysCount(habitType);
     const stats = habitStats[habitType];
+    
+    console.log(`GoalSetting: Progress data for ${habitType}:`, { plannedDays, stats });
     
     if (habitType === 'sleep' && habitsState) {
       const sleepQualityStats = calculateSleepQualityStats(habitsState, viewYear, viewMonth);
@@ -124,6 +142,8 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {habitTypes.map((habitType) => {
           const progressData = getProgressData(habitType);
+          
+          console.log(`GoalSetting: Final progress data for ${habitType}:`, progressData);
           
           return (
             <Card key={habitType} className="overflow-hidden">
