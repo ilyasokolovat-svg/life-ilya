@@ -1,4 +1,3 @@
-
 // Universal date utilities for Dubai timezone (GMT+4)
 import { format, parseISO } from "date-fns";
 
@@ -6,19 +5,26 @@ import { format, parseISO } from "date-fns";
 export const getDubaiDate = (): Date => {
   const now = new Date();
   
-  // Get the current time in Dubai timezone
-  const dubaiTime = new Date(now.toLocaleString("en-US", {
-    timeZone: "Asia/Dubai"
-  }));
+  // Get the current time in Dubai timezone using Intl.DateTimeFormat
+  const dubaiFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Dubai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
   
-  // Set to start of day (midnight Dubai time)
-  dubaiTime.setHours(0, 0, 0, 0);
-  
+  const dubaiDateString = dubaiFormatter.format(now);
   console.log('getDubaiDate: UTC now:', now.toISOString());
-  console.log('getDubaiDate: Dubai time calculated:', dubaiTime.toISOString());
-  console.log('getDubaiDate: Dubai date local string:', dubaiTime.toString());
+  console.log('getDubaiDate: Dubai date string:', dubaiDateString);
   
-  return dubaiTime;
+  // Parse the date string and create a proper Date object
+  const [year, month, day] = dubaiDateString.split('-').map(Number);
+  const dubaiDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+  
+  console.log('getDubaiDate: Dubai date calculated:', dubaiDate.toISOString());
+  console.log('getDubaiDate: Dubai date local string:', dubaiDate.toString());
+  
+  return dubaiDate;
 };
 
 // Format date as ISO string (YYYY-MM-DD) - universal across app
