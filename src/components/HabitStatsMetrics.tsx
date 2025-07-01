@@ -125,7 +125,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   let streakLabel = "";
   let styling = { backgroundColor: '#F8F9FA', color: '#6C757D', stars: 0, label: '0' };
 
-  console.log(`Calculating streak for ${habitType}, habitsState exists:`, !!habitsState);
+  console.log(`🔥🔥🔥 STARTING CALCULATION FOR ${habitType}, habitsState exists:`, !!habitsState);
 
   if (habitsState) {
     if (habitType === 'gym') {
@@ -141,20 +141,22 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'alcohol') {
-      console.log('Calling calculateAlcoholStreakDays (consecutive days - copied from gym logic)...');
+      console.log('🍷🍷🍷 CALLING calculateAlcoholStreakDays...');
       streakValue = calculateAlcoholStreakDays(habitsState);
-      console.log('❗ ALCOHOL STREAK CALCULATED:', streakValue, 'days');
+      console.log('🍷🍷🍷 ALCOHOL STREAK RESULT:', streakValue, 'days');
       streakLabel = "Current streak (consecutive days)";
-      console.log('❗ Before calling getDayStreakStyling with value:', streakValue);
+      
+      // Force the styling but override the label
       styling = getDayStreakStyling(streakValue);
-      console.log('❗ After calling getDayStreakStyling, received styling:', styling);
-      console.log('❗ Final styling.label that will be displayed:', styling.label);
+      styling.label = `${streakValue} days`; // Force correct label
+      
+      console.log('🍷🍷🍷 FORCED STYLING LABEL:', styling.label);
     }
   } else {
-    console.log(`No habitsState provided for ${habitType}`);
+    console.log(`❌❌❌ No habitsState provided for ${habitType}`);
   }
 
-  console.log(`❗❗ FINAL VALUES FOR ${habitType.toUpperCase()}:`);
+  console.log(`🎯🎯🎯 FINAL VALUES FOR ${habitType.toUpperCase()}:`);
   console.log('- streakValue:', streakValue);
   console.log('- styling.label:', styling.label);
   console.log('- styling object:', styling);
@@ -172,10 +174,10 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     );
   };
 
-  // Force the display for alcohol to use the calculated value
+  // ALWAYS use the calculated streakValue for alcohol
   const displayLabel = habitType === 'alcohol' ? `${streakValue} days` : styling.label;
   
-  console.log(`❗❗❗ FINAL DISPLAY LABEL FOR ${habitType.toUpperCase()}:`, displayLabel);
+  console.log(`🚀🚀🚀 FINAL DISPLAY LABEL FOR ${habitType.toUpperCase()}:`, displayLabel);
 
   return (
     <div className="grid grid-cols-1 gap-2">
