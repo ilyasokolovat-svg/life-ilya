@@ -5,7 +5,9 @@ import { habitColors } from "@/utils/chartUtils";
 import { 
   calculateGymStreakWeeks, 
   calculateMeditationStreakWeeks, 
-  getWeekStreakStyling
+  calculateAlcoholStreakDays,
+  getWeekStreakStyling,
+  getAlcoholDayStreakStyling
 } from "@/utils/streakUtils";
 
 interface SleepQualityStats {
@@ -48,13 +50,44 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     );
   }
 
-  // For alcohol, just show basic completion stats without streak
+  // For alcohol, show streak in days
   if (habitType === 'alcohol') {
+    let streakValue = 0;
+    let streakLabel = "Current streak (Days in a row)";
+    let styling = { backgroundColor: '#F8F9FA', color: '#6C757D', stars: 0, label: '0 days' };
+
+    if (habitsState) {
+      streakValue = calculateAlcoholStreakDays(habitsState);
+      styling = getAlcoholDayStreakStyling(streakValue);
+    }
+
+    // Render stars if applicable
+    const renderStars = () => {
+      if (styling.stars === 0) return null;
+      
+      return (
+        <div className="flex gap-1 mt-1">
+          {Array.from({ length: styling.stars }, (_, i) => (
+            <span key={i} className="text-yellow-300 text-sm">⭐</span>
+          ))}
+        </div>
+      );
+    };
+
     return (
       <div className="grid grid-cols-1 gap-2">
-        <div className="p-2 rounded-md bg-red-100">
-          <p className="text-xs text-muted-foreground">Days Completed</p>
-          <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
+        <div 
+          className="p-2 rounded-md transition-all duration-300" 
+          style={{ 
+            backgroundColor: styling.backgroundColor,
+            color: styling.color 
+          }}
+        >
+          <p className="text-xs opacity-80">{streakLabel}</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-bold">{styling.label}</h3>
+            {renderStars()}
+          </div>
         </div>
       </div>
     );

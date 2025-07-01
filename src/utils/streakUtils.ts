@@ -12,6 +12,59 @@ const getMondayOfWeek = (date: Date): Date => {
   return result;
 };
 
+// Calculate alcohol streak (consecutive days without alcohol)
+export const calculateAlcoholStreakDays = (state: HabitsState): number => {
+  console.log('=== CALCULATING ALCOHOL STREAK (DAYS) ===');
+  console.log('Full habits state:', state);
+  console.log('Available days in state:', Object.keys(state?.days || {}));
+  
+  if (!state || !state.days) {
+    console.log('No state or days data available');
+    return 0;
+  }
+
+  const today = getDubaiDate();
+  const todayISO = formatDateISO(today);
+  console.log('Today date object:', today);
+  console.log('Today ISO:', todayISO);
+  
+  // Get all dates sorted in descending order (newest first)
+  const sortedDates = Object.keys(state.days)
+    .filter(dateISO => {
+      const dayDate = new Date(dateISO + 'T00:00:00.000Z');
+      return dayDate <= today; // Only include past and current dates
+    })
+    .sort((a, b) => new Date(b + 'T00:00:00.000Z').getTime() - new Date(a + 'T00:00:00.000Z').getTime());
+
+  console.log('Sorted dates for alcohol streak calculation:', sortedDates);
+
+  let streak = 0;
+  
+  // Start from today and go backwards
+  for (const dateISO of sortedDates) {
+    const dayData = state.days[dateISO];
+    const alcoholData = dayData?.alcohol;
+    
+    console.log(`Alcohol streak check for ${dateISO}:`, alcoholData);
+    
+    // If alcohol is planned AND completed, it means "no alcohol day" was successful
+    if (alcoholData?.planned && alcoholData?.completed) {
+      streak++;
+      console.log(`No alcohol day successful on ${dateISO}, streak now: ${streak}`);
+    } else if (alcoholData?.planned && !alcoholData?.completed) {
+      // Planned but not completed means they drank alcohol, break the streak
+      console.log(`Alcohol consumed on ${dateISO}, breaking streak`);
+      break;
+    } else {
+      // Not planned - skip this day without breaking streak
+      console.log(`No alcohol plan on ${dateISO}, skipping without breaking streak`);
+    }
+  }
+
+  console.log('=== FINAL ALCOHOL STREAK (DAYS):', streak, '===');
+  return streak;
+};
+
 // Calculate gym streak (perfect weeks)
 export const calculateGymStreakWeeks = (state: HabitsState): number => {
   console.log('=== CALCULATING GYM STREAK ===');
@@ -270,6 +323,46 @@ export const getWeekStreakStyling = (weeks: number) => {
       color: '#6C757D',
       stars: 0,
       label: '0 weeks'
+    };
+  }
+};
+
+// Get styling for alcohol day streaks
+export const getAlcoholDayStreakStyling = (days: number) => {
+  if (days >= 30) {
+    return {
+      backgroundColor: '#FEF3C7', // Golden background
+      color: '#92400E', // Dark amber text
+      stars: 1,
+      label: `${days} days`
+    };
+  } else if (days >= 20) {
+    return {
+      backgroundColor: '#064E3B', // Very dark green
+      color: 'white',
+      stars: 0,
+      label: `${days} days`
+    };
+  } else if (days >= 13) {
+    return {
+      backgroundColor: '#0F5132', // Dark green
+      color: 'white',
+      stars: 0,
+      label: `${days} days`
+    };
+  } else if (days >= 6) {
+    return {
+      backgroundColor: '#D1E7DD', // Light green
+      color: '#0F5132',
+      stars: 0,
+      label: `${days} days`
+    };
+  } else {
+    return {
+      backgroundColor: '#F8F9FA', // Light gray
+      color: '#6C757D',
+      stars: 0,
+      label: `${days} days`
     };
   }
 };
