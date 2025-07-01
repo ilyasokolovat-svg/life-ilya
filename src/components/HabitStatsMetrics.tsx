@@ -23,43 +23,57 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// New function to calculate alcohol streak for current month only
-const calculateAlcoholStreakThisMonth = (state: HabitsState, viewMonth: number, viewYear: number): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK THIS MONTH ===');
+// Updated function to calculate alcohol streak across all months
+const calculateAlcoholStreakAllTime = (state: HabitsState): number => {
+  console.log('=== CALCULATING ALCOHOL STREAK ALL TIME ===');
   
   if (!state || !state.days) {
     console.log('No state or days data available');
     return 0;
   }
 
-  // Get all days in the current month up to today
-  const daysInMonth = getDaysInMonth(viewYear, viewMonth);
-  const today = new Date();
+  // Get all dates with alcohol data, sorted from newest to oldest
+  const allDates = Object.keys(state.days)
+    .filter(dateISO => {
+      const dayData = state.days[dateISO];
+      return dayData && dayData.alcohol; // Only dates with alcohol data
+    })
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Newest first
   
+  console.log('All dates with alcohol data (newest first):', allDates);
+  
+  const today = new Date();
   let streak = 0;
   
-  // Go through days from today backwards to find consecutive completed days
-  for (let i = daysInMonth.length - 1; i >= 0; i--) {
-    const date = daysInMonth[i];
+  // Go through dates from newest to oldest, but only count up to today
+  for (const dateISO of allDates) {
+    const checkDate = new Date(dateISO);
     
     // Only check days up to today
-    if (date > today) continue;
+    if (checkDate > today) {
+      console.log(`Skipping future date: ${dateISO}`);
+      continue;
+    }
     
-    const dateISO = formatDateISO(date);
     const dayData = state.days[dateISO];
+    const alcoholData = dayData.alcohol;
     
-    console.log(`Checking ${dateISO}:`, dayData?.alcohol);
+    console.log(`\n=== Checking ${dateISO} ===`);
+    console.log('Alcohol data:', alcoholData);
+    console.log('Completed:', alcoholData?.completed);
     
-    if (dayData?.alcohol?.completed) {
+    if (alcoholData?.completed) {
+      // Successfully avoided alcohol (completed)
       streak++;
-      console.log(`✅ Alcohol avoided on ${dateISO}! Streak now: ${streak}`);
+      console.log(`✅ Successfully avoided alcohol on ${dateISO}! Streak now: ${streak}`);
     } else {
-      console.log(`❌ Alcohol not avoided (or no data) on ${dateISO}, stopping streak calculation`);
+      // Either no data or not completed - break streak
+      console.log(`❌ Alcohol not avoided on ${dateISO}, breaking streak`);
       break;
     }
   }
   
-  console.log('=== FINAL ALCOHOL STREAK THIS MONTH:', streak, 'DAYS ===');
+  console.log('=== FINAL ALCOHOL STREAK ALL TIME:', streak, 'DAYS ===');
   return streak;
 };
 
@@ -116,13 +130,8 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'alcohol') {
-      console.log('Calling calculateAlcoholStreakThisMonth...');
-      // Get current month and year - we need to pass these from parent component
-      const today = new Date();
-      const currentMonth = today.getMonth();
-      const currentYear = today.getFullYear();
-      
-      streakValue = calculateAlcoholStreakThisMonth(habitsState, currentMonth, currentYear);
+      console.log('Calling calculateAlcoholStreakAllTime...');
+      streakValue = calculateAlcoholStreakAllTime(habitsState);
       console.log('Alcohol streak result:', streakValue);
       streakLabel = "Current streak this month";
       styling = getDayStreakStyling(streakValue);
