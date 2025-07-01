@@ -23,63 +23,135 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Fixed alcohol streak calculation - completely rebuilt to match gym logic
-const calculateAlcoholStreakAllTime = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK ALL TIME (REBUILT) ===');
+// Helper function to get Monday of any given date (copied from streakUtils)
+const getMondayOfWeek = (date: Date): Date => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const diff = result.getDate() - day + (day === 0 ? -6 : 1);
+  result.setDate(diff);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+// Calculate alcohol streak (perfect weeks) - EXACT COPY of gym logic but for alcohol
+const calculateAlcoholStreakWeeks = (state: HabitsState): number => {
+  console.log('=== CALCULATING ALCOHOL STREAK (COPIED FROM GYM) ===');
+  console.log('Full habits state:', state);
+  console.log('Available days in state:', Object.keys(state?.days || {}));
   
   if (!state || !state.days) {
     console.log('No state or days data available');
     return 0;
   }
 
-  console.log('Available days in state:', Object.keys(state.days));
-  
-  // Get all dates with data, sorted from newest to oldest
-  const allDates = Object.keys(state.days)
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Newest first
-  
-  console.log('All dates (newest first):', allDates);
-  
+  // Use current date properly
   const today = new Date();
+  const todayISO = formatDateISO(today);
+  console.log('Today date object:', today);
+  console.log('Today ISO:', todayISO);
+  
   let streak = 0;
   
-  // Go through dates from newest to oldest, but only count up to today
-  for (const dateISO of allDates) {
-    const checkDate = new Date(dateISO);
-    
-    // Only check days up to today
-    if (checkDate > today) {
-      console.log(`Skipping future date: ${dateISO}`);
-      continue;
-    }
-    
-    const dayData = state.days[dateISO];
-    
-    console.log(`\n=== Checking ${dateISO} ===`);
-    console.log('Full day data:', dayData);
-    console.log('Alcohol data:', dayData?.alcohol);
-    
-    if (dayData?.alcohol) {
-      const alcoholData = dayData.alcohol;
-      console.log('Alcohol completed:', alcoholData.completed);
+  // Start from the Monday of this week and go backwards
+  let currentWeekStart = getMondayOfWeek(today);
+  console.log('Starting from week beginning:', formatDateISO(currentWeekStart));
+  
+  // Go back up to 2 years to find streaks (prevent infinite loop)
+  let weeksChecked = 0;
+  const maxWeeksToCheck = 104; // 2 years
+
+  while (weeksChecked < maxWeeksToCheck) {
+    const weekEnd = new Date(currentWeekStart);
+    weekEnd.setDate(currentWeekStart.getDate() + 6);
+
+    console.log(`\n--- Checking alcohol week ${weeksChecked + 1} ---`);
+    console.log('Week start:', formatDateISO(currentWeekStart));
+    console.log('Week end:', formatDateISO(weekEnd));
+
+    let plannedDays = 0;
+    let completedDays = 0;
+    let hasAnyAlcoholData = false;
+
+    // Check each day of the week
+    for (let i = 0; i < 7; i++) {
+      const checkDate = new Date(currentWeekStart);
+      checkDate.setDate(currentWeekStart.getDate() + i);
       
-      if (alcoholData.completed) {
-        // Successfully avoided alcohol
-        streak++;
-        console.log(`✅ Successfully avoided alcohol on ${dateISO}! Streak now: ${streak}`);
-      } else {
-        // Has alcohol data but not completed - this breaks the streak
-        console.log(`❌ Alcohol not avoided on ${dateISO}, breaking streak`);
-        break;
+      // Don't check future days beyond today
+      if (checkDate > today) {
+        console.log(`Skipping future date: ${formatDateISO(checkDate)}`);
+        continue;
+      }
+
+      const dateISO = formatDateISO(checkDate);
+      const dayData = state.days[dateISO];
+      
+      console.log(`Day ${formatDateISO(checkDate)}:`, dayData?.alcohol || 'NO ALCOHOL DATA');
+
+      if (dayData?.alcohol) {
+        hasAnyAlcoholData = true;
+        if (dayData.alcohol.planned) {
+          plannedDays++;
+          if (dayData.alcohol.completed) {
+            completedDays++;
+          }
+        }
+      }
+    }
+
+    console.log(`Week summary: planned=${plannedDays}, completed=${completedDays}, hasAnyAlcoholData=${hasAnyAlcoholData}`);
+
+    // If this is the current week and we're early in the week, check if we should count it
+    const isCurrentWeek = currentWeekStart <= today && weekEnd >= today;
+    
+    if (isCurrentWeek) {
+      console.log('This is the current week');
+      // For current week, only count if we have some alcohol activity planned and it's not too early in the week
+      const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      if (dayOfWeek >= 1 && plannedDays > 0) { // From Monday onwards
+        // Check if we have any incomplete planned sessions
+        let hasIncompleteThisWeek = false;
+        for (let i = 0; i < 7; i++) {
+          const checkDate = new Date(currentWeekStart);
+          checkDate.setDate(currentWeekStart.getDate() + i);
+          
+          if (checkDate > today) continue;
+          
+          const dateISO = formatDateISO(checkDate);
+          const dayData = state.days[dateISO];
+          
+          if (dayData?.alcohol?.planned && !dayData.alcohol.completed) {
+            hasIncompleteThisWeek = true;
+            break;
+          }
+        }
+        
+        if (hasIncompleteThisWeek) {
+          console.log('Current week has incomplete alcohol sessions, not counting');
+        } else if (plannedDays === completedDays && plannedDays > 0) {
+          streak++;
+          console.log(`Perfect current alcohol week! Streak now: ${streak}`);
+        }
       }
     } else {
-      // No alcohol data for this day - continue checking without breaking streak
-      console.log(`⚪ No alcohol data for ${dateISO}, continuing`);
-      continue;
+      // For past weeks
+      if (!hasAnyAlcoholData || plannedDays === 0) {
+        console.log('No alcohol data for this past week, skipping without breaking streak');
+      } else if (plannedDays === completedDays && plannedDays > 0) {
+        streak++;
+        console.log(`Perfect past alcohol week! Streak now: ${streak}`);
+      } else {
+        console.log('Past alcohol week was incomplete, breaking streak');
+        break;
+      }
     }
+
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    weeksChecked++;
   }
-  
-  console.log('=== FINAL ALCOHOL STREAK ALL TIME:', streak, 'DAYS ===');
+
+  console.log('=== FINAL ALCOHOL STREAK:', streak, '===');
   return streak;
 };
 
@@ -136,11 +208,11 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'alcohol') {
-      console.log('Calling calculateAlcoholStreakAllTime...');
-      streakValue = calculateAlcoholStreakAllTime(habitsState);
+      console.log('Calling calculateAlcoholStreakWeeks (copied from gym)...');
+      streakValue = calculateAlcoholStreakWeeks(habitsState);
       console.log('Alcohol streak result:', streakValue);
-      streakLabel = "Current streak this month";
-      styling = getDayStreakStyling(streakValue);
+      streakLabel = "Current streak (perfect weeks)";
+      styling = getWeekStreakStyling(streakValue);
     }
   } else {
     console.log(`No habitsState provided for ${habitType}`);
