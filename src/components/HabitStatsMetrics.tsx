@@ -54,7 +54,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       <div className="grid grid-cols-1 gap-2">
         <div className="p-2 rounded-md bg-red-100">
           <p className="text-xs text-muted-foreground">Days Completed</p>
-          <h3 className="text-xl font-bold">{stats.completed}</h3>
+          <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
         </div>
       </div>
     );
