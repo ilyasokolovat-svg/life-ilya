@@ -23,9 +23,9 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Updated function to calculate alcohol streak across all months
+// Updated function to calculate alcohol streak across all months (fixed logic)
 const calculateAlcoholStreakAllTime = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK ALL TIME ===');
+  console.log('=== CALCULATING ALCOHOL STREAK ALL TIME (FIXED) ===');
   
   if (!state || !state.days) {
     console.log('No state or days data available');
@@ -66,11 +66,13 @@ const calculateAlcoholStreakAllTime = (state: HabitsState): number => {
       // Successfully avoided alcohol (completed)
       streak++;
       console.log(`✅ Successfully avoided alcohol on ${dateISO}! Streak now: ${streak}`);
-    } else {
-      // Either no data or not completed - break streak
+    } else if (alcoholData && !alcoholData.completed) {
+      // Has alcohol data but not completed - this breaks the streak
       console.log(`❌ Alcohol not avoided on ${dateISO}, breaking streak`);
       break;
     }
+    // If no alcohol data for this day, we continue (don't break streak)
+    // This matches how gym streak works - it skips days without gym data
   }
   
   console.log('=== FINAL ALCOHOL STREAK ALL TIME:', streak, 'DAYS ===');
