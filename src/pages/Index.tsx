@@ -336,7 +336,7 @@ const Index = () => {
               habitsState={habitsState}
             />
             
-            {/* Gym */}
+            {/* Gym - ADD habitsState prop */}
             <HabitStats 
               habitType="gym" 
               stats={gymStats} 
@@ -345,9 +345,10 @@ const Index = () => {
               viewMonth={chartMonths.gym.month}
               viewYear={chartMonths.gym.year}
               onMonthChange={(month, year) => handleChartMonthChange("gym", month, year)}
+              habitsState={habitsState}
             />
             
-            {/* Alcohol */}
+            {/* Alcohol - ADD habitsState prop */}
             <HabitStats 
               habitType="alcohol" 
               stats={alcoholStats} 
@@ -356,9 +357,10 @@ const Index = () => {
               viewMonth={chartMonths.alcohol.month}
               viewYear={chartMonths.alcohol.year}
               onMonthChange={(month, year) => handleChartMonthChange("alcohol", month, year)}
+              habitsState={habitsState}
             />
             
-            {/* Meditation */}
+            {/* Meditation - ADD habitsState prop */}
             <HabitStats 
               habitType="meditation" 
               stats={meditationStats} 
@@ -367,6 +369,7 @@ const Index = () => {
               viewMonth={chartMonths.meditation.month}
               viewYear={chartMonths.meditation.year}
               onMonthChange={(month, year) => handleChartMonthChange("meditation", month, year)}
+              habitsState={habitsState}
             />
           </div>
         </div>
