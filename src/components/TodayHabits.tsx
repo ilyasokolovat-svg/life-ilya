@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
-import { formatDateISO } from "@/utils/habitUtils";
+import { getDubaiDate, formatDateISO } from "@/utils/dateUtils";
 
 interface TodayHabitsProps {
   todayData: DayData | null;
@@ -13,8 +13,8 @@ interface TodayHabitsProps {
 }
 
 const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) => {
-  // Use standard date handling that matches the calendar
-  const today = new Date();
+  // Use Dubai date consistently with the rest of the app
+  const today = getDubaiDate();
   const todayISO = formatDateISO(today);
 
   console.log('TodayHabits: Using date:', todayISO, 'Date object:', today);

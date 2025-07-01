@@ -10,10 +10,10 @@ import { HabitType, HabitData, HabitGoal } from "@/types/habit";
 import { 
   calculateHabitStats, 
   getDubaiDate,
-  getTodayISO,
   formatYearMonth,
   getMonthGoals
 } from "@/utils/habitUtils";
+import { getDubaiDate as getDubaiDateFromUtils, formatDateISO, getTodayISO } from "@/utils/dateUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
 import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User, Save, ArrowLeft } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
@@ -31,7 +31,7 @@ const Index = () => {
   const { habitsState, updateDay, updateGoal, syncEnabled, toggleSync, isSyncing, forceSyncToCloud } = useHabits();
 
   // Track current view month/year for charts and calendar using Dubai timezone
-  const dubaiDate = getDubaiDate();
+  const dubaiDate = getDubaiDateFromUtils();
   const [viewMonth, setViewMonth] = useState(dubaiDate.getMonth());
   const [viewYear, setViewYear] = useState(dubaiDate.getFullYear());
   
@@ -70,7 +70,7 @@ const Index = () => {
   const handleMonthChange = (month: number, year: number) => {
     // Ensure we don't go beyond reasonable bounds
     const minYear = 2020;
-    const maxYear = getDubaiDate().getFullYear() + 1;
+    const maxYear = getDubaiDateFromUtils().getFullYear() + 1;
     
     if (year < minYear || year > maxYear) {
       console.warn(`Year ${year} is out of bounds (${minYear}-${maxYear})`);

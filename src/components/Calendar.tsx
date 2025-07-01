@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { HabitType, DayData } from "@/types/habit";
 import HabitTracker from "./HabitTracker";
 import { formatDateISO, getDaysInMonth, getDayCompletionPercentage } from "@/utils/habitUtils";
+import { getDubaiDate } from "@/utils/dateUtils";
 import { Separator } from "@/components/ui/separator";
 import { habitColors } from "@/utils/chartUtils";
 import { useMediaQuery } from "@/hooks/use-mobile";
@@ -17,9 +18,9 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, viewYear }) => {
-  const today = new Date();
-  const [currentMonth, setCurrentMonth] = useState(viewMonth !== undefined ? viewMonth : today.getMonth());
-  const [currentYear, setCurrentYear] = useState(viewYear !== undefined ? viewYear : today.getFullYear());
+  const dubaiToday = getDubaiDate();
+  const [currentMonth, setCurrentMonth] = useState(viewMonth !== undefined ? viewMonth : dubaiToday.getMonth());
+  const [currentYear, setCurrentYear] = useState(viewYear !== undefined ? viewYear : dubaiToday.getFullYear());
   const isMobile = useMediaQuery("(max-width: 640px)");
 
   // Update calendar when viewMonth or viewYear prop changes
@@ -96,8 +97,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
   const renderDay = (date: Date) => {
     const dayData = getDayData(date);
     const isoDate = formatDateISO(date);
-    const isToday = formatDateISO(today) === isoDate;
-    const isPast = date < new Date(today.setHours(0, 0, 0, 0));
+    const todayISO = formatDateISO(dubaiToday);
+    const isToday = todayISO === isoDate;
+    const isPast = date < new Date(dubaiToday.setHours(0, 0, 0, 0));
     const completedCount = getCompletedHabitsCount(dayData);
     const progressPercentage = (completedCount / 4) * 100;
     const isAllCompleted = completedCount === 4;
@@ -208,7 +210,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
                     habitType={habitType}
                     habitData={currentHabitData}
                     onUpdate={(type, data) => {
-                      console.log(`Calendar: HabitTracker update for ${type}:`, data);
+                      console.log(`Calendar: HabitTracker update for ${type} on ${isoDate}:`, data);
                       onUpdateHabit(date, type, data);
                     }}
                   />
@@ -241,8 +243,8 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
               <Button
                 variant="outline"
                 onClick={() => {
-                  setCurrentMonth(today.getMonth());
-                  setCurrentYear(today.getFullYear());
+                  setCurrentMonth(dubaiToday.getMonth());
+                  setCurrentYear(dubaiToday.getFullYear());
                 }}
               >
                 Today
