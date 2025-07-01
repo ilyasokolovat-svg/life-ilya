@@ -145,13 +145,17 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       streakValue = calculateAlcoholStreakDays(habitsState);
       console.log('Alcohol streak result:', streakValue);
       streakLabel = "Current streak (consecutive days)";
+      console.log('Before calling getDayStreakStyling with value:', streakValue);
       styling = getDayStreakStyling(streakValue);
+      console.log('After calling getDayStreakStyling, received styling:', styling);
     }
   } else {
     console.log(`No habitsState provided for ${habitType}`);
   }
 
   console.log(`Final styling for ${habitType}:`, styling);
+  console.log(`Final streakValue for ${habitType}:`, streakValue);
+  console.log(`Final styling.label for ${habitType}:`, styling.label);
 
   // Render stars if applicable
   const renderStars = () => {

@@ -1,5 +1,6 @@
+
 import { HabitsState, HabitType } from "@/types/habit";
-import { formatDateISO, getDaysInMonth } from "./habitUtils";
+import { getDubaiDate, formatDateISO } from "./dateUtils";
 
 // Helper function to get Monday of any given date
 const getMondayOfWeek = (date: Date): Date => {
@@ -22,8 +23,8 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
     return 0;
   }
 
-  // Use current date properly
-  const today = new Date();
+  // Use Dubai timezone consistently
+  const today = getDubaiDate();
   const todayISO = formatDateISO(today);
   console.log('Today date object:', today);
   console.log('Today ISO:', todayISO);
@@ -142,7 +143,7 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
     return 0;
   }
 
-  const today = new Date();
+  const today = getDubaiDate();
   let streak = 0;
   
   // Start from the Monday of this week and go backwards
@@ -238,59 +239,6 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
   return streak;
 };
 
-// COMPLETELY REBUILT: Calculate alcohol streak (consecutive days with completed alcohol avoidance)
-export const calculateAlcoholStreakDays = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK (FINAL REBUILD) ===');
-  
-  if (!state || !state.days) {
-    console.log('No state or days data available');
-    return 0;
-  }
-
-  console.log('Available days in state:', Object.keys(state.days));
-  
-  // Get all dates with data, sorted from newest to oldest
-  const allDates = Object.keys(state.days)
-    .filter(dateISO => {
-      const dayData = state.days[dateISO];
-      return dayData && dayData.alcohol; // Only dates with alcohol data
-    })
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Newest first
-  
-  console.log('Dates with alcohol data (newest first):', allDates);
-  
-  let streak = 0;
-  
-  // Go through dates from newest to oldest
-  for (const dateISO of allDates) {
-    const dayData = state.days[dateISO];
-    const alcoholData = dayData.alcohol;
-    
-    console.log(`\n=== Checking ${dateISO} ===`);
-    console.log('Full day data:', dayData);
-    console.log('Alcohol data:', alcoholData);
-    console.log('Planned:', alcoholData?.planned);
-    console.log('Completed:', alcoholData?.completed);
-    
-    if (alcoholData?.planned && alcoholData?.completed) {
-      // Successfully avoided alcohol (planned and completed)
-      streak++;
-      console.log(`✅ Successfully avoided alcohol on ${dateISO}! Streak now: ${streak}`);
-    } else if (alcoholData?.planned && !alcoholData?.completed) {
-      // Planned to avoid alcohol but failed - break streak
-      console.log(`❌ Failed to avoid alcohol on ${dateISO}, breaking streak`);
-      break;
-    } else if (!alcoholData?.planned) {
-      // Not planned for this day - continue checking previous days
-      console.log(`⚪ Alcohol avoidance not planned for ${dateISO}, continuing to check older days`);
-      continue;
-    }
-  }
-  
-  console.log('=== FINAL ALCOHOL STREAK:', streak, 'DAYS ===');
-  return streak;
-};
-
 // Get styling for gym/meditation week streaks
 export const getWeekStreakStyling = (weeks: number) => {
   const stars = Math.floor(weeks / 5);
@@ -326,42 +274,63 @@ export const getWeekStreakStyling = (weeks: number) => {
   }
 };
 
-// Get styling for alcohol day streaks
+// Get styling for alcohol day streaks - FIXED THE ISSUE
 export const getDayStreakStyling = (days: number) => {
+  console.log('=== getDayStreakStyling called with days:', days, '===');
+  
   if (days >= 30) {
-    return {
+    const result = {
       backgroundColor: '#FEF3C7', // Light golden yellow
       color: '#92400E', // Dark amber
       stars: 1,
       label: `${days} days`
     };
+    console.log('Days >= 30, returning:', result);
+    return result;
   } else if (days >= 20) {
-    return {
+    const result = {
       backgroundColor: '#0F5132', // Dark green
       color: 'white',
       stars: 0,
       label: `${days} days`
     };
+    console.log('Days >= 20, returning:', result);
+    return result;
   } else if (days >= 13) {
-    return {
+    const result = {
       backgroundColor: '#198754', // Medium green
       color: 'white',
       stars: 0,
       label: `${days} days`
     };
+    console.log('Days >= 13, returning:', result);
+    return result;
   } else if (days >= 6) {
-    return {
+    const result = {
       backgroundColor: '#D1E7DD', // Light green
       color: '#0F5132',
       stars: 0,
       label: `${days} days`
     };
-  } else {
-    return {
-      backgroundColor: '#F8F9FA', // Light gray
-      color: '#6C757D',
+    console.log('Days >= 6, returning:', result);
+    return result;
+  } else if (days >= 1) {
+    const result = {
+      backgroundColor: '#D1E7DD', // Light green
+      color: '#0F5132',
       stars: 0,
       label: `${days} days`
     };
+    console.log('Days >= 1, returning:', result);
+    return result;
+  } else {
+    const result = {
+      backgroundColor: '#F8F9FA', // Light gray
+      color: '#6C757D',
+      stars: 0,
+      label: '0 days'
+    };
+    console.log('Days = 0, returning:', result);
+    return result;
   }
 };
