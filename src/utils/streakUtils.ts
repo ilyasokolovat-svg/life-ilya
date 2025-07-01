@@ -40,7 +40,7 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
 
   let streak = 0;
   
-  // Start from today and go backwards
+  // Start from today and go backwards - ONLY count consecutive days
   for (const dateISO of sortedDates) {
     const dayData = state.days[dateISO];
     const alcoholData = dayData?.alcohol;
@@ -52,12 +52,14 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
       streak++;
       console.log(`No alcohol day successful on ${dateISO}, streak now: ${streak}`);
     } else if (alcoholData?.planned && !alcoholData?.completed) {
-      // Planned but not completed means they drank alcohol, break the streak
-      console.log(`Alcohol consumed on ${dateISO}, breaking streak`);
+      // Planned but not completed means they drank alcohol, BREAK the streak immediately
+      console.log(`Alcohol consumed on ${dateISO}, BREAKING streak at ${streak} days`);
       break;
     } else {
-      // Not planned - skip this day without breaking streak
-      console.log(`No alcohol plan on ${dateISO}, skipping without breaking streak`);
+      // Not planned - this is a gap in tracking, we should break the streak
+      // because we can't be sure if alcohol was consumed or not
+      console.log(`No alcohol plan on ${dateISO}, BREAKING streak due to gap in tracking`);
+      break;
     }
   }
 
