@@ -5,10 +5,10 @@ import { habitColors } from "@/utils/chartUtils";
 import { 
   calculateGymStreakWeeks, 
   calculateMeditationStreakWeeks, 
-  calculateAlcoholStreakDays,
   getWeekStreakStyling,
   getDayStreakStyling 
 } from "@/utils/streakUtils";
+import { formatDateISO, getDaysInMonth } from "@/utils/habitUtils";
 
 interface SleepQualityStats {
   goodSleep: number;
@@ -22,6 +22,46 @@ interface HabitStatsMetricsProps {
   sleepQualityStats?: SleepQualityStats;
   habitsState?: HabitsState;
 }
+
+// New function to calculate alcohol streak for current month only
+const calculateAlcoholStreakThisMonth = (state: HabitsState, viewMonth: number, viewYear: number): number => {
+  console.log('=== CALCULATING ALCOHOL STREAK THIS MONTH ===');
+  
+  if (!state || !state.days) {
+    console.log('No state or days data available');
+    return 0;
+  }
+
+  // Get all days in the current month up to today
+  const daysInMonth = getDaysInMonth(viewYear, viewMonth);
+  const today = new Date();
+  
+  let streak = 0;
+  
+  // Go through days from today backwards to find consecutive completed days
+  for (let i = daysInMonth.length - 1; i >= 0; i--) {
+    const date = daysInMonth[i];
+    
+    // Only check days up to today
+    if (date > today) continue;
+    
+    const dateISO = formatDateISO(date);
+    const dayData = state.days[dateISO];
+    
+    console.log(`Checking ${dateISO}:`, dayData?.alcohol);
+    
+    if (dayData?.alcohol?.completed) {
+      streak++;
+      console.log(`✅ Alcohol avoided on ${dateISO}! Streak now: ${streak}`);
+    } else {
+      console.log(`❌ Alcohol not avoided (or no data) on ${dateISO}, stopping streak calculation`);
+      break;
+    }
+  }
+  
+  console.log('=== FINAL ALCOHOL STREAK THIS MONTH:', streak, 'DAYS ===');
+  return streak;
+};
 
 const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   habitType,
@@ -76,10 +116,15 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'alcohol') {
-      console.log('Calling calculateAlcoholStreakDays...');
-      streakValue = calculateAlcoholStreakDays(habitsState);
+      console.log('Calling calculateAlcoholStreakThisMonth...');
+      // Get current month and year - we need to pass these from parent component
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      
+      streakValue = calculateAlcoholStreakThisMonth(habitsState, currentMonth, currentYear);
       console.log('Alcohol streak result:', streakValue);
-      streakLabel = "Current streak (days in a row)";
+      streakLabel = "Current streak this month";
       styling = getDayStreakStyling(streakValue);
     }
   } else {
