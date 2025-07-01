@@ -241,7 +241,7 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
 
 // COMPLETELY REBUILT: Calculate alcohol streak (consecutive days with completed alcohol avoidance)
 export const calculateAlcoholStreakDays = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK (REBUILT) ===');
+  console.log('=== CALCULATING ALCOHOL STREAK (COMPLETELY REBUILT) ===');
   
   if (!state || !state.days) {
     console.log('No state or days data available');
@@ -253,38 +253,47 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
   let currentDate = new Date(today);
 
   console.log('Starting alcohol streak calculation from today:', formatDateISO(currentDate));
+  console.log('Full state data available:', Object.keys(state.days).length, 'days');
 
   // Go backwards day by day from today
   let daysChecked = 0;
-  const maxDaysToCheck = 365; // 1 year limit
+  const maxDaysToCheck = 730; // 2 years limit
 
   while (daysChecked < maxDaysToCheck) {
     const dateISO = formatDateISO(currentDate);
     const dayData = state.days[dateISO];
 
-    console.log(`\nDay ${daysChecked + 1}: ${dateISO}`);
-    console.log('Day data:', dayData);
+    console.log(`\n=== Day ${daysChecked + 1}: ${dateISO} ===`);
+    console.log('Raw day data:', dayData);
     console.log('Alcohol data:', dayData?.alcohol);
 
-    // NEW LOGIC: Only count if alcohol avoidance was planned AND completed
-    if (dayData?.alcohol?.planned && dayData.alcohol.completed) {
-      // Successfully avoided alcohol (planned and completed)
-      streak++;
-      console.log(`Successful no-alcohol day! Streak now: ${streak}`);
-    } else if (dayData?.alcohol?.planned && !dayData.alcohol.completed) {
-      // Planned to avoid alcohol but failed - break streak
-      console.log('Alcohol was consumed (planned but not completed), breaking streak');
-      break;
+    if (dayData?.alcohol) {
+      const alcoholData = dayData.alcohol;
+      console.log('Alcohol planned:', alcoholData.planned);
+      console.log('Alcohol completed:', alcoholData.completed);
+
+      if (alcoholData.planned && alcoholData.completed) {
+        // Successfully avoided alcohol (planned and completed)
+        streak++;
+        console.log(`✅ Successful no-alcohol day! Streak now: ${streak}`);
+      } else if (alcoholData.planned && !alcoholData.completed) {
+        // Planned to avoid alcohol but failed - break streak
+        console.log('❌ Alcohol was consumed (planned but not completed), breaking streak');
+        break;
+      } else {
+        // Not planned or other combinations - continue checking but log
+        console.log('⚪ Alcohol not planned for this day, continuing streak');
+      }
     } else {
-      // No alcohol plan for this day - skip but don't break streak
-      console.log('No alcohol plan for this day, skipping (not breaking streak)');
+      // No alcohol data for this day - continue checking
+      console.log('⚪ No alcohol data for this day, continuing streak');
     }
 
     currentDate.setDate(currentDate.getDate() - 1);
     daysChecked++;
   }
 
-  console.log('=== FINAL ALCOHOL STREAK:', streak, '===');
+  console.log('=== FINAL ALCOHOL STREAK:', streak, 'DAYS ===');
   return streak;
 };
 

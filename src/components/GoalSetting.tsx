@@ -87,6 +87,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
       // For sleep, use the sleep quality stats
       if (habitsState) {
         const sleepQualityStats = calculateSleepQualityStats(habitsState, viewYear, viewMonth);
+        console.log(`GoalSetting: Sleep quality stats for ${viewMonth}/${viewYear}:`, sleepQualityStats);
         return sleepQualityStats.goodSleep;
       }
       return 0;
@@ -136,9 +137,10 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
     let completed = 0;
     
     if (habitType === 'sleep') {
-      // For sleep, total is all days in month up to today
+      // For sleep, total is all days in month up to today, completed is good sleep days
       totalDays = getTotalDaysInMonth();
       completed = getCompletedDaysCount('sleep');
+      console.log(`GoalSetting: Sleep progress - completed: ${completed}, total: ${totalDays}`);
     } else {
       // For other habits, total is ALL planned days in month, completed is completed planned days up to today
       totalDays = getPlannedDaysCount(habitType);
