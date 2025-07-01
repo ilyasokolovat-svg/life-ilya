@@ -1,3 +1,4 @@
+
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { HabitType, HabitData, DayData, HabitStats, HabitsState, HabitGoal, MonthlyGoals } from "@/types/habit";
 
@@ -94,21 +95,34 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
     };
   }
   
-  let days = Object.values(state.days);
+  let relevantDays: DayData[] = [];
   
   // Filter by month if specified
   if (year !== undefined && month !== undefined) {
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0); // Last day of month
+    const today = new Date();
     
-    days = days.filter(day => {
-      const dayDate = new Date(day.date);
-      return dayDate >= monthStart && dayDate <= monthEnd;
+    // Get all days in the month up to today
+    const daysInMonth = getDaysInMonth(year, month);
+    
+    daysInMonth.forEach(date => {
+      // Only process days up to today
+      if (date <= today) {
+        const dateISO = formatDateISO(date);
+        const dayData = state.days[dateISO];
+        
+        if (dayData) {
+          relevantDays.push(dayData);
+        }
+      }
     });
+  } else {
+    relevantDays = Object.values(state.days);
   }
   
   // Sort days by date
-  days.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  relevantDays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
   let currentStreak = 0;
   let longestStreak = 0;
@@ -120,75 +134,68 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
   const today = new Date();
   const weekStart = getStartOfWeek(today);
   
+  console.log(`calculateHabitStats: Processing ${habitType} for ${relevantDays.length} days`);
+  
   // For sleep, calculate based on sleep hours instead of planned/completed
   if (habitType === 'sleep') {
-    // Calculate total days passed in the month so far
-    const currentDate = new Date();
-    let totalDaysInMonth;
-    
-    if (year !== undefined && month !== undefined) {
-      const monthStart = new Date(year, month, 1);
-      const monthEnd = new Date(year, month + 1, 0);
-      const endDate = currentDate > monthEnd ? monthEnd : currentDate;
-      
-      // Only count days up to today or end of month
-      totalDaysInMonth = Math.floor((endDate.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    } else {
-      totalDaysInMonth = days.length;
-    }
-    
     let goodSleepDays = 0;
+    let totalDaysWithData = 0;
     
     // Process days for sleep-specific calculations
-    for (const day of days) {
+    for (const day of relevantDays) {
       const dayDate = new Date(day.date);
+      const sleepHours = day.sleep?.sleepHours || 0;
       
-      // Only count days up to today
-      if (dayDate <= today) {
-        const sleepHours = day.sleep?.sleepHours || 0;
-        
+      console.log(`calculateHabitStats: Sleep for ${day.date}: ${sleepHours} hours`);
+      
+      if (sleepHours > 0) {
+        totalDaysWithData++;
         if (sleepHours >= 7) {
           goodSleepDays++;
           tempStreak++;
-        } else if (sleepHours > 0) {
+        } else {
           tempStreak = 0;
         }
-        
         longestStreak = Math.max(longestStreak, tempStreak);
       }
     }
     
     // Calculate current streak (from most recent days)
-    for (let i = days.length - 1; i >= 0; i--) {
-      const day = days[i];
-      const dayDate = new Date(day.date);
-      
-      if (dayDate <= today) {
-        const sleepHours = day.sleep?.sleepHours || 0;
-        if (sleepHours >= 7) {
-          currentStreak++;
-        } else {
-          break;
-        }
+    for (let i = relevantDays.length - 1; i >= 0; i--) {
+      const day = relevantDays[i];
+      const sleepHours = day.sleep?.sleepHours || 0;
+      if (sleepHours >= 7) {
+        currentStreak++;
+      } else if (sleepHours > 0) {
+        break;
       }
     }
+    
+    const totalDaysInPeriod = year !== undefined && month !== undefined 
+      ? Math.min(relevantDays.length, new Date().getDate()) 
+      : totalDaysWithData;
+    
+    console.log(`calculateHabitStats: Sleep summary - goodSleep: ${goodSleepDays}, totalDays: ${totalDaysInPeriod}`);
     
     return {
       currentStreak,
       longestStreak,
       totalCompleted: goodSleepDays,
-      completionRate: totalDaysInMonth > 0 ? Math.round((goodSleepDays / totalDaysInMonth) * 100) : 0,
+      completionRate: totalDaysInPeriod > 0 ? Math.round((goodSleepDays / totalDaysInPeriod) * 100) : 0,
       currentWeekCompleted: 0 // Not used for sleep
     };
   }
   
-  // Original logic for other habits
   // Process days in reverse (newest first) for current streak
-  for (let i = days.length - 1; i >= 0; i--) {
-    const day = days[i];
-    if (!day[habitType]?.planned) continue;
+  for (let i = relevantDays.length - 1; i >= 0; i--) {
+    const day = relevantDays[i];
+    const habitData = day[habitType];
     
-    if (day[habitType]?.completed) {
+    console.log(`calculateHabitStats: Checking ${habitType} for ${day.date}:`, habitData);
+    
+    if (!habitData?.planned) continue;
+    
+    if (habitData?.completed) {
       currentStreak++;
     } else {
       break;
@@ -196,11 +203,13 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
   }
   
   // Process days in order for longest streak and completion stats
-  for (const day of days) {
-    if (day[habitType]?.planned) {
+  for (const day of relevantDays) {
+    const habitData = day[habitType];
+    
+    if (habitData?.planned) {
       totalPlanned++;
       
-      if (day[habitType]?.completed) {
+      if (habitData?.completed) {
         totalCompleted++;
         tempStreak++;
         
@@ -216,6 +225,8 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
       longestStreak = Math.max(longestStreak, tempStreak);
     }
   }
+  
+  console.log(`calculateHabitStats: ${habitType} summary - planned: ${totalPlanned}, completed: ${totalCompleted}, streak: ${currentStreak}`);
   
   return {
     currentStreak,

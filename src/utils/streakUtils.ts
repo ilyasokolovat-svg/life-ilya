@@ -268,23 +268,25 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
     console.log('Day data:', dayData);
     console.log('Alcohol data:', dayData?.alcohol);
 
-    // For alcohol: 
-    // - planned=true means "I plan to avoid alcohol"
-    // - completed=true means "I successfully avoided alcohol"
-    // So planned=true AND completed=true = successful no-alcohol day
+    // For alcohol streak logic:
+    // - If there's alcohol data with planned=true and completed=true: successful no-alcohol day (continue streak)
+    // - If there's alcohol data with planned=true and completed=false: alcohol was consumed (break streak)
+    // - If there's no alcohol data or planned=false: assume no alcohol was consumed (continue streak)
+    
     if (dayData?.alcohol) {
-      if (dayData.alcohol.planned && dayData.alcohol.completed) {
-        // Successfully avoided alcohol - continue streak
-        streak++;
-        console.log(`Successful no-alcohol day! Streak now: ${streak}`);
-      } else if (dayData.alcohol.planned && !dayData.alcohol.completed) {
-        // Planned to avoid but didn't - alcohol was consumed, break streak
-        console.log('Alcohol was consumed (planned but not completed), breaking streak');
-        break;
-      } else if (!dayData.alcohol.planned) {
-        // No plan to avoid alcohol - but if we have no data about alcohol consumption, 
-        // we should continue the streak (assume no alcohol was consumed)
-        console.log('No alcohol avoidance plan for this day, but continuing streak (assuming no alcohol)');
+      if (dayData.alcohol.planned) {
+        if (dayData.alcohol.completed) {
+          // Successfully avoided alcohol - continue streak
+          streak++;
+          console.log(`Successful no-alcohol day (planned and completed)! Streak now: ${streak}`);
+        } else {
+          // Planned to avoid but didn't - alcohol was consumed, break streak
+          console.log('Alcohol was consumed (planned but not completed), breaking streak');
+          break;
+        }
+      } else {
+        // No plan to avoid alcohol - assume no alcohol was consumed, continue streak
+        console.log('No alcohol avoidance plan for this day, continuing streak (assuming no alcohol)');
         streak++;
       }
     } else {

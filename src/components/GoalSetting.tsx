@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -101,7 +100,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
     return plannedCount;
   };
 
-  // Calculate progress for each habit
+  // Calculate progress for each habit - use the corrected stats
   const getProgressData = (habitType: HabitType) => {
     const plannedDays = getPlannedDaysCount(habitType);
     const stats = habitStats[habitType];
@@ -119,6 +118,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
       };
     }
     
+    // For other habits, use the totalCompleted from stats
     if (stats && plannedDays > 0) {
       const progress = Math.min(100, Math.round((stats.totalCompleted / plannedDays) * 100));
       return {
