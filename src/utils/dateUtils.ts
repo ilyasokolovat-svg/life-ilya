@@ -5,10 +5,10 @@ import { format, parseISO } from "date-fns";
 // Get current date in Dubai timezone (GMT+4)
 export const getDubaiDate = (): Date => {
   const now = new Date();
-  // Convert to Dubai time (GMT+4)
-  const dubaiTime = new Date(now.getTime() + (4 * 60 * 60 * 1000));
+  // Get current time in Dubai (GMT+4)
+  const dubaiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Dubai"}));
   // Reset to start of day for consistency
-  dubaiTime.setUTCHours(0, 0, 0, 0);
+  dubaiTime.setHours(0, 0, 0, 0);
   return dubaiTime;
 };
 
