@@ -8,7 +8,7 @@ import {
   getWeekStreakStyling,
   getDayStreakStyling 
 } from "@/utils/streakUtils";
-import { getDubaiDate, getTodayISO, getDaysInMonth } from "@/utils/habitUtils";
+import { getDubaiDate, getTodayISO, formatDateISO } from "@/utils/dateUtils";
 
 interface SleepQualityStats {
   goodSleep: number;
@@ -23,9 +23,9 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Calculate alcohol streak (consecutive days) - UNIVERSAL DUBAI TIMEZONE
+// Calculate alcohol streak (consecutive days) - COPIED FROM GYM LOGIC BUT FOR DAYS
 const calculateAlcoholStreakDays = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK (DUBAI TIMEZONE) ===');
+  console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS - COPIED FROM GYM LOGIC) ===');
   console.log('Full habits state:', state);
   console.log('Available days in state:', Object.keys(state?.days || {}));
   
@@ -35,32 +35,24 @@ const calculateAlcoholStreakDays = (state: HabitsState): number => {
   }
 
   // Use Dubai timezone consistently
+  const today = getDubaiDate();
   const todayISO = getTodayISO();
   console.log('Today in Dubai timezone:', todayISO);
+  console.log('Today date object:', today);
 
-  // Find all dates with alcohol data, sorted from newest to oldest
-  const availableDates = Object.keys(state.days)
-    .filter(dateStr => {
-      const dayData = state.days[dateStr];
-      const hasAlcoholData = dayData?.alcohol?.planned;
-      console.log(`Date ${dateStr} has alcohol data:`, hasAlcoholData, dayData?.alcohol);
-      return hasAlcoholData;
-    })
-    .sort()
-    .reverse(); // Most recent first
-  
-  console.log('Available dates with alcohol data (newest first):', availableDates);
-  
-  if (availableDates.length === 0) {
-    console.log('No alcohol data found in any day');
-    return 0;
-  }
-  
   let streak = 0;
   
-  // Start from the most recent date with alcohol data and go backwards
-  for (const dateISO of availableDates) {
-    console.log(`\n--- Checking alcohol day: ${dateISO} ---`);
+  // Start from today and go backwards day by day (like gym logic but for days instead of weeks)
+  let currentDate = new Date(today);
+  console.log('Starting from date:', formatDateISO(currentDate));
+  
+  // Go back up to 60 days to find streaks (prevent infinite loop)
+  let daysChecked = 0;
+  const maxDaysToCheck = 60;
+
+  while (daysChecked < maxDaysToCheck) {
+    const dateISO = formatDateISO(currentDate);
+    console.log(`\n--- Checking alcohol day ${daysChecked + 1}: ${dateISO} ---`);
 
     const dayData = state.days[dateISO];
     console.log(`Day data for ${dateISO}:`, dayData);
@@ -75,10 +67,20 @@ const calculateAlcoholStreakDays = (state: HabitsState): number => {
           console.log(`✅ Completed alcohol avoidance on ${dateISO}! Streak now: ${streak}`);
         } else {
           console.log(`❌ Failed alcohol avoidance on ${dateISO}, breaking streak`);
-          break;
+          break; // Break the streak like in gym logic
         }
+      } else {
+        // No alcohol planned for this day - skip but don't break streak (like gym logic)
+        console.log(`⚪ Alcohol avoidance not planned for ${dateISO}, skipping without breaking streak`);
       }
+    } else {
+      // No alcohol data for this day - skip but don't break streak (like gym logic)
+      console.log(`⚫ No alcohol data for ${dateISO}, skipping without breaking streak`);
     }
+
+    // Move to previous day
+    currentDate.setDate(currentDate.getDate() - 1);
+    daysChecked++;
   }
 
   console.log('=== FINAL ALCOHOL STREAK:', streak, 'DAYS ===');
@@ -139,7 +141,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       streakLabel = "Current streak (perfect weeks)";
       styling = getWeekStreakStyling(streakValue);
     } else if (habitType === 'alcohol') {
-      console.log('Calling calculateAlcoholStreakDays (consecutive days with Dubai timezone)...');
+      console.log('Calling calculateAlcoholStreakDays (consecutive days - copied from gym logic)...');
       streakValue = calculateAlcoholStreakDays(habitsState);
       console.log('Alcohol streak result:', streakValue);
       streakLabel = "Current streak (consecutive days)";
