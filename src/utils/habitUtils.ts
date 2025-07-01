@@ -78,24 +78,24 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
   
   let relevantDays: DayData[] = [];
   
-  // Filter by month if specified
+  // Filter by month if specified - STRICT month filtering
   if (year !== undefined && month !== undefined) {
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0); // Last day of month
     const today = getDubaiDate(); // Use Dubai timezone
     
-    // Get all days in the month up to today
-    const daysInMonth = getDaysInMonth(year, month);
+    console.log(`calculateHabitStats: Calculating for ${habitType} in ${year}-${month + 1} (Dubai timezone)`);
     
-    daysInMonth.forEach(date => {
-      // Only process days up to today
-      if (date <= today) {
-        const dateISO = formatDateISO(date);
-        const dayData = state.days[dateISO];
-        
-        if (dayData) {
-          relevantDays.push(dayData);
-        }
+    // Only include days that belong to the specified month AND year
+    Object.keys(state.days).forEach(dateISO => {
+      const dayDate = parseISODate(dateISO);
+      const dayData = state.days[dateISO];
+      
+      // STRICT filtering: day must be in the exact month and year, and not in the future
+      if (dayDate.getFullYear() === year && 
+          dayDate.getMonth() === month && 
+          dayDate <= today && 
+          dayData) {
+        relevantDays.push(dayData);
+        console.log(`calculateHabitStats: Including day ${dateISO} in ${year}-${month + 1} calculation`);
       }
     });
   } else {
@@ -124,7 +124,7 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
     
     // Process days for sleep-specific calculations
     for (const day of relevantDays) {
-      const dayDate = new Date(day.date);
+      const dayDate = parseISODate(day.date);
       const sleepHours = day.sleep?.sleepHours || 0;
       
       console.log(`calculateHabitStats: Sleep for ${day.date}: ${sleepHours} hours`);
@@ -195,7 +195,7 @@ export const calculateHabitStats = (state: HabitsState, habitType: HabitType, ye
         tempStreak++;
         
         // Check if this is in the current week
-        const dayDate = new Date(day.date);
+        const dayDate = parseISODate(day.date);
         if (dayDate >= weekStart && dayDate <= today) {
           currentWeekCompleted++;
         }
@@ -224,31 +224,40 @@ export const calculateSleepQualityStats = (state: HabitsState, year: number, mon
     return { goodSleep: 0, averageSleep: 0, badSleep: 0 };
   }
   
-  const monthStart = new Date(year, month, 1);
-  const monthEnd = new Date(year, month + 1, 0);
   const today = getDubaiDate(); // Use Dubai timezone
   
   let goodSleep = 0;
   let averageSleep = 0;
   let badSleep = 0;
   
-  // Filter days for the specific month
-  const days = Object.values(state.days).filter(day => {
-    const dayDate = new Date(day.date);
-    return dayDate >= monthStart && dayDate <= monthEnd && dayDate <= today;
+  console.log(`calculateSleepQualityStats: Calculating for ${year}-${month + 1} (Dubai timezone)`);
+  
+  // Filter days for the specific month - STRICT filtering
+  Object.keys(state.days).forEach(dateISO => {
+    const dayDate = parseISODate(dateISO);
+    const dayData = state.days[dateISO];
+    
+    // STRICT filtering: day must be in the exact month and year, and not in the future
+    if (dayDate.getFullYear() === year && 
+        dayDate.getMonth() === month && 
+        dayDate <= today && 
+        dayData) {
+      
+      const sleepHours = dayData.sleep?.sleepHours || 0;
+      
+      console.log(`calculateSleepQualityStats: Processing ${dateISO}: ${sleepHours} hours`);
+      
+      if (sleepHours >= 7) {
+        goodSleep++;
+      } else if (sleepHours >= 5) {
+        averageSleep++;
+      } else if (sleepHours > 0) {
+        badSleep++;
+      }
+    }
   });
   
-  for (const day of days) {
-    const sleepHours = day.sleep?.sleepHours || 0;
-    
-    if (sleepHours >= 7) {
-      goodSleep++;
-    } else if (sleepHours >= 5) {
-      averageSleep++;
-    } else if (sleepHours > 0) {
-      badSleep++;
-    }
-  }
+  console.log(`calculateSleepQualityStats: Results - good: ${goodSleep}, average: ${averageSleep}, bad: ${badSleep}`);
   
   return { goodSleep, averageSleep, badSleep };
 };
