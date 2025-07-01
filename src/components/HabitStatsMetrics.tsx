@@ -1,4 +1,5 @@
 
+
 import React from "react";
 import { HabitType, HabitStats, HabitsState } from "@/types/habit";
 import { habitColors } from "@/utils/chartUtils";
@@ -23,9 +24,9 @@ interface HabitStatsMetricsProps {
   habitsState?: HabitsState;
 }
 
-// Calculate alcohol streak (consecutive days) - FIXED VERSION
+// Calculate alcohol streak (consecutive days) - FIXED DATE HANDLING
 const calculateAlcoholStreakDays = (state: HabitsState): number => {
-  console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS) - FIXED ===');
+  console.log('=== CALCULATING ALCOHOL STREAK (CONSECUTIVE DAYS) - FIXED DATE HANDLING ===');
   console.log('Full habits state:', state);
   console.log('Available days in state:', Object.keys(state?.days || {}));
   
@@ -34,33 +35,28 @@ const calculateAlcoholStreakDays = (state: HabitsState): number => {
     return 0;
   }
 
-  // Use current date properly
-  const today = new Date();
-  const todayISO = formatDateISO(today);
-  console.log('Today date object:', today);
-  console.log('Today ISO:', todayISO);
+  // Find the most recent day with alcohol data instead of assuming today
+  const availableDates = Object.keys(state.days)
+    .filter(dateStr => state.days[dateStr]?.alcohol?.planned)
+    .sort()
+    .reverse(); // Most recent first
+  
+  console.log('Available dates with alcohol data:', availableDates);
+  
+  if (availableDates.length === 0) {
+    console.log('No alcohol data found in any day');
+    return 0;
+  }
   
   let streak = 0;
   
-  // Start from today and go backwards day by day
-  let currentDate = new Date(today);
-  
-  // Go back up to 2 years to find streaks (prevent infinite loop)
-  let daysChecked = 0;
-  const maxDaysToCheck = 730; // 2 years
-
-  while (daysChecked < maxDaysToCheck) {
-    const dateISO = formatDateISO(currentDate);
-    console.log(`\n--- Checking alcohol day ${daysChecked + 1}: ${dateISO} ---`);
+  // Start from the most recent date with alcohol data and go backwards
+  for (const dateISO of availableDates) {
+    console.log(`\n--- Checking alcohol day: ${dateISO} ---`);
 
     const dayData = state.days[dateISO];
     console.log(`Day data for ${dateISO}:`, dayData);
     
-    if (dayData) {
-      console.log(`Full day data structure:`, JSON.stringify(dayData, null, 2));
-      console.log(`Alcohol data:`, dayData.alcohol);
-    }
-
     if (dayData?.alcohol) {
       const alcoholData = dayData.alcohol;
       console.log(`Alcohol data details: planned=${alcoholData.planned}, completed=${alcoholData.completed}`);
@@ -73,16 +69,8 @@ const calculateAlcoholStreakDays = (state: HabitsState): number => {
           console.log(`❌ Failed alcohol avoidance on ${dateISO}, breaking streak`);
           break;
         }
-      } else {
-        console.log(`⚪ Alcohol avoidance not planned for ${dateISO}, continuing to previous day`);
       }
-    } else {
-      console.log(`⚪ No alcohol data for ${dateISO}, continuing to previous day`);
     }
-
-    // Move to previous day
-    currentDate.setDate(currentDate.getDate() - 1);
-    daysChecked++;
   }
 
   console.log('=== FINAL ALCOHOL STREAK:', streak, 'DAYS ===');
@@ -187,3 +175,4 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
 };
 
 export default HabitStatsMetrics;
+
