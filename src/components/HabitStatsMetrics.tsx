@@ -1,7 +1,14 @@
 
 import React from "react";
-import { HabitType, HabitStats } from "@/types/habit";
+import { HabitType, HabitStats, HabitsState } from "@/types/habit";
 import { habitColors } from "@/utils/chartUtils";
+import { 
+  calculateGymStreakWeeks, 
+  calculateMeditationStreakWeeks, 
+  calculateAlcoholStreakDays,
+  getWeekStreakStyling,
+  getDayStreakStyling 
+} from "@/utils/streakUtils";
 
 interface SleepQualityStats {
   goodSleep: number;
@@ -13,12 +20,14 @@ interface HabitStatsMetricsProps {
   habitType: HabitType;
   stats: HabitStats;
   sleepQualityStats?: SleepQualityStats;
+  habitsState?: HabitsState;
 }
 
 const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   habitType,
   stats,
-  sleepQualityStats
+  sleepQualityStats,
+  habitsState
 }) => {
   const colors = habitColors[habitType];
 
@@ -41,11 +50,54 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     );
   }
 
+  // Calculate streaks for other habit types
+  let streakValue = 0;
+  let streakLabel = "";
+  let styling = { backgroundColor: '#F8F9FA', color: '#6C757D', stars: 0, label: '0' };
+
+  if (habitsState) {
+    if (habitType === 'gym') {
+      streakValue = calculateGymStreakWeeks(habitsState);
+      streakLabel = "Current streak (perfect weeks)";
+      styling = getWeekStreakStyling(streakValue);
+    } else if (habitType === 'meditation') {
+      streakValue = calculateMeditationStreakWeeks(habitsState);
+      streakLabel = "Current streak (perfect weeks)";
+      styling = getWeekStreakStyling(streakValue);
+    } else if (habitType === 'alcohol') {
+      streakValue = calculateAlcoholStreakDays(habitsState);
+      streakLabel = "Current streak (days in a row)";
+      styling = getDayStreakStyling(streakValue);
+    }
+  }
+
+  // Render stars if applicable
+  const renderStars = () => {
+    if (styling.stars === 0) return null;
+    
+    return (
+      <div className="flex gap-1 mt-1">
+        {Array.from({ length: styling.stars }, (_, i) => (
+          <span key={i} className="text-yellow-300 text-sm">⭐</span>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 gap-2">
-      <div className="p-2 rounded-md" style={{ backgroundColor: colors.secondary }}>
-        <p className="text-xs text-muted-foreground">Total Completed</p>
-        <h3 className="text-xl font-bold">{stats.totalCompleted}</h3>
+      <div 
+        className="p-2 rounded-md transition-all duration-300" 
+        style={{ 
+          backgroundColor: styling.backgroundColor,
+          color: styling.color 
+        }}
+      >
+        <p className="text-xs opacity-80">{streakLabel}</p>
+        <div className="flex items-center gap-2">
+          <h3 className="text-xl font-bold">{styling.label}</h3>
+          {renderStars()}
+        </div>
       </div>
     </div>
   );

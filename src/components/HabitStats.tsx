@@ -74,6 +74,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({
           habitType={habitType}
           stats={stats}
           sleepQualityStats={sleepQualityStats}
+          habitsState={habitsState}
         />
         
         <HabitStatsChart
