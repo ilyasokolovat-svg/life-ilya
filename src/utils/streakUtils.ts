@@ -8,12 +8,8 @@ const getMondayOfWeek = (date: Date): Date => {
   const day = result.getDay();
   const diff = result.getDate() - day + (day === 0 ? -6 : 1);
   result.setDate(diff);
+  result.setHours(0, 0, 0, 0);
   return result;
-};
-
-// Generate week key based on Monday
-const generateWeekKey = (monday: Date): string => {
-  return `${monday.getFullYear()}-${monday.getMonth() + 1}-${monday.getDate()}`;
 };
 
 // Calculate gym streak (perfect weeks)
@@ -21,19 +17,29 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
   if (!state || !state.days) return 0;
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   let streak = 0;
+  
+  // Start from the Monday of this week and go backwards
   let currentWeekStart = getMondayOfWeek(today);
+  
+  // If today is Monday and we haven't completed this week yet, start from last week
+  const currentWeekEnd = new Date(currentWeekStart);
+  currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+  
+  // If current week is not complete, start checking from previous week
+  if (currentWeekEnd >= today) {
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+  }
 
-  // Go backwards week by week
+  console.log('Calculating gym streak, starting from week:', formatDateISO(currentWeekStart));
+
   while (true) {
     const weekEnd = new Date(currentWeekStart);
     weekEnd.setDate(currentWeekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
 
-    // Don't count future weeks or current incomplete week
-    if (currentWeekStart > today) {
-      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-      continue;
-    }
+    console.log('Checking week:', formatDateISO(currentWeekStart), 'to', formatDateISO(weekEnd));
 
     let plannedDays = 0;
     let completedDays = 0;
@@ -43,7 +49,7 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
       const checkDate = new Date(currentWeekStart);
       checkDate.setDate(currentWeekStart.getDate() + i);
       
-      // Don't count future days
+      // Don't check future days
       if (checkDate > today) continue;
 
       const dateISO = formatDateISO(checkDate);
@@ -57,7 +63,9 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
       }
     }
 
-    // If no gym was planned this week, skip it
+    console.log(`Week ${formatDateISO(currentWeekStart)}: planned=${plannedDays}, completed=${completedDays}`);
+
+    // If no gym was planned this week, skip it (don't break streak)
     if (plannedDays === 0) {
       currentWeekStart.setDate(currentWeekStart.getDate() - 7);
       continue;
@@ -66,14 +74,17 @@ export const calculateGymStreakWeeks = (state: HabitsState): number => {
     // If all planned gym sessions were completed, continue streak
     if (plannedDays === completedDays) {
       streak++;
+      console.log('Perfect week! Streak now:', streak);
     } else {
       // Streak broken
+      console.log('Streak broken - not all planned sessions completed');
       break;
     }
 
     currentWeekStart.setDate(currentWeekStart.getDate() - 7);
   }
 
+  console.log('Final gym streak:', streak);
   return streak;
 };
 
@@ -82,19 +93,27 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
   if (!state || !state.days) return 0;
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   let streak = 0;
+  
+  // Start from the Monday of this week and go backwards
   let currentWeekStart = getMondayOfWeek(today);
+  
+  // If today is Monday and we haven't completed this week yet, start from last week
+  const currentWeekEnd = new Date(currentWeekStart);
+  currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+  
+  // If current week is not complete, start checking from previous week
+  if (currentWeekEnd >= today) {
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+  }
 
-  // Go backwards week by week
+  console.log('Calculating meditation streak, starting from week:', formatDateISO(currentWeekStart));
+
   while (true) {
     const weekEnd = new Date(currentWeekStart);
     weekEnd.setDate(currentWeekStart.getDate() + 6);
-
-    // Don't count future weeks or current incomplete week
-    if (currentWeekStart > today) {
-      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-      continue;
-    }
+    weekEnd.setHours(23, 59, 59, 999);
 
     let plannedDays = 0;
     let completedDays = 0;
@@ -104,7 +123,7 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
       const checkDate = new Date(currentWeekStart);
       checkDate.setDate(currentWeekStart.getDate() + i);
       
-      // Don't count future days
+      // Don't check future days
       if (checkDate > today) continue;
 
       const dateISO = formatDateISO(checkDate);
@@ -117,6 +136,8 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
         }
       }
     }
+
+    console.log(`Meditation week ${formatDateISO(currentWeekStart)}: planned=${plannedDays}, completed=${completedDays}`);
 
     // If no meditation was planned this week, skip it
     if (plannedDays === 0) {
@@ -135,6 +156,7 @@ export const calculateMeditationStreakWeeks = (state: HabitsState): number => {
     currentWeekStart.setDate(currentWeekStart.getDate() - 7);
   }
 
+  console.log('Final meditation streak:', streak);
   return streak;
 };
 
@@ -143,26 +165,40 @@ export const calculateAlcoholStreakDays = (state: HabitsState): number => {
   if (!state || !state.days) return 0;
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   let streak = 0;
   let currentDate = new Date(today);
+
+  console.log('Calculating alcohol streak, starting from:', formatDateISO(currentDate));
 
   // Go backwards day by day
   while (true) {
     const dateISO = formatDateISO(currentDate);
     const dayData = state.days[dateISO];
 
-    // If alcohol was completed (meaning no alcohol), continue streak
-    if (dayData?.alcohol?.completed) {
+    console.log(`Checking alcohol for ${dateISO}:`, dayData?.alcohol);
+
+    // If alcohol was planned and completed, it means no alcohol was consumed
+    if (dayData?.alcohol?.planned && dayData?.alcohol?.completed) {
       streak++;
-    } else if (dayData?.alcohol?.planned) {
-      // If alcohol was planned but not completed (meaning they drank), break streak
+      console.log('No alcohol day found, streak now:', streak);
+    } else if (dayData?.alcohol?.planned && !dayData?.alcohol?.completed) {
+      // If alcohol was planned but not completed, it means they drank
+      console.log('Alcohol consumed, breaking streak');
       break;
+    } else if (!dayData?.alcohol?.planned) {
+      // If no alcohol plan for this day, we can't count it in the streak
+      // but we also don't break the streak, just move to previous day
+      console.log('No alcohol plan for this day, skipping');
     }
-    // If no alcohol data for this day, continue checking previous days
 
     currentDate.setDate(currentDate.getDate() - 1);
+    
+    // Don't go back more than a year
+    if (streak > 365) break;
   }
 
+  console.log('Final alcohol streak:', streak);
   return streak;
 };
 
