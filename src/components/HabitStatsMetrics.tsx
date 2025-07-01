@@ -143,19 +143,21 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     } else if (habitType === 'alcohol') {
       console.log('Calling calculateAlcoholStreakDays (consecutive days - copied from gym logic)...');
       streakValue = calculateAlcoholStreakDays(habitsState);
-      console.log('Alcohol streak result:', streakValue);
+      console.log('❗ ALCOHOL STREAK CALCULATED:', streakValue, 'days');
       streakLabel = "Current streak (consecutive days)";
-      console.log('Before calling getDayStreakStyling with value:', streakValue);
+      console.log('❗ Before calling getDayStreakStyling with value:', streakValue);
       styling = getDayStreakStyling(streakValue);
-      console.log('After calling getDayStreakStyling, received styling:', styling);
+      console.log('❗ After calling getDayStreakStyling, received styling:', styling);
+      console.log('❗ Final styling.label that will be displayed:', styling.label);
     }
   } else {
     console.log(`No habitsState provided for ${habitType}`);
   }
 
-  console.log(`Final styling for ${habitType}:`, styling);
-  console.log(`Final streakValue for ${habitType}:`, streakValue);
-  console.log(`Final styling.label for ${habitType}:`, styling.label);
+  console.log(`❗❗ FINAL VALUES FOR ${habitType.toUpperCase()}:`);
+  console.log('- streakValue:', streakValue);
+  console.log('- styling.label:', styling.label);
+  console.log('- styling object:', styling);
 
   // Render stars if applicable
   const renderStars = () => {
@@ -170,6 +172,11 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     );
   };
 
+  // Force the display for alcohol to use the calculated value
+  const displayLabel = habitType === 'alcohol' ? `${streakValue} days` : styling.label;
+  
+  console.log(`❗❗❗ FINAL DISPLAY LABEL FOR ${habitType.toUpperCase()}:`, displayLabel);
+
   return (
     <div className="grid grid-cols-1 gap-2">
       <div 
@@ -181,7 +188,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
       >
         <p className="text-xs opacity-80">{streakLabel}</p>
         <div className="flex items-center gap-2">
-          <h3 className="text-xl font-bold">{styling.label}</h3>
+          <h3 className="text-xl font-bold">{displayLabel}</h3>
           {renderStars()}
         </div>
       </div>
