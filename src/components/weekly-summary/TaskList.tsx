@@ -19,7 +19,6 @@ interface TaskListProps {
   onDrop: (e: React.DragEvent, targetItemId: string) => void;
   onDragEnd: () => void;
   onToggleBulletPoint: (item: any, bulletIndex: number, completed: boolean) => void;
-  onJumpToWeeklyPlan: (category: string, subcategory: string, periodKey: string) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -36,8 +35,7 @@ const TaskList: React.FC<TaskListProps> = ({
   onDragOver,
   onDrop,
   onDragEnd,
-  onToggleBulletPoint,
-  onJumpToWeeklyPlan
+  onToggleBulletPoint
 }) => {
   return (
     <CardContent className="space-y-3">
@@ -58,7 +56,6 @@ const TaskList: React.FC<TaskListProps> = ({
           onDrop={onDrop}
           onDragEnd={onDragEnd}
           onToggleBulletPoint={onToggleBulletPoint}
-          onJumpToWeeklyPlan={onJumpToWeeklyPlan}
         />
       ))}
     </CardContent>

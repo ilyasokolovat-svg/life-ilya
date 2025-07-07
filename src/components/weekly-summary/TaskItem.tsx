@@ -3,7 +3,7 @@ import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Edit, Save, X, ExternalLink } from "lucide-react";
+import { GripVertical, Edit, Save, X } from "lucide-react";
 import BulletPointTask from "./BulletPointTask";
 import { WeeklySummaryItem } from "@/hooks/useWeeklySummary";
 
@@ -22,7 +22,6 @@ interface TaskItemProps {
   onDrop: (e: React.DragEvent, targetItemId: string) => void;
   onDragEnd: () => void;
   onToggleBulletPoint: (item: any, bulletIndex: number, completed: boolean) => void;
-  onJumpToWeeklyPlan: (category: string, subcategory: string, periodKey: string) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -39,8 +38,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDragOver,
   onDrop,
   onDragEnd,
-  onToggleBulletPoint,
-  onJumpToWeeklyPlan
+  onToggleBulletPoint
 }) => {
   const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
   const hasBulletPoints = bulletPoints.length > 1;
@@ -94,16 +92,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
           </div>
           
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onJumpToWeeklyPlan(item.category, item.subcategory, item.period_key)}
-              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            >
-              <ExternalLink className="h-4 w-4 mr-1" />
-              Jump
-            </Button>
-            
             {editingTask === item.id ? (
               <div className="flex gap-1">
                 <Button

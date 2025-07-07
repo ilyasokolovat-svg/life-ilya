@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
@@ -5,10 +6,8 @@ import { useWeeklySummaryHooks } from "./weekly-summary/useWeeklySummaryHooks";
 import { useStandaloneTodos } from "@/hooks/useStandaloneTodos";
 import TaskList from "./weekly-summary/TaskList";
 import StandaloneTodos from "./weekly-summary/StandaloneTodos";
-import { useNavigate } from "react-router-dom";
 
 const WeeklySummaryDashboard: React.FC = () => {
-  const navigate = useNavigate();
   const { weeklySummary, isLoading, currentWeekKey } = useWeeklySummary();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [tasks, setTasks] = useState(weeklySummary);
@@ -79,13 +78,6 @@ const WeeklySummaryDashboard: React.FC = () => {
     }
     
     return completed;
-  };
-
-  // Navigation handler for jumping to weekly planning - fixed to navigate to the correct Goals page
-  const handleJumpToWeeklyPlan = (category: string, subcategory: string, periodKey: string) => {
-    // Navigate directly to the Goals page for the specific category
-    // The Goals page will handle the subcategory display and weekly planning
-    navigate(`/goals/${encodeURIComponent(category)}`);
   };
 
   const toggleTaskCompletion = (item: any, completed: boolean) => {
@@ -301,7 +293,6 @@ const WeeklySummaryDashboard: React.FC = () => {
             onDrop={handleDrop}
             onDragEnd={handleDragEnd}
             onToggleBulletPoint={toggleBulletPointCompletion}
-            onJumpToWeeklyPlan={handleJumpToWeeklyPlan}
           />
         )}
       </Card>
