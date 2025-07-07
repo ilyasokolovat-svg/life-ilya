@@ -81,16 +81,11 @@ const WeeklySummaryDashboard: React.FC = () => {
     return completed;
   };
 
-  // Navigation handler for jumping to weekly planning - fixed to use correct route format
+  // Navigation handler for jumping to weekly planning - fixed to navigate to the correct Goals page
   const handleJumpToWeeklyPlan = (category: string, subcategory: string, periodKey: string) => {
-    // Navigate to Goals page using the correct route format /goals/:category with query params
-    const searchParams = new URLSearchParams({
-      subcategory,
-      view: 'week',
-      week: periodKey
-    });
-    
-    navigate(`/goals/${encodeURIComponent(category)}?${searchParams.toString()}`);
+    // Navigate directly to the Goals page for the specific category
+    // The Goals page will handle the subcategory display and weekly planning
+    navigate(`/goals/${encodeURIComponent(category)}`);
   };
 
   const toggleTaskCompletion = (item: any, completed: boolean) => {
