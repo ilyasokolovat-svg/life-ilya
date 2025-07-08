@@ -53,6 +53,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const isBulletPointTask = bulletPoints.length > 1;
 
   const handleDayChange = (day: string) => {
+    console.log('Day change requested:', day, 'for task:', item.id);
     const assignedDay = day === 'unassigned' ? null : day;
     onDayAssignmentUpdate(item.id, assignedDay);
   };
@@ -71,7 +72,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
       case 'friday': return 'Fri';
       case 'saturday': return 'Sat';
       case 'sunday': return 'Sun';
-      default: return 'Day';
+      default: return 'No Day';
     }
   };
 
@@ -149,25 +150,25 @@ const TaskItem: React.FC<TaskItemProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Day Assignment Dropdown */}
+          {/* Day Assignment Dropdown with better visibility */}
           <Select
             value={getDayDisplayValue()}
             onValueChange={handleDayChange}
           >
-            <SelectTrigger className="h-8 w-20 text-xs">
+            <SelectTrigger className="h-8 w-24 text-xs bg-white border-gray-300 z-50">
               <SelectValue>
-                {item.assigned_day ? getDayLabel(item.assigned_day) : 'Day'}
+                {item.assigned_day ? getDayLabel(item.assigned_day) : 'No Day'}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">No day</SelectItem>
-              <SelectItem value="monday">Monday</SelectItem>
-              <SelectItem value="tuesday">Tuesday</SelectItem>
-              <SelectItem value="wednesday">Wednesday</SelectItem>
-              <SelectItem value="thursday">Thursday</SelectItem>
-              <SelectItem value="friday">Friday</SelectItem>
-              <SelectItem value="saturday">Saturday</SelectItem>
-              <SelectItem value="sunday">Sunday</SelectItem>
+            <SelectContent className="bg-white border shadow-lg z-50">
+              <SelectItem value="unassigned" className="text-xs">No Day</SelectItem>
+              <SelectItem value="monday" className="text-xs">Monday</SelectItem>
+              <SelectItem value="tuesday" className="text-xs">Tuesday</SelectItem>
+              <SelectItem value="wednesday" className="text-xs">Wednesday</SelectItem>
+              <SelectItem value="thursday" className="text-xs">Thursday</SelectItem>
+              <SelectItem value="friday" className="text-xs">Friday</SelectItem>
+              <SelectItem value="saturday" className="text-xs">Saturday</SelectItem>
+              <SelectItem value="sunday" className="text-xs">Sunday</SelectItem>
             </SelectContent>
           </Select>
 

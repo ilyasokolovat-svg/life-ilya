@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,12 +209,19 @@ const WeeklySummaryDashboard: React.FC = () => {
     setEditText('');
   };
 
-  // Handle day assignment update
+  // Handle day assignment update with better debugging
   const handleDayAssignmentUpdate = (taskId: string, assigned_day?: string | null) => {
-    updateTaskAssignment({
-      taskId,
-      assigned_day
-    });
+    console.log('handleDayAssignmentUpdate called:', { taskId, assigned_day });
+    
+    try {
+      updateTaskAssignment({
+        taskId,
+        assigned_day
+      });
+      console.log('updateTaskAssignment called successfully');
+    } catch (error) {
+      console.error('Error updating task assignment:', error);
+    }
   };
 
   const handleDragStart = useCallback((e: React.DragEvent, itemId: string) => {
