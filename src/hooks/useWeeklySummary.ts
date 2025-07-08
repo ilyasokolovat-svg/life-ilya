@@ -1,5 +1,4 @@
-
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,10 +13,12 @@ export interface WeeklySummaryItem {
   bullet_point_completions?: boolean[];
   isOverdue?: boolean;
   weekDates?: string; // Added for displaying week dates
+  order_index?: number; // Added for custom ordering
 }
 
 export function useWeeklySummary() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Helper function to get Monday of any given date (consistent week start)
   const getMondayOfWeek = (date: Date): Date => {
@@ -127,7 +128,14 @@ export function useWeeklySummary() {
         ...incompletePreviousTasks.map(item => ({ ...item, isOverdue: true }))
       ];
       
-      return allTasks.map(item => {
+      // Sort by order_index if it exists, otherwise keep original order
+      const sortedTasks = allTasks.sort((a, b) => {
+        const orderA = a.order_index ?? 999999;
+        const orderB = b.order_index ?? 999999;
+        return orderA - orderB;
+      });
+      
+      return sortedTasks.map(item => {
         // Parse bullet point completions from actual_result if it exists
         let bulletPointCompletions: boolean[] = [];
         if (item.actual_result && item.actual_result !== 'completed') {
@@ -151,16 +159,50 @@ export function useWeeklySummary() {
           isCompleted: item.actual_result === 'completed',
           bullet_point_completions: bulletPointCompletions,
           isOverdue: item.isOverdue || false,
-          weekDates: item.isOverdue ? getWeekDates(item.period_key) : undefined
+          weekDates: item.isOverdue ? getWeekDates(item.period_key) : undefined,
+          order_index: item.order_index
         };
       });
     },
     enabled: !!user?.id,
   });
 
+  // Mutation to update task order
+  const updateTaskOrder = useMutation({
+    mutationFn: async (orderedTasks: WeeklySummaryItem[]) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Update each task with its new order index
+      const updates = orderedTasks.map((task, index) => ({
+        id: task.id,
+        order_index: index
+      }));
+      
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('goals_data')
+          .update({ order_index: update.order_index })
+          .eq('id', update.id)
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+      }
+      
+      return updates;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch the weekly summary
+      queryClient.invalidateQueries({ queryKey: ['weekly_summary', user?.id, currentWeekKey] });
+    },
+    onError: (error) => {
+      console.error('Failed to update task order:', error);
+    }
+  });
+
   return {
     weeklySummary,
     isLoading,
-    currentWeekKey
+    currentWeekKey,
+    updateTaskOrder: updateTaskOrder.mutate
   };
 }

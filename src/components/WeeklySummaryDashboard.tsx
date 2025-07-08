@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
@@ -8,7 +9,7 @@ import TaskList from "./weekly-summary/TaskList";
 import StandaloneTodos from "./weekly-summary/StandaloneTodos";
 
 const WeeklySummaryDashboard: React.FC = () => {
-  const { weeklySummary, isLoading, currentWeekKey } = useWeeklySummary();
+  const { weeklySummary, isLoading, currentWeekKey, updateTaskOrder } = useWeeklySummary();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [tasks, setTasks] = useState(weeklySummary);
   const [editingTask, setEditingTask] = useState<string | null>(null);
@@ -34,7 +35,7 @@ const WeeklySummaryDashboard: React.FC = () => {
   // Update tasks when weeklySummary changes, but preserve manual order
   React.useEffect(() => {
     if (tasks.length === 0) {
-      // Initial load - use the order from database
+      // Initial load - use the order from database (already sorted by order_index)
       setTasks(weeklySummary);
     } else {
       // Preserve manual order but update task properties
@@ -224,7 +225,7 @@ const WeeklySummaryDashboard: React.FC = () => {
       return;
     }
 
-    // Manual reordering only - when user drags and drops
+    // Manual reordering - when user drags and drops
     setTasks(currentTasks => {
       const newTasks = [...currentTasks];
       const draggedIndex = newTasks.findIndex(task => task.id === draggedItem);
@@ -236,11 +237,14 @@ const WeeklySummaryDashboard: React.FC = () => {
       const [draggedTask] = newTasks.splice(draggedIndex, 1);
       newTasks.splice(targetIndex, 0, draggedTask);
       
+      // Save the new order to the database
+      updateTaskOrder(newTasks);
+      
       return newTasks;
     });
     
     setDraggedItem(null);
-  }, [draggedItem]);
+  }, [draggedItem, updateTaskOrder]);
 
   const handleDragEnd = useCallback(() => {
     setDraggedItem(null);
