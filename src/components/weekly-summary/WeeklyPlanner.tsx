@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -264,7 +263,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
   return (
     <div className="w-full max-w-none">
-      <div className="flex gap-4">
+      <div className="flex gap-6">
         {/* Unassigned Tasks Pool - Left Side */}
         <div className="w-80 shrink-0">
           <Card className="h-full">
@@ -292,18 +291,16 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           </Card>
         </div>
 
-        {/* Days of the Week - Right Side */}
-        <div className="flex-1 space-y-4">
+        {/* Days of the Week - Right Side with wider columns */}
+        <div className="flex-1 space-y-6">
           {/* First Row: Monday - Thursday */}
-          <div className="flex gap-4">
+          <div className="grid grid-cols-4 gap-6">
             {DAYS.slice(0, 4).map(day => renderDayColumn(day))}
           </div>
 
           {/* Second Row: Friday - Sunday */}
-          <div className="flex gap-4">
+          <div className="grid grid-cols-3 gap-6">
             {DAYS.slice(4, 7).map(day => renderDayColumn(day))}
-            {/* Add empty div to balance the layout since we only have 3 days in row 2 */}
-            <div className="flex-1"></div>
           </div>
         </div>
       </div>
