@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WeeklySummaryItem } from '@/hooks/useWeeklySummary';
-import { Calendar, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, AlertCircle } from 'lucide-react';
 
 interface WeeklyPlannerProps {
   tasks: WeeklySummaryItem[];
@@ -14,7 +15,6 @@ interface WeeklyPlannerProps {
 }
 
 type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-type TimeSlot = 'morning' | 'afternoon' | 'evening';
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
   { key: 'monday', label: 'Monday', short: 'Mon' },
@@ -24,12 +24,6 @@ const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
   { key: 'friday', label: 'Friday', short: 'Fri' },
   { key: 'saturday', label: 'Saturday', short: 'Sat' },
   { key: 'sunday', label: 'Sunday', short: 'Sun' }
-];
-
-const TIME_SLOTS: { key: TimeSlot; label: string; icon: string }[] = [
-  { key: 'morning', label: 'Morning', icon: '🌅' },
-  { key: 'afternoon', label: 'Afternoon', icon: '☀️' },
-  { key: 'evening', label: 'Evening', icon: '🌙' }
 ];
 
 const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
@@ -44,15 +38,27 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   const unassignedTasks = tasks.filter(task => !task.assigned_day);
   const assignedTasks = tasks.filter(task => task.assigned_day);
 
+  // Sort tasks by priority (high > medium > low > unclassified)
+  const sortTasksByPriority = (taskList: WeeklySummaryItem[]) => {
+    return [...taskList].sort((a, b) => {
+      const priorityOrder = { high: 4, medium: 3, low: 2, unclassified: 1 };
+      const priorityA = priorityOrder[a.priority as keyof typeof priorityOrder] || 1;
+      const priorityB = priorityOrder[b.priority as keyof typeof priorityOrder] || 1;
+      return priorityB - priorityA;
+    });
+  };
+
   // Get priority badge styling
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return <Badge variant="destructive" className="text-xs">🔴 High</Badge>;
+        return <Badge variant="destructive" className="text-xs">High</Badge>;
       case 'low':
-        return <Badge variant="secondary" className="text-xs">🟢 Low</Badge>;
+        return <Badge variant="secondary" className="text-xs">Low</Badge>;
+      case 'medium':
+        return <Badge variant="outline" className="text-xs">Med</Badge>;
       default:
-        return <Badge variant="outline" className="text-xs">🟡 Med</Badge>;
+        return <Badge variant="outline" className="text-xs opacity-50">-</Badge>;
     }
   };
 
@@ -68,11 +74,11 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     e.dataTransfer.dropEffect = 'move';
   };
 
-  // Handle drop on day/time slot
-  const handleDrop = (e: React.DragEvent, day: DayOfWeek, timeSlot?: TimeSlot) => {
+  // Handle drop on day
+  const handleDrop = (e: React.DragEvent, day: DayOfWeek) => {
     e.preventDefault();
     if (draggedTask) {
-      onUpdateTaskAssignment(draggedTask, day, timeSlot);
+      onUpdateTaskAssignment(draggedTask, day, null);
       setDraggedTask(null);
     }
   };
@@ -94,7 +100,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   // Render task card
   const renderTaskCard = (task: WeeklySummaryItem, isInPool = false) => {
     const bulletPoints = task.planned_goal.split('\n').filter(line => line.trim());
-    const hasBulletPoints = bulletPoints.length > 1;
+    const taskText = bulletPoints.length > 1 ? bulletPoints[0].replace(/^•\s*/, '') : task.planned_goal;
 
     return (
       <div
@@ -107,68 +113,50 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           ${task.isOverdue ? 'border-orange-300 bg-orange-50' : 'border-gray-200'}
           ${task.priority === 'high' ? 'border-l-4 border-l-red-500' : ''}
           ${task.priority === 'low' ? 'border-l-4 border-l-green-500' : ''}
+          ${task.priority === 'medium' ? 'border-l-4 border-l-yellow-500' : ''}
+          ${!isInPool ? 'min-w-[180px] max-w-[200px]' : 'w-full'}
         `}
       >
         <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2 flex-1">
-            {getPriorityBadge(task.priority || 'medium')}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {getPriorityBadge(task.priority || 'unclassified')}
             {task.isOverdue && (
-              <Badge variant="outline" className="text-xs text-orange-600">
+              <Badge variant="outline" className="text-xs text-orange-600 shrink-0">
                 <AlertCircle className="w-3 h-3 mr-1" />
                 {task.weekDates}
               </Badge>
             )}
           </div>
           {isInPool && (
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 px-2 text-xs"
-                onClick={() => handlePriorityChange(task.id, task.priority === 'high' ? 'medium' : 'high')}
-              >
-                {task.priority === 'high' ? '🔴→🟡' : '🟡→🔴'}
-              </Button>
+            <Select
+              value={task.priority || 'unclassified'}
+              onValueChange={(value) => handlePriorityChange(task.id, value === 'unclassified' ? '' : value)}
+            >
+              <SelectTrigger className="h-6 w-16 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Med</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="unclassified">-</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        <div className="text-sm mb-2">
+          <div className="font-medium text-gray-800 line-clamp-2">
+            {taskText}
+          </div>
+          {bulletPoints.length > 1 && (
+            <div className="text-xs text-gray-500 mt-1">
+              +{bulletPoints.length - 1} more points
             </div>
           )}
         </div>
 
-        <div className="text-sm">
-          {hasBulletPoints ? (
-            <div className="space-y-1">
-              {bulletPoints.map((point, index) => {
-                const isCompleted = task.bullet_point_completions?.[index] || false;
-                return (
-                  <div key={index} className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      checked={isCompleted}
-                      onChange={(e) => onToggleBulletPoint(task, index, e.target.checked)}
-                      className="mt-0.5 h-3 w-3"
-                    />
-                    <span className={`text-xs ${isCompleted ? 'line-through text-gray-500' : ''}`}>
-                      {point.replace(/^•\s*/, '')}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={task.isCompleted}
-                onChange={(e) => onToggleCompletion(task, e.target.checked)}
-                className="h-3 w-3"
-              />
-              <span className={`text-xs ${task.isCompleted ? 'line-through text-gray-500' : ''}`}>
-                {task.planned_goal}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="text-xs text-gray-500 mt-2">
+        <div className="text-xs text-gray-500 truncate">
           {task.category} • {task.subcategory}
         </div>
       </div>
@@ -176,7 +164,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-8 gap-4 h-[600px]">
+    <div className="grid grid-cols-9 gap-4 h-[600px]">
       {/* Unassigned Tasks Pool */}
       <div className="col-span-2">
         <Card className="h-full">
@@ -196,7 +184,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                 All tasks are assigned! 🎉
               </p>
             ) : (
-              unassignedTasks.map(task => renderTaskCard(task, true))
+              sortTasksByPriority(unassignedTasks).map(task => renderTaskCard(task, true))
             )}
           </CardContent>
         </Card>
@@ -205,6 +193,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       {/* Days of the Week */}
       {DAYS.map(day => {
         const dayTasks = assignedTasks.filter(task => task.assigned_day === day.key);
+        const sortedDayTasks = sortTasksByPriority(dayTasks);
         
         return (
           <div key={day.key} className="col-span-1">
@@ -219,33 +208,16 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 space-y-2">
-                {TIME_SLOTS.map(timeSlot => {
-                  const timeSlotTasks = dayTasks.filter(task => task.assigned_time_slot === timeSlot.key);
-                  
-                  return (
-                    <div
-                      key={timeSlot.key}
-                      className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[120px] hover:border-blue-300 transition-colors"
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, day.key, timeSlot.key)}
-                    >
-                      <div className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
-                        <span>{timeSlot.icon}</span>
-                        {timeSlot.label}
-                        {timeSlotTasks.length > 0 && (
-                          <Badge variant="secondary" className="text-xs ml-1">
-                            {timeSlotTasks.length}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-1 max-h-[80px] overflow-y-auto">
-                        {timeSlotTasks.map(task => renderTaskCard(task))}
-                      </div>
-                    </div>
-                  );
-                })}
+              <CardContent className="pt-0">
+                <div
+                  className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[450px] hover:border-blue-300 transition-colors"
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, day.key)}
+                >
+                  <div className="space-y-2 overflow-y-auto max-h-[430px]">
+                    {sortedDayTasks.map(task => renderTaskCard(task))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
