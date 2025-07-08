@@ -53,7 +53,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const isBulletPointTask = bulletPoints.length > 1;
 
   const handleDayChange = (day: string) => {
-    console.log('Day change requested:', day, 'for task:', item.id);
+    console.log('TaskItem handleDayChange:', { day, taskId: item.id, currentAssignedDay: item.assigned_day });
     const assignedDay = day === 'unassigned' ? null : day;
     onDayAssignmentUpdate(item.id, assignedDay);
   };
@@ -80,17 +80,17 @@ const TaskItem: React.FC<TaskItemProps> = ({
     <Select
       value={assignedDay || 'unassigned'}
       onValueChange={(day) => {
-        console.log('Day change requested:', day, 'for task:', taskId);
+        console.log('DayDropdown onValueChange:', { day, taskId, assignedDay });
         const assignedDayValue = day === 'unassigned' ? null : day;
         onDayAssignmentUpdate(taskId, assignedDayValue);
       }}
     >
-      <SelectTrigger className="h-7 w-20 text-xs bg-white border-gray-300">
+      <SelectTrigger className="h-7 w-20 text-xs bg-white border-gray-300 z-50">
         <SelectValue>
           {assignedDay ? getDayLabel(assignedDay) : 'No Day'}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent className="bg-white border shadow-lg z-50">
+      <SelectContent className="bg-white border shadow-lg z-[100]">
         <SelectItem value="unassigned" className="text-xs">No Day</SelectItem>
         <SelectItem value="monday" className="text-xs">Monday</SelectItem>
         <SelectItem value="tuesday" className="text-xs">Tuesday</SelectItem>

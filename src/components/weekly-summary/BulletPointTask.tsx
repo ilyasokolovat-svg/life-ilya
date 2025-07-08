@@ -25,9 +25,6 @@ const BulletPointTask: React.FC<BulletPointTaskProps> = ({
         const isCompleted = bulletPointCompletions[index] === true;
         const cleanBulletPoint = bulletPoint.replace(/^•\s*/, '').trim();
         
-        // Generate a unique task ID for each bullet point
-        const bulletTaskId = `${item.id}-bullet-${index}`;
-        
         return (
           <div key={index} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-1">
@@ -40,7 +37,7 @@ const BulletPointTask: React.FC<BulletPointTaskProps> = ({
               </span>
             </div>
             <DayDropdown 
-              taskId={bulletTaskId} 
+              taskId={item.id}
               assignedDay={item.assigned_day} 
             />
           </div>
