@@ -14,9 +14,12 @@ export interface WeeklySummaryItem {
   isOverdue?: boolean;
   weekDates?: string; // Added for displaying week dates
   order_index?: number; // Added for custom ordering
+  priority?: 'high' | 'medium' | 'low'; // Added for priority system
+  assigned_day?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'; // Added for day assignment
+  assigned_time_slot?: 'morning' | 'afternoon' | 'evening'; // Added for time slot assignment
 }
 
-// Extended type for database items that includes order_index
+// Extended type for database items that includes all new fields
 interface DatabaseGoalItem {
   id: string;
   category: string;
@@ -29,6 +32,9 @@ interface DatabaseGoalItem {
   created_at: string;
   updated_at: string;
   order_index: number | null;
+  priority: string | null;
+  assigned_day: string | null;
+  assigned_time_slot: string | null;
 }
 
 export function useWeeklySummary() {
@@ -143,8 +149,18 @@ export function useWeeklySummary() {
         ...incompletePreviousTasks.map(item => ({ ...(item as DatabaseGoalItem), isOverdue: true }))
       ];
       
-      // Sort by order_index if it exists, otherwise keep original order
+      // Sort by priority first (high > medium > low), then by order_index
       const sortedTasks = allTasks.sort((a, b) => {
+        // Priority sorting
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        const priorityA = priorityOrder[a.priority as keyof typeof priorityOrder] || 2;
+        const priorityB = priorityOrder[b.priority as keyof typeof priorityOrder] || 2;
+        
+        if (priorityA !== priorityB) {
+          return priorityB - priorityA; // Higher priority first
+        }
+        
+        // If priority is the same, sort by order_index
         const orderA = a.order_index ?? 999999;
         const orderB = b.order_index ?? 999999;
         return orderA - orderB;
@@ -175,11 +191,53 @@ export function useWeeklySummary() {
           bullet_point_completions: bulletPointCompletions,
           isOverdue: item.isOverdue || false,
           weekDates: item.isOverdue ? getWeekDates(item.period_key) : undefined,
-          order_index: item.order_index
+          order_index: item.order_index,
+          priority: (item.priority as 'high' | 'medium' | 'low') || 'medium',
+          assigned_day: item.assigned_day as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday' | undefined,
+          assigned_time_slot: item.assigned_time_slot as 'morning' | 'afternoon' | 'evening' | undefined
         };
       });
     },
     enabled: !!user?.id,
+  });
+
+  // Mutation to update task assignment and priority
+  const updateTaskAssignment = useMutation({
+    mutationFn: async ({
+      taskId,
+      assigned_day,
+      assigned_time_slot,
+      priority
+    }: {
+      taskId: string;
+      assigned_day?: string | null;
+      assigned_time_slot?: string | null;
+      priority?: string;
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const updates: any = {};
+      if (assigned_day !== undefined) updates.assigned_day = assigned_day;
+      if (assigned_time_slot !== undefined) updates.assigned_time_slot = assigned_time_slot;
+      if (priority !== undefined) updates.priority = priority;
+      
+      const { error } = await supabase
+        .from('goals_data')
+        .update(updates)
+        .eq('id', taskId)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      return { taskId, ...updates };
+    },
+    onSuccess: () => {
+      // Invalidate and refetch the weekly summary
+      queryClient.invalidateQueries({ queryKey: ['weekly_summary', user?.id, currentWeekKey] });
+    },
+    onError: (error) => {
+      console.error('Failed to update task assignment:', error);
+    }
   });
 
   // Mutation to update task order
@@ -218,6 +276,7 @@ export function useWeeklySummary() {
     weeklySummary,
     isLoading,
     currentWeekKey,
-    updateTaskOrder: updateTaskOrder.mutate
+    updateTaskOrder: updateTaskOrder.mutate,
+    updateTaskAssignment: updateTaskAssignment.mutate
   };
 }

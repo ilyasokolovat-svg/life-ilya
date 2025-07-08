@@ -17,6 +17,8 @@ export type Database = {
       goals_data: {
         Row: {
           actual_result: string | null
+          assigned_day: string | null
+          assigned_time_slot: string | null
           category: string
           created_at: string
           id: string
@@ -24,12 +26,15 @@ export type Database = {
           period_key: string
           period_type: string
           planned_goal: string | null
+          priority: string | null
           subcategory: string
           updated_at: string
           user_id: string
         }
         Insert: {
           actual_result?: string | null
+          assigned_day?: string | null
+          assigned_time_slot?: string | null
           category: string
           created_at?: string
           id?: string
@@ -37,12 +42,15 @@ export type Database = {
           period_key: string
           period_type: string
           planned_goal?: string | null
+          priority?: string | null
           subcategory: string
           updated_at?: string
           user_id: string
         }
         Update: {
           actual_result?: string | null
+          assigned_day?: string | null
+          assigned_time_slot?: string | null
           category?: string
           created_at?: string
           id?: string
@@ -50,6 +58,7 @@ export type Database = {
           period_key?: string
           period_type?: string
           planned_goal?: string | null
+          priority?: string | null
           subcategory?: string
           updated_at?: string
           user_id?: string

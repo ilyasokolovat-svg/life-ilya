@@ -1,19 +1,21 @@
-
-
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useWeeklySummary } from "@/hooks/useWeeklySummary";
 import { useWeeklySummaryHooks } from "./weekly-summary/useWeeklySummaryHooks";
 import { useStandaloneTodos } from "@/hooks/useStandaloneTodos";
 import TaskList from "./weekly-summary/TaskList";
 import StandaloneTodos from "./weekly-summary/StandaloneTodos";
+import WeeklyPlanner from "./weekly-summary/WeeklyPlanner";
+import { Calendar, List } from "lucide-react";
 
 const WeeklySummaryDashboard: React.FC = () => {
-  const { weeklySummary, isLoading, currentWeekKey, updateTaskOrder } = useWeeklySummary();
+  const { weeklySummary, isLoading, currentWeekKey, updateTaskOrder, updateTaskAssignment } = useWeeklySummary();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [tasks, setTasks] = useState(weeklySummary);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'list' | 'planner'>('list');
 
   // Standalone todos hook - now using Supabase
   const {
@@ -35,7 +37,7 @@ const WeeklySummaryDashboard: React.FC = () => {
   // Update tasks when weeklySummary changes, but preserve manual order
   React.useEffect(() => {
     if (tasks.length === 0) {
-      // Initial load - use the order from database (already sorted by order_index)
+      // Initial load - use the order from database (already sorted by priority and order_index)
       setTasks(weeklySummary);
     } else {
       // Preserve manual order but update task properties
@@ -207,6 +209,11 @@ const WeeklySummaryDashboard: React.FC = () => {
     setEditText('');
   };
 
+  // Handle task assignment update
+  const handleTaskAssignmentUpdate = (taskId: string, assigned_day?: string | null, assigned_time_slot?: string | null, priority?: string) => {
+    updateTaskAssignment(taskId, assigned_day, assigned_time_slot, priority);
+  };
+
   const handleDragStart = useCallback((e: React.DragEvent, itemId: string) => {
     setDraggedItem(itemId);
     e.dataTransfer.effectAllowed = 'move';
@@ -269,11 +276,36 @@ const WeeklySummaryDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Category-based tasks */}
+      {/* View Mode Toggle */}
+      <div className="flex justify-center gap-2">
+        <Button
+          variant={viewMode === 'list' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('list')}
+          className="flex items-center gap-2"
+        >
+          <List className="w-4 h-4" />
+          Task List
+        </Button>
+        <Button
+          variant={viewMode === 'planner' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('planner')}
+          className="flex items-center gap-2"
+        >
+          <Calendar className="w-4 h-4" />
+          Weekly Planner
+        </Button>
+      </div>
+
+      {/* Tasks Section */}
       <Card>
         <CardHeader>
           <CardTitle>This Week's Tasks</CardTitle>
-          <p className="text-sm text-gray-600">Week of {currentWeekKey} • Drag to reorder by priority</p>
+          <p className="text-sm text-gray-600">
+            Week of {currentWeekKey} • 
+            {viewMode === 'list' ? ' Drag to reorder by priority' : ' Drag tasks to assign them to days'}
+          </p>
         </CardHeader>
         {tasks.length === 0 ? (
           <CardContent>
@@ -282,22 +314,33 @@ const WeeklySummaryDashboard: React.FC = () => {
             </p>
           </CardContent>
         ) : (
-          <TaskList
-            tasks={tasks}
-            draggedItem={draggedItem}
-            editingTask={editingTask}
-            editText={editText}
-            onToggleCompletion={toggleTaskCompletion}
-            onStartEditing={startEditing}
-            onCancelEditing={cancelEditing}
-            onSaveEdit={saveEdit}
-            onEditTextChange={setEditText}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onDragEnd={handleDragEnd}
-            onToggleBulletPoint={toggleBulletPointCompletion}
-          />
+          <CardContent>
+            {viewMode === 'list' ? (
+              <TaskList
+                tasks={tasks}
+                draggedItem={draggedItem}
+                editingTask={editingTask}
+                editText={editText}
+                onToggleCompletion={toggleTaskCompletion}
+                onStartEditing={startEditing}
+                onCancelEditing={cancelEditing}
+                onSaveEdit={saveEdit}
+                onEditTextChange={setEditText}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                onToggleBulletPoint={toggleBulletPointCompletion}
+              />
+            ) : (
+              <WeeklyPlanner
+                tasks={tasks}
+                onUpdateTaskAssignment={handleTaskAssignmentUpdate}
+                onToggleCompletion={toggleTaskCompletion}
+                onToggleBulletPoint={toggleBulletPointCompletion}
+              />
+            )}
+          </CardContent>
         )}
       </Card>
 
