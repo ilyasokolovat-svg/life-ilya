@@ -69,20 +69,6 @@ const WeeklySummaryDashboard: React.FC = () => {
 
   const { getHookForCategory } = useWeeklySummaryHooks();
 
-  // Helper function to check if a task is fully completed
-  const isTaskFullyCompleted = (item: any, completed: boolean): boolean => {
-    if (completed) return true;
-    
-    // Check bullet point completions
-    const bulletPoints = item.planned_goal.split('\n').filter((line: string) => line.trim());
-    if (bulletPoints.length > 1) {
-      const bulletPointCompletions = item.bullet_point_completions || [];
-      return bulletPoints.every((_: string, index: number) => bulletPointCompletions[index] === true);
-    }
-    
-    return completed;
-  };
-
   const toggleTaskCompletion = (item: any, completed: boolean) => {
     const hook = getHookForCategory(item.category);
     if (hook) {
@@ -267,11 +253,14 @@ const WeeklySummaryDashboard: React.FC = () => {
           assigned_day
         });
         
-        // Update local state
+        // Update local state with proper type casting
         setTasks(currentTasks => {
           return currentTasks.map(task => 
             task.id === taskId 
-              ? { ...task, assigned_day: assigned_day }
+              ? { 
+                  ...task, 
+                  assigned_day: assigned_day as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday' | undefined
+                }
               : task
           );
         });
