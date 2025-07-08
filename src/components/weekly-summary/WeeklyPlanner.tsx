@@ -16,17 +16,14 @@ interface WeeklyPlannerProps {
 
 type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
-const DAYS_ROW1: { key: DayOfWeek; label: string; short: string }[] = [
-  { key: 'monday', label: 'Monday', short: 'Monday' },
-  { key: 'tuesday', label: 'Tuesday', short: 'Tuesday' },
-  { key: 'wednesday', label: 'Wednesday', short: 'Wednesday' },
-  { key: 'thursday', label: 'Thursday', short: 'Thursday' }
-];
-
-const DAYS_ROW2: { key: DayOfWeek; label: string; short: string }[] = [
-  { key: 'friday', label: 'Friday', short: 'Friday' },
-  { key: 'saturday', label: 'Saturday', short: 'Saturday' },
-  { key: 'sunday', label: 'Sunday', short: 'Sunday' }
+const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
+  { key: 'monday', label: 'Monday', short: 'Mon' },
+  { key: 'tuesday', label: 'Tuesday', short: 'Tue' },
+  { key: 'wednesday', label: 'Wednesday', short: 'Wed' },
+  { key: 'thursday', label: 'Thursday', short: 'Thu' },
+  { key: 'friday', label: 'Friday', short: 'Fri' },
+  { key: 'saturday', label: 'Saturday', short: 'Sat' },
+  { key: 'sunday', label: 'Sunday', short: 'Sun' }
 ];
 
 const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
@@ -47,7 +44,9 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
         ...task,
         displayText: task.planned_goal.replace(/^•\s*/, '').trim(),
         bulletIndex: -1,
-        taskKey: task.id
+        taskKey: task.id,
+        // Set priority to unclassified if it's not already set
+        priority: task.priority || 'unclassified'
       }];
     } else {
       // Multiple bullet points - create individual tasks
@@ -56,7 +55,9 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
         displayText: bullet.replace(/^•\s*/, '').trim(),
         bulletIndex: index,
         taskKey: `${task.id}-bullet-${index}`,
-        id: `${task.id}-bullet-${index}` // Unique ID for each bullet
+        id: `${task.id}-bullet-${index}`, // Unique ID for each bullet
+        // Set priority to unclassified if it's not already set
+        priority: task.priority || 'unclassified'
       }));
     }
   });
@@ -65,13 +66,20 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   const unassignedTasks = individualTasks.filter(task => !task.assigned_day);
   const assignedTasks = individualTasks.filter(task => task.assigned_day);
 
-  // Sort tasks by priority (high > medium > low > unclassified)
+  // Sort tasks by priority (high > medium > low > unclassified) and then alphabetically within each priority
   const sortTasksByPriority = (taskList: any[]) => {
     return [...taskList].sort((a, b) => {
       const priorityOrder = { high: 4, medium: 3, low: 2, unclassified: 1 };
       const priorityA = priorityOrder[a.priority as keyof typeof priorityOrder] || 1;
       const priorityB = priorityOrder[b.priority as keyof typeof priorityOrder] || 1;
-      return priorityB - priorityA;
+      
+      // First sort by priority
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA;
+      }
+      
+      // Then sort alphabetically within the same priority
+      return a.displayText.localeCompare(b.displayText);
     });
   };
 
@@ -80,10 +88,10 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     switch (priority) {
       case 'high':
         return <Badge variant="destructive" className="text-xs">High</Badge>;
-      case 'low':
-        return <Badge variant="secondary" className="text-xs">Low</Badge>;
       case 'medium':
         return <Badge variant="outline" className="text-xs">Med</Badge>;
+      case 'low':
+        return <Badge variant="secondary" className="text-xs">Low</Badge>;
       default:
         return <Badge variant="outline" className="text-xs opacity-50">-</Badge>;
     }
@@ -165,7 +173,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           {isInPool && (
             <Select
               value={task.priority || 'unclassified'}
-              onValueChange={(value) => handlePriorityChange(task.taskKey, value === 'unclassified' ? '' : value)}
+              onValueChange={(value) => handlePriorityChange(task.taskKey, value === 'unclassified' ? 'unclassified' : value)}
             >
               <SelectTrigger className="h-6 w-16 text-xs">
                 <SelectValue />
@@ -232,10 +240,10 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     const dayTasks = assignedTasks.filter(task => task.assigned_day === day.key);
     
     return (
-      <div key={day.key} className="flex-1">
+      <div key={day.key} className="flex-1 min-w-0">
         <Card className="h-full">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-center">
+            <CardTitle className="text-base text-center">
               {day.short}
               {dayTasks.length > 0 && (
                 <Badge variant="outline" className="ml-2 text-xs">
@@ -256,14 +264,14 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
   return (
     <div className="w-full max-w-none">
-      <div className="space-y-6">
-        {/* Unassigned Tasks Pool */}
-        <div className="w-full">
-          <Card>
+      <div className="flex gap-4">
+        {/* Unassigned Tasks Pool - Left Side */}
+        <div className="w-80 shrink-0">
+          <Card className="h-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                Unassigned Tasks ({unassignedTasks.length})
+                Unassigned ({unassignedTasks.length})
               </CardTitle>
             </CardHeader>
             <CardContent
@@ -276,7 +284,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                   All tasks are assigned! 🎉
                 </p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {sortTasksByPriority(unassignedTasks).map(task => renderTaskCard(task, true))}
                 </div>
               )}
@@ -284,16 +292,19 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           </Card>
         </div>
 
-        {/* First Row: Monday - Thursday */}
-        <div className="flex gap-4">
-          {DAYS_ROW1.map(day => renderDayColumn(day))}
-        </div>
+        {/* Days of the Week - Right Side */}
+        <div className="flex-1 space-y-4">
+          {/* First Row: Monday - Thursday */}
+          <div className="flex gap-4">
+            {DAYS.slice(0, 4).map(day => renderDayColumn(day))}
+          </div>
 
-        {/* Second Row: Friday - Sunday */}
-        <div className="flex gap-4">
-          {DAYS_ROW2.map(day => renderDayColumn(day))}
-          {/* Add empty div to balance the layout since we only have 3 days in row 2 */}
-          <div className="flex-1"></div>
+          {/* Second Row: Friday - Sunday */}
+          <div className="flex gap-4">
+            {DAYS.slice(4, 7).map(day => renderDayColumn(day))}
+            {/* Add empty div to balance the layout since we only have 3 days in row 2 */}
+            <div className="flex-1"></div>
+          </div>
         </div>
       </div>
     </div>
