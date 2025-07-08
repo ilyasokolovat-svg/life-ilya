@@ -76,6 +76,33 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   };
 
+  const DayDropdown = ({ taskId, assignedDay }: { taskId: string, assignedDay?: string | null }) => (
+    <Select
+      value={assignedDay || 'unassigned'}
+      onValueChange={(day) => {
+        console.log('Day change requested:', day, 'for task:', taskId);
+        const assignedDayValue = day === 'unassigned' ? null : day;
+        onDayAssignmentUpdate(taskId, assignedDayValue);
+      }}
+    >
+      <SelectTrigger className="h-7 w-20 text-xs bg-white border-gray-300">
+        <SelectValue>
+          {assignedDay ? getDayLabel(assignedDay) : 'No Day'}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent className="bg-white border shadow-lg z-50">
+        <SelectItem value="unassigned" className="text-xs">No Day</SelectItem>
+        <SelectItem value="monday" className="text-xs">Monday</SelectItem>
+        <SelectItem value="tuesday" className="text-xs">Tuesday</SelectItem>
+        <SelectItem value="wednesday" className="text-xs">Wednesday</SelectItem>
+        <SelectItem value="thursday" className="text-xs">Thursday</SelectItem>
+        <SelectItem value="friday" className="text-xs">Friday</SelectItem>
+        <SelectItem value="saturday" className="text-xs">Saturday</SelectItem>
+        <SelectItem value="sunday" className="text-xs">Sunday</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
   return (
     <div
       className={`p-4 border rounded-lg transition-all ${
@@ -139,39 +166,24 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 <BulletPointTask
                   item={item}
                   onToggleBulletPoint={onToggleBulletPoint}
+                  onDayAssignmentUpdate={onDayAssignmentUpdate}
+                  DayDropdown={DayDropdown}
                 />
               ) : (
-                <p className={`text-sm ${item.isCompleted ? 'line-through text-gray-500' : ''}`}>
-                  {item.planned_goal}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-gray-500' : ''}`}>
+                    {item.planned_goal}
+                  </p>
+                  <div className="ml-2">
+                    <DayDropdown taskId={item.id} assignedDay={item.assigned_day} />
+                  </div>
+                </div>
               )}
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Day Assignment Dropdown with better visibility */}
-          <Select
-            value={getDayDisplayValue()}
-            onValueChange={handleDayChange}
-          >
-            <SelectTrigger className="h-8 w-24 text-xs bg-white border-gray-300 z-50">
-              <SelectValue>
-                {item.assigned_day ? getDayLabel(item.assigned_day) : 'No Day'}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg z-50">
-              <SelectItem value="unassigned" className="text-xs">No Day</SelectItem>
-              <SelectItem value="monday" className="text-xs">Monday</SelectItem>
-              <SelectItem value="tuesday" className="text-xs">Tuesday</SelectItem>
-              <SelectItem value="wednesday" className="text-xs">Wednesday</SelectItem>
-              <SelectItem value="thursday" className="text-xs">Thursday</SelectItem>
-              <SelectItem value="friday" className="text-xs">Friday</SelectItem>
-              <SelectItem value="saturday" className="text-xs">Saturday</SelectItem>
-              <SelectItem value="sunday" className="text-xs">Sunday</SelectItem>
-            </SelectContent>
-          </Select>
-
           {!isEditing && (
             <Button
               size="sm"

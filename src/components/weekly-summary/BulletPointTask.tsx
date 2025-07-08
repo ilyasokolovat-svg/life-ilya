@@ -6,31 +6,43 @@ import { WeeklySummaryItem } from "@/hooks/useWeeklySummary";
 interface BulletPointTaskProps {
   item: WeeklySummaryItem;
   onToggleBulletPoint: (item: any, bulletIndex: number, completed: boolean) => void;
+  onDayAssignmentUpdate: (taskId: string, assigned_day?: string | null) => void;
+  DayDropdown: React.ComponentType<{ taskId: string, assignedDay?: string | null }>;
 }
 
 const BulletPointTask: React.FC<BulletPointTaskProps> = ({
   item,
-  onToggleBulletPoint
+  onToggleBulletPoint,
+  onDayAssignmentUpdate,
+  DayDropdown
 }) => {
   const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
-  
+  const bulletPointCompletions = item.bullet_point_completions || [];
+
   return (
     <div className="space-y-2">
       {bulletPoints.map((bulletPoint, index) => {
-        const isCompleted = item.bullet_point_completions?.[index] || false;
+        const isCompleted = bulletPointCompletions[index] === true;
+        const cleanBulletPoint = bulletPoint.replace(/^•\s*/, '').trim();
+        
+        // Generate a unique task ID for each bullet point
+        const bulletTaskId = `${item.id}-bullet-${index}`;
         
         return (
-          <div key={index} className="flex items-start gap-2 py-1">
-            <Checkbox
-              checked={isCompleted}
-              onCheckedChange={(checked) => onToggleBulletPoint(item, index, !!checked)}
-              className="mt-0.5 flex-shrink-0 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+          <div key={index} className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-1">
+              <Checkbox
+                checked={isCompleted}
+                onCheckedChange={(checked) => onToggleBulletPoint(item, index, !!checked)}
+              />
+              <span className={`text-sm ${isCompleted ? 'line-through text-gray-500' : ''}`}>
+                • {cleanBulletPoint}
+              </span>
+            </div>
+            <DayDropdown 
+              taskId={bulletTaskId} 
+              assignedDay={item.assigned_day} 
             />
-            <span className={`text-sm break-words flex-1 ${
-              isCompleted ? 'line-through text-gray-500' : 'text-gray-800'
-            }`}>
-              {bulletPoint.replace(/^•\s*/, '')} {/* Remove bullet point prefix */}
-            </span>
           </div>
         );
       })}
