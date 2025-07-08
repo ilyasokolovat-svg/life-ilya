@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { useWeeklySummaryHooks } from "./weekly-summary/useWeeklySummaryHooks";
 import { useStandaloneTodos } from "@/hooks/useStandaloneTodos";
 import TaskList from "./weekly-summary/TaskList";
 import StandaloneTodos from "./weekly-summary/StandaloneTodos";
-import WeeklyPlanner from "./weekly-summary/WeeklyPlanner";
+import WeeklyView from "./weekly-summary/WeeklyView";
 import { Calendar, List } from "lucide-react";
 
 const WeeklySummaryDashboard: React.FC = () => {
@@ -15,7 +16,7 @@ const WeeklySummaryDashboard: React.FC = () => {
   const [tasks, setTasks] = useState(weeklySummary);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'list' | 'planner'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'weekly'>('list');
 
   // Standalone todos hook - now using Supabase
   const {
@@ -209,13 +210,11 @@ const WeeklySummaryDashboard: React.FC = () => {
     setEditText('');
   };
 
-  // Handle task assignment update - fixed to pass object parameter
-  const handleTaskAssignmentUpdate = (taskId: string, assigned_day?: string | null, assigned_time_slot?: string | null, priority?: string) => {
+  // Handle day assignment update
+  const handleDayAssignmentUpdate = (taskId: string, assigned_day?: string | null) => {
     updateTaskAssignment({
       taskId,
-      assigned_day,
-      assigned_time_slot,
-      priority
+      assigned_day
     });
   };
 
@@ -293,45 +292,20 @@ const WeeklySummaryDashboard: React.FC = () => {
           Task List
         </Button>
         <Button
-          variant={viewMode === 'planner' ? 'default' : 'outline'}
+          variant={viewMode === 'weekly' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setViewMode('planner')}
+          onClick={() => setViewMode('weekly')}
           className="flex items-center gap-2"
         >
           <Calendar className="w-4 h-4" />
-          Weekly Planner
+          Weekly View
         </Button>
       </div>
 
       {/* Tasks Section */}
-      {viewMode === 'planner' ? (
-        // Full width planner view
-        <div className="w-full">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold">This Week's Tasks</h2>
-            <p className="text-sm text-gray-600">
-              Week of {currentWeekKey} • Drag tasks to assign them to days
-            </p>
-          </div>
-          {tasks.length === 0 ? (
-            <Card>
-              <CardContent className="py-8">
-                <p className="text-gray-500 text-center">
-                  No tasks planned for this week. Start planning in your goal categories!
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <WeeklyPlanner
-              tasks={tasks}
-              onUpdateTaskAssignment={handleTaskAssignmentUpdate}
-              onToggleCompletion={toggleTaskCompletion}
-              onToggleBulletPoint={toggleBulletPointCompletion}
-            />
-          )}
-        </div>
+      {viewMode === 'weekly' ? (
+        <WeeklyView tasks={tasks} currentWeekKey={currentWeekKey} />
       ) : (
-        // Regular card layout for list view
         <Card>
           <CardHeader>
             <CardTitle>This Week's Tasks</CardTitle>
@@ -362,6 +336,7 @@ const WeeklySummaryDashboard: React.FC = () => {
                 onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
                 onToggleBulletPoint={toggleBulletPointCompletion}
+                onDayAssignmentUpdate={handleDayAssignmentUpdate}
               />
             </CardContent>
           )}

@@ -1,11 +1,14 @@
 
 import React from "react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Edit, Save, X } from "lucide-react";
-import BulletPointTask from "./BulletPointTask";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GripVertical, Edit, Save, X, Calendar } from "lucide-react";
 import { WeeklySummaryItem } from "@/hooks/useWeeklySummary";
+import BulletPointTask from "./BulletPointTask";
 
 interface TaskItemProps {
   item: WeeklySummaryItem;
@@ -22,6 +25,7 @@ interface TaskItemProps {
   onDrop: (e: React.DragEvent, targetItemId: string) => void;
   onDragEnd: () => void;
   onToggleBulletPoint: (item: any, bulletIndex: number, completed: boolean) => void;
+  onDayAssignmentUpdate: (taskId: string, assigned_day?: string | null) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -38,122 +42,146 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDragOver,
   onDrop,
   onDragEnd,
-  onToggleBulletPoint
+  onToggleBulletPoint,
+  onDayAssignmentUpdate
 }) => {
+  const isEditing = editingTask === item.id;
+  const isDragging = draggedItem === item.id;
+  
+  // Check if this is a bullet point task
   const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
-  const hasBulletPoints = bulletPoints.length > 1;
+  const isBulletPointTask = bulletPoints.length > 1;
 
-  // Check if task is fully completed (either marked as completed or all bullet points are checked)
-  const isFullyCompleted = item.isCompleted || (hasBulletPoints && 
-    bulletPoints.every((_, index) => item.bullet_point_completions?.[index] === true)
-  );
+  const handleDayChange = (day: string) => {
+    const assignedDay = day === 'unassigned' ? null : day;
+    onDayAssignmentUpdate(item.id, assignedDay);
+  };
+
+  const getDayDisplayValue = () => {
+    if (!item.assigned_day) return 'unassigned';
+    return item.assigned_day;
+  };
+
+  const getDayLabel = (day: string) => {
+    switch (day) {
+      case 'monday': return 'Mon';
+      case 'tuesday': return 'Tue';
+      case 'wednesday': return 'Wed';
+      case 'thursday': return 'Thu';
+      case 'friday': return 'Fri';
+      case 'saturday': return 'Sat';
+      case 'sunday': return 'Sun';
+      default: return 'Day';
+    }
+  };
 
   return (
     <div
-      className={`flex items-start gap-3 p-4 border rounded-lg transition-all cursor-move ${
-        draggedItem === item.id ? 'opacity-50' : ''
-      } ${
-        isFullyCompleted 
-          ? 'border-green-300 bg-green-50' 
-          : item.isOverdue 
-            ? 'border-orange-300 bg-orange-50' 
-            : 'border-gray-200 hover:border-gray-300'
-      }`}
+      className={`p-4 border rounded-lg transition-all ${
+        isDragging ? 'opacity-50 scale-95' : ''
+      } ${item.isOverdue ? 'border-orange-300 bg-orange-50' : 'border-gray-200'}`}
       draggable
       onDragStart={(e) => onDragStart(e, item.id)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, item.id)}
       onDragEnd={onDragEnd}
     >
-      <GripVertical className="h-4 w-4 text-gray-400 mt-1 flex-shrink-0" />
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium text-blue-600">
-                {item.category}
-              </span>
-              <span className="text-xs text-gray-500">→</span>
-              <span className="text-sm text-gray-700">
-                {item.subcategory}
-              </span>
-              {item.isOverdue && (
-                <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded">
-                  Overdue ({item.weekDates})
-                </span>
-              )}
-              {isFullyCompleted && (
-                <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded font-medium">
-                  Completed ✓
-                </span>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {editingTask === item.id ? (
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onSaveEdit(item)}
-                  className="text-green-600 hover:text-green-700"
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onCancelEditing}
-                  className="text-gray-600 hover:text-gray-700"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onStartEditing(item)}
-                className="text-gray-600 hover:text-gray-700"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
+          {!isBulletPointTask && (
+            <Checkbox
+              checked={item.isCompleted}
+              onCheckedChange={(checked) => onToggleCompletion(item, !!checked)}
+              disabled={isEditing}
+            />
+          )}
         </div>
 
-        {editingTask === item.id ? (
-          <Textarea
-            value={editText}
-            onChange={(e) => onEditTextChange(e.target.value)}
-            className="w-full min-h-[100px] mb-2"
-            placeholder="Enter your task details..."
-          />
-        ) : (
-          <div className="mb-3">
-            {hasBulletPoints ? (
-              <BulletPointTask
-                item={item}
-                onToggleBulletPoint={onToggleBulletPoint}
-              />
-            ) : (
-              <div className="flex items-start gap-2">
-                <Checkbox
-                  checked={item.isCompleted}
-                  onCheckedChange={(checked) => onToggleCompletion(item, !!checked)}
-                  className="mt-1 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                />
-                <p className={`leading-relaxed flex-1 ${
-                  isFullyCompleted ? 'text-green-700 font-medium' : 'text-gray-700'
-                }`}>
-                  {item.planned_goal}
-                </p>
-              </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="outline" className="text-xs">
+              {item.category}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {item.subcategory}
+            </Badge>
+            {item.isOverdue && (
+              <Badge variant="destructive" className="text-xs">
+                Overdue ({item.weekDates})
+              </Badge>
             )}
           </div>
-        )}
+
+          {isEditing ? (
+            <div className="space-y-2">
+              <Textarea
+                value={editText}
+                onChange={(e) => onEditTextChange(e.target.value)}
+                className="min-h-[100px] text-sm"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => onSaveEdit(item)}>
+                  <Save className="h-3 w-3 mr-1" />
+                  Save
+                </Button>
+                <Button size="sm" variant="outline" onClick={onCancelEditing}>
+                  <X className="h-3 w-3 mr-1" />
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {isBulletPointTask ? (
+                <BulletPointTask
+                  item={item}
+                  onToggleBulletPoint={onToggleBulletPoint}
+                />
+              ) : (
+                <p className={`text-sm ${item.isCompleted ? 'line-through text-gray-500' : ''}`}>
+                  {item.planned_goal}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Day Assignment Dropdown */}
+          <Select
+            value={getDayDisplayValue()}
+            onValueChange={handleDayChange}
+          >
+            <SelectTrigger className="h-8 w-20 text-xs">
+              <SelectValue>
+                {item.assigned_day ? getDayLabel(item.assigned_day) : 'Day'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">No day</SelectItem>
+              <SelectItem value="monday">Monday</SelectItem>
+              <SelectItem value="tuesday">Tuesday</SelectItem>
+              <SelectItem value="wednesday">Wednesday</SelectItem>
+              <SelectItem value="thursday">Thursday</SelectItem>
+              <SelectItem value="friday">Friday</SelectItem>
+              <SelectItem value="saturday">Saturday</SelectItem>
+              <SelectItem value="sunday">Sunday</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {!isEditing && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onStartEditing(item)}
+              className="h-8 w-8 p-0"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
