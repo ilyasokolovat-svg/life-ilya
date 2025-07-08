@@ -20,6 +20,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          order_index: number | null
           period_key: string
           period_type: string
           planned_goal: string | null
@@ -32,6 +33,7 @@ export type Database = {
           category: string
           created_at?: string
           id?: string
+          order_index?: number | null
           period_key: string
           period_type: string
           planned_goal?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          order_index?: number | null
           period_key?: string
           period_type?: string
           planned_goal?: string | null
