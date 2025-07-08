@@ -16,6 +16,21 @@ export interface WeeklySummaryItem {
   order_index?: number; // Added for custom ordering
 }
 
+// Extended type for database items that includes order_index
+interface DatabaseGoalItem {
+  id: string;
+  category: string;
+  subcategory: string;
+  period_key: string;
+  period_type: string;
+  planned_goal: string | null;
+  actual_result: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  order_index: number | null;
+}
+
 export function useWeeklySummary() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -122,10 +137,10 @@ export function useWeeklySummary() {
         !isTaskFullyCompleted(item) && isWeekEnded(item.period_key)
       );
       
-      // Combine current and overdue tasks
+      // Combine current and overdue tasks - cast to our extended type
       const allTasks = [
-        ...(currentWeekData || []).map(item => ({ ...item, isOverdue: false })),
-        ...incompletePreviousTasks.map(item => ({ ...item, isOverdue: true }))
+        ...(currentWeekData || []).map(item => ({ ...(item as DatabaseGoalItem), isOverdue: false })),
+        ...incompletePreviousTasks.map(item => ({ ...(item as DatabaseGoalItem), isOverdue: true }))
       ];
       
       // Sort by order_index if it exists, otherwise keep original order
