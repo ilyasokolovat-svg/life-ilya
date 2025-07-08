@@ -304,23 +304,49 @@ const WeeklySummaryDashboard: React.FC = () => {
       </div>
 
       {/* Tasks Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>This Week's Tasks</CardTitle>
-          <p className="text-sm text-gray-600">
-            Week of {currentWeekKey} • 
-            {viewMode === 'list' ? ' Drag to reorder by priority' : ' Drag tasks to assign them to days'}
-          </p>
-        </CardHeader>
-        {tasks.length === 0 ? (
-          <CardContent>
-            <p className="text-gray-500 text-center py-4">
-              No tasks planned for this week. Start planning in your goal categories!
+      {viewMode === 'planner' ? (
+        // Full width planner view
+        <div className="w-full">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">This Week's Tasks</h2>
+            <p className="text-sm text-gray-600">
+              Week of {currentWeekKey} • Drag tasks to assign them to days
             </p>
-          </CardContent>
-        ) : (
-          <CardContent>
-            {viewMode === 'list' ? (
+          </div>
+          {tasks.length === 0 ? (
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-gray-500 text-center">
+                  No tasks planned for this week. Start planning in your goal categories!
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <WeeklyPlanner
+              tasks={tasks}
+              onUpdateTaskAssignment={handleTaskAssignmentUpdate}
+              onToggleCompletion={toggleTaskCompletion}
+              onToggleBulletPoint={toggleBulletPointCompletion}
+            />
+          )}
+        </div>
+      ) : (
+        // Regular card layout for list view
+        <Card>
+          <CardHeader>
+            <CardTitle>This Week's Tasks</CardTitle>
+            <p className="text-sm text-gray-600">
+              Week of {currentWeekKey} • Drag to reorder by priority
+            </p>
+          </CardHeader>
+          {tasks.length === 0 ? (
+            <CardContent>
+              <p className="text-gray-500 text-center py-4">
+                No tasks planned for this week. Start planning in your goal categories!
+              </p>
+            </CardContent>
+          ) : (
+            <CardContent>
               <TaskList
                 tasks={tasks}
                 draggedItem={draggedItem}
@@ -337,17 +363,10 @@ const WeeklySummaryDashboard: React.FC = () => {
                 onDragEnd={handleDragEnd}
                 onToggleBulletPoint={toggleBulletPointCompletion}
               />
-            ) : (
-              <WeeklyPlanner
-                tasks={tasks}
-                onUpdateTaskAssignment={handleTaskAssignmentUpdate}
-                onToggleCompletion={toggleTaskCompletion}
-                onToggleBulletPoint={toggleBulletPointCompletion}
-              />
-            )}
-          </CardContent>
-        )}
-      </Card>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* Standalone todos - now loads from Supabase */}
       <StandaloneTodos
