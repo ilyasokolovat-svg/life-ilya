@@ -93,7 +93,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       case 'low':
         return <Badge variant="secondary" className="text-xs">Low</Badge>;
       default:
-        return <Badge variant="outline" className="text-xs opacity-50">-</Badge>;
+        return <Badge variant="outline" className="text-xs opacity-50">No priority</Badge>;
     }
   };
 
@@ -173,7 +173,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           {isInPool && (
             <Select
               value={task.priority || 'unclassified'}
-              onValueChange={(value) => handlePriorityChange(task.taskKey, value === 'unclassified' ? 'unclassified' : value)}
+              onValueChange={(value) => handlePriorityChange(task.taskKey, value)}
             >
               <SelectTrigger className="h-6 w-16 text-xs">
                 <SelectValue />
@@ -182,7 +182,7 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                 <SelectItem value="high">High</SelectItem>
                 <SelectItem value="medium">Med</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="unclassified">-</SelectItem>
+                <SelectItem value="unclassified">No priority</SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -263,10 +263,10 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   };
 
   return (
-    <div className="w-full max-w-full mx-auto">
-      <div className="flex gap-8 w-full">
+    <div className="w-full">
+      <div className="flex gap-6">
         {/* Unassigned Tasks Pool - Left Side */}
-        <div className="w-96 shrink-0">
+        <div className="w-80 shrink-0">
           <Card className="h-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -293,14 +293,14 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
         </div>
 
         {/* Days of the Week - Right Side taking up remaining space */}
-        <div className="flex-1 min-w-0 space-y-8">
+        <div className="flex-1 min-w-0 space-y-6">
           {/* First Row: Monday - Thursday */}
-          <div className="grid grid-cols-4 gap-8">
+          <div className="grid grid-cols-4 gap-4">
             {DAYS.slice(0, 4).map(day => renderDayColumn(day))}
           </div>
 
           {/* Second Row: Friday - Sunday */}
-          <div className="grid grid-cols-3 gap-8">
+          <div className="grid grid-cols-3 gap-4">
             {DAYS.slice(4, 7).map(day => renderDayColumn(day))}
           </div>
         </div>
