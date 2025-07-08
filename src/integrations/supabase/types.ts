@@ -19,6 +19,7 @@ export type Database = {
           actual_result: string | null
           assigned_day: string | null
           assigned_time_slot: string | null
+          bullet_point_day_assignments: string | null
           category: string
           created_at: string
           id: string
@@ -35,6 +36,7 @@ export type Database = {
           actual_result?: string | null
           assigned_day?: string | null
           assigned_time_slot?: string | null
+          bullet_point_day_assignments?: string | null
           category: string
           created_at?: string
           id?: string
@@ -51,6 +53,7 @@ export type Database = {
           actual_result?: string | null
           assigned_day?: string | null
           assigned_time_slot?: string | null
+          bullet_point_day_assignments?: string | null
           category?: string
           created_at?: string
           id?: string

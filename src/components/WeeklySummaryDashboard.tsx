@@ -239,7 +239,11 @@ const WeeklySummaryDashboard: React.FC = () => {
         }
         
         // Update the specific bullet point's day assignment
-        bulletPointDayAssignments[bulletIndex] = assigned_day;
+        if (assigned_day === null) {
+          delete bulletPointDayAssignments[bulletIndex];
+        } else {
+          bulletPointDayAssignments[bulletIndex] = assigned_day;
+        }
         
         // Update the task with the new bullet point day assignments
         updateTaskAssignment({
@@ -257,9 +261,19 @@ const WeeklySummaryDashboard: React.FC = () => {
         });
       } else {
         // Regular task day assignment
+        console.log('Updating regular task day assignment:', { taskId, assigned_day });
         updateTaskAssignment({
           taskId,
           assigned_day
+        });
+        
+        // Update local state
+        setTasks(currentTasks => {
+          return currentTasks.map(task => 
+            task.id === taskId 
+              ? { ...task, assigned_day: assigned_day }
+              : task
+          );
         });
       }
       console.log('updateTaskAssignment called successfully');
