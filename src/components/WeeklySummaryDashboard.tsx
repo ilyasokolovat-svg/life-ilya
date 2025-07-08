@@ -209,9 +209,14 @@ const WeeklySummaryDashboard: React.FC = () => {
     setEditText('');
   };
 
-  // Handle task assignment update
+  // Handle task assignment update - fixed to pass object parameter
   const handleTaskAssignmentUpdate = (taskId: string, assigned_day?: string | null, assigned_time_slot?: string | null, priority?: string) => {
-    updateTaskAssignment(taskId, assigned_day, assigned_time_slot, priority);
+    updateTaskAssignment({
+      taskId,
+      assigned_day,
+      assigned_time_slot,
+      priority
+    });
   };
 
   const handleDragStart = useCallback((e: React.DragEvent, itemId: string) => {
