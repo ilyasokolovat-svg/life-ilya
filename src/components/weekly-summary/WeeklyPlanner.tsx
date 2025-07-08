@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WeeklySummaryItem } from '@/hooks/useWeeklySummary';
-import { Calendar, AlertCircle } from 'lucide-react';
+import { Calendar, AlertCircle, Plus } from 'lucide-react';
 
 interface WeeklyPlannerProps {
   tasks: WeeklySummaryItem[];
@@ -16,14 +16,17 @@ interface WeeklyPlannerProps {
 
 type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
-const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
-  { key: 'monday', label: 'Monday', short: 'Mon' },
-  { key: 'tuesday', label: 'Tuesday', short: 'Tue' },
-  { key: 'wednesday', label: 'Wednesday', short: 'Wed' },
-  { key: 'thursday', label: 'Thursday', short: 'Thu' },
-  { key: 'friday', label: 'Friday', short: 'Fri' },
-  { key: 'saturday', label: 'Saturday', short: 'Sat' },
-  { key: 'sunday', label: 'Sunday', short: 'Sun' }
+const DAYS_ROW1: { key: DayOfWeek; label: string; short: string }[] = [
+  { key: 'monday', label: 'Monday', short: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday', short: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday', short: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday', short: 'Thursday' }
+];
+
+const DAYS_ROW2: { key: DayOfWeek; label: string; short: string }[] = [
+  { key: 'friday', label: 'Friday', short: 'Friday' },
+  { key: 'saturday', label: 'Saturday', short: 'Saturday' },
+  { key: 'sunday', label: 'Sunday', short: 'Sunday' }
 ];
 
 const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
@@ -147,7 +150,6 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           ${task.priority === 'high' ? 'border-l-4 border-l-red-500' : ''}
           ${task.priority === 'low' ? 'border-l-4 border-l-green-500' : ''}
           ${task.priority === 'medium' ? 'border-l-4 border-l-yellow-500' : ''}
-          ${isInPool ? 'w-full' : 'w-full max-w-none'}
         `}
       >
         <div className="flex items-start justify-between mb-2">
@@ -191,20 +193,81 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     );
   };
 
+  // Render placeholder slots for each day
+  const renderDayPlaceholders = (day: DayOfWeek, dayTasks: any[]) => {
+    const sortedDayTasks = sortTasksByPriority(dayTasks);
+    const minSlots = 3;
+    const totalSlots = Math.max(minSlots, sortedDayTasks.length + 1);
+    
+    const slots = [];
+    
+    // Add existing tasks
+    sortedDayTasks.forEach((task, index) => {
+      slots.push(
+        <div key={task.taskKey} className="mb-2">
+          {renderTaskCard(task)}
+        </div>
+      );
+    });
+    
+    // Add empty placeholder slots
+    for (let i = sortedDayTasks.length; i < totalSlots; i++) {
+      slots.push(
+        <div
+          key={`placeholder-${i}`}
+          className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-2 hover:border-blue-400 transition-colors flex items-center justify-center min-h-[60px]"
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, day)}
+        >
+          <Plus className="w-6 h-6 text-gray-400" />
+        </div>
+      );
+    }
+    
+    return slots;
+  };
+
+  // Render day column
+  const renderDayColumn = (day: { key: DayOfWeek; label: string; short: string }) => {
+    const dayTasks = assignedTasks.filter(task => task.assigned_day === day.key);
+    
+    return (
+      <div key={day.key} className="flex-1">
+        <Card className="h-full">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-center">
+              {day.short}
+              {dayTasks.length > 0 && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {dayTasks.length}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2 min-h-[300px]">
+              {renderDayPlaceholders(day.key, dayTasks)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-8 gap-4 h-[600px]">
+    <div className="w-full max-w-none">
+      <div className="space-y-6">
         {/* Unassigned Tasks Pool */}
-        <div className="col-span-1">
-          <Card className="h-full">
+        <div className="w-full">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Unassigned ({unassignedTasks.length})
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Unassigned Tasks ({unassignedTasks.length})
               </CardTitle>
             </CardHeader>
             <CardContent
-              className="pt-0 overflow-y-auto max-h-[500px]"
+              className="pt-0"
               onDragOver={handleDragOver}
               onDrop={handleDropUnassigned}
             >
@@ -213,45 +276,25 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                   All tasks are assigned! 🎉
                 </p>
               ) : (
-                sortTasksByPriority(unassignedTasks).map(task => renderTaskCard(task, true))
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {sortTasksByPriority(unassignedTasks).map(task => renderTaskCard(task, true))}
+                </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Days of the Week */}
-        {DAYS.map(day => {
-          const dayTasks = assignedTasks.filter(task => task.assigned_day === day.key);
-          const sortedDayTasks = sortTasksByPriority(dayTasks);
-          
-          return (
-            <div key={day.key} className="col-span-1">
-              <Card className="h-full">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-center">
-                    {day.short}
-                    {dayTasks.length > 0 && (
-                      <Badge variant="outline" className="ml-1 text-xs">
-                        {dayTasks.length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div
-                    className="border-2 border-dashed border-gray-200 rounded-lg p-2 min-h-[450px] hover:border-blue-300 transition-colors"
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, day.key)}
-                  >
-                    <div className="space-y-2 overflow-y-auto max-h-[430px]">
-                      {sortedDayTasks.map(task => renderTaskCard(task))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          );
-        })}
+        {/* First Row: Monday - Thursday */}
+        <div className="flex gap-4">
+          {DAYS_ROW1.map(day => renderDayColumn(day))}
+        </div>
+
+        {/* Second Row: Friday - Sunday */}
+        <div className="flex gap-4">
+          {DAYS_ROW2.map(day => renderDayColumn(day))}
+          {/* Add empty div to balance the layout since we only have 3 days in row 2 */}
+          <div className="flex-1"></div>
+        </div>
       </div>
     </div>
   );
