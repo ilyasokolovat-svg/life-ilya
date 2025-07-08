@@ -11,12 +11,13 @@ export interface WeeklySummaryItem {
   actual_result?: string;
   isCompleted: boolean;
   bullet_point_completions?: boolean[];
+  bullet_point_day_assignments?: string; // JSON string storing day assignments for each bullet point
   isOverdue?: boolean;
-  weekDates?: string; // Added for displaying week dates
-  order_index?: number; // Added for custom ordering
-  priority?: 'high' | 'medium' | 'low'; // Added for priority system
-  assigned_day?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'; // Added for day assignment
-  assigned_time_slot?: 'morning' | 'afternoon' | 'evening'; // Added for time slot assignment
+  weekDates?: string;
+  order_index?: number;
+  priority?: 'high' | 'medium' | 'low';
+  assigned_day?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  assigned_time_slot?: 'morning' | 'afternoon' | 'evening';
 }
 
 // Extended type for database items that includes all new fields
@@ -35,6 +36,7 @@ interface DatabaseGoalItem {
   priority: string | null;
   assigned_day: string | null;
   assigned_time_slot: string | null;
+  bullet_point_day_assignments: string | null; // Added for bullet point day assignments
 }
 
 export function useWeeklySummary() {
@@ -189,6 +191,7 @@ export function useWeeklySummary() {
           actual_result: item.actual_result,
           isCompleted: item.actual_result === 'completed',
           bullet_point_completions: bulletPointCompletions,
+          bullet_point_day_assignments: item.bullet_point_day_assignments || undefined,
           isOverdue: item.isOverdue || false,
           weekDates: item.isOverdue ? getWeekDates(item.period_key) : undefined,
           order_index: item.order_index,
@@ -207,12 +210,14 @@ export function useWeeklySummary() {
       taskId,
       assigned_day,
       assigned_time_slot,
-      priority
+      priority,
+      bullet_point_day_assignments
     }: {
       taskId: string;
       assigned_day?: string | null;
       assigned_time_slot?: string | null;
       priority?: string;
+      bullet_point_day_assignments?: string;
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
@@ -220,6 +225,7 @@ export function useWeeklySummary() {
       if (assigned_day !== undefined) updates.assigned_day = assigned_day;
       if (assigned_time_slot !== undefined) updates.assigned_time_slot = assigned_time_slot;
       if (priority !== undefined) updates.priority = priority;
+      if (bullet_point_day_assignments !== undefined) updates.bullet_point_day_assignments = bullet_point_day_assignments;
       
       const { error } = await supabase
         .from('goals_data')

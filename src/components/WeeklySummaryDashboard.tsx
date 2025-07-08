@@ -209,15 +209,59 @@ const WeeklySummaryDashboard: React.FC = () => {
     setEditText('');
   };
 
-  // Handle day assignment update with better debugging
+  // Handle day assignment update with support for bullet points
   const handleDayAssignmentUpdate = (taskId: string, assigned_day?: string | null) => {
     console.log('handleDayAssignmentUpdate called:', { taskId, assigned_day });
     
     try {
-      updateTaskAssignment({
-        taskId,
-        assigned_day
-      });
+      // Check if this is a bullet point task
+      if (taskId.includes('-bullet-')) {
+        const [parentTaskId, , bulletIndexStr] = taskId.split('-bullet-');
+        const bulletIndex = parseInt(bulletIndexStr);
+        
+        console.log('Updating bullet point:', { parentTaskId, bulletIndex, assigned_day });
+        
+        // Find the parent task
+        const parentTask = tasks.find(task => task.id === parentTaskId);
+        if (!parentTask) {
+          console.error('Parent task not found:', parentTaskId);
+          return;
+        }
+        
+        // Get current bullet point day assignments
+        let bulletPointDayAssignments = {};
+        try {
+          if (parentTask.bullet_point_day_assignments) {
+            bulletPointDayAssignments = JSON.parse(parentTask.bullet_point_day_assignments);
+          }
+        } catch (e) {
+          console.error('Error parsing bullet point day assignments:', e);
+        }
+        
+        // Update the specific bullet point's day assignment
+        bulletPointDayAssignments[bulletIndex] = assigned_day;
+        
+        // Update the task with the new bullet point day assignments
+        updateTaskAssignment({
+          taskId: parentTaskId,
+          bullet_point_day_assignments: JSON.stringify(bulletPointDayAssignments)
+        });
+        
+        // Update local state
+        setTasks(currentTasks => {
+          return currentTasks.map(task => 
+            task.id === parentTaskId 
+              ? { ...task, bullet_point_day_assignments: JSON.stringify(bulletPointDayAssignments) }
+              : task
+          );
+        });
+      } else {
+        // Regular task day assignment
+        updateTaskAssignment({
+          taskId,
+          assigned_day
+        });
+      }
       console.log('updateTaskAssignment called successfully');
     } catch (error) {
       console.error('Error updating task assignment:', error);

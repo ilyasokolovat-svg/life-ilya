@@ -18,12 +18,38 @@ const BulletPointTask: React.FC<BulletPointTaskProps> = ({
 }) => {
   const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
   const bulletPointCompletions = item.bullet_point_completions || [];
+  
+  // Parse bullet point day assignments from a JSON field or default to parent's day
+  const getBulletPointDayAssignments = () => {
+    try {
+      // Check if we have bullet point day assignments stored
+      if (item.bullet_point_day_assignments) {
+        return JSON.parse(item.bullet_point_day_assignments);
+      }
+    } catch (e) {
+      // Fall back to empty object if parsing fails
+    }
+    return {};
+  };
+  
+  const bulletPointDayAssignments = getBulletPointDayAssignments();
+
+  const handleBulletPointDayChange = (bulletIndex: number, assignedDay: string | null) => {
+    console.log('BulletPointTask day change:', { bulletIndex, assignedDay, taskId: item.id });
+    
+    // Create a unique identifier for this bullet point
+    const bulletTaskId = `${item.id}-bullet-${bulletIndex}`;
+    
+    // Update the specific bullet point's day assignment
+    onDayAssignmentUpdate(bulletTaskId, assignedDay);
+  };
 
   return (
     <div className="space-y-2">
       {bulletPoints.map((bulletPoint, index) => {
         const isCompleted = bulletPointCompletions[index] === true;
         const cleanBulletPoint = bulletPoint.replace(/^•\s*/, '').trim();
+        const bulletPointAssignedDay = bulletPointDayAssignments[index] || null;
         
         return (
           <div key={index} className="flex items-center justify-between gap-2">
@@ -37,8 +63,8 @@ const BulletPointTask: React.FC<BulletPointTaskProps> = ({
               </span>
             </div>
             <DayDropdown 
-              taskId={item.id}
-              assignedDay={item.assigned_day} 
+              taskId={`${item.id}-bullet-${index}`}
+              assignedDay={bulletPointAssignedDay} 
             />
           </div>
         );
