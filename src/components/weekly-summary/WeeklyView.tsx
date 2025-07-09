@@ -19,16 +19,86 @@ const DAYS = [
   { key: 'sunday', label: 'Sunday' }
 ];
 
+interface TaskForDay {
+  id: string;
+  taskId: string;
+  category: string;
+  subcategory: string;
+  text: string;
+  isCompleted: boolean;
+  isOverdue?: boolean;
+  isBulletPoint?: boolean;
+  bulletIndex?: number;
+}
+
 const WeeklyView: React.FC<WeeklyViewProps> = ({ tasks, currentWeekKey }) => {
-  // Group tasks by assigned day
-  const tasksByDay = tasks.reduce((acc, task) => {
-    const day = task.assigned_day || 'unassigned';
-    if (!acc[day]) {
-      acc[day] = [];
-    }
-    acc[day].push(task);
-    return acc;
-  }, {} as Record<string, WeeklySummaryItem[]>);
+  // Process tasks to create individual items for each day assignment
+  const processTasksForWeekly = () => {
+    const tasksByDay: Record<string, TaskForDay[]> = {};
+    
+    tasks.forEach(task => {
+      const bulletPoints = task.planned_goal.split('\n').filter(line => line.trim());
+      const isBulletPointTask = bulletPoints.length > 1;
+      
+      if (isBulletPointTask) {
+        // Handle bullet point tasks with individual day assignments
+        let bulletPointDayAssignments = {};
+        try {
+          if (task.bullet_point_day_assignments) {
+            bulletPointDayAssignments = JSON.parse(task.bullet_point_day_assignments);
+          }
+        } catch (e) {
+          console.error('Error parsing bullet point day assignments:', e);
+        }
+        
+        // Add each bullet point that has a day assignment
+        bulletPoints.forEach((bulletPoint, index) => {
+          const assignedDay = bulletPointDayAssignments[index];
+          if (assignedDay) {
+            const day = assignedDay as string;
+            if (!tasksByDay[day]) {
+              tasksByDay[day] = [];
+            }
+            
+            const cleanBulletPoint = bulletPoint.replace(/^•\s*/, '').trim();
+            tasksByDay[day].push({
+              id: `${task.id}-bullet-${index}`,
+              taskId: task.id,
+              category: task.category,
+              subcategory: task.subcategory,
+              text: cleanBulletPoint,
+              isCompleted: task.bullet_point_completions?.[index] === true,
+              isOverdue: task.isOverdue,
+              isBulletPoint: true,
+              bulletIndex: index
+            });
+          }
+        });
+      } else {
+        // Handle regular single tasks
+        const day = task.assigned_day || 'unassigned';
+        if (!tasksByDay[day]) {
+          tasksByDay[day] = [];
+        }
+        
+        const taskText = task.planned_goal.split('\n')[0].replace('• ', '');
+        tasksByDay[day].push({
+          id: task.id,
+          taskId: task.id,
+          category: task.category,
+          subcategory: task.subcategory,
+          text: taskText,
+          isCompleted: task.isCompleted,
+          isOverdue: task.isOverdue,
+          isBulletPoint: false
+        });
+      }
+    });
+    
+    return tasksByDay;
+  };
+
+  const tasksByDay = processTasksForWeekly();
 
   const renderDayCard = (day: { key: string; label: string }) => {
     const dayTasks = tasksByDay[day.key] || [];
@@ -43,18 +113,19 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ tasks, currentWeekKey }) => {
             <p className="text-gray-400 text-sm italic">No tasks assigned</p>
           ) : (
             <div className="space-y-2">
-              {dayTasks.map((task) => (
-                <div key={task.id} className="text-sm">
+              {dayTasks.map((taskItem) => (
+                <div key={taskItem.id} className="text-sm">
                   <div className="flex items-start gap-1">
                     <span className="text-gray-400 mt-1">•</span>
                     <div className="flex-1">
                       <span className="text-gray-600 text-xs">
-                        ({task.category}/{task.subcategory})
+                        ({taskItem.category}/{taskItem.subcategory})
+                        {taskItem.isBulletPoint && ` - Item ${(taskItem.bulletIndex || 0) + 1}`}
                       </span>
-                      <p className={`${task.isCompleted ? 'line-through text-gray-500' : ''}`}>
-                        {task.planned_goal.split('\n')[0].replace('• ', '')}
+                      <p className={`${taskItem.isCompleted ? 'line-through text-gray-500' : ''}`}>
+                        {taskItem.text}
                       </p>
-                      {task.isOverdue && (
+                      {taskItem.isOverdue && (
                         <Badge variant="destructive" className="text-xs mt-1">
                           Overdue
                         </Badge>
@@ -97,18 +168,19 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ tasks, currentWeekKey }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {tasksByDay.unassigned.map((task) => (
-                <div key={task.id} className="text-sm">
+              {tasksByDay.unassigned.map((taskItem) => (
+                <div key={taskItem.id} className="text-sm">
                   <div className="flex items-start gap-1">
                     <span className="text-gray-400 mt-1">•</span>
                     <div className="flex-1">
                       <span className="text-gray-600 text-xs">
-                        ({task.category}/{task.subcategory})
+                        ({taskItem.category}/{taskItem.subcategory})
+                        {taskItem.isBulletPoint && ` - Item ${(taskItem.bulletIndex || 0) + 1}`}
                       </span>
-                      <p className={`${task.isCompleted ? 'line-through text-gray-500' : ''}`}>
-                        {task.planned_goal.split('\n')[0].replace('• ', '')}
+                      <p className={`${taskItem.isCompleted ? 'line-through text-gray-500' : ''}`}>
+                        {taskItem.text}
                       </p>
-                      {task.isOverdue && (
+                      {taskItem.isOverdue && (
                         <Badge variant="destructive" className="text-xs mt-1">
                           Overdue
                         </Badge>
