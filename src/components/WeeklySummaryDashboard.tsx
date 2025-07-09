@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -200,10 +201,23 @@ const WeeklySummaryDashboard: React.FC = () => {
     console.log('handleDayAssignmentUpdate called:', { taskId, assigned_day });
     
     try {
-      // Check if this is a bullet point task
+      // Check if this is a bullet point task by looking for the pattern
       if (taskId.includes('-bullet-')) {
-        const [parentTaskId, , bulletIndexStr] = taskId.split('-bullet-');
-        const bulletIndex = parseInt(bulletIndexStr);
+        // Split the taskId to get parent task ID and bullet index
+        const parts = taskId.split('-bullet-');
+        if (parts.length !== 2) {
+          console.error('Invalid bullet point task ID format:', taskId);
+          return;
+        }
+        
+        const parentTaskId = parts[0];
+        const bulletIndexStr = parts[1];
+        const bulletIndex = parseInt(bulletIndexStr, 10);
+        
+        if (isNaN(bulletIndex)) {
+          console.error('Invalid bullet index:', bulletIndexStr);
+          return;
+        }
         
         console.log('Updating bullet point:', { parentTaskId, bulletIndex, assigned_day });
         
