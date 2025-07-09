@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,9 +60,22 @@ const WeeklySummaryDashboard: React.FC = () => {
         });
 
         // Remove tasks that no longer exist in the database
-        return updatedTasks.filter(task => 
+        const filteredTasks = updatedTasks.filter(task => 
           weeklySummary.some(dbTask => dbTask.id === task.id)
         );
+
+        // Sort tasks: incomplete first, then completed at the bottom
+        return filteredTasks.sort((a, b) => {
+          // If completion status is different, put incomplete first
+          if (a.isCompleted !== b.isCompleted) {
+            return a.isCompleted ? 1 : -1;
+          }
+          
+          // If both have same completion status, maintain existing order
+          const aIndex = updatedTasks.findIndex(task => task.id === a.id);
+          const bIndex = updatedTasks.findIndex(task => task.id === b.id);
+          return aIndex - bIndex;
+        });
       });
     }
   }, [weeklySummary]);
@@ -82,13 +94,21 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: completed ? 'completed' : null
       });
 
-      // Update local state - maintain exact order, only update the specific task
+      // Update local state - maintain order but update completion status
       setTasks(currentTasks => {
-        return currentTasks.map(task => 
+        const updatedTasks = currentTasks.map(task => 
           task.id === item.id 
             ? { ...task, isCompleted: completed }
             : task
         );
+
+        // Re-sort to move completed items to bottom
+        return updatedTasks.sort((a, b) => {
+          if (a.isCompleted !== b.isCompleted) {
+            return a.isCompleted ? 1 : -1;
+          }
+          return 0; // Maintain relative order for items with same completion status
+        });
       });
     }
   };
@@ -119,9 +139,9 @@ const WeeklySummaryDashboard: React.FC = () => {
         actual_result: actualResult
       });
 
-      // Update local state - maintain exact order, update bullet point completions and completion status
+      // Update local state - update bullet point completions and completion status
       setTasks(currentTasks => {
-        return currentTasks.map(task => 
+        const updatedTasks = currentTasks.map(task => 
           task.id === item.id 
             ? { 
                 ...task, 
@@ -130,6 +150,14 @@ const WeeklySummaryDashboard: React.FC = () => {
               }
             : task
         );
+
+        // Re-sort to move completed items to bottom
+        return updatedTasks.sort((a, b) => {
+          if (a.isCompleted !== b.isCompleted) {
+            return a.isCompleted ? 1 : -1;
+          }
+          return 0; // Maintain relative order for items with same completion status
+        });
       });
     }
   };

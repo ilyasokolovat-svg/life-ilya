@@ -48,7 +48,11 @@ const BulletPointTask: React.FC<BulletPointTaskProps> = ({
                 checked={isCompleted}
                 onCheckedChange={(checked) => onToggleBulletPoint(item, index, !!checked)}
               />
-              <span className={`text-sm ${isCompleted ? 'line-through text-gray-500' : ''}`}>
+              <span className={`text-sm ${
+                isCompleted 
+                  ? 'line-through text-green-600 font-medium' 
+                  : ''
+              }`}>
                 • {cleanBulletPoint}
               </span>
             </div>

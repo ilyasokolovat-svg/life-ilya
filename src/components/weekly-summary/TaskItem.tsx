@@ -107,7 +107,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
     <div
       className={`p-4 border rounded-lg transition-all ${
         isDragging ? 'opacity-50 scale-95' : ''
-      } ${item.isOverdue ? 'border-orange-300 bg-orange-50' : 'border-gray-200'}`}
+      } ${
+        item.isCompleted 
+          ? 'border-green-300 bg-green-50' 
+          : item.isOverdue 
+            ? 'border-orange-300 bg-orange-50' 
+            : 'border-gray-200'
+      }`}
       draggable
       onDragStart={(e) => onDragStart(e, item.id)}
       onDragOver={onDragOver}
@@ -128,15 +134,26 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="text-xs">
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${item.isCompleted ? 'bg-green-100 text-green-700 border-green-300' : ''}`}
+            >
               {item.category}
             </Badge>
-            <Badge variant="secondary" className="text-xs">
+            <Badge 
+              variant="secondary" 
+              className={`text-xs ${item.isCompleted ? 'bg-green-100 text-green-700' : ''}`}
+            >
               {item.subcategory}
             </Badge>
             {item.isOverdue && (
               <Badge variant="destructive" className="text-xs">
                 Overdue ({item.weekDates})
+              </Badge>
+            )}
+            {item.isCompleted && (
+              <Badge className="text-xs bg-green-600 text-white">
+                Completed
               </Badge>
             )}
           </div>
@@ -171,7 +188,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 />
               ) : (
                 <div className="flex items-center justify-between">
-                  <p className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-gray-500' : ''}`}>
+                  <p className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-green-600 font-medium' : ''}`}>
                     {item.planned_goal}
                   </p>
                   <div className="ml-2">
