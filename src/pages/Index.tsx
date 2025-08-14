@@ -47,6 +47,25 @@ const Index = () => {
     updateDay(date, type, data);
   };
 
+  const handleUpdateLocation = (date: Date, location: string) => {
+    const dateISO = formatDateISO(date);
+    
+    // Get existing day data or create new one
+    const existingData = habitsState.days[dateISO] || {
+      date: dateISO,
+      gym: { planned: false, completed: false },
+      alcohol: { planned: false, completed: false },
+      sleep: { planned: false, completed: false },
+      meditation: { planned: false, completed: false }
+    };
+    
+    // Update the habits state directly (local storage only, no sync needed for location)
+    habitsState.days[dateISO] = { ...existingData, location };
+    
+    // Trigger a re-render by updating a habit (we'll use sleep as it's least disruptive)
+    updateDay(date, 'sleep', existingData.sleep);
+  };
+
   const handleUpdateGoal = (type: HabitType, goal: HabitGoal) => {
     updateGoal(type, goal, viewYear, viewMonth);
   };
@@ -320,6 +339,7 @@ const Index = () => {
             <Calendar
               days={habitsState.days}
               onUpdateHabit={handleUpdateHabit}
+              onUpdateLocation={handleUpdateLocation}
               viewMonth={viewMonth}
               viewYear={viewYear}
             />
