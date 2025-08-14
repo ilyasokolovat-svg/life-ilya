@@ -119,15 +119,24 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
     
     // Check if alcohol is planned (no alcohol day)
     const isAlcoholPlanned = dayData?.alcohol?.planned || false;
+    const isAlcoholCompleted = dayData?.alcohol?.completed || false;
+    
+    // Check if this is a past day
+    const isPastDay = isoDate < todayISO;
+    
+    // Show yellow highlighting only if:
+    // 1. Alcohol is planned, AND
+    // 2. Either it's not a past day, OR it's a past day that was completed
+    const shouldShowYellowHighlight = isAlcoholPlanned && (!isPastDay || isAlcoholCompleted);
     
     // Enhanced day styling with yellow border for no alcohol days
     let dayStyle = '';
     if (isToday) {
-      dayStyle = isAlcoholPlanned 
+      dayStyle = shouldShowYellowHighlight 
         ? 'border-2 border-yellow-400 bg-blue-50 shadow-lg ring-2 ring-yellow-300'
         : 'border-2 border-blue-500 bg-blue-50 shadow-lg';
     } else {
-      dayStyle = isAlcoholPlanned
+      dayStyle = shouldShowYellowHighlight
         ? 'border-2 border-yellow-400 bg-white hover:shadow-md transition-shadow duration-200'
         : 'border border-gray-200 bg-white hover:shadow-md transition-shadow duration-200';
     }
