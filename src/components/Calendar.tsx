@@ -13,11 +13,12 @@ import { useMediaQuery } from "@/hooks/use-mobile";
 interface CalendarProps {
   days: Record<string, DayData>;
   onUpdateHabit: (date: Date, type: HabitType, data: { planned: boolean; completed: boolean; sleepHours?: number }) => void;
+  onUpdateLocation?: (date: Date, location: string) => void;
   viewMonth?: number;
   viewYear?: number;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, viewYear }) => {
+const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocation, viewMonth, viewYear }) => {
   const dubaiToday = getDubaiDate();
   const [currentMonth, setCurrentMonth] = useState(viewMonth !== undefined ? viewMonth : dubaiToday.getMonth());
   const [currentYear, setCurrentYear] = useState(viewYear !== undefined ? viewYear : dubaiToday.getFullYear());
@@ -208,6 +209,17 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
               boxShadow: progressPercentage > 0 ? '0 0 4px rgba(0,0,0,0.2)' : 'none'
             }}
           ></div>
+        </div>
+        
+        {/* Location input section */}
+        <div className="px-2 py-1">
+          <input
+            type="text"
+            placeholder="Location"
+            value={dayData?.location || ''}
+            onChange={(e) => onUpdateLocation?.(date, e.target.value)}
+            className="w-full text-xs px-2 py-1 border border-gray-200 rounded text-gray-600 placeholder-gray-400 focus:outline-none focus:border-blue-300"
+          />
         </div>
         
         {/* Habits for the day with restructured layout */}

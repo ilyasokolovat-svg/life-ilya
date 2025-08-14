@@ -11,6 +11,7 @@ export interface HabitData {
 
 export interface DayData {
   date: string; // ISO format date
+  location?: string; // Optional location for the day
   gym: HabitData;
   alcohol: HabitData;
   sleep: HabitData;
