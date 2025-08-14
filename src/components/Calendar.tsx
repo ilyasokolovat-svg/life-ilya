@@ -180,7 +180,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
       >
         {/* Enhanced day header with conditional yellowish background */}
         <div className={`p-2 flex justify-between items-center border-b border-gray-200 ${
-          isAlcoholPlanned 
+          shouldShowYellowHighlight 
             ? 'bg-gradient-to-r from-yellow-50 to-yellow-100' 
             : 'bg-gradient-to-r from-gray-50 to-gray-100'
         }`}>
@@ -189,7 +189,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, viewMonth, vie
           </span>
           <div className="flex items-center gap-1">
             {/* No alcohol icon indicator with yellow color */}
-            {isAlcoholPlanned && (
+            {shouldShowYellowHighlight && (
               <WineOff className="h-3 w-3 text-yellow-600" />
             )}
             {isAllCompleted && (
