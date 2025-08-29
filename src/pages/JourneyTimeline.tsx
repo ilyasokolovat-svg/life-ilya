@@ -39,7 +39,9 @@ const JourneyTimeline = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [travelPeriods, setTravelPeriods] = useState<TravelPeriod[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isTravelDialogOpen, setIsTravelDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -67,12 +69,33 @@ const JourneyTimeline = () => {
     type: 'achievement' as 'achievement' | 'challenge'
   });
 
+  // Travel form state
+  const [travelFormData, setTravelFormData] = useState({
+    title: '',
+    description: '',
+    location: '',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    emoji: '✈️',
+    color: '#8B5CF6'
+  });
+
+  const travelEmojis = [
+    { emoji: '✈️', label: 'Airplane' },
+    { emoji: '🏖️', label: 'Beach' },
+    { emoji: '🏔️', label: 'Mountains' },
+    { emoji: '🏛️', label: 'Historical' },
+    { emoji: '🌆', label: 'City' },
+    { emoji: '🚗', label: 'Road Trip' },
+    { emoji: '🚢', label: 'Cruise' },
+    { emoji: '🎿', label: 'Skiing' }
+  ];
+
   const achievementCategories = [
     { name: 'Career', emoji: '💼', color: '#3B82F6' },
     { name: 'Personal', emoji: '🎯', color: '#10B981' },
     { name: 'Health', emoji: '💪', color: '#EF4444' },
     { name: 'Relationships', emoji: '❤️', color: '#F59E0B' },
-    { name: 'Travel', emoji: '✈️', color: '#8B5CF6' },
     { name: 'Achievement', emoji: '🏆', color: '#F97316' },
     { name: 'Learning', emoji: '📚', color: '#06B6D4' },
     { name: 'Other', emoji: '⭐', color: '#6B7280' }
@@ -91,6 +114,7 @@ const JourneyTimeline = () => {
 
   useEffect(() => {
     fetchMilestones();
+    fetchTravelPeriods();
   }, [user, selectedYear]);
 
   const fetchMilestones = async () => {
@@ -116,6 +140,42 @@ const JourneyTimeline = () => {
       toast.error('Failed to load milestones');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTravelPeriods = async () => {
+    if (!user) return;
+
+    try {
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${selectedYear}-12-31`;
+
+      const { data, error } = await supabase
+        .from('travel_periods')
+        .select('*')
+        .eq('user_id', user.id)
+        .or(`start_date.gte.${startDate},end_date.lte.${endDate}`)
+        .order('start_date', { ascending: true });
+
+      if (error) throw error;
+      
+      // Map database fields to interface
+      const mappedData = (data || []).map(period => ({
+        id: period.id,
+        title: period.title,
+        description: period.description,
+        startDate: period.start_date,
+        endDate: period.end_date,
+        location: period.location,
+        emoji: period.emoji,
+        color: period.color,
+        created_at: period.created_at
+      }));
+      
+      setTravelPeriods(mappedData);
+    } catch (error) {
+      console.error('Error fetching travel periods:', error);
+      toast.error('Failed to load travel periods');
     }
   };
 
@@ -156,11 +216,55 @@ const JourneyTimeline = () => {
     }
   };
 
+  const handleTravelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('travel_periods')
+        .insert({
+          title: travelFormData.title,
+          description: travelFormData.description,
+          location: travelFormData.location,
+          start_date: travelFormData.startDate,
+          end_date: travelFormData.endDate,
+          emoji: travelFormData.emoji,
+          color: travelFormData.color,
+          user_id: user.id
+        });
+
+      if (error) throw error;
+
+      toast.success('Travel added successfully!');
+      setIsTravelDialogOpen(false);
+      setTravelFormData({
+        title: '',
+        description: '',
+        location: '',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        emoji: '✈️',
+        color: '#8B5CF6'
+      });
+      fetchTravelPeriods();
+    } catch (error) {
+      console.error('Error adding travel:', error);
+      toast.error('Failed to add travel');
+    }
+  };
+
   const getMilestonePosition = (date: string) => {
     const milestoneDate = new Date(date);
     const dayOfYear = Math.floor((milestoneDate.getTime() - new Date(selectedYear, 0, 0).getTime()) / (1000 * 60 * 60 * 24));
     const totalDays = new Date(selectedYear, 11, 31).getDate() === 31 ? 365 : 366;
     return (dayOfYear / totalDays) * 100;
+  };
+
+  const getTravelPosition = (startDate: string, endDate: string) => {
+    const startPos = getMilestonePosition(startDate);
+    const endPos = getMilestonePosition(endDate);
+    return { startPos, endPos, height: Math.max(endPos - startPos, 2) }; // Minimum 2% height
   };
 
   // Calculate positioning for milestones with proper chronological order
@@ -277,13 +381,98 @@ const JourneyTimeline = () => {
               </div>
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add Event
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-3">
+              <Dialog open={isTravelDialogOpen} onOpenChange={setIsTravelDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+                    <MapPin className="h-5 w-5 mr-2" />
+                    Add Travel
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <span className="text-xl">✈️</span>
+                      Add Travel Period
+                    </DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleTravelSubmit} className="space-y-4">
+                    <div>
+                      <Input
+                        placeholder="Trip title (e.g., 'Paris Vacation')"
+                        value={travelFormData.title}
+                        onChange={(e) => setTravelFormData({ ...travelFormData, title: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        placeholder="Location"
+                        value={travelFormData.location}
+                        onChange={(e) => setTravelFormData({ ...travelFormData, location: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Textarea
+                        placeholder="Description (optional)"
+                        value={travelFormData.description}
+                        onChange={(e) => setTravelFormData({ ...travelFormData, description: e.target.value })}
+                        rows={2}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">Start Date</label>
+                        <Input
+                          type="date"
+                          value={travelFormData.startDate}
+                          onChange={(e) => setTravelFormData({ ...travelFormData, startDate: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">End Date</label>
+                        <Input
+                          type="date"
+                          value={travelFormData.endDate}
+                          onChange={(e) => setTravelFormData({ ...travelFormData, endDate: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {travelEmojis.map((travelEmoji) => (
+                        <Button
+                          key={travelEmoji.emoji}
+                          type="button"
+                          variant={travelFormData.emoji === travelEmoji.emoji ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setTravelFormData({ 
+                            ...travelFormData, 
+                            emoji: travelEmoji.emoji
+                          })}
+                          className="text-xs h-auto py-2"
+                        >
+                          <span className="mr-1">{travelEmoji.emoji}</span>
+                          {travelEmoji.label}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600">
+                      ✈️ Add Travel
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Event
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
@@ -364,6 +553,7 @@ const JourneyTimeline = () => {
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
       </header>
@@ -593,6 +783,50 @@ const JourneyTimeline = () => {
                       </HoverCard>
                     </div>
                   ))}
+                  
+                  {/* Travel Periods - Right Side */}
+                  {travelPeriods.map((travel, index) => {
+                    const position = getTravelPosition(travel.startDate, travel.endDate);
+                    return (
+                      <div
+                        key={travel.id}
+                        className="absolute right-0 w-64"
+                        style={{ 
+                          top: `${position.startPos}%`, 
+                          height: `${position.height}%`,
+                          minHeight: '60px'
+                        }}
+                      >
+                        <div className="relative h-full">
+                          {/* Connection line to timeline */}
+                          <div className="absolute left-0 top-1/2 w-8 h-1 bg-gradient-to-r from-purple-300 to-indigo-400 transform -translate-y-1/2"></div>
+                          
+                          {/* Travel period bar */}
+                          <div 
+                            className="absolute left-8 top-0 bottom-0 w-2 rounded-full shadow-lg"
+                            style={{ backgroundColor: travel.color }}
+                          ></div>
+                          
+                          {/* Travel info card */}
+                          <div className="absolute left-12 top-0 bottom-0 w-48 flex items-center">
+                            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-3 shadow-lg w-full">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-lg">{travel.emoji}</span>
+                                <h4 className="font-semibold text-purple-900 text-sm truncate">{travel.title}</h4>
+                              </div>
+                              <p className="text-xs text-purple-700 mb-1 truncate">{travel.location}</p>
+                              <div className="text-xs text-purple-600">
+                                {new Date(travel.startDate).toLocaleDateString()} - {new Date(travel.endDate).toLocaleDateString()}
+                              </div>
+                              {travel.description && (
+                                <p className="text-xs text-purple-600 mt-1 line-clamp-2">{travel.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {milestones.length === 0 && (

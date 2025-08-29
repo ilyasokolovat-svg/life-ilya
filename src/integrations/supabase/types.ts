@@ -227,6 +227,48 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_periods: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          emoji: string | null
+          end_date: string
+          id: string
+          location: string
+          start_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          end_date: string
+          id?: string
+          location: string
+          start_date: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          end_date?: string
+          id?: string
+          location?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subcategory_preferences: {
         Row: {
           category: string
