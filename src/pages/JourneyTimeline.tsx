@@ -119,56 +119,39 @@ const JourneyTimeline = () => {
     return (dayOfYear / totalDays) * 100;
   };
 
-  // Calculate road position for any given t (0-1)
-  const getRoadPosition = (t: number) => {
-    let x, y;
-    if (t <= 0.33) {
-      const localT = t / 0.33;
-      x = 50 + localT * 300;
-      y = 200 + Math.sin(localT * Math.PI) * -80;
-    } else if (t <= 0.66) {
-      const localT = (t - 0.33) / 0.33;
-      x = 350 + localT * 300;
-      y = 180 + Math.sin(localT * Math.PI + Math.PI) * 80 - 20;
-    } else {
-      const localT = (t - 0.66) / 0.34;
-      x = 650 + localT * 500;
-      y = 160 + Math.sin(localT * Math.PI) * -60 + 20;
-    }
-    return { x, y };
-  };
-
-  // Calculate positioning for milestones with better spacing
+  // Calculate positioning for milestones with alternating sides
   const getMilestonePositioning = () => {
     const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const spacedMilestones: Array<Milestone & { xPos: number; spacing: number }> = [];
     
-    sortedMilestones.forEach((milestone, index) => {
-      const xPos = getMilestonePosition(milestone.date);
-      let spacing = 0;
+    return sortedMilestones.map((milestone, index) => {
+      const yPos = getMilestonePosition(milestone.date);
       
-      // Check for conflicts with existing milestones
-      const conflicts = spacedMilestones.filter(existing => 
-        Math.abs(existing.xPos - xPos) < 8 // Within 8% of timeline
-      );
+      // Alternate sides and handle close milestones
+      let side = 'left';
+      let offset = 0;
       
-      if (conflicts.length > 0) {
-        // Find the best spacing to avoid overlap
-        spacing = conflicts.length * 12; // 12% spacing per conflict
-        if (index % 2 === 1) spacing *= -1; // Alternate sides
+      // Check for milestones within 5% distance
+      const nearbyMilestones = sortedMilestones.slice(0, index).filter((_, i) => {
+        const prevPos = getMilestonePosition(sortedMilestones[i].date);
+        return Math.abs(yPos - prevPos) < 5;
+      });
+      
+      if (nearbyMilestones.length === 0) {
+        // No conflicts, alternate sides normally
+        side = index % 2 === 0 ? 'left' : 'right';
       } else {
-        // Small alternating offset for visual variety
-        spacing = (index % 2 === 0 ? 8 : -8);
+        // Handle conflicts by stacking on opposite sides
+        const conflictCount = nearbyMilestones.length;
+        side = conflictCount % 2 === 0 ? 'left' : 'right';
+        offset = Math.floor(conflictCount / 2) * 8; // 8% offset per conflict level
       }
       
-      spacedMilestones.push({
+      return {
         ...milestone,
-        xPos,
-        spacing
-      });
+        yPos: yPos + offset,
+        side
+      };
     });
-    
-    return spacedMilestones;
   };
 
   const months = [
@@ -179,9 +162,9 @@ const JourneyTimeline = () => {
   const positionedMilestones = getMilestonePositioning();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-purple-100">
+      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-slate-200">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -194,7 +177,7 @@ const JourneyTimeline = () => {
                 Back to Dashboard
               </Button>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
                   Journey Timeline
                 </h1>
                 <p className="text-gray-600 mt-1">Track your significant milestones and achievements</p>
@@ -203,7 +186,7 @@ const JourneyTimeline = () => {
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                <Button className="bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-700 hover:to-slate-900">
                   <Plus className="h-5 w-5 mr-2" />
                   Add Milestone
                 </Button>
@@ -270,7 +253,7 @@ const JourneyTimeline = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Year Selector */}
         <div className="flex justify-center mb-8">
-          <Card className="bg-white/70 backdrop-blur-sm border-purple-200">
+          <Card className="bg-white/70 backdrop-blur-sm border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 <Button
@@ -280,7 +263,7 @@ const JourneyTimeline = () => {
                 >
                   ←
                 </Button>
-                <span className="text-2xl font-bold text-purple-700 min-w-[80px] text-center">
+                <span className="text-2xl font-bold text-slate-700 min-w-[80px] text-center">
                   {selectedYear}
                 </span>
                 <Button
@@ -296,156 +279,103 @@ const JourneyTimeline = () => {
           </Card>
         </div>
 
-                {/* Timeline */}
-        <Card className="bg-white/70 backdrop-blur-sm border-purple-200 shadow-xl">
+        {/* Timeline */}
+        <Card className="bg-white/70 backdrop-blur-sm border-slate-200 shadow-xl">
           <CardHeader>
-            <CardTitle className="text-center text-purple-700">
-              Your {selectedYear} Journey Road
+            <CardTitle className="text-center text-slate-700">
+              Your {selectedYear} Journey
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8">
             {loading ? (
               <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
               </div>
             ) : (
-              <div className="relative" style={{ minHeight: '500px' }}>
-                {/* Winding Road Timeline */}
-                <div className="relative h-96 mb-8">
-                  <svg 
-                    width="100%" 
-                    height="100%" 
-                    viewBox="0 0 1200 380" 
-                    className="absolute inset-0"
-                    preserveAspectRatio="none"
-                  >
-                    <defs>
-                      <linearGradient id="roadGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#A855F7" />
-                        <stop offset="20%" stopColor="#6366F1" />
-                        <stop offset="40%" stopColor="#3B82F6" />
-                        <stop offset="60%" stopColor="#10B981" />
-                        <stop offset="80%" stopColor="#F59E0B" />
-                        <stop offset="100%" stopColor="#EF4444" />
-                      </linearGradient>
-                      <linearGradient id="roadShadow" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#9333EA" stopOpacity="0.3" />
-                        <stop offset="50%" stopColor="#1E40AF" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#DC2626" stopOpacity="0.3" />
-                      </linearGradient>
-                    </defs>
-                    
-                    {/* Road shadow for depth */}
-                    <path
-                      d="M 50 200 Q 200 120 350 180 Q 500 240 650 160 Q 800 80 950 140 Q 1050 180 1150 200"
-                      stroke="url(#roadShadow)"
-                      strokeWidth="16"
-                      fill="none"
-                      transform="translate(2, 4)"
-                      className="opacity-40"
-                    />
-                    
-                    {/* Main winding road */}
-                    <path
-                      d="M 50 200 Q 200 120 350 180 Q 500 240 650 160 Q 800 80 950 140 Q 1050 180 1150 200"
-                      stroke="url(#roadGradient)"
-                      strokeWidth="12"
-                      fill="none"
-                      className="drop-shadow-lg"
-                    />
-                    
-                    {/* Road center line */}
-                    <path
-                      d="M 50 200 Q 200 120 350 180 Q 500 240 650 160 Q 800 80 950 140 Q 1050 180 1150 200"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeDasharray="15,10"
-                      fill="none"
-                      className="opacity-80"
-                    />
-                    
-                    {/* Month markers along the road */}
-                    {months.map((month, index) => {
-                      const t = index / 11;
-                      const { x, y } = getRoadPosition(t);
-                      
-                      return (
-                        <g key={month}>
-                          <circle
-                            cx={x}
-                            cy={y}
-                            r="8"
-                            fill="white"
-                            stroke="#A855F7"
-                            strokeWidth="3"
-                            className="drop-shadow-md"
-                          />
-                          <text
-                            x={x}
-                            y={y + 35}
-                            textAnchor="middle"
-                            className="text-sm font-bold fill-purple-700 drop-shadow-sm"
-                          >
-                            {month}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
+              <div className="relative max-w-4xl mx-auto">
+                {/* Vertical Timeline */}
+                <div className="relative" style={{ minHeight: '600px' }}>
+                  {/* Central timeline line */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-300 via-slate-400 to-slate-300 transform -translate-x-1/2"></div>
                   
-                  {/* Milestones positioned along the winding road */}
-                  {positionedMilestones.map((milestone) => {
-                    const t = milestone.xPos / 100;
-                    const roadPos = getRoadPosition(t);
-                    const x = (roadPos.x / 1200) * 100; // Convert to percentage
-                    const y = (roadPos.y / 380) * 100; // Convert to percentage
-                    const spacing = milestone.spacing;
-                    
-                    return (
-                      <HoverCard key={milestone.id}>
+                  {/* Year markers */}
+                  <div className="absolute left-1/2 top-0 w-4 h-4 bg-slate-600 rounded-full transform -translate-x-1/2 -translate-y-2 border-4 border-white shadow-lg"></div>
+                  <div className="absolute left-1/2 bottom-0 w-4 h-4 bg-slate-600 rounded-full transform -translate-x-1/2 translate-y-2 border-4 border-white shadow-lg"></div>
+                  
+                  {/* Year labels */}
+                  <div className="absolute left-1/2 top-0 transform -translate-x-1/2 -translate-y-8">
+                    <span className="text-sm font-semibold text-slate-600 bg-white px-2 py-1 rounded-full shadow-sm">Jan {selectedYear}</span>
+                  </div>
+                  <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-8">
+                    <span className="text-sm font-semibold text-slate-600 bg-white px-2 py-1 rounded-full shadow-sm">Dec {selectedYear}</span>
+                  </div>
+                  
+                  {/* Milestones */}
+                  {positionedMilestones.map((milestone, index) => (
+                    <div
+                      key={milestone.id}
+                      className="absolute w-full"
+                      style={{ top: `${milestone.yPos}%` }}
+                    >
+                      <HoverCard>
                         <HoverCardTrigger asChild>
                           <div
-                            className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group z-10"
-                            style={{ 
-                              left: `${x}%`,
-                              top: `${y + spacing}%`
-                            }}
+                            className={`absolute cursor-pointer transform -translate-y-1/2 group ${
+                              milestone.side === 'left' ? 'right-1/2 pr-8' : 'left-1/2 pl-8'
+                            }`}
                           >
-                            {/* Connection line to road */}
+                            {/* Connection line */}
                             <div 
-                              className="absolute w-1 bg-gradient-to-b from-purple-400 to-transparent rounded-full"
-                              style={{
-                                height: `${Math.abs(spacing * 3)}px`,
-                                top: spacing > 0 ? '-100%' : '100%',
-                                left: '50%',
-                                transform: 'translateX(-50%)'
-                              }}
+                              className={`absolute top-1/2 w-8 h-0.5 bg-slate-300 transform -translate-y-1/2 ${
+                                milestone.side === 'left' ? 'right-0' : 'left-0'
+                              }`}
                             />
                             
+                            {/* Milestone content */}
                             <div 
-                              className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl transform transition-all duration-300 group-hover:scale-125 group-hover:shadow-2xl border-4 border-white relative z-20 backdrop-blur-sm"
-                              style={{ backgroundColor: milestone.color }}
+                              className={`flex items-center gap-4 ${
+                                milestone.side === 'left' ? 'flex-row-reverse' : 'flex-row'
+                              }`}
                             >
-                              <span className="text-2xl">{milestone.emoji}</span>
-                            </div>
-                            
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3">
-                              <div className="text-sm font-semibold text-purple-800 text-center max-w-[120px] bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg border border-purple-200">
-                                {milestone.title}
+                              {/* Milestone circle */}
+                              <div 
+                                className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl border-4 border-white relative z-10"
+                                style={{ backgroundColor: milestone.color }}
+                              >
+                                <span className="text-xl">{milestone.emoji}</span>
+                              </div>
+                              
+                              {/* Milestone info */}
+                              <div 
+                                className={`max-w-xs p-4 bg-white rounded-lg shadow-md border border-slate-200 ${
+                                  milestone.side === 'left' ? 'text-right' : 'text-left'
+                                }`}
+                              >
+                                <h3 className="font-semibold text-slate-800 mb-1">{milestone.title}</h3>
+                                <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>{new Date(milestone.date).toLocaleDateString()}</span>
+                                </div>
+                                {milestone.category && (
+                                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{milestone.category}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
                         </HoverCardTrigger>
-                        <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-sm border-purple-200 shadow-xl">
+                        <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-sm border-slate-200 shadow-xl">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <span className="text-xl">{milestone.emoji}</span>
-                              <h3 className="font-semibold text-purple-800">{milestone.title}</h3>
+                              <h3 className="font-semibold text-slate-800">{milestone.title}</h3>
                             </div>
                             {milestone.description && (
-                              <p className="text-sm text-gray-600">{milestone.description}</p>
+                              <p className="text-sm text-slate-600">{milestone.description}</p>
                             )}
-                            <div className="flex items-center gap-4 text-xs text-purple-600">
+                            <div className="flex items-center gap-4 text-xs text-slate-500">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 {new Date(milestone.date).toLocaleDateString()}
@@ -460,13 +390,13 @@ const JourneyTimeline = () => {
                           </div>
                         </HoverCardContent>
                       </HoverCard>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
 
                 {milestones.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    <Star className="h-12 w-12 mx-auto mb-4 text-purple-300" />
+                  <div className="text-center py-12 text-slate-500">
+                    <Star className="h-12 w-12 mx-auto mb-4 text-slate-300" />
                     <p>No milestones yet for {selectedYear}</p>
                     <p className="text-sm">Add your first milestone to start tracking your journey!</p>
                   </div>
