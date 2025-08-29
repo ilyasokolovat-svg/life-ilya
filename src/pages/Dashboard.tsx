@@ -9,7 +9,7 @@ import {
   Heart,
   LogOut,
   User,
-  Utensils
+  Map
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -98,16 +98,16 @@ const Dashboard = () => {
             </div>
           </Link>
 
-          {/* Meal Planning Bubble */}
-          <Link to="/meal-planning">
+          {/* Journey Timeline Bubble */}
+          <Link to="/journey">
             <div className="group relative">
-              <div className="w-44 h-44 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
+              <div className="w-44 h-44 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
                 <div className="text-center">
-                  <Utensils className="w-14 h-14 text-white mb-3 mx-auto" />
-                  <h2 className="text-xl font-bold text-white">Meal Planning</h2>
+                  <Map className="w-14 h-14 text-white mb-3 mx-auto" />
+                  <h2 className="text-xl font-bold text-white">Journey Timeline</h2>
                 </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
 
