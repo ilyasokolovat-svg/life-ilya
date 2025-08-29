@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ArrowLeft, Plus, Star, Calendar, MapPin, Edit2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Plus, Star, Calendar, MapPin, Edit2, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +44,11 @@ const JourneyTimeline = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isTravelDialogOpen, setIsTravelDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isTravelEditDialogOpen, setIsTravelEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [editingTravel, setEditingTravel] = useState<TravelPeriod | null>(null);
+  const [deletingMilestone, setDeletingMilestone] = useState<Milestone | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
 
@@ -76,6 +81,17 @@ const JourneyTimeline = () => {
     location: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
+    emoji: '✈️',
+    color: '#8B5CF6'
+  });
+
+  // Travel edit form state
+  const [editTravelFormData, setEditTravelFormData] = useState({
+    title: '',
+    description: '',
+    location: '',
+    startDate: '',
+    endDate: '',
     emoji: '✈️',
     color: '#8B5CF6'
   });
@@ -338,6 +354,76 @@ const JourneyTimeline = () => {
     } catch (error) {
       console.error('Error updating milestone:', error);
       toast.error('Failed to update achievement');
+    }
+  };
+
+  const handleDelete = (milestone: Milestone) => {
+    setDeletingMilestone(milestone);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!user || !deletingMilestone) return;
+
+    try {
+      const { error } = await supabase
+        .from('milestones')
+        .delete()
+        .eq('id', deletingMilestone.id);
+
+      if (error) throw error;
+
+      toast.success('Achievement deleted successfully!');
+      setIsDeleteDialogOpen(false);
+      setDeletingMilestone(null);
+      fetchMilestones();
+    } catch (error) {
+      console.error('Error deleting milestone:', error);
+      toast.error('Failed to delete achievement');
+    }
+  };
+
+  const handleTravelEdit = (travel: TravelPeriod) => {
+    setEditingTravel(travel);
+    setEditTravelFormData({
+      title: travel.title,
+      description: travel.description || '',
+      location: travel.location,
+      startDate: travel.startDate,
+      endDate: travel.endDate,
+      emoji: travel.emoji,
+      color: travel.color
+    });
+    setIsTravelEditDialogOpen(true);
+  };
+
+  const handleTravelEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !editingTravel) return;
+
+    try {
+      const { error } = await supabase
+        .from('travel_periods')
+        .update({
+          title: editTravelFormData.title,
+          description: editTravelFormData.description,
+          location: editTravelFormData.location,
+          start_date: editTravelFormData.startDate,
+          end_date: editTravelFormData.endDate,
+          emoji: editTravelFormData.emoji,
+          color: editTravelFormData.color
+        })
+        .eq('id', editingTravel.id);
+
+      if (error) throw error;
+
+      toast.success('Travel updated successfully!');
+      setIsTravelEditDialogOpen(false);
+      setEditingTravel(null);
+      fetchTravelPeriods();
+    } catch (error) {
+      console.error('Error updating travel:', error);
+      toast.error('Failed to update travel');
     }
   };
 
@@ -718,16 +804,27 @@ const JourneyTimeline = () => {
                                     : 'bg-gradient-to-br from-white to-amber-50/30 border-amber-200/50'
                                 }`}
                               >
-                                {/* Edit button */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEdit(milestone);
-                                  }}
-                                  className="absolute top-2 right-2 p-1 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-full transition-colors"
-                                >
-                                  <Edit2 className="h-3 w-3" />
-                                </button>
+                                {/* Edit and Delete buttons */}
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEdit(milestone);
+                                    }}
+                                    className="p-1 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-full transition-colors"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(milestone);
+                                    }}
+                                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
                                 
                                 <h3 className={`font-bold mb-2 text-lg pr-6 ${
                                   milestone.type === 'challenge' ? 'text-slate-700' : 'text-amber-900'
@@ -815,10 +912,21 @@ const JourneyTimeline = () => {
                           </HoverCardTrigger>
                           <HoverCardContent className="w-64" side="left">
                             <div className="space-y-2">
-                              <h4 className="font-semibold text-sm flex items-center gap-2">
-                                <span>{travel.emoji}</span>
-                                {travel.title}
-                              </h4>
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-sm flex items-center gap-2">
+                                  <span>{travel.emoji}</span>
+                                  {travel.title}
+                                </h4>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTravelEdit(travel);
+                                  }}
+                                  className="p-1 text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded-full transition-colors"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </button>
+                              </div>
                               <div className="text-xs text-muted-foreground space-y-1">
                                 <div className="flex items-center gap-1">
                                   <MapPin className="h-3 w-3" />
@@ -950,6 +1058,119 @@ const JourneyTimeline = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Travel Edit Dialog */}
+        <Dialog open={isTravelEditDialogOpen} onOpenChange={setIsTravelEditDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5" />
+                Edit Travel
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleTravelEditSubmit} className="space-y-4">
+              <div>
+                <Input
+                  placeholder="Trip title (e.g., 'Paris Vacation')"
+                  value={editTravelFormData.title}
+                  onChange={(e) => setEditTravelFormData({ ...editTravelFormData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Input
+                  placeholder="Location"
+                  value={editTravelFormData.location}
+                  onChange={(e) => setEditTravelFormData({ ...editTravelFormData, location: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Textarea
+                  placeholder="Description (optional)"
+                  value={editTravelFormData.description}
+                  onChange={(e) => setEditTravelFormData({ ...editTravelFormData, description: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Start Date</label>
+                  <Input
+                    type="date"
+                    value={editTravelFormData.startDate}
+                    onChange={(e) => setEditTravelFormData({ ...editTravelFormData, startDate: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">End Date</label>
+                  <Input
+                    type="date"
+                    value={editTravelFormData.endDate}
+                    onChange={(e) => setEditTravelFormData({ ...editTravelFormData, endDate: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {travelEmojis.map((travelEmoji) => (
+                  <Button
+                    key={travelEmoji.emoji}
+                    type="button"
+                    variant={editTravelFormData.emoji === travelEmoji.emoji ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEditTravelFormData({ 
+                      ...editTravelFormData, 
+                      emoji: travelEmoji.emoji
+                    })}
+                    className="text-xs h-auto py-2"
+                  >
+                    <span className="mr-1">{travelEmoji.emoji}</span>
+                    {travelEmoji.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsTravelEditDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600">
+                  ✈️ Update Travel
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-red-500" />
+                Delete Achievement
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{deletingMilestone?.title}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteConfirm}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
