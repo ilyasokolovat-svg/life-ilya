@@ -112,10 +112,6 @@ const JourneyTimeline = () => {
     }
   };
 
-  const getMonthPosition = (month: number) => {
-    return (month - 1) * (100 / 11); // 11 intervals for 12 months
-  };
-
   const getMilestonePosition = (date: string) => {
     const milestoneDate = new Date(date);
     const dayOfYear = Math.floor((milestoneDate.getTime() - new Date(selectedYear, 0, 0).getTime()) / (1000 * 60 * 60 * 24));
@@ -123,39 +119,56 @@ const JourneyTimeline = () => {
     return (dayOfYear / totalDays) * 100;
   };
 
-  // Calculate curved positioning for milestones to avoid overlap
+  // Calculate road position for any given t (0-1)
+  const getRoadPosition = (t: number) => {
+    let x, y;
+    if (t <= 0.33) {
+      const localT = t / 0.33;
+      x = 50 + localT * 300;
+      y = 200 + Math.sin(localT * Math.PI) * -80;
+    } else if (t <= 0.66) {
+      const localT = (t - 0.33) / 0.33;
+      x = 350 + localT * 300;
+      y = 180 + Math.sin(localT * Math.PI + Math.PI) * 80 - 20;
+    } else {
+      const localT = (t - 0.66) / 0.34;
+      x = 650 + localT * 500;
+      y = 160 + Math.sin(localT * Math.PI) * -60 + 20;
+    }
+    return { x, y };
+  };
+
+  // Calculate positioning for milestones with better spacing
   const getMilestonePositioning = () => {
     const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return sortedMilestones.map((milestone, index) => {
+    const spacedMilestones: Array<Milestone & { xPos: number; spacing: number }> = [];
+    
+    sortedMilestones.forEach((milestone, index) => {
       const xPos = getMilestonePosition(milestone.date);
+      let spacing = 0;
       
-      // Create alternating heights with extra spacing for close milestones
-      let yOffset = 0;
-      let height = index % 2 === 0 ? -60 : 40;
+      // Check for conflicts with existing milestones
+      const conflicts = spacedMilestones.filter(existing => 
+        Math.abs(existing.xPos - xPos) < 8 // Within 8% of timeline
+      );
       
-      // Check for nearby milestones and adjust positioning
-      if (index > 0) {
-        const prevXPos = getMilestonePosition(sortedMilestones[index - 1].date);
-        const distance = Math.abs(xPos - prevXPos);
-        
-        // If milestones are very close (within 5% of timeline), stack them vertically
-        if (distance < 5) {
-          const sameLevel = sortedMilestones.slice(0, index).filter((_, i) => {
-            const prevPos = getMilestonePosition(sortedMilestones[i].date);
-            return Math.abs(xPos - prevPos) < 5;
-          }).length;
-          
-          // Alternate between top and bottom, but with more spacing
-          height = sameLevel % 2 === 0 ? -60 - (Math.floor(sameLevel / 2) * 50) : 40 + (Math.floor(sameLevel / 2) * 50);
-        }
+      if (conflicts.length > 0) {
+        // Find the best spacing to avoid overlap
+        spacing = conflicts.length * 12; // 12% spacing per conflict
+        if (index % 2 === 1) spacing *= -1; // Alternate sides
+      } else {
+        // Small alternating offset for visual variety
+        spacing = (index % 2 === 0 ? 8 : -8);
       }
       
-      return {
+      spacedMilestones.push({
         ...milestone,
         xPos,
-        yPos: height
-      };
+        spacing
+      });
     });
+    
+    return spacedMilestones;
   };
 
   const months = [
@@ -354,21 +367,7 @@ const JourneyTimeline = () => {
                     {/* Month markers along the road */}
                     {months.map((month, index) => {
                       const t = index / 11;
-                      // Calculate position along the winding road
-                      let x, y;
-                      if (t <= 0.33) {
-                        const localT = t / 0.33;
-                        x = 50 + localT * 300;
-                        y = 200 + Math.sin(localT * Math.PI) * -80;
-                      } else if (t <= 0.66) {
-                        const localT = (t - 0.33) / 0.33;
-                        x = 350 + localT * 300;
-                        y = 180 + Math.sin(localT * Math.PI + Math.PI) * 80 - 20;
-                      } else {
-                        const localT = (t - 0.66) / 0.34;
-                        x = 650 + localT * 500;
-                        y = 160 + Math.sin(localT * Math.PI) * -60 + 20;
-                      }
+                      const { x, y } = getRoadPosition(t);
                       
                       return (
                         <g key={month}>
@@ -397,28 +396,10 @@ const JourneyTimeline = () => {
                   {/* Milestones positioned along the winding road */}
                   {positionedMilestones.map((milestone) => {
                     const t = milestone.xPos / 100;
-                    let x, y, offsetY;
-                    
-                    // Calculate position along the winding road with natural spacing
-                    if (t <= 0.33) {
-                      const localT = t / 0.33;
-                      x = (50 + localT * 300) / 1200 * 100;
-                      const roadY = 200 + Math.sin(localT * Math.PI) * -80;
-                      y = roadY / 380 * 100;
-                      offsetY = localT % 2 === 0 ? -15 : 15; // Alternate sides
-                    } else if (t <= 0.66) {
-                      const localT = (t - 0.33) / 0.33;
-                      x = (350 + localT * 300) / 1200 * 100;
-                      const roadY = 180 + Math.sin(localT * Math.PI + Math.PI) * 80 - 20;
-                      y = roadY / 380 * 100;
-                      offsetY = localT % 2 === 0 ? 15 : -15; // Alternate sides
-                    } else {
-                      const localT = (t - 0.66) / 0.34;
-                      x = (650 + localT * 500) / 1200 * 100;
-                      const roadY = 160 + Math.sin(localT * Math.PI) * -60 + 20;
-                      y = roadY / 380 * 100;
-                      offsetY = localT % 2 === 0 ? -15 : 15; // Alternate sides
-                    }
+                    const roadPos = getRoadPosition(t);
+                    const x = (roadPos.x / 1200) * 100; // Convert to percentage
+                    const y = (roadPos.y / 380) * 100; // Convert to percentage
+                    const spacing = milestone.spacing;
                     
                     return (
                       <HoverCard key={milestone.id}>
@@ -427,15 +408,15 @@ const JourneyTimeline = () => {
                             className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group z-10"
                             style={{ 
                               left: `${x}%`,
-                              top: `${y + offsetY}%`
+                              top: `${y + spacing}%`
                             }}
                           >
                             {/* Connection line to road */}
                             <div 
                               className="absolute w-1 bg-gradient-to-b from-purple-400 to-transparent rounded-full"
                               style={{
-                                height: `${Math.abs(offsetY * 2)}px`,
-                                top: offsetY > 0 ? '-100%' : '100%',
+                                height: `${Math.abs(spacing * 3)}px`,
+                                top: spacing > 0 ? '-100%' : '100%',
                                 left: '50%',
                                 transform: 'translateX(-50%)'
                               }}
