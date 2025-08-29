@@ -283,11 +283,11 @@ const JourneyTimeline = () => {
           </Card>
         </div>
 
-        {/* Timeline */}
+                {/* Timeline */}
         <Card className="bg-white/70 backdrop-blur-sm border-purple-200 shadow-xl">
           <CardHeader>
             <CardTitle className="text-center text-purple-700">
-              Your {selectedYear} Journey
+              Your {selectedYear} Journey Road
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8">
@@ -296,58 +296,96 @@ const JourneyTimeline = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
               </div>
             ) : (
-              <div className="relative" style={{ minHeight: '400px' }}>
-                {/* Curved Timeline */}
-                <div className="relative h-60 mb-8">
+              <div className="relative" style={{ minHeight: '500px' }}>
+                {/* Winding Road Timeline */}
+                <div className="relative h-96 mb-8">
                   <svg 
                     width="100%" 
                     height="100%" 
-                    viewBox="0 0 1000 240" 
+                    viewBox="0 0 1200 380" 
                     className="absolute inset-0"
                     preserveAspectRatio="none"
                   >
-                    {/* Curved timeline path */}
                     <defs>
-                      <linearGradient id="timelineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <linearGradient id="roadGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                         <stop offset="0%" stopColor="#A855F7" />
-                        <stop offset="25%" stopColor="#6366F1" />
-                        <stop offset="50%" stopColor="#3B82F6" />
-                        <stop offset="75%" stopColor="#6366F1" />
-                        <stop offset="100%" stopColor="#A855F7" />
+                        <stop offset="20%" stopColor="#6366F1" />
+                        <stop offset="40%" stopColor="#3B82F6" />
+                        <stop offset="60%" stopColor="#10B981" />
+                        <stop offset="80%" stopColor="#F59E0B" />
+                        <stop offset="100%" stopColor="#EF4444" />
+                      </linearGradient>
+                      <linearGradient id="roadShadow" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#9333EA" stopOpacity="0.3" />
+                        <stop offset="50%" stopColor="#1E40AF" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#DC2626" stopOpacity="0.3" />
                       </linearGradient>
                     </defs>
                     
-                    {/* Main curved path */}
+                    {/* Road shadow for depth */}
                     <path
-                      d="M 0 120 Q 250 80 500 120 T 1000 120"
-                      stroke="url(#timelineGradient)"
-                      strokeWidth="4"
+                      d="M 50 200 Q 200 120 350 180 Q 500 240 650 160 Q 800 80 950 140 Q 1050 180 1150 200"
+                      stroke="url(#roadShadow)"
+                      strokeWidth="16"
                       fill="none"
-                      className="drop-shadow-sm"
+                      transform="translate(2, 4)"
+                      className="opacity-40"
                     />
                     
-                    {/* Month markers along the curve */}
+                    {/* Main winding road */}
+                    <path
+                      d="M 50 200 Q 200 120 350 180 Q 500 240 650 160 Q 800 80 950 140 Q 1050 180 1150 200"
+                      stroke="url(#roadGradient)"
+                      strokeWidth="12"
+                      fill="none"
+                      className="drop-shadow-lg"
+                    />
+                    
+                    {/* Road center line */}
+                    <path
+                      d="M 50 200 Q 200 120 350 180 Q 500 240 650 160 Q 800 80 950 140 Q 1050 180 1150 200"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeDasharray="15,10"
+                      fill="none"
+                      className="opacity-80"
+                    />
+                    
+                    {/* Month markers along the road */}
                     {months.map((month, index) => {
-                      const x = (index / 11) * 1000;
-                      // Calculate y position along the curve
                       const t = index / 11;
-                      const y = 120 + Math.sin(t * Math.PI) * -40 * Math.sin(t * 2 * Math.PI);
+                      // Calculate position along the winding road
+                      let x, y;
+                      if (t <= 0.33) {
+                        const localT = t / 0.33;
+                        x = 50 + localT * 300;
+                        y = 200 + Math.sin(localT * Math.PI) * -80;
+                      } else if (t <= 0.66) {
+                        const localT = (t - 0.33) / 0.33;
+                        x = 350 + localT * 300;
+                        y = 180 + Math.sin(localT * Math.PI + Math.PI) * 80 - 20;
+                      } else {
+                        const localT = (t - 0.66) / 0.34;
+                        x = 650 + localT * 500;
+                        y = 160 + Math.sin(localT * Math.PI) * -60 + 20;
+                      }
                       
                       return (
                         <g key={month}>
                           <circle
                             cx={x}
                             cy={y}
-                            r="6"
+                            r="8"
                             fill="white"
                             stroke="#A855F7"
-                            strokeWidth="2"
+                            strokeWidth="3"
+                            className="drop-shadow-md"
                           />
                           <text
                             x={x}
-                            y={y + 25}
+                            y={y + 35}
                             textAnchor="middle"
-                            className="text-xs font-medium fill-purple-600"
+                            className="text-sm font-bold fill-purple-700 drop-shadow-sm"
                           >
                             {month}
                           </text>
@@ -356,13 +394,31 @@ const JourneyTimeline = () => {
                     })}
                   </svg>
                   
-                  {/* Milestones positioned along the curve */}
+                  {/* Milestones positioned along the winding road */}
                   {positionedMilestones.map((milestone) => {
-                    // Calculate position along the curved path
                     const t = milestone.xPos / 100;
-                    const x = t * 100; // percentage for CSS positioning
-                    const curveY = 120 + Math.sin(t * Math.PI) * -40 * Math.sin(t * 2 * Math.PI);
-                    const adjustedY = (curveY / 240) * 100; // convert to percentage
+                    let x, y, offsetY;
+                    
+                    // Calculate position along the winding road with natural spacing
+                    if (t <= 0.33) {
+                      const localT = t / 0.33;
+                      x = (50 + localT * 300) / 1200 * 100;
+                      const roadY = 200 + Math.sin(localT * Math.PI) * -80;
+                      y = roadY / 380 * 100;
+                      offsetY = localT % 2 === 0 ? -15 : 15; // Alternate sides
+                    } else if (t <= 0.66) {
+                      const localT = (t - 0.33) / 0.33;
+                      x = (350 + localT * 300) / 1200 * 100;
+                      const roadY = 180 + Math.sin(localT * Math.PI + Math.PI) * 80 - 20;
+                      y = roadY / 380 * 100;
+                      offsetY = localT % 2 === 0 ? 15 : -15; // Alternate sides
+                    } else {
+                      const localT = (t - 0.66) / 0.34;
+                      x = (650 + localT * 500) / 1200 * 100;
+                      const roadY = 160 + Math.sin(localT * Math.PI) * -60 + 20;
+                      y = roadY / 380 * 100;
+                      offsetY = localT % 2 === 0 ? -15 : 15; // Alternate sides
+                    }
                     
                     return (
                       <HoverCard key={milestone.id}>
@@ -371,29 +427,29 @@ const JourneyTimeline = () => {
                             className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group z-10"
                             style={{ 
                               left: `${x}%`,
-                              top: `${adjustedY + (milestone.yPos / 4)}%` // Add offset for spacing
+                              top: `${y + offsetY}%`
                             }}
                           >
-                            {/* Connection line to timeline */}
+                            {/* Connection line to road */}
                             <div 
-                              className="absolute w-0.5 bg-purple-300"
+                              className="absolute w-1 bg-gradient-to-b from-purple-400 to-transparent rounded-full"
                               style={{
-                                height: `${Math.abs(milestone.yPos / 4)}%`,
-                                top: milestone.yPos > 0 ? '-100%' : '100%',
+                                height: `${Math.abs(offsetY * 2)}px`,
+                                top: offsetY > 0 ? '-100%' : '100%',
                                 left: '50%',
                                 transform: 'translateX(-50%)'
                               }}
                             />
                             
                             <div 
-                              className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl border-4 border-white relative z-20"
+                              className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl transform transition-all duration-300 group-hover:scale-125 group-hover:shadow-2xl border-4 border-white relative z-20 backdrop-blur-sm"
                               style={{ backgroundColor: milestone.color }}
                             >
-                              <span className="text-xl">{milestone.emoji}</span>
+                              <span className="text-2xl">{milestone.emoji}</span>
                             </div>
                             
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2">
-                              <div className="text-xs font-medium text-purple-700 text-center max-w-[100px] truncate bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3">
+                              <div className="text-sm font-semibold text-purple-800 text-center max-w-[120px] bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg border border-purple-200">
                                 {milestone.title}
                               </div>
                             </div>
@@ -402,7 +458,7 @@ const JourneyTimeline = () => {
                         <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-sm border-purple-200 shadow-xl">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-lg">{milestone.emoji}</span>
+                              <span className="text-xl">{milestone.emoji}</span>
                               <h3 className="font-semibold text-purple-800">{milestone.title}</h3>
                             </div>
                             {milestone.description && (
