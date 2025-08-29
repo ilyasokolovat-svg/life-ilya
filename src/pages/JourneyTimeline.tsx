@@ -162,43 +162,56 @@ const JourneyTimeline = () => {
   const positionedMilestones = getMilestonePositioning();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 relative overflow-hidden">
+      {/* Background Achievement Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 text-6xl text-amber-200/30 animate-pulse">🏆</div>
+        <div className="absolute top-40 right-20 text-4xl text-yellow-200/40 animate-bounce">⭐</div>
+        <div className="absolute bottom-40 left-20 text-5xl text-orange-200/30 animate-pulse">🎯</div>
+        <div className="absolute bottom-20 right-10 text-3xl text-amber-200/40 animate-bounce">✨</div>
+        <div className="absolute top-60 left-1/3 text-4xl text-yellow-200/30 animate-pulse">🌟</div>
+        <div className="absolute bottom-60 right-1/3 text-5xl text-orange-200/20 animate-bounce">🎖️</div>
+      </div>
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-slate-200">
+      <header className="bg-gradient-to-r from-amber-100/90 to-yellow-100/90 backdrop-blur-sm shadow-lg border-b border-amber-200 relative z-10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 onClick={() => navigate('/')}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-amber-700 hover:text-amber-900 hover:bg-amber-50"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Back to Dashboard
               </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
-                  Journey Timeline
+              <div className="relative">
+                <div className="absolute -top-2 -right-2 text-2xl animate-bounce">🏆</div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                  Achievement Timeline
                 </h1>
-                <p className="text-gray-600 mt-1">Track your significant milestones and achievements</p>
+                <p className="text-amber-700 mt-1 font-medium">Celebrate your victories and milestones!</p>
               </div>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-700 hover:to-slate-900">
+                <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
                   <Plus className="h-5 w-5 mr-2" />
-                  Add Milestone
+                  Add Achievement
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Add New Milestone</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2">
+                    <span className="text-xl">🏆</span>
+                    Add New Achievement
+                  </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <Input
-                      placeholder="Milestone title"
+                      placeholder="Achievement title"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       required
@@ -240,8 +253,8 @@ const JourneyTimeline = () => {
                       </Button>
                     ))}
                   </div>
-                  <Button type="submit" className="w-full">
-                    Add Milestone
+                  <Button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+                    🎉 Add Achievement
                   </Button>
                 </form>
               </DialogContent>
@@ -250,20 +263,21 @@ const JourneyTimeline = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
         {/* Year Selector */}
         <div className="flex justify-center mb-8">
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200">
+          <Card className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm border-amber-200 shadow-lg">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedYear(selectedYear - 1)}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
                 >
                   ←
                 </Button>
-                <span className="text-2xl font-bold text-slate-700 min-w-[80px] text-center">
+                <span className="text-2xl font-bold text-amber-700 min-w-[80px] text-center">
                   {selectedYear}
                 </span>
                 <Button
@@ -271,6 +285,7 @@ const JourneyTimeline = () => {
                   size="sm"
                   onClick={() => setSelectedYear(selectedYear + 1)}
                   disabled={selectedYear >= new Date().getFullYear()}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
                 >
                   →
                 </Button>
@@ -280,37 +295,54 @@ const JourneyTimeline = () => {
         </div>
 
         {/* Timeline */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200 shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-center text-slate-700">
-              Your {selectedYear} Journey
+        <Card className="bg-gradient-to-br from-white/80 to-amber-50/40 backdrop-blur-sm border-amber-200 shadow-2xl relative overflow-hidden">
+          {/* Decorative sparkles */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-4 right-8 text-xl text-amber-300/50 animate-pulse">✨</div>
+            <div className="absolute top-12 left-8 text-lg text-yellow-300/40 animate-bounce">⭐</div>
+            <div className="absolute bottom-8 right-12 text-xl text-orange-300/50 animate-pulse">🌟</div>
+          </div>
+          
+          <CardHeader className="relative z-10">
+            <CardTitle className="text-center text-amber-800 flex items-center justify-center gap-2">
+              <span className="text-2xl">🏆</span>
+              Your {selectedYear} Achievements
+              <span className="text-2xl">🏆</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-8 relative z-10">
             {loading ? (
               <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
               </div>
             ) : (
               <div className="relative max-w-4xl mx-auto">
                 {/* Vertical Timeline */}
                 <div className="relative" style={{ minHeight: '600px' }}>
-                  {/* Central timeline line */}
-                  <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-300 via-slate-400 to-slate-300 transform -translate-x-1/2"></div>
+                  {/* Central timeline line with gradient */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-2 bg-gradient-to-b from-amber-300 via-yellow-400 to-orange-400 transform -translate-x-1/2 rounded-full shadow-lg"></div>
                   
-                  {/* Year markers */}
-                  <div className="absolute left-1/2 top-0 w-4 h-4 bg-slate-600 rounded-full transform -translate-x-1/2 -translate-y-2 border-4 border-white shadow-lg"></div>
-                  <div className="absolute left-1/2 bottom-0 w-4 h-4 bg-slate-600 rounded-full transform -translate-x-1/2 translate-y-2 border-4 border-white shadow-lg"></div>
-                  
-                  {/* Year labels */}
-                  <div className="absolute left-1/2 top-0 transform -translate-x-1/2 -translate-y-8">
-                    <span className="text-sm font-semibold text-slate-600 bg-white px-2 py-1 rounded-full shadow-sm">Jan {selectedYear}</span>
+                  {/* Year markers with glow effect */}
+                  <div className="absolute left-1/2 top-0 w-6 h-6 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transform -translate-x-1/2 -translate-y-3 border-4 border-white shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full animate-ping opacity-75"></div>
                   </div>
-                  <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-8">
-                    <span className="text-sm font-semibold text-slate-600 bg-white px-2 py-1 rounded-full shadow-sm">Dec {selectedYear}</span>
+                  <div className="absolute left-1/2 bottom-0 w-6 h-6 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transform -translate-x-1/2 translate-y-3 border-4 border-white shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full animate-ping opacity-75"></div>
                   </div>
                   
-                  {/* Milestones */}
+                  {/* Year labels with achievement styling */}
+                  <div className="absolute left-1/2 top-0 transform -translate-x-1/2 -translate-y-12">
+                    <span className="text-sm font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-2 rounded-full shadow-md border border-amber-200">
+                      🎊 Jan {selectedYear}
+                    </span>
+                  </div>
+                  <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-12">
+                    <span className="text-sm font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-2 rounded-full shadow-md border border-amber-200">
+                      Dec {selectedYear} 🎊
+                    </span>
+                  </div>
+                  
+                  {/* Achievement Milestones */}
                   {positionedMilestones.map((milestone, index) => (
                     <div
                       key={milestone.id}
@@ -324,66 +356,82 @@ const JourneyTimeline = () => {
                               milestone.side === 'left' ? 'right-1/2 pr-8' : 'left-1/2 pl-8'
                             }`}
                           >
-                            {/* Connection line */}
+                            {/* Sparkle effects on hover */}
+                            <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <div className="absolute -top-2 -left-2 text-sm text-yellow-400 animate-bounce">✨</div>
+                              <div className="absolute -top-1 -right-3 text-xs text-amber-400 animate-pulse">⭐</div>
+                              <div className="absolute -bottom-2 -left-1 text-xs text-orange-400 animate-bounce">🌟</div>
+                            </div>
+                            
+                            {/* Connection line with glow */}
                             <div 
-                              className={`absolute top-1/2 w-8 h-0.5 bg-slate-300 transform -translate-y-1/2 ${
+                              className={`absolute top-1/2 w-8 h-1 bg-gradient-to-r from-amber-300 to-yellow-400 transform -translate-y-1/2 shadow-md ${
                                 milestone.side === 'left' ? 'right-0' : 'left-0'
                               }`}
                             />
                             
-                            {/* Milestone content */}
+                            {/* Achievement content */}
                             <div 
                               className={`flex items-center gap-4 ${
                                 milestone.side === 'left' ? 'flex-row-reverse' : 'flex-row'
                               }`}
                             >
-                              {/* Milestone circle */}
-                              <div 
-                                className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl border-4 border-white relative z-10"
-                                style={{ backgroundColor: milestone.color }}
-                              >
-                                <span className="text-xl">{milestone.emoji}</span>
+                              {/* Achievement badge */}
+                              <div className="relative">
+                                <div 
+                                  className="w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl transform transition-all duration-300 group-hover:scale-125 group-hover:rotate-12 border-4 border-white relative z-10"
+                                  style={{ backgroundColor: milestone.color }}
+                                >
+                                  <span className="text-2xl">{milestone.emoji}</span>
+                                  {/* Achievement ring */}
+                                  <div className="absolute inset-0 rounded-full border-2 border-yellow-300/50 animate-pulse"></div>
+                                </div>
+                                {/* Achievement glow */}
+                                <div 
+                                  className="absolute inset-0 rounded-full opacity-30 blur-lg group-hover:opacity-50 transition-opacity"
+                                  style={{ backgroundColor: milestone.color }}
+                                ></div>
                               </div>
                               
-                              {/* Milestone info */}
+                              {/* Achievement info card */}
                               <div 
-                                className={`max-w-xs p-4 bg-white rounded-lg shadow-md border border-slate-200 ${
+                                className={`max-w-xs p-5 bg-gradient-to-br from-white to-amber-50/30 rounded-xl shadow-xl border-2 border-amber-200/50 backdrop-blur-sm transform transition-all duration-300 group-hover:shadow-2xl group-hover:scale-105 ${
                                   milestone.side === 'left' ? 'text-right' : 'text-left'
                                 }`}
                               >
-                                <h3 className="font-semibold text-slate-800 mb-1">{milestone.title}</h3>
-                                <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-                                  <Calendar className="h-3 w-3" />
-                                  <span>{new Date(milestone.date).toLocaleDateString()}</span>
+                                <h3 className="font-bold text-amber-900 mb-2 text-lg">{milestone.title}</h3>
+                                <div className="flex items-center gap-2 text-sm text-amber-700 mb-2">
+                                  <Calendar className="h-4 w-4" />
+                                  <span className="font-medium">{new Date(milestone.date).toLocaleDateString()}</span>
                                 </div>
                                 {milestone.category && (
-                                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                                  <div className="flex items-center gap-2 text-xs text-amber-600">
                                     <MapPin className="h-3 w-3" />
-                                    <span>{milestone.category}</span>
+                                    <span className="font-medium">{milestone.category}</span>
                                   </div>
                                 )}
                               </div>
                             </div>
                           </div>
                         </HoverCardTrigger>
-                        <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-sm border-slate-200 shadow-xl">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl">{milestone.emoji}</span>
-                              <h3 className="font-semibold text-slate-800">{milestone.title}</h3>
+                        <HoverCardContent className="w-80 p-6 bg-gradient-to-br from-white/95 to-amber-50/80 backdrop-blur-md border-amber-300 shadow-2xl">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">{milestone.emoji}</span>
+                              <h3 className="font-bold text-amber-900 text-lg">{milestone.title}</h3>
                             </div>
                             {milestone.description && (
-                              <p className="text-sm text-slate-600">{milestone.description}</p>
+                              <p className="text-amber-800 leading-relaxed">{milestone.description}</p>
                             )}
-                            <div className="flex items-center gap-4 text-xs text-slate-500">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(milestone.date).toLocaleDateString()}
+                            <div className="flex items-center gap-4 text-sm text-amber-700 pt-2 border-t border-amber-200">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span className="font-medium">{new Date(milestone.date).toLocaleDateString()}</span>
                               </div>
                               {milestone.category && (
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {milestone.category}
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4" />
+                                  <span className="font-medium">{milestone.category}</span>
                                 </div>
                               )}
                             </div>
@@ -395,10 +443,15 @@ const JourneyTimeline = () => {
                 </div>
 
                 {milestones.length === 0 && (
-                  <div className="text-center py-12 text-slate-500">
-                    <Star className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                    <p>No milestones yet for {selectedYear}</p>
-                    <p className="text-sm">Add your first milestone to start tracking your journey!</p>
+                  <div className="text-center py-20 text-amber-600">
+                    <div className="text-8xl mb-6 animate-bounce">🏆</div>
+                    <h3 className="text-2xl font-bold mb-2">Ready to celebrate your first achievement?</h3>
+                    <p className="text-lg">Add your first milestone to start building your success story!</p>
+                    <div className="mt-4 text-4xl space-x-2">
+                      <span className="animate-pulse">✨</span>
+                      <span className="animate-bounce">🌟</span>
+                      <span className="animate-pulse">✨</span>
+                    </div>
                   </div>
                 )}
               </div>
