@@ -23,6 +23,18 @@ interface Milestone {
   type?: 'achievement' | 'challenge';
 }
 
+interface TravelPeriod {
+  id: string;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  emoji: string;
+  color: string;
+  created_at: string;
+}
+
 const JourneyTimeline = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
