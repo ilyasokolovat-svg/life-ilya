@@ -20,6 +20,7 @@ interface Milestone {
   emoji: string;
   color: string;
   created_at: string;
+  type?: 'achievement' | 'challenge';
 }
 
 const JourneyTimeline = () => {
@@ -39,7 +40,8 @@ const JourneyTimeline = () => {
     date: new Date().toISOString().split('T')[0],
     category: '',
     emoji: '⭐',
-    color: '#3B82F6'
+    color: '#3B82F6',
+    type: 'achievement' as 'achievement' | 'challenge'
   });
 
   // Edit form state
@@ -49,10 +51,11 @@ const JourneyTimeline = () => {
     date: '',
     category: '',
     emoji: '⭐',
-    color: '#3B82F6'
+    color: '#3B82F6',
+    type: 'achievement' as 'achievement' | 'challenge'
   });
 
-  const categories = [
+  const achievementCategories = [
     { name: 'Career', emoji: '💼', color: '#3B82F6' },
     { name: 'Personal', emoji: '🎯', color: '#10B981' },
     { name: 'Health', emoji: '💪', color: '#EF4444' },
@@ -61,6 +64,17 @@ const JourneyTimeline = () => {
     { name: 'Achievement', emoji: '🏆', color: '#F97316' },
     { name: 'Learning', emoji: '📚', color: '#06B6D4' },
     { name: 'Other', emoji: '⭐', color: '#6B7280' }
+  ];
+
+  const challengeCategories = [
+    { name: 'Career', emoji: '💼', color: '#64748B' },
+    { name: 'Personal', emoji: '🌱', color: '#64748B' },
+    { name: 'Health', emoji: '🩹', color: '#64748B' },
+    { name: 'Relationships', emoji: '💔', color: '#64748B' },
+    { name: 'Loss', emoji: '🕊️', color: '#64748B' },
+    { name: 'Financial', emoji: '💸', color: '#64748B' },
+    { name: 'Life Change', emoji: '🔄', color: '#64748B' },
+    { name: 'Other', emoji: '🌧️', color: '#64748B' }
   ];
 
   useEffect(() => {
@@ -115,7 +129,8 @@ const JourneyTimeline = () => {
         date: new Date().toISOString().split('T')[0],
         category: '',
         emoji: '⭐',
-        color: '#3B82F6'
+        color: '#3B82F6',
+        type: 'achievement'
       });
       fetchMilestones();
     } catch (error) {
@@ -170,7 +185,8 @@ const JourneyTimeline = () => {
       date: milestone.date,
       category: milestone.category || '',
       emoji: milestone.emoji,
-      color: milestone.color
+      color: milestone.color,
+      type: milestone.type || 'achievement'
     });
     setIsEditDialogOpen(true);
   };
@@ -241,20 +257,38 @@ const JourneyTimeline = () => {
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
                   <Plus className="h-5 w-5 mr-2" />
-                  Add Achievement
+                  Add Event
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <span className="text-xl">🏆</span>
-                    Add New Achievement
+                    <span className="text-xl">{formData.type === 'achievement' ? '🏆' : '🌱'}</span>
+                    Add New {formData.type === 'achievement' ? 'Achievement' : 'Life Event'}
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={formData.type === 'achievement' ? "default" : "outline"}
+                      onClick={() => setFormData({ ...formData, type: 'achievement', category: '', emoji: '⭐', color: '#3B82F6' })}
+                      className="flex-1"
+                    >
+                      🏆 Achievement
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={formData.type === 'challenge' ? "default" : "outline"}
+                      onClick={() => setFormData({ ...formData, type: 'challenge', category: '', emoji: '🌱', color: '#64748B' })}
+                      className="flex-1"
+                    >
+                      🌱 Life Event
+                    </Button>
+                  </div>
                   <div>
                     <Input
-                      placeholder="Achievement title"
+                      placeholder={formData.type === 'achievement' ? "Achievement title" : "What happened?"}
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       required
@@ -262,7 +296,7 @@ const JourneyTimeline = () => {
                   </div>
                   <div>
                     <Textarea
-                      placeholder="Description (optional)"
+                      placeholder={formData.type === 'achievement' ? "Description (optional)" : "How did you grow from this? (optional)"}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={3}
@@ -277,7 +311,7 @@ const JourneyTimeline = () => {
                     />
                   </div>
                   <div className="grid grid-cols-4 gap-2">
-                    {categories.map((cat) => (
+                    {(formData.type === 'achievement' ? achievementCategories : challengeCategories).map((cat) => (
                       <Button
                         key={cat.name}
                         type="button"
@@ -296,8 +330,12 @@ const JourneyTimeline = () => {
                       </Button>
                     ))}
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
-                    🎉 Add Achievement
+                  <Button type="submit" className={`w-full ${
+                    formData.type === 'achievement' 
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600' 
+                      : 'bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700'
+                  }`}>
+                    {formData.type === 'achievement' ? '🎉 Add Achievement' : '🌱 Add Life Event'}
                   </Button>
                 </form>
               </DialogContent>
@@ -406,10 +444,14 @@ const JourneyTimeline = () => {
                               <div className="absolute -bottom-2 -left-1 text-xs text-orange-400 animate-bounce">🌟</div>
                             </div>
                             
-                            {/* Connection line with glow */}
+                            {/* Connection line with glow - different styles for achievements vs challenges */}
                             <div 
-                              className={`absolute top-1/2 w-8 h-1 bg-gradient-to-r from-amber-300 to-yellow-400 transform -translate-y-1/2 shadow-md ${
+                              className={`absolute top-1/2 w-8 h-1 transform -translate-y-1/2 shadow-md ${
                                 milestone.side === 'left' ? 'right-0' : 'left-0'
+                              } ${
+                                milestone.type === 'challenge' 
+                                  ? 'bg-gradient-to-r from-slate-400 to-slate-500' 
+                                  : 'bg-gradient-to-r from-amber-300 to-yellow-400'
                               }`}
                             />
                             
@@ -419,27 +461,47 @@ const JourneyTimeline = () => {
                                 milestone.side === 'left' ? 'flex-row-reverse' : 'flex-row'
                               }`}
                             >
-                              {/* Achievement badge */}
+                              {/* Badge - different styles for achievements vs challenges */}
                               <div className="relative">
                                 <div 
-                                  className="w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl transform transition-all duration-300 group-hover:scale-125 group-hover:rotate-12 border-4 border-white relative z-10"
-                                  style={{ backgroundColor: milestone.color }}
+                                  className={`w-20 h-20 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 border-4 border-white relative z-10 ${
+                                    milestone.type === 'challenge' 
+                                      ? 'text-slate-600 group-hover:scale-110 bg-gradient-to-br from-slate-100 to-slate-200' 
+                                      : 'text-white group-hover:scale-125 group-hover:rotate-12'
+                                  }`}
+                                  style={{ 
+                                    backgroundColor: milestone.type === 'challenge' ? undefined : milestone.color 
+                                  }}
                                 >
                                   <span className="text-2xl">{milestone.emoji}</span>
-                                  {/* Achievement ring */}
-                                  <div className="absolute inset-0 rounded-full border-2 border-yellow-300/50 animate-pulse"></div>
+                                  {/* Ring effect - different for each type */}
+                                  <div className={`absolute inset-0 rounded-full border-2 animate-pulse ${
+                                    milestone.type === 'challenge' 
+                                      ? 'border-slate-300/50' 
+                                      : 'border-yellow-300/50'
+                                  }`}></div>
                                 </div>
-                                {/* Achievement glow */}
+                                {/* Glow effect - subtle for challenges */}
                                 <div 
-                                  className="absolute inset-0 rounded-full opacity-30 blur-lg group-hover:opacity-50 transition-opacity"
-                                  style={{ backgroundColor: milestone.color }}
+                                  className={`absolute inset-0 rounded-full blur-lg transition-opacity ${
+                                    milestone.type === 'challenge' 
+                                      ? 'opacity-10 group-hover:opacity-20 bg-slate-400' 
+                                      : 'opacity-30 group-hover:opacity-50'
+                                  }`}
+                                  style={{ 
+                                    backgroundColor: milestone.type === 'challenge' ? undefined : milestone.color 
+                                  }}
                                 ></div>
                               </div>
                               
-                              {/* Achievement info card */}
+                              {/* Info card - different styling for achievements vs challenges */}
                               <div 
-                                className={`max-w-xs p-5 bg-gradient-to-br from-white to-amber-50/30 rounded-xl shadow-xl border-2 border-amber-200/50 backdrop-blur-sm transform transition-all duration-300 group-hover:shadow-2xl group-hover:scale-105 relative ${
+                                className={`max-w-xs p-5 rounded-xl shadow-xl border-2 backdrop-blur-sm transform transition-all duration-300 group-hover:shadow-2xl group-hover:scale-105 relative ${
                                   milestone.side === 'left' ? 'text-right' : 'text-left'
+                                } ${
+                                  milestone.type === 'challenge' 
+                                    ? 'bg-gradient-to-br from-slate-50 to-slate-100/50 border-slate-200/70' 
+                                    : 'bg-gradient-to-br from-white to-amber-50/30 border-amber-200/50'
                                 }`}
                               >
                                 {/* Edit button */}
@@ -453,15 +515,28 @@ const JourneyTimeline = () => {
                                   <Edit2 className="h-3 w-3" />
                                 </button>
                                 
-                                <h3 className="font-bold text-amber-900 mb-2 text-lg pr-6">{milestone.title}</h3>
-                                <div className="flex items-center gap-2 text-sm text-amber-700 mb-2">
+                                <h3 className={`font-bold mb-2 text-lg pr-6 ${
+                                  milestone.type === 'challenge' ? 'text-slate-700' : 'text-amber-900'
+                                }`}>
+                                  {milestone.title}
+                                </h3>
+                                <div className={`flex items-center gap-2 text-sm mb-2 ${
+                                  milestone.type === 'challenge' ? 'text-slate-600' : 'text-amber-700'
+                                }`}>
                                   <Calendar className="h-4 w-4" />
                                   <span className="font-medium">{new Date(milestone.date).toLocaleDateString()}</span>
                                 </div>
                                 {milestone.category && (
-                                  <div className="flex items-center gap-2 text-xs text-amber-600">
+                                  <div className={`flex items-center gap-2 text-xs ${
+                                    milestone.type === 'challenge' ? 'text-slate-500' : 'text-amber-600'
+                                  }`}>
                                     <MapPin className="h-3 w-3" />
                                     <span className="font-medium">{milestone.category}</span>
+                                  </div>
+                                )}
+                                {milestone.type === 'challenge' && (
+                                  <div className="mt-2 text-xs text-slate-500 italic">
+                                    🌱 Growth moment
                                   </div>
                                 )}
                               </div>
@@ -547,8 +622,26 @@ const JourneyTimeline = () => {
                   required
                 />
               </div>
+              <div className="flex gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant={editFormData.type === 'achievement' ? "default" : "outline"}
+                  onClick={() => setEditFormData({ ...editFormData, type: 'achievement', category: '', emoji: '⭐', color: '#3B82F6' })}
+                  className="flex-1"
+                >
+                  🏆 Achievement
+                </Button>
+                <Button
+                  type="button"
+                  variant={editFormData.type === 'challenge' ? "default" : "outline"}
+                  onClick={() => setEditFormData({ ...editFormData, type: 'challenge', category: '', emoji: '🌱', color: '#64748B' })}
+                  className="flex-1"
+                >
+                  🌱 Life Event
+                </Button>
+              </div>
               <div className="grid grid-cols-4 gap-2">
-                {categories.map((cat) => (
+                {(editFormData.type === 'achievement' ? achievementCategories : challengeCategories).map((cat) => (
                   <Button
                     key={cat.name}
                     type="button"
