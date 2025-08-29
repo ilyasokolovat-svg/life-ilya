@@ -784,49 +784,62 @@ const JourneyTimeline = () => {
                     </div>
                   ))}
                   
-                  {/* Travel Periods - Right Side */}
-                  {travelPeriods.map((travel, index) => {
-                    const position = getTravelPosition(travel.startDate, travel.endDate);
-                    return (
-                      <div
-                        key={travel.id}
-                        className="absolute right-0 w-64"
-                        style={{ 
-                          top: `${position.startPos}%`, 
-                          height: `${position.height}%`,
-                          minHeight: '60px'
-                        }}
-                      >
-                        <div className="relative h-full">
-                          {/* Connection line to timeline */}
-                          <div className="absolute left-0 top-1/2 w-8 h-1 bg-gradient-to-r from-purple-300 to-indigo-400 transform -translate-y-1/2"></div>
-                          
-                          {/* Travel period bar */}
-                          <div 
-                            className="absolute left-8 top-0 bottom-0 w-2 rounded-full shadow-lg"
-                            style={{ backgroundColor: travel.color }}
-                          ></div>
-                          
-                          {/* Travel info card */}
-                          <div className="absolute left-12 top-0 bottom-0 w-48 flex items-center">
-                            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-3 shadow-lg w-full">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-lg">{travel.emoji}</span>
-                                <h4 className="font-semibold text-purple-900 text-sm truncate">{travel.title}</h4>
+                  {/* Travel Timeline - Vertical line on right edge */}
+                  <div className="absolute -right-8 top-0 h-full">
+                    {/* Main vertical timeline line */}
+                    <div className="absolute right-20 top-0 w-1 h-full bg-gray-300"></div>
+                    
+                    {/* Travel periods as highlighted sections */}
+                    {travelPeriods.map((travel, index) => {
+                      const position = getTravelPosition(travel.startDate, travel.endDate);
+                      return (
+                        <HoverCard key={travel.id}>
+                          <HoverCardTrigger asChild>
+                            <div
+                              className="absolute cursor-pointer transition-all duration-200 hover:scale-110"
+                              style={{
+                                top: `${position.startPos}%`,
+                                height: `${Math.max(position.height, 3)}%`,
+                                right: '78px',
+                                width: '6px',
+                                backgroundColor: travel.color,
+                                borderRadius: '3px',
+                                minHeight: '20px'
+                              }}
+                            >
+                              {/* Country name label */}
+                              <div className="absolute -right-24 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-700 whitespace-nowrap">
+                                {travel.emoji} {travel.location}
                               </div>
-                              <p className="text-xs text-purple-700 mb-1 truncate">{travel.location}</p>
-                              <div className="text-xs text-purple-600">
-                                {new Date(travel.startDate).toLocaleDateString()} - {new Date(travel.endDate).toLocaleDateString()}
-                              </div>
-                              {travel.description && (
-                                <p className="text-xs text-purple-600 mt-1 line-clamp-2">{travel.description}</p>
-                              )}
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-64" side="left">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm flex items-center gap-2">
+                                <span>{travel.emoji}</span>
+                                {travel.title}
+                              </h4>
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {travel.location}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(travel.startDate).toLocaleDateString()} - {new Date(travel.endDate).toLocaleDateString()}
+                                </div>
+                                {travel.description && (
+                                  <div className="text-xs mt-2 italic">
+                                    {travel.description}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {milestones.length === 0 && (
