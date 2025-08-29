@@ -123,10 +123,47 @@ const JourneyTimeline = () => {
     return (dayOfYear / totalDays) * 100;
   };
 
+  // Calculate curved positioning for milestones to avoid overlap
+  const getMilestonePositioning = () => {
+    const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return sortedMilestones.map((milestone, index) => {
+      const xPos = getMilestonePosition(milestone.date);
+      
+      // Create alternating heights with extra spacing for close milestones
+      let yOffset = 0;
+      let height = index % 2 === 0 ? -60 : 40;
+      
+      // Check for nearby milestones and adjust positioning
+      if (index > 0) {
+        const prevXPos = getMilestonePosition(sortedMilestones[index - 1].date);
+        const distance = Math.abs(xPos - prevXPos);
+        
+        // If milestones are very close (within 5% of timeline), stack them vertically
+        if (distance < 5) {
+          const sameLevel = sortedMilestones.slice(0, index).filter((_, i) => {
+            const prevPos = getMilestonePosition(sortedMilestones[i].date);
+            return Math.abs(xPos - prevPos) < 5;
+          }).length;
+          
+          // Alternate between top and bottom, but with more spacing
+          height = sameLevel % 2 === 0 ? -60 - (Math.floor(sameLevel / 2) * 50) : 40 + (Math.floor(sameLevel / 2) * 50);
+        }
+      }
+      
+      return {
+        ...milestone,
+        xPos,
+        yPos: height
+      };
+    });
+  };
+
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
+
+  const positionedMilestones = getMilestonePositioning();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -259,76 +296,135 @@ const JourneyTimeline = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
               </div>
             ) : (
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-purple-300 via-indigo-300 to-purple-300 rounded-full transform -translate-y-1/2 z-0"></div>
-                
-                {/* Month markers */}
-                <div className="relative h-24 mb-8">
-                  {months.map((month, index) => (
-                    <div
-                      key={month}
-                      className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2"
-                      style={{ left: `${getMonthPosition(index + 1)}%` }}
-                    >
-                      <div className="bg-white border-2 border-purple-300 rounded-full w-4 h-4 z-10"></div>
-                      <div className="text-xs text-purple-600 mt-2 font-medium text-center min-w-[30px]">
-                        {month}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Milestones */}
-                <div className="relative h-32">
-                  {milestones.map((milestone, index) => (
-                    <HoverCard key={milestone.id}>
-                      <HoverCardTrigger asChild>
-                        <div
-                          className="absolute cursor-pointer transform -translate-x-1/2 group"
-                          style={{ 
-                            left: `${getMilestonePosition(milestone.date)}%`,
-                            top: index % 2 === 0 ? '-20px' : '60px'
-                          }}
-                        >
-                          <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transform transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl border-4 border-white"
-                            style={{ backgroundColor: milestone.color }}
+              <div className="relative" style={{ minHeight: '400px' }}>
+                {/* Curved Timeline */}
+                <div className="relative h-60 mb-8">
+                  <svg 
+                    width="100%" 
+                    height="100%" 
+                    viewBox="0 0 1000 240" 
+                    className="absolute inset-0"
+                    preserveAspectRatio="none"
+                  >
+                    {/* Curved timeline path */}
+                    <defs>
+                      <linearGradient id="timelineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#A855F7" />
+                        <stop offset="25%" stopColor="#6366F1" />
+                        <stop offset="50%" stopColor="#3B82F6" />
+                        <stop offset="75%" stopColor="#6366F1" />
+                        <stop offset="100%" stopColor="#A855F7" />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* Main curved path */}
+                    <path
+                      d="M 0 120 Q 250 80 500 120 T 1000 120"
+                      stroke="url(#timelineGradient)"
+                      strokeWidth="4"
+                      fill="none"
+                      className="drop-shadow-sm"
+                    />
+                    
+                    {/* Month markers along the curve */}
+                    {months.map((month, index) => {
+                      const x = (index / 11) * 1000;
+                      // Calculate y position along the curve
+                      const t = index / 11;
+                      const y = 120 + Math.sin(t * Math.PI) * -40 * Math.sin(t * 2 * Math.PI);
+                      
+                      return (
+                        <g key={month}>
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="6"
+                            fill="white"
+                            stroke="#A855F7"
+                            strokeWidth="2"
+                          />
+                          <text
+                            x={x}
+                            y={y + 25}
+                            textAnchor="middle"
+                            className="text-xs font-medium fill-purple-600"
                           >
-                            <span className="text-lg">{milestone.emoji}</span>
-                          </div>
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1">
-                            <div className="text-xs font-medium text-purple-700 text-center max-w-[80px] truncate">
-                              {milestone.title}
+                            {month}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                  
+                  {/* Milestones positioned along the curve */}
+                  {positionedMilestones.map((milestone) => {
+                    // Calculate position along the curved path
+                    const t = milestone.xPos / 100;
+                    const x = t * 100; // percentage for CSS positioning
+                    const curveY = 120 + Math.sin(t * Math.PI) * -40 * Math.sin(t * 2 * Math.PI);
+                    const adjustedY = (curveY / 240) * 100; // convert to percentage
+                    
+                    return (
+                      <HoverCard key={milestone.id}>
+                        <HoverCardTrigger asChild>
+                          <div
+                            className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group z-10"
+                            style={{ 
+                              left: `${x}%`,
+                              top: `${adjustedY + (milestone.yPos / 4)}%` // Add offset for spacing
+                            }}
+                          >
+                            {/* Connection line to timeline */}
+                            <div 
+                              className="absolute w-0.5 bg-purple-300"
+                              style={{
+                                height: `${Math.abs(milestone.yPos / 4)}%`,
+                                top: milestone.yPos > 0 ? '-100%' : '100%',
+                                left: '50%',
+                                transform: 'translateX(-50%)'
+                              }}
+                            />
+                            
+                            <div 
+                              className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl border-4 border-white relative z-20"
+                              style={{ backgroundColor: milestone.color }}
+                            >
+                              <span className="text-xl">{milestone.emoji}</span>
                             </div>
-                          </div>
-                        </div>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-sm border-purple-200">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{milestone.emoji}</span>
-                            <h3 className="font-semibold text-purple-800">{milestone.title}</h3>
-                          </div>
-                          {milestone.description && (
-                            <p className="text-sm text-gray-600">{milestone.description}</p>
-                          )}
-                          <div className="flex items-center gap-4 text-xs text-purple-600">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(milestone.date).toLocaleDateString()}
-                            </div>
-                            {milestone.category && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {milestone.category}
+                            
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2">
+                              <div className="text-xs font-medium text-purple-700 text-center max-w-[100px] truncate bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                                {milestone.title}
                               </div>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
-                  ))}
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-sm border-purple-200 shadow-xl">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{milestone.emoji}</span>
+                              <h3 className="font-semibold text-purple-800">{milestone.title}</h3>
+                            </div>
+                            {milestone.description && (
+                              <p className="text-sm text-gray-600">{milestone.description}</p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-purple-600">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(milestone.date).toLocaleDateString()}
+                              </div>
+                              {milestone.category && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {milestone.category}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    );
+                  })}
                 </div>
 
                 {milestones.length === 0 && (
