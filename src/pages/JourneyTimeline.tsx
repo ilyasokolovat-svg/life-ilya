@@ -115,7 +115,12 @@ const JourneyTimeline = () => {
       const { error } = await supabase
         .from('milestones')
         .insert({
-          ...formData,
+          title: formData.title,
+          description: formData.description,
+          date: formData.date,
+          category: formData.category,
+          emoji: formData.emoji,
+          color: formData.color,
           user_id: user.id
         });
 
@@ -198,7 +203,14 @@ const JourneyTimeline = () => {
     try {
       const { error } = await supabase
         .from('milestones')
-        .update(editFormData)
+        .update({
+          title: editFormData.title,
+          description: editFormData.description,
+          date: editFormData.date,
+          category: editFormData.category,
+          emoji: editFormData.emoji,
+          color: editFormData.color
+        })
         .eq('id', editingMilestone.id);
 
       if (error) throw error;
