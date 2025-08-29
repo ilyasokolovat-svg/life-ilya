@@ -411,7 +411,7 @@ const JourneyTimeline = () => {
             ) : (
               <div className="relative max-w-4xl mx-auto">
                 {/* Vertical Timeline */}
-                <div className="relative" style={{ minHeight: '1200px' }}>
+                <div className="relative" style={{ minHeight: '2000px' }}>
                   {/* Central timeline line with gradient */}
                   <div className="absolute left-1/2 top-0 bottom-0 w-2 bg-gradient-to-b from-amber-300 via-yellow-400 to-orange-400 transform -translate-x-1/2 rounded-full shadow-lg"></div>
                   
