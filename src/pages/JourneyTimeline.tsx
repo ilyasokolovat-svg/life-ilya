@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ArrowLeft, Plus, Star, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Star, Calendar, MapPin, Edit2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,8 @@ const JourneyTimeline = () => {
   const navigate = useNavigate();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +37,16 @@ const JourneyTimeline = () => {
     title: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
+    category: '',
+    emoji: '⭐',
+    color: '#3B82F6'
+  });
+
+  // Edit form state
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    date: '',
     category: '',
     emoji: '⭐',
     color: '#3B82F6'
@@ -119,39 +131,72 @@ const JourneyTimeline = () => {
     return (dayOfYear / totalDays) * 100;
   };
 
-  // Calculate positioning for milestones with alternating sides
+  // Calculate positioning for milestones with proper alternating sides
   const getMilestonePositioning = () => {
     const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     return sortedMilestones.map((milestone, index) => {
-      const yPos = getMilestonePosition(milestone.date);
+      let baseYPos = getMilestonePosition(milestone.date);
       
-      // Alternate sides and handle close milestones
-      let side = 'left';
-      let offset = 0;
+      // Stretch the timeline to provide more space - multiply by 1.5 for 50% more space
+      baseYPos = baseYPos * 1.5;
       
-      // Check for milestones within 5% distance
-      const nearbyMilestones = sortedMilestones.slice(0, index).filter((_, i) => {
-        const prevPos = getMilestonePosition(sortedMilestones[i].date);
-        return Math.abs(yPos - prevPos) < 5;
-      });
+      // Simple alternating: left for even indices, right for odd indices
+      const side = index % 2 === 0 ? 'left' : 'right';
       
-      if (nearbyMilestones.length === 0) {
-        // No conflicts, alternate sides normally
-        side = index % 2 === 0 ? 'left' : 'right';
-      } else {
-        // Handle conflicts by stacking on opposite sides
-        const conflictCount = nearbyMilestones.length;
-        side = conflictCount % 2 === 0 ? 'left' : 'right';
-        offset = Math.floor(conflictCount / 2) * 8; // 8% offset per conflict level
+      // Check for very close milestones (within 8% after stretching)
+      let yOffset = 0;
+      for (let i = 0; i < index; i++) {
+        const prevMilestone = sortedMilestones[i];
+        const prevYPos = getMilestonePosition(prevMilestone.date) * 1.5;
+        
+        if (Math.abs(baseYPos - prevYPos) < 8) {
+          // If milestones are too close, offset the current one
+          yOffset += 12; // 12% offset to create clear separation
+        }
       }
       
       return {
         ...milestone,
-        yPos: yPos + offset,
+        yPos: Math.min(baseYPos + yOffset, 140), // Cap at 140% to keep within bounds
         side
       };
     });
+  };
+
+  const handleEdit = (milestone: Milestone) => {
+    setEditingMilestone(milestone);
+    setEditFormData({
+      title: milestone.title,
+      description: milestone.description || '',
+      date: milestone.date,
+      category: milestone.category || '',
+      emoji: milestone.emoji,
+      color: milestone.color
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !editingMilestone) return;
+
+    try {
+      const { error } = await supabase
+        .from('milestones')
+        .update(editFormData)
+        .eq('id', editingMilestone.id);
+
+      if (error) throw error;
+
+      toast.success('Achievement updated successfully!');
+      setIsEditDialogOpen(false);
+      setEditingMilestone(null);
+      fetchMilestones();
+    } catch (error) {
+      console.error('Error updating milestone:', error);
+      toast.error('Failed to update achievement');
+    }
   };
 
   const months = [
@@ -395,11 +440,22 @@ const JourneyTimeline = () => {
                               
                               {/* Achievement info card */}
                               <div 
-                                className={`max-w-xs p-5 bg-gradient-to-br from-white to-amber-50/30 rounded-xl shadow-xl border-2 border-amber-200/50 backdrop-blur-sm transform transition-all duration-300 group-hover:shadow-2xl group-hover:scale-105 ${
+                                className={`max-w-xs p-5 bg-gradient-to-br from-white to-amber-50/30 rounded-xl shadow-xl border-2 border-amber-200/50 backdrop-blur-sm transform transition-all duration-300 group-hover:shadow-2xl group-hover:scale-105 relative ${
                                   milestone.side === 'left' ? 'text-right' : 'text-left'
                                 }`}
                               >
-                                <h3 className="font-bold text-amber-900 mb-2 text-lg">{milestone.title}</h3>
+                                {/* Edit button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit(milestone);
+                                  }}
+                                  className="absolute top-2 right-2 p-1 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-full transition-colors"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </button>
+                                
+                                <h3 className="font-bold text-amber-900 mb-2 text-lg pr-6">{milestone.title}</h3>
                                 <div className="flex items-center gap-2 text-sm text-amber-700 mb-2">
                                   <Calendar className="h-4 w-4" />
                                   <span className="font-medium">{new Date(milestone.date).toLocaleDateString()}</span>
@@ -458,6 +514,80 @@ const JourneyTimeline = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5" />
+                Edit Achievement
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <Input
+                  placeholder="Achievement title"
+                  value={editFormData.title}
+                  onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Textarea
+                  placeholder="Description (optional)"
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Input
+                  type="date"
+                  value={editFormData.date}
+                  onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {categories.map((cat) => (
+                  <Button
+                    key={cat.name}
+                    type="button"
+                    variant={editFormData.category === cat.name ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEditFormData({ 
+                      ...editFormData, 
+                      category: cat.name, 
+                      emoji: cat.emoji, 
+                      color: cat.color 
+                    })}
+                    className="text-xs h-auto py-2"
+                  >
+                    <span className="mr-1">{cat.emoji}</span>
+                    {cat.name}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                >
+                  ✨ Update Achievement
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
