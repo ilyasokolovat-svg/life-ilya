@@ -131,34 +131,32 @@ const JourneyTimeline = () => {
     return (dayOfYear / totalDays) * 100;
   };
 
-  // Calculate positioning for milestones with proper alternating sides
+  // Calculate positioning for milestones with proper chronological order
   const getMilestonePositioning = () => {
     const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     return sortedMilestones.map((milestone, index) => {
+      // Calculate the base position based on the date within the year
       let baseYPos = getMilestonePosition(milestone.date);
-      
-      // Stretch the timeline to provide more space - multiply by 1.5 for 50% more space
-      baseYPos = baseYPos * 1.5;
       
       // Simple alternating: left for even indices, right for odd indices
       const side = index % 2 === 0 ? 'left' : 'right';
       
-      // Check for very close milestones (within 8% after stretching)
+      // For milestones that are very close (within 3% of timeline), add minimal offset
       let yOffset = 0;
-      for (let i = 0; i < index; i++) {
-        const prevMilestone = sortedMilestones[i];
-        const prevYPos = getMilestonePosition(prevMilestone.date) * 1.5;
+      if (index > 0) {
+        const prevMilestone = sortedMilestones[index - 1];
+        const prevYPos = getMilestonePosition(prevMilestone.date);
         
-        if (Math.abs(baseYPos - prevYPos) < 8) {
-          // If milestones are too close, offset the current one
-          yOffset += 12; // 12% offset to create clear separation
+        // If milestones are within 3% of each other, add small offset
+        if (Math.abs(baseYPos - prevYPos) < 3) {
+          yOffset = 4; // Small 4% offset to prevent overlap
         }
       }
       
       return {
         ...milestone,
-        yPos: Math.min(baseYPos + yOffset, 140), // Cap at 140% to keep within bounds
+        yPos: baseYPos + yOffset, // Don't cap, let it use full timeline
         side
       };
     });
@@ -363,7 +361,7 @@ const JourneyTimeline = () => {
             ) : (
               <div className="relative max-w-4xl mx-auto">
                 {/* Vertical Timeline */}
-                <div className="relative" style={{ minHeight: '600px' }}>
+                <div className="relative" style={{ minHeight: '1200px' }}>
                   {/* Central timeline line with gradient */}
                   <div className="absolute left-1/2 top-0 bottom-0 w-2 bg-gradient-to-b from-amber-300 via-yellow-400 to-orange-400 transform -translate-x-1/2 rounded-full shadow-lg"></div>
                   
