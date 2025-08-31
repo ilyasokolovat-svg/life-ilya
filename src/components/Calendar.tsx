@@ -145,8 +145,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
     // Reordering habits to put sleep first, then gym, alcohol, and meditation
     const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
 
-    // Adjust cell height based on screen size
-    const cellHeight = isMobile ? 'min-h-[110px]' : 'min-h-[140px]';
+    // Adjust cell height and layout based on screen size
+    const cellHeight = isMobile ? 'min-h-[200px]' : 'min-h-[140px]';
+    const showFullLabels = !isMobile;
 
     const getHabitLabel = (habitType: HabitType) => {
       switch (habitType) {
@@ -222,21 +223,23 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
           />
         </div>
         
-        {/* Habits for the day with restructured layout */}
-        <div className="flex-1 p-2 space-y-1">
+        {/* Habits for the day with mobile-responsive layout */}
+        <div className={`flex-1 p-2 ${isMobile ? 'space-y-3' : 'space-y-1'}`}>
           {habitOrder.map((habitType) => {
             // Get the most up-to-date habit data, ensuring we have the latest state
             const currentHabitData = dayData?.[habitType] || { planned: false, completed: false };
             console.log(`Calendar: Rendering ${habitType} for ${isoDate}:`, currentHabitData);
             
             return (
-              <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 flex-1">
+              <div key={`${isoDate}-${habitType}`} className={`bg-gray-50 rounded ${isMobile ? 'px-3 py-2' : 'px-2 py-1'}`}>
+                <div className={`flex items-center ${isMobile ? 'flex-col gap-2' : 'justify-between'}`}>
+                  <div className={`flex items-center gap-1 ${isMobile ? 'w-full justify-center' : 'flex-1'}`}>
                     {getHabitIcon(habitType)}
-                    <span className="text-xs font-medium text-gray-600">
-                      {getHabitLabel(habitType)}
-                    </span>
+                    {showFullLabels && (
+                      <span className="text-xs font-medium text-gray-600">
+                        {getHabitLabel(habitType)}
+                      </span>
+                    )}
                   </div>
                   <HabitTracker
                     key={`${isoDate}-${habitType}-${currentHabitData.completed}-${Date.now()}`}

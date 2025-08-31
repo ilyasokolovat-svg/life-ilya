@@ -15,7 +15,7 @@ export interface WeeklySummaryItem {
   isOverdue?: boolean;
   weekDates?: string;
   order_index?: number;
-  priority?: 'high' | 'medium' | 'low';
+  priority?: 'high' | 'medium' | 'low' | 'very-low';
   assigned_day?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
   assigned_time_slot?: 'morning' | 'afternoon' | 'evening';
 }
@@ -195,7 +195,7 @@ export function useWeeklySummary() {
           isOverdue: item.isOverdue || false,
           weekDates: item.isOverdue ? getWeekDates(item.period_key) : undefined,
           order_index: item.order_index,
-          priority: (item.priority as 'high' | 'medium' | 'low') || 'medium',
+          priority: (item.priority as 'high' | 'medium' | 'low' | 'very-low') || 'medium',
           assigned_day: item.assigned_day as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday' | undefined,
           assigned_time_slot: item.assigned_time_slot as 'morning' | 'afternoon' | 'evening' | undefined
         };

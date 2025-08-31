@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useWeeklySummary } from "@/hooks/useWeeklySummary";
+import { useWeeklySummary, WeeklySummaryItem } from "@/hooks/useWeeklySummary";
 import { useWeeklySummaryHooks } from "./weekly-summary/useWeeklySummaryHooks";
 import { useStandaloneTodos } from "@/hooks/useStandaloneTodos";
 import TaskList from "./weekly-summary/TaskList";
@@ -225,6 +225,25 @@ const WeeklySummaryDashboard: React.FC = () => {
   };
 
   // Handle day assignment update with support for bullet points
+  // Handle priority update
+  const handlePriorityUpdate = (taskId: string, priority: string) => {
+    console.log('handlePriorityUpdate called:', { taskId, priority });
+    
+    updateTaskAssignment({
+      taskId,
+      priority
+    });
+    
+    // Update local state
+    setTasks(currentTasks => {
+      return currentTasks.map(task => 
+        task.id === taskId 
+          ? { ...task, priority: priority as WeeklySummaryItem['priority'] }
+          : task
+      );
+    });
+  };
+
   const handleDayAssignmentUpdate = (taskId: string, assigned_day?: string | null) => {
     console.log('handleDayAssignmentUpdate called:', { taskId, assigned_day });
     
@@ -432,6 +451,7 @@ const WeeklySummaryDashboard: React.FC = () => {
                 onDragEnd={handleDragEnd}
                 onToggleBulletPoint={toggleBulletPointCompletion}
                 onDayAssignmentUpdate={handleDayAssignmentUpdate}
+                onPriorityUpdate={handlePriorityUpdate}
               />
             </CardContent>
           )}

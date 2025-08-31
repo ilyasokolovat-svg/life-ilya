@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GripVertical, Edit, Save, X, Calendar } from "lucide-react";
+import { GripVertical, Edit, Save, X, Calendar, Flag } from "lucide-react";
 import { WeeklySummaryItem } from "@/hooks/useWeeklySummary";
 import BulletPointTask from "./BulletPointTask";
 
@@ -26,6 +26,7 @@ interface TaskItemProps {
   onDragEnd: () => void;
   onToggleBulletPoint: (item: any, bulletIndex: number, completed: boolean) => void;
   onDayAssignmentUpdate: (taskId: string, assigned_day?: string | null) => void;
+  onPriorityUpdate?: (taskId: string, priority: string) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -43,7 +44,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDrop,
   onDragEnd,
   onToggleBulletPoint,
-  onDayAssignmentUpdate
+  onDayAssignmentUpdate,
+  onPriorityUpdate
 }) => {
   const isEditing = editingTask === item.id;
   const isDragging = draggedItem === item.id;
@@ -99,6 +101,55 @@ const TaskItem: React.FC<TaskItemProps> = ({
         <SelectItem value="friday" className="text-xs">Friday</SelectItem>
         <SelectItem value="saturday" className="text-xs">Saturday</SelectItem>
         <SelectItem value="sunday" className="text-xs">Sunday</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
+  const PriorityDropdown = ({ taskId, priority }: { taskId: string, priority?: string }) => (
+    <Select
+      value={priority || 'medium'}
+      onValueChange={(newPriority) => {
+        onPriorityUpdate?.(taskId, newPriority);
+      }}
+    >
+      <SelectTrigger className="h-7 w-16 text-xs bg-white border-gray-300 z-50">
+        <SelectValue>
+          <div className="flex items-center gap-1">
+            <Flag className={`h-3 w-3 ${
+              priority === 'high' ? 'text-red-500' : 
+              priority === 'medium' ? 'text-yellow-500' : 
+              priority === 'low' ? 'text-green-500' : 
+              'text-gray-500'
+            }`} />
+            <span>{priority === 'high' ? '1' : priority === 'medium' ? '2' : priority === 'low' ? '3' : '4'}</span>
+          </div>
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent className="bg-white border shadow-lg z-[100]">
+        <SelectItem value="high" className="text-xs">
+          <div className="flex items-center gap-2">
+            <Flag className="h-3 w-3 text-red-500" />
+            Priority 1 (High)
+          </div>
+        </SelectItem>
+        <SelectItem value="medium" className="text-xs">
+          <div className="flex items-center gap-2">
+            <Flag className="h-3 w-3 text-yellow-500" />
+            Priority 2 (Medium)
+          </div>
+        </SelectItem>
+        <SelectItem value="low" className="text-xs">
+          <div className="flex items-center gap-2">
+            <Flag className="h-3 w-3 text-green-500" />
+            Priority 3 (Low)
+          </div>
+        </SelectItem>
+        <SelectItem value="very-low" className="text-xs">
+          <div className="flex items-center gap-2">
+            <Flag className="h-3 w-3 text-gray-500" />
+            Priority 4 (Very Low)
+          </div>
+        </SelectItem>
       </SelectContent>
     </Select>
   );
@@ -191,7 +242,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   <p className={`text-sm flex-1 ${item.isCompleted ? 'line-through text-green-600 font-medium' : ''}`}>
                     {item.planned_goal}
                   </p>
-                  <div className="ml-2">
+                  <div className="ml-2 flex items-center gap-2">
+                    <PriorityDropdown taskId={item.id} priority={item.priority} />
                     <DayDropdown taskId={item.id} assignedDay={item.assigned_day} />
                   </div>
                 </div>

@@ -70,19 +70,9 @@ const ProgressTracking: React.FC<ProgressTrackingProps> = ({
         
         <CardContent className="relative space-y-4">
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-blue-700 flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                Quarter Progress
-              </span>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {Math.round(progressValue * 0.8)}%
-              </span>
-            </div>
-            
             <div className="space-y-2">
               <Progress 
-                value={progressValue * 0.8} 
+                value={0}
                 className="h-3 bg-white/60 backdrop-blur-sm shadow-inner"
               />
             </div>
