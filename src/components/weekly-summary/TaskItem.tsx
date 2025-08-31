@@ -236,6 +236,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   onToggleBulletPoint={onToggleBulletPoint}
                   onDayAssignmentUpdate={onDayAssignmentUpdate}
                   DayDropdown={DayDropdown}
+                  PriorityDropdown={PriorityDropdown}
                 />
               ) : (
                 <div className="flex items-center justify-between">

@@ -8,13 +8,15 @@ interface BulletPointTaskProps {
   onToggleBulletPoint: (item: any, bulletIndex: number, completed: boolean) => void;
   onDayAssignmentUpdate: (bulletTaskId: string, assigned_day?: string | null) => void;
   DayDropdown: React.ComponentType<{ taskId: string, assignedDay?: string | null }>;
+  PriorityDropdown: React.ComponentType<{ taskId: string, priority?: string }>;
 }
 
 const BulletPointTask: React.FC<BulletPointTaskProps> = ({
   item,
   onToggleBulletPoint,
   onDayAssignmentUpdate,
-  DayDropdown
+  DayDropdown,
+  PriorityDropdown
 }) => {
   const bulletPoints = item.planned_goal.split('\n').filter(line => line.trim());
   const bulletPointCompletions = item.bullet_point_completions || [];
@@ -56,10 +58,13 @@ const BulletPointTask: React.FC<BulletPointTaskProps> = ({
                 • {cleanBulletPoint}
               </span>
             </div>
-            <DayDropdown 
-              taskId={bulletTaskId}
-              assignedDay={bulletPointAssignedDay} 
-            />
+            <div className="flex items-center gap-2">
+              <PriorityDropdown taskId={item.id} priority={item.priority} />
+              <DayDropdown 
+                taskId={bulletTaskId}
+                assignedDay={bulletPointAssignedDay} 
+              />
+            </div>
           </div>
         );
       })}
