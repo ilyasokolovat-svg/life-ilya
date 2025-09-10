@@ -434,6 +434,21 @@ const JourneyTimeline = () => {
 
   const positionedMilestones = getMilestonePositioning();
 
+  // Calculate total days traveled in the year
+  const calculateTravelPercentage = () => {
+    let totalDays = 0;
+    travelPeriods.forEach(travel => {
+      const startDate = new Date(travel.startDate);
+      const endDate = new Date(travel.endDate);
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end days
+      totalDays += diffDays;
+    });
+    return Math.round((totalDays / 365) * 100);
+  };
+
+  const travelPercentage = calculateTravelPercentage();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 relative overflow-hidden">
       {/* Background Achievement Elements */}
@@ -883,6 +898,11 @@ const JourneyTimeline = () => {
                   
                   {/* Travel Timeline - Vertical line on right edge */}
                   <div className="absolute -right-8 top-0 h-full">
+                    {/* Travel percentage circle at the top */}
+                    <div className="absolute right-16 -top-8 w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg border-2 border-white">
+                      {travelPercentage}%
+                    </div>
+                    
                     {/* Main vertical timeline line */}
                     <div className="absolute right-20 top-0 w-1 h-full bg-gray-300"></div>
                     
