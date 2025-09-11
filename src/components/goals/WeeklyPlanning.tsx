@@ -13,6 +13,7 @@ interface WeeklyPlanningProps {
   onWeekPlanChange: (weekKey: string, plan: string) => void;
   onToggleWeekCompletion: (weekKey: string, completed: boolean) => void;
   onSaveWeekPlan: (weekKey: string, plan: string) => void;
+  hidePastWeeks?: boolean;
 }
 
 const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
@@ -21,7 +22,8 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
   getWeekPlan,
   getWeekCompleted,
   onToggleWeekCompletion,
-  onSaveWeekPlan
+  onSaveWeekPlan,
+  hidePastWeeks = true
 }) => {
   const [localPlans, setLocalPlans] = useState<Record<string, string>>({});
   const [changedWeeks, setChangedWeeks] = useState<Set<string>>(new Set());
@@ -62,8 +64,8 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         
-        // Only include weeks that overlap with this month AND haven't passed yet
-        if (weekEnd >= firstDay && weekEnd >= today) {
+        // Only include weeks that overlap with this month AND conditionally filter past weeks
+        if (weekEnd >= firstDay && (!hidePastWeeks || weekEnd >= today)) {
           // Use consistent week key based on Monday
           const weekKey = generateWeekKey(weekStart);
           monthWeeks.push({

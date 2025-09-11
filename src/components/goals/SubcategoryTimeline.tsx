@@ -24,6 +24,7 @@ interface TimelinePeriod {
 
 const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, subcategory }) => {
   const [hidePastPeriods, setHidePastPeriods] = useState(true); // Changed to true by default
+  const [hidePastWeeks, setHidePastWeeks] = useState(true); // New state for weekly planning
   const [selectedPeriod, setSelectedPeriod] = useState<TimelinePeriod | null>(null);
   const [progressValue, setProgressValue] = useState(0);
   const [progressText, setProgressText] = useState("");
@@ -208,15 +209,28 @@ const SubcategoryTimeline: React.FC<SubcategoryTimelineProps> = ({ category, sub
 
             {/* Weekly Planning Grid - Only for quarters */}
             {selectedPeriod.type === 'quarter' && (
-              <WeeklyPlanning
-                year={selectedPeriod.year}
-                quarter={selectedPeriod.quarter!}
-                getWeekPlan={getWeekPlan}
-                getWeekCompleted={getWeekCompleted}
-                onWeekPlanChange={() => {}} // No longer needed with manual save
-                onToggleWeekCompletion={toggleWeekCompletion}
-                onSaveWeekPlan={saveWeekPlan}
-              />
+              <div className="space-y-4">
+                {/* Toggle for past weeks */}
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-gray-700">Weekly Planning</h4>
+                  <button
+                    onClick={() => setHidePastWeeks(!hidePastWeeks)}
+                    className="text-xs px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                  >
+                    {hidePastWeeks ? 'Show past weeks' : 'Hide past weeks'}
+                  </button>
+                </div>
+                <WeeklyPlanning
+                  year={selectedPeriod.year}
+                  quarter={selectedPeriod.quarter!}
+                  getWeekPlan={getWeekPlan}
+                  getWeekCompleted={getWeekCompleted}
+                  onWeekPlanChange={() => {}} // No longer needed with manual save
+                  onToggleWeekCompletion={toggleWeekCompletion}
+                  onSaveWeekPlan={saveWeekPlan}
+                  hidePastWeeks={hidePastWeeks}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
