@@ -83,6 +83,25 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
     });
   };
 
+  // Get subcategory emoji
+  const getSubcategoryEmoji = (subcategory: string) => {
+    const emojiMap: Record<string, string> = {
+      'Sport': '🏃',
+      'Food': '🍎',
+      'Sleep': '😴',
+      'Networking': '🤝',
+      'Activities': '🎯',
+      'Phone usage': '📱',
+      'Spending commitment': '💰',
+      'Trading': '📈',
+      'Projects': '🚀',
+      'Books': '📚',
+      'People Management': '👥',
+      'Arabic': '🗣️'
+    };
+    return emojiMap[subcategory] || '📋';
+  };
+
   const getCategoryTheme = (category: string) => {
     const themes = {
       physical: {
@@ -188,6 +207,7 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
               return (
                 <div key={subcategory} className="space-y-2 relative">
                   <div className="flex items-center gap-2">
+                    <span className="text-sm">{getSubcategoryEmoji(subcategory)}</span>
                     <div className={`text-xs font-medium ${theme.year.textSecondary}`}>{subcategory}</div>
                     {getPeriodGoals('2025', subcategory) && !hasChanges && (
                       <div className={theme.year.textSecondary}>{theme.year.emoji}</div>
@@ -237,6 +257,7 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
               return (
                 <div key={subcategory} className="space-y-2 relative">
                   <div className="flex items-center gap-2">
+                    <span className="text-sm">{getSubcategoryEmoji(subcategory)}</span>
                     <div className={`text-xs font-medium ${theme.quarter.textSecondary}`}>{subcategory}</div>
                     {getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges && (
                       <div className={theme.quarter.textSecondary}>{theme.quarter.emoji}</div>

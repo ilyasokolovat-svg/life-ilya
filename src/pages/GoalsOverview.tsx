@@ -35,7 +35,7 @@ const GoalsOverview = () => {
       title: "Physical",
       emoji: "💪",
       icon: TrendingUp,
-      color: "from-green-500 to-green-600",
+      color: "from-yellow-400 to-orange-500",
       subcategories: categorySubcategories.physical
     },
     {
@@ -43,7 +43,7 @@ const GoalsOverview = () => {
       title: "Mental",
       emoji: "🧠",
       icon: Briefcase,
-      color: "from-blue-500 to-blue-600",
+      color: "from-blue-600 to-purple-600",
       subcategories: categorySubcategories.mental
     },
     {
@@ -51,7 +51,7 @@ const GoalsOverview = () => {
       title: "Financial",
       emoji: "💰",
       icon: DollarSign,
-      color: "from-purple-500 to-purple-600",
+      color: "from-green-500 to-emerald-600",
       subcategories: categorySubcategories.financial
     },
     {
@@ -59,7 +59,7 @@ const GoalsOverview = () => {
       title: "Skills",
       emoji: "🎓",
       icon: GraduationCap,
-      color: "from-orange-500 to-orange-600",
+      color: "from-orange-500 to-red-500",
       subcategories: categorySubcategories.skills
     }
   ];

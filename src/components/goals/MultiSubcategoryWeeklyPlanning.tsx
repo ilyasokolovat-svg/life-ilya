@@ -163,12 +163,34 @@ const MultiSubcategoryWeeklyPlanning: React.FC<MultiSubcategoryWeeklyPlanningPro
     });
   };
 
+  // Get subcategory emoji
+  const getSubcategoryEmoji = (subcategory: string) => {
+    const emojiMap: Record<string, string> = {
+      'Sport': '🏃',
+      'Food': '🍎',
+      'Sleep': '😴',
+      'Networking': '🤝',
+      'Activities': '🎯',
+      'Phone usage': '📱',
+      'Spending commitment': '💰',
+      'Trading': '📈',
+      'Projects': '🚀',
+      'Books': '📚',
+      'People Management': '👥',
+      'Arabic': '🗣️'
+    };
+    return emojiMap[subcategory] || '📋';
+  };
+
   return (
     <div className="space-y-6">
       {visibleSubcategories.map((subcategory) => (
         <Card key={subcategory} className="shadow-md border-0 bg-white">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-gray-700">{subcategory}</CardTitle>
+            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
+              <span className="text-xl">{getSubcategoryEmoji(subcategory)}</span>
+              {subcategory}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">

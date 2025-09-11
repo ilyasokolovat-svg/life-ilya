@@ -38,6 +38,25 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
 
   const isHidden = (subcategory: string) => hiddenSubcategories.includes(subcategory);
 
+  // Get subcategory emoji
+  const getSubcategoryEmoji = (subcategory: string) => {
+    const emojiMap: Record<string, string> = {
+      'Sport': '🏃',
+      'Food': '🍎',
+      'Sleep': '😴',
+      'Networking': '🤝',
+      'Activities': '🎯',
+      'Phone usage': '📱',
+      'Spending commitment': '💰',
+      'Trading': '📈',
+      'Projects': '🚀',
+      'Books': '📚',
+      'People Management': '👥',
+      'Arabic': '🗣️'
+    };
+    return emojiMap[subcategory] || '📋';
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -86,7 +105,8 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
                       : 'bg-gray-50'
                   }`}
                 >
-                  <span className={`text-sm ${isHidden(subcategory) ? 'line-through text-gray-500' : ''}`}>
+                  <span className={`text-sm flex items-center gap-2 ${isHidden(subcategory) ? 'line-through text-gray-500' : ''}`}>
+                    <span className="text-base">{getSubcategoryEmoji(subcategory)}</span>
                     {subcategory}
                   </span>
                   <div className="flex items-center space-x-1">
