@@ -104,7 +104,11 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
                     placeholder={`Enter your 2025 goals for ${subcategory}...`}
                     value={goalValue}
                     onChange={(e) => handleGoalChange('2025', subcategory, e.target.value)}
-                    className="bg-white/70 border-indigo-200 focus:border-indigo-400 text-xs resize-none"
+                    className={`border-indigo-200 focus:border-indigo-400 text-xs resize-none ${
+                      getPeriodGoals('2025', subcategory) && !hasChanges
+                        ? 'bg-indigo-100/50 text-indigo-800'
+                        : 'bg-white/70'
+                    }`}
                     style={{ minHeight: Math.max(40, goalValue.split('\n').length * 16) + 'px' }}
                   />
                   {hasChanges && (
@@ -144,7 +148,11 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
                     placeholder={`Enter your Q${currentQuarter} goals for ${subcategory}...`}
                     value={goalValue}
                     onChange={(e) => handleGoalChange(currentQuarterKey, subcategory, e.target.value)}
-                    className="bg-white/70 border-blue-200 focus:border-blue-400 text-xs resize-none"
+                    className={`border-blue-200 focus:border-blue-400 text-xs resize-none ${
+                      getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges
+                        ? 'bg-blue-100/50 text-blue-800'
+                        : 'bg-white/70'
+                    }`}
                     style={{ minHeight: Math.max(40, goalValue.split('\n').length * 16) + 'px' }}
                   />
                   {hasChanges && (

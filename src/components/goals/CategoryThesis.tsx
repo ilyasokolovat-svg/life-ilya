@@ -71,7 +71,11 @@ const CategoryThesis: React.FC<CategoryThesisProps> = ({ category }) => {
               placeholder={getThesisPlaceholder(category)}
               value={localThesis}
               onChange={(e) => handleChange(e.target.value)}
-              className="bg-white/70 border-amber-200 focus:border-amber-400 italic text-sm resize-none"
+              className={`border-amber-200 focus:border-amber-400 italic text-sm resize-none ${
+                getCurrentThesis() && !hasChanges 
+                  ? 'bg-amber-100/50 text-amber-800' 
+                  : 'bg-white/70'
+              }`}
               style={{ minHeight: Math.max(60, localThesis.split('\n').length * 20) + 'px' }}
             />
             {hasChanges && (
