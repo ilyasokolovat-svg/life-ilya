@@ -44,6 +44,7 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
   const generateWeeksForQuarter = (year: number, quarter: number) => {
     const weeks = [];
     const startMonth = (quarter - 1) * 3; // 0, 3, 6, 9
+    const today = new Date();
     
     for (let month = 0; month < 3; month++) {
       const currentMonth = startMonth + month;
@@ -61,8 +62,8 @@ const WeeklyPlanning: React.FC<WeeklyPlanningProps> = ({
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         
-        // Only include weeks that overlap with this month
-        if (weekEnd >= firstDay) {
+        // Only include weeks that overlap with this month AND haven't passed yet
+        if (weekEnd >= firstDay && weekEnd >= today) {
           // Use consistent week key based on Monday
           const weekKey = generateWeekKey(weekStart);
           monthWeeks.push({
