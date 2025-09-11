@@ -67,17 +67,28 @@ const CategoryThesis: React.FC<CategoryThesisProps> = ({ category }) => {
           </div>
           <div className="flex-1 space-y-3">
             <div className="text-sm font-medium text-amber-700">Category Guidance & Philosophy</div>
-            <Textarea
-              placeholder={getThesisPlaceholder(category)}
-              value={localThesis}
-              onChange={(e) => handleChange(e.target.value)}
-              className={`border-amber-200 focus:border-amber-400 italic text-sm resize-none ${
-                getCurrentThesis() && !hasChanges 
-                  ? 'bg-amber-100/50 text-amber-800' 
-                  : 'bg-white/70'
-              }`}
-              style={{ minHeight: Math.max(60, localThesis.split('\n').length * 20) + 'px' }}
-            />
+            <div className="relative">
+              <Textarea
+                placeholder={getThesisPlaceholder(category)}
+                value={localThesis}
+                onChange={(e) => handleChange(e.target.value)}
+                className={`border-amber-200 focus:border-amber-400 text-sm resize-none transition-all duration-300 ${
+                  getCurrentThesis() && !hasChanges 
+                    ? 'bg-amber-200/60 text-amber-900 italic font-medium pl-6 pr-6' 
+                    : 'bg-white/70 italic'
+                }`}
+                style={{ minHeight: Math.max(60, localThesis.split('\n').length * 20) + 'px' }}
+              />
+              {getCurrentThesis() && !hasChanges && (
+                <>
+                  <span className="absolute top-2 left-2 text-amber-700 text-lg pointer-events-none">"</span>
+                  <span className="absolute bottom-2 right-2 text-amber-700 text-lg pointer-events-none">"</span>
+                  <div className="absolute top-2 right-8 text-amber-600">
+                    <Lightbulb className="w-4 h-4" />
+                  </div>
+                </>
+              )}
+            </div>
             {hasChanges && (
               <Button 
                 onClick={handleSave}

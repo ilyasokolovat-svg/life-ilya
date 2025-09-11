@@ -98,15 +98,20 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
               const hasChanges = changedGoals.has(`2025-${subcategory}`);
               
               return (
-                <div key={subcategory} className="space-y-2">
-                  <div className="text-xs font-medium text-indigo-600">{subcategory}</div>
+                <div key={subcategory} className="space-y-2 relative">
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs font-medium text-indigo-600">{subcategory}</div>
+                    {getPeriodGoals('2025', subcategory) && !hasChanges && (
+                      <div className="text-indigo-500">⭐</div>
+                    )}
+                  </div>
                   <Textarea
                     placeholder={`Enter your 2025 goals for ${subcategory}...`}
                     value={goalValue}
                     onChange={(e) => handleGoalChange('2025', subcategory, e.target.value)}
-                    className={`border-indigo-200 focus:border-indigo-400 text-xs resize-none ${
+                    className={`border-indigo-200 focus:border-indigo-400 text-xs resize-none transition-all duration-300 ${
                       getPeriodGoals('2025', subcategory) && !hasChanges
-                        ? 'bg-indigo-100/50 text-indigo-800'
+                        ? 'bg-indigo-200/70 text-indigo-900 font-medium shadow-inner'
                         : 'bg-white/70'
                     }`}
                     style={{ minHeight: Math.max(40, goalValue.split('\n').length * 16) + 'px' }}
@@ -142,15 +147,20 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
               const hasChanges = changedGoals.has(`${currentQuarterKey}-${subcategory}`);
               
               return (
-                <div key={subcategory} className="space-y-2">
-                  <div className="text-xs font-medium text-blue-600">{subcategory}</div>
+                <div key={subcategory} className="space-y-2 relative">
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs font-medium text-blue-600">{subcategory}</div>
+                    {getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges && (
+                      <div className="text-blue-500">🎯</div>
+                    )}
+                  </div>
                   <Textarea
                     placeholder={`Enter your Q${currentQuarter} goals for ${subcategory}...`}
                     value={goalValue}
                     onChange={(e) => handleGoalChange(currentQuarterKey, subcategory, e.target.value)}
-                    className={`border-blue-200 focus:border-blue-400 text-xs resize-none ${
+                    className={`border-blue-200 focus:border-blue-400 text-xs resize-none transition-all duration-300 ${
                       getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges
-                        ? 'bg-blue-100/50 text-blue-800'
+                        ? 'bg-blue-200/70 text-blue-900 font-medium shadow-inner'
                         : 'bg-white/70'
                     }`}
                     style={{ minHeight: Math.max(40, goalValue.split('\n').length * 16) + 'px' }}
