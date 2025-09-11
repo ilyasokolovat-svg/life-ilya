@@ -58,32 +58,76 @@ const CategoryThesis: React.FC<CategoryThesisProps> = ({ category }) => {
     return placeholders[category as keyof typeof placeholders] || "Write your guiding principles for this category...";
   };
 
+  const getCategoryTheme = (category: string) => {
+    const themes = {
+      physical: {
+        card: 'from-physical-light to-physical-medium',
+        icon: 'bg-physical-medium',
+        iconText: 'text-orange-800',
+        text: 'text-orange-700',
+        border: 'border-physical-medium focus:border-physical-dark',
+        savedBg: 'bg-physical-medium/70 text-orange-900',
+        button: 'bg-physical-dark hover:bg-orange-600'
+      },
+      mental: {
+        card: 'from-mental-light to-mental-medium',
+        icon: 'bg-mental-medium',
+        iconText: 'text-blue-800',
+        text: 'text-blue-700',
+        border: 'border-mental-medium focus:border-mental-dark',
+        savedBg: 'bg-mental-medium/70 text-blue-900',
+        button: 'bg-mental-dark hover:bg-blue-600'
+      },
+      financial: {
+        card: 'from-financial-light to-financial-medium',
+        icon: 'bg-financial-medium',
+        iconText: 'text-green-800',
+        text: 'text-green-700',
+        border: 'border-financial-medium focus:border-financial-dark',
+        savedBg: 'bg-financial-medium/70 text-green-900',
+        button: 'bg-financial-dark hover:bg-green-600'
+      },
+      skills: {
+        card: 'from-skills-light to-skills-medium',
+        icon: 'bg-skills-medium',
+        iconText: 'text-red-800',
+        text: 'text-red-700',
+        border: 'border-skills-medium focus:border-skills-dark',
+        savedBg: 'bg-skills-medium/70 text-red-900',
+        button: 'bg-skills-dark hover:bg-red-600'
+      }
+    };
+    return themes[category as keyof typeof themes] || themes.physical;
+  };
+
+  const theme = getCategoryTheme(category);
+
   return (
-    <Card className="border-0 shadow-md bg-gradient-to-r from-amber-50 to-orange-50">
+    <Card className={`border-0 shadow-md bg-gradient-to-r ${theme.card}`}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-amber-100 flex-shrink-0">
-            <Lightbulb className="w-4 h-4 text-amber-600" />
+          <div className={`p-2 rounded-lg ${theme.icon} flex-shrink-0`}>
+            <Lightbulb className={`w-4 h-4 ${theme.iconText}`} />
           </div>
           <div className="flex-1 space-y-3">
-            <div className="text-sm font-medium text-amber-700">Category Guidance & Philosophy</div>
+            <div className={`text-sm font-medium ${theme.text}`}>Category Guidance & Philosophy</div>
             <div className="relative">
               <Textarea
                 placeholder={getThesisPlaceholder(category)}
                 value={localThesis}
                 onChange={(e) => handleChange(e.target.value)}
-                className={`border-amber-200 focus:border-amber-400 text-sm resize-none transition-all duration-300 ${
+                className={`${theme.border} text-sm resize-none transition-all duration-300 ${
                   getCurrentThesis() && !hasChanges 
-                    ? 'bg-amber-200/60 text-amber-900 italic font-medium pl-6 pr-6' 
+                    ? `${theme.savedBg} italic font-medium pl-6 pr-6` 
                     : 'bg-white/70 italic'
                 }`}
                 style={{ minHeight: Math.max(60, localThesis.split('\n').length * 20) + 'px' }}
               />
               {getCurrentThesis() && !hasChanges && (
                 <>
-                  <span className="absolute top-2 left-2 text-amber-700 text-lg pointer-events-none">"</span>
-                  <span className="absolute bottom-2 right-2 text-amber-700 text-lg pointer-events-none">"</span>
-                  <div className="absolute top-2 right-8 text-amber-600">
+                  <span className={`absolute top-2 left-2 ${theme.text} text-lg pointer-events-none`}>"</span>
+                  <span className={`absolute bottom-2 right-2 ${theme.text} text-lg pointer-events-none`}>"</span>
+                  <div className={`absolute top-2 right-8 ${theme.iconText}`}>
                     <Lightbulb className="w-4 h-4" />
                   </div>
                 </>
@@ -92,7 +136,7 @@ const CategoryThesis: React.FC<CategoryThesisProps> = ({ category }) => {
             {hasChanges && (
               <Button 
                 onClick={handleSave}
-                className="bg-amber-500 hover:bg-amber-600 text-white"
+                className={`${theme.button} text-white`}
                 size="sm"
               >
                 <Save className="w-4 h-4 mr-2" />

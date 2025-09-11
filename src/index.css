@@ -34,6 +34,27 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    /* Category theme colors */
+    --physical-bg: 48 100% 98%;
+    --physical-light: 48 100% 88%;
+    --physical-medium: 45 100% 75%;
+    --physical-dark: 42 100% 65%;
+    
+    --mental-bg: 215 100% 98%;
+    --mental-light: 215 90% 85%;
+    --mental-medium: 220 85% 75%;
+    --mental-dark: 225 80% 65%;
+    
+    --financial-bg: 140 100% 98%;
+    --financial-light: 140 90% 85%;
+    --financial-medium: 145 85% 75%;
+    --financial-dark: 150 80% 65%;
+    
+    --skills-bg: 20 100% 98%;
+    --skills-light: 20 90% 85%;
+    --skills-medium: 25 85% 75%;
+    --skills-dark: 30 80% 65%;
   }
 }
 

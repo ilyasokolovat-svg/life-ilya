@@ -83,12 +83,100 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
     });
   };
 
+  const getCategoryTheme = (category: string) => {
+    const themes = {
+      physical: {
+        year: {
+          card: 'from-physical-light to-physical-medium border-physical-medium',
+          text: 'text-orange-700',
+          textSecondary: 'text-orange-600',
+          border: 'border-physical-medium focus:border-physical-dark',
+          savedBg: 'bg-physical-medium/70 text-orange-900',
+          button: 'bg-physical-dark hover:bg-orange-600',
+          emoji: '⭐'
+        },
+        quarter: {
+          card: 'from-physical-bg to-physical-light border-physical-light',
+          text: 'text-orange-700',
+          textSecondary: 'text-orange-600',
+          border: 'border-physical-light focus:border-physical-medium',
+          savedBg: 'bg-physical-light/70 text-orange-900',
+          button: 'bg-physical-medium hover:bg-orange-500',
+          emoji: '🎯'
+        }
+      },
+      mental: {
+        year: {
+          card: 'from-mental-light to-mental-medium border-mental-medium',
+          text: 'text-blue-700',
+          textSecondary: 'text-blue-600',
+          border: 'border-mental-medium focus:border-mental-dark',
+          savedBg: 'bg-mental-medium/70 text-blue-900',
+          button: 'bg-mental-dark hover:bg-blue-600',
+          emoji: '⭐'
+        },
+        quarter: {
+          card: 'from-mental-bg to-mental-light border-mental-light',
+          text: 'text-blue-700',
+          textSecondary: 'text-blue-600',
+          border: 'border-mental-light focus:border-mental-medium',
+          savedBg: 'bg-mental-light/70 text-blue-900',
+          button: 'bg-mental-medium hover:bg-blue-500',
+          emoji: '🎯'
+        }
+      },
+      financial: {
+        year: {
+          card: 'from-financial-light to-financial-medium border-financial-medium',
+          text: 'text-green-700',
+          textSecondary: 'text-green-600',
+          border: 'border-financial-medium focus:border-financial-dark',
+          savedBg: 'bg-financial-medium/70 text-green-900',
+          button: 'bg-financial-dark hover:bg-green-600',
+          emoji: '⭐'
+        },
+        quarter: {
+          card: 'from-financial-bg to-financial-light border-financial-light',
+          text: 'text-green-700',
+          textSecondary: 'text-green-600',
+          border: 'border-financial-light focus:border-financial-medium',
+          savedBg: 'bg-financial-light/70 text-green-900',
+          button: 'bg-financial-medium hover:bg-green-500',
+          emoji: '🎯'
+        }
+      },
+      skills: {
+        year: {
+          card: 'from-skills-light to-skills-medium border-skills-medium',
+          text: 'text-red-700',
+          textSecondary: 'text-red-600',
+          border: 'border-skills-medium focus:border-skills-dark',
+          savedBg: 'bg-skills-medium/70 text-red-900',
+          button: 'bg-skills-dark hover:bg-red-600',
+          emoji: '⭐'
+        },
+        quarter: {
+          card: 'from-skills-bg to-skills-light border-skills-light',
+          text: 'text-red-700',
+          textSecondary: 'text-red-600',
+          border: 'border-skills-light focus:border-skills-medium',
+          savedBg: 'bg-skills-light/70 text-red-900',
+          button: 'bg-skills-medium hover:bg-red-500',
+          emoji: '🎯'
+        }
+      }
+    };
+    return themes[category as keyof typeof themes] || themes.physical;
+  };
+
+  const theme = getCategoryTheme(category);
+
   return (
     <div className="space-y-4">
       {/* 2025 Strategic Goals */}
-      <Card className="bg-gradient-to-br from-indigo-100 to-purple-200 border border-indigo-300 shadow-sm">
+      <Card className={`bg-gradient-to-br ${theme.year.card} shadow-sm`}>
         <CardContent className="p-4">
-          <div className="text-sm font-semibold text-indigo-700 mb-3 flex items-center gap-2">
+          <div className={`text-sm font-semibold ${theme.year.text} mb-3 flex items-center gap-2`}>
             <Target className="w-4 h-4" />
             2025 Strategic Goals
           </div>
@@ -100,18 +188,18 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
               return (
                 <div key={subcategory} className="space-y-2 relative">
                   <div className="flex items-center gap-2">
-                    <div className="text-xs font-medium text-indigo-600">{subcategory}</div>
+                    <div className={`text-xs font-medium ${theme.year.textSecondary}`}>{subcategory}</div>
                     {getPeriodGoals('2025', subcategory) && !hasChanges && (
-                      <div className="text-indigo-500">⭐</div>
+                      <div className={theme.year.textSecondary}>{theme.year.emoji}</div>
                     )}
                   </div>
                   <Textarea
                     placeholder={`Enter your 2025 goals for ${subcategory}...`}
                     value={goalValue}
                     onChange={(e) => handleGoalChange('2025', subcategory, e.target.value)}
-                    className={`border-indigo-200 focus:border-indigo-400 text-xs resize-none transition-all duration-300 ${
+                    className={`${theme.year.border} text-xs resize-none transition-all duration-300 ${
                       getPeriodGoals('2025', subcategory) && !hasChanges
-                        ? 'bg-indigo-200/70 text-indigo-900 font-medium shadow-inner'
+                        ? `${theme.year.savedBg} font-medium shadow-inner`
                         : 'bg-white/70'
                     }`}
                     style={{ minHeight: Math.max(40, goalValue.split('\n').length * 16) + 'px' }}
@@ -119,7 +207,7 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
                   {hasChanges && (
                     <Button 
                       onClick={() => handleSaveGoal('2025', subcategory)}
-                      className="bg-indigo-500 hover:bg-indigo-600 text-white"
+                      className={`${theme.year.button} text-white`}
                       size="sm"
                     >
                       <Save className="w-3 h-3 mr-1" />
@@ -134,9 +222,9 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
       </Card>
 
       {/* Current Quarter Goals */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 shadow-sm">
+      <Card className={`bg-gradient-to-br ${theme.quarter.card} shadow-sm`}>
         <CardContent className="p-4">
-          <div className="text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
+          <div className={`text-sm font-semibold ${theme.quarter.text} mb-3 flex items-center gap-2`}>
             <Calendar className="w-4 h-4" />
             Q{currentQuarter} {currentYear} Goals
           </div>
@@ -149,18 +237,18 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
               return (
                 <div key={subcategory} className="space-y-2 relative">
                   <div className="flex items-center gap-2">
-                    <div className="text-xs font-medium text-blue-600">{subcategory}</div>
+                    <div className={`text-xs font-medium ${theme.quarter.textSecondary}`}>{subcategory}</div>
                     {getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges && (
-                      <div className="text-blue-500">🎯</div>
+                      <div className={theme.quarter.textSecondary}>{theme.quarter.emoji}</div>
                     )}
                   </div>
                   <Textarea
                     placeholder={`Enter your Q${currentQuarter} goals for ${subcategory}...`}
                     value={goalValue}
                     onChange={(e) => handleGoalChange(currentQuarterKey, subcategory, e.target.value)}
-                    className={`border-blue-200 focus:border-blue-400 text-xs resize-none transition-all duration-300 ${
+                    className={`${theme.quarter.border} text-xs resize-none transition-all duration-300 ${
                       getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges
-                        ? 'bg-blue-200/70 text-blue-900 font-medium shadow-inner'
+                        ? `${theme.quarter.savedBg} font-medium shadow-inner`
                         : 'bg-white/70'
                     }`}
                     style={{ minHeight: Math.max(40, goalValue.split('\n').length * 16) + 'px' }}
@@ -168,7 +256,7 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
                   {hasChanges && (
                     <Button 
                       onClick={() => handleSaveGoal(currentQuarterKey, subcategory)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      className={`${theme.quarter.button} text-white`}
                       size="sm"
                     >
                       <Save className="w-3 h-3 mr-1" />

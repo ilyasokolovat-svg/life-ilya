@@ -74,6 +74,31 @@ export default {
 					light: '#f8f9fa',
 					DEFAULT: '#e9ecef',
 					dark: '#dee2e6',
+				},
+				// Category theme colors
+				physical: {
+					bg: 'hsl(var(--physical-bg))',
+					light: 'hsl(var(--physical-light))',
+					medium: 'hsl(var(--physical-medium))',
+					dark: 'hsl(var(--physical-dark))'
+				},
+				mental: {
+					bg: 'hsl(var(--mental-bg))',
+					light: 'hsl(var(--mental-light))',
+					medium: 'hsl(var(--mental-medium))',
+					dark: 'hsl(var(--mental-dark))'
+				},
+				financial: {
+					bg: 'hsl(var(--financial-bg))',
+					light: 'hsl(var(--financial-light))',
+					medium: 'hsl(var(--financial-medium))',
+					dark: 'hsl(var(--financial-dark))'
+				},
+				skills: {
+					bg: 'hsl(var(--skills-bg))',
+					light: 'hsl(var(--skills-light))',
+					medium: 'hsl(var(--skills-medium))',
+					dark: 'hsl(var(--skills-dark))'
 				}
 			},
 			borderRadius: {

@@ -83,8 +83,20 @@ const CategoryView: React.FC<CategoryViewProps> = ({
     }
   };
 
+  // Get category theme class
+  const getCategoryBgClass = (category: string) => {
+    const themes = {
+      physical: 'bg-physical-bg',
+      mental: 'bg-mental-bg', 
+      financial: 'bg-financial-bg',
+      skills: 'bg-skills-bg'
+    };
+    return themes[category as keyof typeof themes] || 'bg-background';
+  };
+
   return (
-    <div className="space-y-6">
+    <div className={`min-h-screen ${getCategoryBgClass(category)} transition-colors duration-300`}>
+      <div className="space-y-6 p-6">
       {/* Category Thesis */}
       <CategoryThesis category={category} />
 
@@ -143,6 +155,7 @@ const CategoryView: React.FC<CategoryViewProps> = ({
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 };
