@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { ArrowLeft, Briefcase, TrendingUp, DollarSign, GraduationCap } from "lucide-react";
-import GoalTimelineView from "@/components/goals/GoalTimelineView";
+import CategoryView from "@/components/goals/CategoryView";
 import SubcategoryManager from "@/components/goals/SubcategoryManager";
 import { useSubcategoryPreferences } from "@/hooks/useSubcategoryPreferences";
 
@@ -13,10 +13,10 @@ const GoalsOverview = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const initialCategories = {
-    career: ["Commission/Bonus/Dividends", "Quota Achievement", "Salary/Income", "Promotion", "Sales Skills"],
-    business: ["TT Website", "TT Instagram Organic", "TT Ads", "Selo Olive Oil", "Real Estate Projects"],
-    investments: ["Crypto", "ETFs", "Monthly Investment"],
-    skills: ["Spanish Language", "Arabic Language", "Golf", "Yachting", "Networking", "Sales Skills", "Books"]
+    physical: ["Sport", "Food", "Sleep"],
+    mental: ["Networking", "Activities", "Phone usage"],
+    financial: ["Spending commitment", "Trading", "Projects"],
+    skills: ["Books", "People Management", "Arabic"]
   };
 
   // Use Supabase to persist subcategories and hidden state
@@ -31,32 +31,32 @@ const GoalsOverview = () => {
 
   const categories = [
     {
-      id: "career",
-      title: "Career",
-      emoji: "💼",
-      icon: Briefcase,
-      color: "from-blue-500 to-blue-600",
-      subcategories: categorySubcategories.career
-    },
-    {
-      id: "business",
-      title: "Business",
-      emoji: "📈",
+      id: "physical",
+      title: "Physical",
+      emoji: "💪",
       icon: TrendingUp,
       color: "from-green-500 to-green-600",
-      subcategories: categorySubcategories.business
+      subcategories: categorySubcategories.physical
     },
     {
-      id: "investments",
-      title: "Investments",
+      id: "mental",
+      title: "Mental",
+      emoji: "🧠",
+      icon: Briefcase,
+      color: "from-blue-500 to-blue-600",
+      subcategories: categorySubcategories.mental
+    },
+    {
+      id: "financial",
+      title: "Financial",
       emoji: "💰",
       icon: DollarSign,
       color: "from-purple-500 to-purple-600",
-      subcategories: categorySubcategories.investments
+      subcategories: categorySubcategories.financial
     },
     {
       id: "skills",
-      title: "Skills & Growth",
+      title: "Skills",
       emoji: "🎓",
       icon: GraduationCap,
       color: "from-orange-500 to-orange-600",
@@ -95,7 +95,7 @@ const GoalsOverview = () => {
                 </Button>
               </Link>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Goals Management
+                Becoming the Best version of myself
               </h1>
             </div>
           </div>
@@ -140,30 +140,11 @@ const GoalsOverview = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <Tabs defaultValue={getVisibleSubcategories(selectedCategory)[0]} className="w-full">
-                  <div className="overflow-x-auto mb-6">
-                    <TabsList className="inline-flex h-auto items-center justify-start bg-transparent p-0 gap-2 min-w-full w-max">
-                      {getVisibleSubcategories(selectedCategory).map((subcategory) => (
-                        <TabsTrigger 
-                          key={subcategory} 
-                          value={subcategory} 
-                          className="flex-shrink-0 px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 data-[state=active]:bg-blue-50 data-[state=active]:border-blue-300 data-[state=active]:text-blue-700 data-[state=active]:shadow-md transition-all duration-200"
-                        >
-                          {subcategory}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </div>
-
-                  {getVisibleSubcategories(selectedCategory).map((subcategory) => (
-                    <TabsContent key={subcategory} value={subcategory}>
-                      <GoalTimelineView 
-                        category={selectedCategory} 
-                        subcategory={subcategory} 
-                      />
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                <CategoryView
+                  category={selectedCategory}
+                  categoryTitle={categories.find(c => c.id === selectedCategory)?.title || ''}
+                  visibleSubcategories={getVisibleSubcategories(selectedCategory)}
+                />
               </CardContent>
             </Card>
           </div>
