@@ -57,7 +57,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
       case "alcohol":
         return "No Alcohol";
       case "meditation":
-        return "Meditation";
+        return "Presence";
       default:
         return "";
     }

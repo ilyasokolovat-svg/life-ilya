@@ -154,7 +154,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
         case 'sleep': return 'Sleep';
         case 'gym': return 'Gym';
         case 'alcohol': return 'No Alcohol';
-        case 'meditation': return 'Meditation';
+        case 'meditation': return 'Presence';
         default: return '';
       }
     };
@@ -360,7 +360,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
             </div>
             <div className="flex items-center">
               <Brain className="h-3.5 w-3.5 mr-1" />
-              <span>Meditation</span>
+              <span>Presence</span>
             </div>
           </div>
         </div>

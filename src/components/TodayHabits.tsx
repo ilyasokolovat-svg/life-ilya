@@ -93,7 +93,8 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     {
       type: 'meditation' as HabitType,
       icon: Brain,
-      name: 'Meditation',
+      name: 'Presence',
+      description: 'Meditate, Journal and mindful phone usage',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200'
@@ -135,7 +136,12 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                   <div className={`p-3 rounded-full ${habit.bgColor}`}>
                     <Icon className={`h-6 w-6 ${habit.color}`} />
                   </div>
-                  <span className="font-semibold text-gray-900 text-lg">{habit.name}</span>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-lg">{habit.name}</div>
+                    {habit.description && (
+                      <div className="text-sm text-gray-600 mt-1">{habit.description}</div>
+                    )}
+                  </div>
                 </div>
                 
                 {habit.isSpecial ? (

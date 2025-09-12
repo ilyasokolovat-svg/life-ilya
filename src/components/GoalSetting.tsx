@@ -48,7 +48,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
       case "sleep":
         return "Good Sleep";
       case "meditation":
-        return "Meditation";
+        return "Presence";
       default:
         return "";
     }

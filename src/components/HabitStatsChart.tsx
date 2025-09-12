@@ -35,7 +35,7 @@ const HabitStatsChart: React.FC<HabitStatsChartProps> = ({
       case "sleep":
         return "Good Sleep";
       case "meditation":
-        return "Meditation";
+        return "Presence";
       default:
         return "";
     }

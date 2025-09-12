@@ -35,7 +35,7 @@ const HabitStatsHeader: React.FC<HabitStatsHeaderProps> = ({
       case "sleep":
         return "Good Sleep";
       case "meditation":
-        return "Meditation";
+        return "Presence";
       default:
         return "";
     }
