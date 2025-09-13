@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HabitsState } from "@/types/habit";
 import { formatDateISO } from "@/utils/habitUtils";
 import { Users } from "lucide-react";
@@ -54,6 +55,18 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
   };
 
   const plannedDays = getPlannedSocialDays();
+
+  const socialEventOptions = [
+    "Friend", "Date", "Networking", "Random", "Colleague", 
+    "Golf", "Birthday", "Brunch", "Beach", "Volleyball", "Padel"
+  ];
+
+  const friendOptions = [
+    "Kushal", "Sagar", "Jesper", "Jamila", "Ivy", "Seb", "Cormac", "Molly", 
+    "Ayan", "Jordan", "Cameron (YP)", "Jake (YP)", "Lindo", "Dan / Summer", 
+    "Lefti", "Remah", "Eren / Duygu", "Marko", "Stipe", "Alvaro / his gf", 
+    "Tomi", "Ali", "Arun", "Rami", "Adam / Santana", "Tarek", "Mo", "Nasser"
+  ];
 
   const handleSocialEventChange = (dateISO: string, socialEvent: string) => {
     const dayData = habitsState.days[dateISO];
@@ -133,13 +146,18 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
               
               <div className="space-y-2">
                 <div>
-                  <Input
-                    type="text"
-                    placeholder="Social event"
-                    value={day.socialEvent}
-                    onChange={(e) => handleSocialEventChange(day.dateISO, e.target.value)}
-                    className="text-xs h-7 placeholder:text-gray-400"
-                  />
+                  <Select value={day.socialEvent} onValueChange={(value) => handleSocialEventChange(day.dateISO, value)}>
+                    <SelectTrigger className="text-xs h-7">
+                      <SelectValue placeholder="Social event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {socialEventOptions.map((option) => (
+                        <SelectItem key={option} value={option} className="text-xs">
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div>
@@ -153,13 +171,18 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
                 </div>
 
                 <div>
-                  <Input
-                    type="text"
-                    placeholder="Name of friend/person met"
-                    value={day.socialPerson}
-                    onChange={(e) => handleSocialPersonChange(day.dateISO, e.target.value)}
-                    className="text-xs h-7 placeholder:text-gray-400"
-                  />
+                  <Select value={day.socialPerson} onValueChange={(value) => handleSocialPersonChange(day.dateISO, value)}>
+                    <SelectTrigger className="text-xs h-7">
+                      <SelectValue placeholder="Name of friend/person met" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {friendOptions.map((friend) => (
+                        <SelectItem key={friend} value={friend} className="text-xs">
+                          {friend}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
