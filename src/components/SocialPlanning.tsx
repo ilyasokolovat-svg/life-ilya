@@ -65,7 +65,8 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
     "Kushal", "Sagar", "Jesper", "Jamila", "Ivy", "Seb", "Cormac", "Molly", 
     "Ayan", "Jordan", "Cameron (YP)", "Jake (YP)", "Lindo", "Dan / Summer", 
     "Lefti", "Remah", "Eren / Duygu", "Marko", "Stipe", "Alvaro / his gf", 
-    "Tomi", "Ali", "Arun", "Rami", "Adam / Santana", "Tarek", "Mo", "Nasser"
+    "Tomi", "Ali", "Arun", "Rami", "Adam / Santana", "Tarek", "Mo", "Nasser",
+    "Custom..."
   ];
 
   const handleSocialEventChange = (dateISO: string, socialEvent: string) => {
@@ -171,18 +172,35 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
                 </div>
 
                 <div>
-                  <Select value={day.socialPerson} onValueChange={(value) => handleSocialPersonChange(day.dateISO, value)}>
-                    <SelectTrigger className="text-xs h-7">
-                      <SelectValue placeholder="Name of friend/person met" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {friendOptions.map((friend) => (
-                        <SelectItem key={friend} value={friend} className="text-xs">
-                          {friend}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {day.socialPerson === "Custom..." ? (
+                    <Input
+                      type="text"
+                      placeholder="Enter custom name"
+                      value=""
+                      onChange={(e) => handleSocialPersonChange(day.dateISO, e.target.value)}
+                      className="text-xs h-7 placeholder:text-gray-400"
+                      autoFocus
+                    />
+                  ) : (
+                    <Select value={day.socialPerson} onValueChange={(value) => {
+                      if (value === "Custom...") {
+                        handleSocialPersonChange(day.dateISO, "");
+                      } else {
+                        handleSocialPersonChange(day.dateISO, value);
+                      }
+                    }}>
+                      <SelectTrigger className="text-xs h-7">
+                        <SelectValue placeholder="Name of friend/person met" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {friendOptions.map((friend) => (
+                          <SelectItem key={friend} value={friend} className="text-xs">
+                            {friend}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </div>
