@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Users } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
 import { getDubaiDate, formatDateISO } from "@/utils/dateUtils";
 
@@ -98,6 +98,15 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200'
+    },
+    {
+      type: 'social' as HabitType,
+      icon: Users,
+      name: 'Social',
+      description: 'Networking, meeting friends, quality social fulfilment',
+      color: 'text-pink-600',
+      bgColor: 'bg-pink-50',
+      borderColor: 'border-pink-200'
     }
   ];
 
@@ -116,7 +125,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {habits.map((habit) => {
             const Icon = habit.icon;
             const habitData = todayData?.[habit.type] || { planned: false, completed: false };

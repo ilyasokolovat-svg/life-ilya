@@ -2,7 +2,7 @@
 import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { HabitType } from "@/types/habit";
-import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
+import { Dumbbell, Wine, Moon, Brain, Users } from "lucide-react";
 
 interface HabitStatsHeaderProps {
   habitType: HabitType;
@@ -21,6 +21,8 @@ const HabitStatsHeader: React.FC<HabitStatsHeaderProps> = ({
         return <Moon className="h-5 w-5" />;
       case "meditation":
         return <Brain className="h-5 w-5" />;
+      case "social":
+        return <Users className="h-5 w-5" />;
       default:
         return null;
     }
@@ -36,6 +38,8 @@ const HabitStatsHeader: React.FC<HabitStatsHeaderProps> = ({
         return "Good Sleep";
       case "meditation":
         return "Presence";
+      case "social":
+        return "Social";
       default:
         return "";
     }

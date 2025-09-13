@@ -15,12 +15,13 @@ import {
 } from "@/utils/habitUtils";
 import { getDubaiDate as getDubaiDateFromUtils, formatDateISO, getTodayISO } from "@/utils/dateUtils";
 import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
-import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User, Save, ArrowLeft } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Users, Cloud, CloudOff, LogOut, User, Save, ArrowLeft } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import GymPlanning from "@/components/GymPlanning";
+import SocialPlanning from "@/components/SocialPlanning";
 import TodayHabits from "@/components/TodayHabits";
 
 const Index = () => {
@@ -40,7 +41,8 @@ const Index = () => {
     sleep: { month: viewMonth, year: viewYear },
     gym: { month: viewMonth, year: viewYear },
     alcohol: { month: viewMonth, year: viewYear },
-    meditation: { month: viewMonth, year: viewYear }
+    meditation: { month: viewMonth, year: viewYear },
+    social: { month: viewMonth, year: viewYear }
   });
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
@@ -56,7 +58,8 @@ const Index = () => {
       gym: { planned: false, completed: false },
       alcohol: { planned: false, completed: false },
       sleep: { planned: false, completed: false },
-      meditation: { planned: false, completed: false }
+      meditation: { planned: false, completed: false },
+      social: { planned: false, completed: false }
     };
     
     // Update the habits state directly (local storage only, no sync needed for location)
@@ -85,6 +88,21 @@ const Index = () => {
     updateDay(date, 'gym', updatedData);
   };
   
+  // Add new handler for social planning updates
+  const handleUpdateSocialPlan = (dateISO: string, socialEvent: string, location: string, socialPerson?: string) => {
+    const date = new Date(dateISO);
+    const existingData = habitsState.days[dateISO]?.social || { planned: false, completed: false };
+    
+    const updatedData = {
+      ...existingData,
+      socialEvent,
+      location,
+      ...(socialPerson !== undefined && { socialPerson })
+    };
+    
+    updateDay(date, 'social', updatedData);
+  };
+  
   // Handle month change for charts and calendar with better bounds checking
   const handleMonthChange = (month: number, year: number) => {
     // Ensure we don't go beyond reasonable bounds
@@ -109,7 +127,8 @@ const Index = () => {
       sleep: { month, year },
       gym: { month, year },
       alcohol: { month, year },
-      meditation: { month, year }
+      meditation: { month, year },
+      social: { month, year }
     });
   };
   
@@ -129,13 +148,15 @@ const Index = () => {
   const gymStats = calculateHabitStats(habitsState, "gym", viewYear, viewMonth);
   const alcoholStats = calculateHabitStats(habitsState, "alcohol", viewYear, viewMonth);
   const meditationStats = calculateHabitStats(habitsState, "meditation", viewYear, viewMonth);
+  const socialStats = calculateHabitStats(habitsState, "social", viewYear, viewMonth);
 
   // Create habit stats object for GoalSetting
   const habitStats = {
     sleep: sleepStats,
     gym: gymStats,
     alcohol: alcoholStats,
-    meditation: meditationStats
+    meditation: meditationStats,
+    social: socialStats
   };
   
   // Get weekly stats for each habit type with their respective months
@@ -143,6 +164,7 @@ const Index = () => {
   const gymWeeklyStats = getMonthlyWeeklyStats(habitsState, "gym", chartMonths.gym.year, chartMonths.gym.month);
   const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", chartMonths.alcohol.year, chartMonths.alcohol.month);
   const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", chartMonths.meditation.year, chartMonths.meditation.month);
+  const socialWeeklyStats = getMonthlyWeeklyStats(habitsState, "social", chartMonths.social.year, chartMonths.social.month);
 
   // Toggle cloud sync
   const handleToggleSync = () => {
@@ -350,7 +372,7 @@ const Index = () => {
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {/* Sleep */}
             <HabitStats 
               habitType="sleep" 
@@ -398,6 +420,18 @@ const Index = () => {
               onMonthChange={(month, year) => handleChartMonthChange("meditation", month, year)}
               habitsState={habitsState}
             />
+            
+            {/* Social - ADD habitsState prop */}
+            <HabitStats 
+              habitType="social" 
+              stats={socialStats} 
+              goal={currentMonthGoals.social} 
+              weeklyData={socialWeeklyStats}
+              viewMonth={chartMonths.social.month}
+              viewYear={chartMonths.social.year}
+              onMonthChange={(month, year) => handleChartMonthChange("social", month, year)}
+              habitsState={habitsState}
+            />
           </div>
         </div>
         
@@ -408,6 +442,16 @@ const Index = () => {
             viewMonth={viewMonth}
             viewYear={viewYear}
             onUpdateGymPlan={handleUpdateGymPlan}
+          />
+        </div>
+        
+        {/* Social Planning Section */}
+        <div className="mt-8 mb-8">
+          <SocialPlanning 
+            habitsState={habitsState}
+            viewMonth={viewMonth}
+            viewYear={viewYear}
+            onUpdateSocialPlan={handleUpdateSocialPlan}
           />
         </div>
         
@@ -438,6 +482,12 @@ const Index = () => {
                 <Brain className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Stay Mindful</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-light p-4 rounded-full mb-2">
+                <Users className="h-8 w-8 text-blue-dark" />
+              </div>
+              <p className="text-sm">Stay Social</p>
             </div>
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto">

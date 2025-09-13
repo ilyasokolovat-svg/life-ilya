@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { HabitType, HabitGoal, HabitStats } from "@/types/habit";
-import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
+import { Dumbbell, Wine, Moon, Brain, Users } from "lucide-react";
 import { getDaysInMonth, formatDateISO } from "@/utils/habitUtils";
 
 interface GoalSettingProps {
@@ -34,6 +34,8 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
         return <Moon className="h-4 w-4" />;
       case "meditation":
         return <Brain className="h-4 w-4" />;
+      case "social":
+        return <Users className="h-4 w-4" />;
       default:
         return null;
     }
@@ -49,6 +51,8 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
         return "Good Sleep";
       case "meditation":
         return "Presence";
+      case "social":
+        return "Social";
       default:
         return "";
     }
@@ -136,14 +140,14 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   };
 
   // Define habit types to ensure consistent ordering
-  const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
+  const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation', 'social'];
 
   return (
     <div>
       <h3 className="text-lg font-medium mb-3">
         Goals for {getMonthName(viewMonth)} {viewYear}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
         {habitTypes.map((habitType) => {
           const progressData = getProgressData(habitType);
           

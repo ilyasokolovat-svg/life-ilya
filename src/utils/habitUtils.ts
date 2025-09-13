@@ -269,7 +269,8 @@ export const createEmptyDayData = (date: Date): DayData => {
     gym: { planned: false, completed: false },
     alcohol: { planned: false, completed: false },
     sleep: { planned: false, completed: false, sleepHours: undefined },
-    meditation: { planned: false, completed: false }
+    meditation: { planned: false, completed: false },
+    social: { planned: false, completed: false }
   };
 };
 
@@ -279,7 +280,8 @@ export const createDefaultGoals = () => {
     gym: { frequency: 12, notes: "" },
     alcohol: { frequency: 25, notes: "" },
     sleep: { frequency: 20, notes: "" },
-    meditation: { frequency: 25, notes: "" }
+    meditation: { frequency: 25, notes: "" },
+    social: { frequency: 15, notes: "" }
   };
 };
 
@@ -289,7 +291,8 @@ export const createDefaultMonthlyGoals = (): MonthlyGoals => {
     gym: { frequency: 12, notes: "" },
     alcohol: { frequency: 25, notes: "" },
     sleep: { frequency: 20, notes: "" },
-    meditation: { frequency: 25, notes: "" }
+    meditation: { frequency: 25, notes: "" },
+    social: { frequency: 15, notes: "" }
   };
   
   return {

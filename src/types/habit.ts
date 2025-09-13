@@ -1,4 +1,4 @@
-export type HabitType = 'gym' | 'alcohol' | 'sleep' | 'meditation';
+export type HabitType = 'gym' | 'alcohol' | 'sleep' | 'meditation' | 'social';
 
 export interface HabitData {
   planned: boolean;
@@ -7,6 +7,8 @@ export interface HabitData {
   workoutType?: string; // Optional field for gym workout type
   location?: string; // Optional field for gym location
   calories?: string; // Optional field for gym calories burned
+  socialEvent?: string; // Optional field for social event type
+  socialPerson?: string; // Optional field for person met
 }
 
 export interface DayData {
@@ -16,6 +18,7 @@ export interface DayData {
   alcohol: HabitData;
   sleep: HabitData;
   meditation: HabitData;
+  social: HabitData;
 }
 
 export interface HabitGoal {

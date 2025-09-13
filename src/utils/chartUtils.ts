@@ -103,6 +103,10 @@ export const habitColors = {
   meditation: {
     primary: '#22c55e', // Green
     secondary: '#f2fce2', // Light green
+  },
+  social: {
+    primary: '#ec4899', // Pink
+    secondary: '#fce7f3', // Light pink
   }
 };
 
