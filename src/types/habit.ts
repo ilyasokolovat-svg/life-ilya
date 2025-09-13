@@ -9,6 +9,7 @@ export interface HabitData {
   calories?: string; // Optional field for gym calories burned
   socialEvent?: string; // Optional field for social event type
   socialPerson?: string; // Optional field for person met
+  highlights?: string; // Optional field for social event highlights
 }
 
 export interface DayData {

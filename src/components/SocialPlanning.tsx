@@ -10,7 +10,7 @@ interface SocialPlanningProps {
   habitsState: HabitsState;
   viewMonth: number;
   viewYear: number;
-  onUpdateSocialPlan: (date: string, socialEvent: string, location: string, socialPerson?: string) => void;
+  onUpdateSocialPlan: (date: string, socialEvent: string, location: string, socialPerson?: string, highlights?: string) => void;
 }
 
 const SocialPlanning: React.FC<SocialPlanningProps> = ({
@@ -27,6 +27,7 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
       socialEvent: string; 
       location: string; 
       socialPerson: string;
+      highlights: string;
       completed: boolean;
     }[] = [];
     
@@ -46,6 +47,7 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
           socialEvent: dayData.social.socialEvent || '',
           location: dayData.social.location || '',
           socialPerson: dayData.social.socialPerson || '',
+          highlights: dayData.social.highlights || '',
           completed: dayData.social.completed || false
         });
       }
@@ -73,21 +75,32 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
     const dayData = habitsState.days[dateISO];
     const location = dayData?.social?.location || '';
     const socialPerson = dayData?.social?.socialPerson || '';
-    onUpdateSocialPlan(dateISO, socialEvent, location, socialPerson);
+    const highlights = dayData?.social?.highlights || '';
+    onUpdateSocialPlan(dateISO, socialEvent, location, socialPerson, highlights);
   };
 
   const handleLocationChange = (dateISO: string, location: string) => {
     const dayData = habitsState.days[dateISO];
     const socialEvent = dayData?.social?.socialEvent || '';
     const socialPerson = dayData?.social?.socialPerson || '';
-    onUpdateSocialPlan(dateISO, socialEvent, location, socialPerson);
+    const highlights = dayData?.social?.highlights || '';
+    onUpdateSocialPlan(dateISO, socialEvent, location, socialPerson, highlights);
   };
 
   const handleSocialPersonChange = (dateISO: string, socialPerson: string) => {
     const dayData = habitsState.days[dateISO];
     const socialEvent = dayData?.social?.socialEvent || '';
     const location = dayData?.social?.location || '';
-    onUpdateSocialPlan(dateISO, socialEvent, location, socialPerson);
+    const highlights = dayData?.social?.highlights || '';
+    onUpdateSocialPlan(dateISO, socialEvent, location, socialPerson, highlights);
+  };
+
+  const handleHighlightsChange = (dateISO: string, highlights: string) => {
+    const dayData = habitsState.days[dateISO];
+    const socialEvent = dayData?.social?.socialEvent || '';
+    const location = dayData?.social?.location || '';
+    const socialPerson = dayData?.social?.socialPerson || '';
+    onUpdateSocialPlan(dateISO, socialEvent, location, socialPerson, highlights);
   };
 
   const formatDateDisplay = (date: Date) => {
@@ -201,6 +214,16 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
                       </SelectContent>
                     </Select>
                   )}
+                </div>
+
+                <div>
+                  <Input
+                    type="text"
+                    placeholder="Highlights/memorable moments"
+                    value={day.highlights}
+                    onChange={(e) => handleHighlightsChange(day.dateISO, e.target.value)}
+                    className="text-xs h-7 placeholder:text-gray-400"
+                  />
                 </div>
               </div>
             </div>
