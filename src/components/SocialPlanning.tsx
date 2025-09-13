@@ -172,11 +172,11 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
                 </div>
 
                 <div>
-                  {day.socialPerson === "Custom..." ? (
+                  {day.socialPerson && !friendOptions.includes(day.socialPerson) && day.socialPerson !== "" ? (
                     <Input
                       type="text"
                       placeholder="Enter custom name"
-                      value=""
+                      value={day.socialPerson}
                       onChange={(e) => handleSocialPersonChange(day.dateISO, e.target.value)}
                       className="text-xs h-7 placeholder:text-gray-400"
                       autoFocus
@@ -184,7 +184,7 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
                   ) : (
                     <Select value={day.socialPerson} onValueChange={(value) => {
                       if (value === "Custom...") {
-                        handleSocialPersonChange(day.dateISO, "");
+                        handleSocialPersonChange(day.dateISO, "Custom Name");
                       } else {
                         handleSocialPersonChange(day.dateISO, value);
                       }
