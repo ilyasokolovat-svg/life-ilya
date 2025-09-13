@@ -6,6 +6,9 @@ export const useWeeklySummaryHooks = () => {
   const businessHook = useGoalsData('business');
   const investmentsHook = useGoalsData('investments');
   const skillsHook = useGoalsData('skills');
+  const physicalHook = useGoalsData('physical');
+  const mentalHook = useGoalsData('mental');
+  const financialHook = useGoalsData('financial');
 
   const getHookForCategory = (category: string) => {
     switch (category) {
@@ -13,6 +16,9 @@ export const useWeeklySummaryHooks = () => {
       case 'business': return businessHook;
       case 'investments': return investmentsHook;
       case 'skills': return skillsHook;
+      case 'physical': return physicalHook;
+      case 'mental': return mentalHook;
+      case 'financial': return financialHook;
       default: return null;
     }
   };
