@@ -221,8 +221,13 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
                   <Textarea
                     placeholder="Highlights/memorable moments"
                     value={day.highlights}
-                    onChange={(e) => handleHighlightsChange(day.dateISO, e.target.value)}
-                    className="text-xs min-h-[60px] placeholder:text-gray-400 resize-none"
+                    onChange={(e) => {
+                      console.log('Textarea onChange triggered:', e.target.value);
+                      handleHighlightsChange(day.dateISO, e.target.value);
+                    }}
+                    className="text-xs min-h-[60px] placeholder:text-gray-400 resize-none w-full bg-background border-input"
+                    onFocus={() => console.log('Textarea focused')}
+                    onBlur={() => console.log('Textarea blurred')}
                   />
                 </div>
               </div>
