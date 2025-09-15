@@ -89,7 +89,7 @@ const Index = () => {
   };
   
   // Add new handler for social planning updates
-  const handleUpdateSocialPlan = (dateISO: string, socialEvent: string, location: string, socialPerson?: string) => {
+  const handleUpdateSocialPlan = (dateISO: string, socialEvent: string, location: string, socialPerson?: string, highlights?: string) => {
     const date = new Date(dateISO);
     const existingData = habitsState.days[dateISO]?.social || { planned: false, completed: false };
     
@@ -97,7 +97,8 @@ const Index = () => {
       ...existingData,
       socialEvent,
       location,
-      ...(socialPerson !== undefined && { socialPerson })
+      ...(socialPerson !== undefined && { socialPerson }),
+      ...(highlights !== undefined && { highlights })
     };
     
     updateDay(date, 'social', updatedData);
