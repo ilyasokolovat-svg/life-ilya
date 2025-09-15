@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HabitsState } from "@/types/habit";
 import { formatDateISO } from "@/utils/habitUtils";
@@ -217,12 +218,11 @@ const SocialPlanning: React.FC<SocialPlanningProps> = ({
                 </div>
 
                 <div>
-                  <Input
-                    type="text"
+                  <Textarea
                     placeholder="Highlights/memorable moments"
                     value={day.highlights}
                     onChange={(e) => handleHighlightsChange(day.dateISO, e.target.value)}
-                    className="text-xs h-7 placeholder:text-gray-400"
+                    className="text-xs min-h-[60px] placeholder:text-gray-400 resize-none"
                   />
                 </div>
               </div>
