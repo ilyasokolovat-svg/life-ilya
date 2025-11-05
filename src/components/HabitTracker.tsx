@@ -9,6 +9,7 @@ interface HabitTrackerProps {
   habitType: HabitType;
   habitData: HabitData;
   onUpdate: (type: HabitType, data: HabitData) => void;
+  isMobile?: boolean;
 }
 
 const HabitTracker: React.FC<HabitTrackerProps> = ({
@@ -16,6 +17,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   habitType,
   habitData,
   onUpdate,
+  isMobile = false,
 }) => {
   const [sleepHours, setSleepHours] = useState(habitData.sleepHours?.toString() || "");
 
@@ -59,32 +61,36 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
 
   console.log(`HabitTracker: Rendering ${habitType} with data:`, habitData);
 
+  const checkboxSize = isMobile ? "h-5 w-5" : "h-3 w-3";
+  const inputSize = isMobile ? "w-16 h-8 text-sm" : "w-12 h-6 text-xs";
+  const spacing = isMobile ? "space-x-3" : "space-x-1";
+
   return (
-    <div className="flex items-center space-x-1">
+    <div className={`flex items-center ${spacing}`}>
       {habitType === "sleep" ? (
-        <div className="flex items-center space-x-1">
+        <div className={`flex items-center ${spacing}`}>
           <Input
             type="number"
             value={sleepHours}
             onChange={(e) => handleSleepHoursChange(e.target.value)}
             placeholder="hrs"
-            className="w-12 h-6 text-xs p-1 text-center border-gray-300"
+            className={`${inputSize} p-1 text-center border-gray-300`}
             min="0"
             max="24"
             step="0.5"
           />
         </div>
       ) : (
-        <div className="flex items-center space-x-1">
+        <div className={`flex items-center ${spacing}`}>
           <Checkbox
             checked={habitData.planned || false}
             onCheckedChange={handlePlannedChange}
-            className="h-3 w-3 border-gray-400"
+            className={`${checkboxSize} border-gray-400`}
           />
           <Checkbox
             checked={habitData.completed || false}
             onCheckedChange={handleCompletedChange}
-            className="h-3 w-3 border-green-500"
+            className={`${checkboxSize} border-green-500`}
           />
         </div>
       )}

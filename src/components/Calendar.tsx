@@ -145,10 +145,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
     // Reordering habits to put sleep first, then gym, alcohol, meditation, and social
     const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation', 'social'];
 
-    // Adjust cell height and layout based on screen size
-    const cellHeight = isMobile ? 'min-h-[200px]' : 'min-h-[140px]';
-    const showFullLabels = !isMobile;
-
     const getHabitLabel = (habitType: HabitType) => {
       switch (habitType) {
         case 'sleep': return 'Sleep';
@@ -161,7 +157,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
     };
 
     const getHabitIcon = (habitType: HabitType) => {
-      const iconProps = { className: "h-3 w-3" };
+      const iconProps = { className: isMobile ? "h-4 w-4" : "h-3 w-3" };
       switch (habitType) {
         case "sleep":
           return <Moon {...iconProps} />;
@@ -178,10 +174,94 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
       }
     };
 
+    // Mobile version - completely different layout
+    if (isMobile) {
+      return (
+        <div 
+          key={isoDate} 
+          className={`habit-day ${dayStyle} overflow-hidden flex flex-col rounded-lg relative`}
+        >
+          {/* Day header */}
+          <div className={`p-3 flex justify-between items-center border-b border-gray-200 ${
+            shouldShowYellowHighlight 
+              ? 'bg-gradient-to-r from-yellow-50 to-yellow-100' 
+              : 'bg-gradient-to-r from-gray-50 to-gray-100'
+          }`}>
+            <span className={`text-base font-bold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
+              {date.getDate()}
+            </span>
+            <div className="flex items-center gap-2">
+              {shouldShowYellowHighlight && (
+                <WineOff className="h-4 w-4 text-yellow-600" />
+              )}
+              {isAllCompleted && (
+                <span className="text-xl">🎉</span>
+              )}
+            </div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="w-full h-1.5 bg-gray-100">
+            <div 
+              className="h-full transition-all duration-500 ease-out"
+              style={{
+                width: `${progressPercentage}%`,
+                backgroundColor: getProgressBarColor(completedCount),
+                boxShadow: progressPercentage > 0 ? '0 0 4px rgba(0,0,0,0.2)' : 'none'
+              }}
+            ></div>
+          </div>
+          
+          {/* Location input */}
+          <div className="px-3 py-2">
+            <input
+              type="text"
+              placeholder="trip"
+              value={dayData?.location || ''}
+              onChange={(e) => onUpdateLocation?.(date, e.target.value)}
+              className="w-full text-sm px-3 py-2 border border-gray-200 rounded text-gray-600 placeholder-gray-400 focus:outline-none focus:border-blue-400"
+            />
+          </div>
+          
+          {/* Habits - larger touch targets */}
+          <div className="flex-1 p-2 space-y-2">
+            {habitOrder.map((habitType) => {
+              const currentHabitData = dayData?.[habitType] || { planned: false, completed: false };
+              
+              return (
+                <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {getHabitIcon(habitType)}
+                      <span className="text-sm font-medium text-gray-700">
+                        {getHabitLabel(habitType)}
+                      </span>
+                    </div>
+                    <HabitTracker
+                      key={`${isoDate}-${habitType}-${currentHabitData.completed}-${Date.now()}`}
+                      date={date}
+                      habitType={habitType}
+                      habitData={currentHabitData}
+                      onUpdate={(type, data) => {
+                        console.log(`Calendar: HabitTracker update for ${type} on ${isoDate}:`, data);
+                        onUpdateHabit(date, type, data);
+                      }}
+                      isMobile={true}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Desktop version - original layout
     return (
       <div 
         key={isoDate} 
-        className={`habit-day ${dayStyle} ${cellHeight} overflow-hidden flex flex-col rounded-lg relative`}
+        className={`habit-day ${dayStyle} min-h-[140px] overflow-hidden flex flex-col rounded-lg relative`}
       >
         {/* Enhanced day header with conditional yellowish background */}
         <div className={`p-2 flex justify-between items-center border-b border-gray-200 ${
@@ -193,7 +273,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
             {date.getDate()}
           </span>
           <div className="flex items-center gap-1">
-            {/* No alcohol icon indicator with yellow color */}
             {shouldShowYellowHighlight && (
               <WineOff className="h-3 w-3 text-yellow-600" />
             )}
@@ -226,23 +305,20 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
           />
         </div>
         
-        {/* Habits for the day with mobile-responsive layout */}
-        <div className={`flex-1 p-2 ${isMobile ? 'space-y-3' : 'space-y-1'}`}>
+        {/* Habits for the day */}
+        <div className="flex-1 p-2 space-y-1">
           {habitOrder.map((habitType) => {
-            // Get the most up-to-date habit data, ensuring we have the latest state
             const currentHabitData = dayData?.[habitType] || { planned: false, completed: false };
             console.log(`Calendar: Rendering ${habitType} for ${isoDate}:`, currentHabitData);
             
             return (
-              <div key={`${isoDate}-${habitType}`} className={`bg-gray-50 rounded ${isMobile ? 'px-3 py-2' : 'px-2 py-1'}`}>
-                <div className={`flex items-center ${isMobile ? 'flex-col gap-2' : 'justify-between'}`}>
-                  <div className={`flex items-center gap-1 ${isMobile ? 'w-full justify-center' : 'flex-1'}`}>
+              <div key={`${isoDate}-${habitType}`} className="bg-gray-50 rounded px-2 py-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 flex-1">
                     {getHabitIcon(habitType)}
-                    {showFullLabels && (
-                      <span className="text-xs font-medium text-gray-600">
-                        {getHabitLabel(habitType)}
-                      </span>
-                    )}
+                    <span className="text-xs font-medium text-gray-600">
+                      {getHabitLabel(habitType)}
+                    </span>
                   </div>
                   <HabitTracker
                     key={`${isoDate}-${habitType}-${currentHabitData.completed}-${Date.now()}`}
@@ -253,6 +329,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
                       console.log(`Calendar: HabitTracker update for ${type} on ${isoDate}:`, data);
                       onUpdateHabit(date, type, data);
                     }}
+                    isMobile={false}
                   />
                 </div>
               </div>
@@ -327,17 +404,17 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
         </div>
       </div>
       
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2">
-        {/* Week day headers - now starting with Monday */}
-        {weekDays.map((day) => (
+      {/* Calendar grid - responsive */}
+      <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-7 gap-2'}`}>
+        {/* Week day headers - only show on desktop */}
+        {!isMobile && weekDays.map((day) => (
           <div key={day} className="text-center font-medium py-3 text-gray-600 bg-gray-50 rounded-t-lg">
             {day}
           </div>
         ))}
         
-        {/* Empty cells for days before the 1st of the month */}
-        {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+        {/* Empty cells for days before the 1st of the month - only on desktop */}
+        {!isMobile && Array.from({ length: firstDayOfMonth }).map((_, index) => (
           <div key={`empty-${index}`} className="bg-gray-50 border border-gray-100 rounded-lg opacity-50" />
         ))}
         
