@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,8 +22,8 @@ const StreakHabits: React.FC = () => {
     }
   };
 
-  const getBackgroundColor = (completedDays: boolean[]) => {
-    const completedCount = completedDays.filter(day => day).length;
+  const getBackgroundColor = (completedDays: ('pending' | 'completed' | 'missed')[]) => {
+    const completedCount = completedDays.filter(day => day === 'completed').length;
     const percentage = (completedCount / completedDays.length) * 100;
     
     if (percentage >= 75) return 'hsl(142 76% 85%)'; // dark green
@@ -108,7 +108,7 @@ const StreakHabits: React.FC = () => {
               <div className="flex-1">
                 <h3 className="font-semibold text-sm md:text-base">{habit.name}</h3>
                 <p className="text-xs text-muted-foreground">
-                  {habit.completedDays.filter(day => day).length} / {habit.goalDuration} days completed
+                  {habit.completedDays.filter(day => day === 'completed').length} / {habit.goalDuration} days completed
                 </p>
               </div>
               <Button
@@ -122,16 +122,22 @@ const StreakHabits: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap gap-1">
-              {habit.completedDays.map((completed, index) => (
+              {habit.completedDays.map((status, index) => (
                 <div
                   key={index}
                   className="flex flex-col items-center cursor-pointer group"
                   onClick={() => toggleDay(habit.id, index)}
                 >
-                  <Checkbox
-                    checked={completed}
-                    className="h-5 w-5 rounded border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:scale-110"
-                  />
+                  {status === 'missed' ? (
+                    <div className="h-5 w-5 rounded border-2 border-destructive bg-destructive/20 flex items-center justify-center transition-all group-hover:scale-110">
+                      <X className="h-3 w-3 text-destructive" />
+                    </div>
+                  ) : (
+                    <Checkbox
+                      checked={status === 'completed'}
+                      className="h-5 w-5 rounded border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:scale-110"
+                    />
+                  )}
                   <span className="text-[10px] text-muted-foreground mt-0.5">{index + 1}</span>
                 </div>
               ))}
