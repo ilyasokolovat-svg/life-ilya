@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import GymPlanning from "@/components/GymPlanning";
 import SocialPlanning from "@/components/SocialPlanning";
 import TodayHabits from "@/components/TodayHabits";
+import StreakHabits from "@/components/StreakHabits";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -454,6 +455,11 @@ const Index = () => {
             viewYear={viewYear}
             onUpdateSocialPlan={handleUpdateSocialPlan}
           />
+        </div>
+        
+        {/* Priority Streak Habits Section */}
+        <div className="mt-8 mb-8">
+          <StreakHabits />
         </div>
         
         {/* Motivational section */}
