@@ -188,7 +188,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
               : 'bg-gradient-to-r from-gray-50 to-gray-100'
           }`}>
             <span className={`text-base font-bold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-              {date.getDate()}
+              {date.toLocaleString('default', { weekday: 'short' })} {date.getDate()}
             </span>
             <div className="flex items-center gap-2">
               {shouldShowYellowHighlight && (
@@ -270,7 +270,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
             : 'bg-gradient-to-r from-gray-50 to-gray-100'
         }`}>
           <span className={`text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-            {date.getDate()}
+            {date.toLocaleString('default', { weekday: 'short' })} {date.getDate()}
           </span>
           <div className="flex items-center gap-1">
             {shouldShowYellowHighlight && (
