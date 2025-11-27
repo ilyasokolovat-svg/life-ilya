@@ -83,22 +83,22 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
   };
   
   const content = (
-    <div className={compact ? "h-[120px]" : "h-[160px]"}>
+    <div className={compact ? "h-[100px]" : "h-[140px]"}>
       <ChartContainer config={chartConfig}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={chartData} 
-            margin={{ top: 5, right: 10, left: 5, bottom: 15 }}
-            barCategoryGap={6}
+            margin={{ top: 2, right: 8, left: 2, bottom: 10 }}
+            barCategoryGap={4}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" fontSize={8} tickMargin={3} />
+            <XAxis dataKey="name" fontSize={7} tickMargin={2} height={15} />
             <YAxis 
               allowDecimals={false} 
-              fontSize={8} 
+              fontSize={7} 
               domain={[0, 7]}
-              ticks={[0, 2, 4, 6, 7]}
-              width={20}
+              ticks={[0, 3, 7]}
+              width={18}
             />
             <Tooltip 
               content={<ChartTooltipContent />}
