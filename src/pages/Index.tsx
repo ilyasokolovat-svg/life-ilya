@@ -370,73 +370,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Stats section with integrated charts */}
-        <div className="mt-8 mb-8">
-          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* Sleep */}
-            <HabitStats 
-              habitType="sleep" 
-              stats={sleepStats} 
-              goal={currentMonthGoals.sleep} 
-              weeklyData={sleepWeeklyStats}
-              viewMonth={chartMonths.sleep.month}
-              viewYear={chartMonths.sleep.year}
-              onMonthChange={(month, year) => handleChartMonthChange("sleep", month, year)}
-              habitsState={habitsState}
-            />
-            
-            {/* Gym - ADD habitsState prop */}
-            <HabitStats 
-              habitType="gym" 
-              stats={gymStats} 
-              goal={currentMonthGoals.gym} 
-              weeklyData={gymWeeklyStats}
-              viewMonth={chartMonths.gym.month}
-              viewYear={chartMonths.gym.year}
-              onMonthChange={(month, year) => handleChartMonthChange("gym", month, year)}
-              habitsState={habitsState}
-            />
-            
-            {/* Alcohol - ADD habitsState prop */}
-            <HabitStats 
-              habitType="alcohol" 
-              stats={alcoholStats} 
-              goal={currentMonthGoals.alcohol} 
-              weeklyData={alcoholWeeklyStats}
-              viewMonth={chartMonths.alcohol.month}
-              viewYear={chartMonths.alcohol.year}
-              onMonthChange={(month, year) => handleChartMonthChange("alcohol", month, year)}
-              habitsState={habitsState}
-            />
-            
-            {/* Meditation - ADD habitsState prop */}
-            <HabitStats 
-              habitType="meditation" 
-              stats={meditationStats} 
-              goal={currentMonthGoals.meditation} 
-              weeklyData={meditationWeeklyStats}
-              viewMonth={chartMonths.meditation.month}
-              viewYear={chartMonths.meditation.year}
-              onMonthChange={(month, year) => handleChartMonthChange("meditation", month, year)}
-              habitsState={habitsState}
-            />
-            
-            {/* Social - ADD habitsState prop */}
-            <HabitStats 
-              habitType="social" 
-              stats={socialStats} 
-              goal={currentMonthGoals.social} 
-              weeklyData={socialWeeklyStats}
-              viewMonth={chartMonths.social.month}
-              viewYear={chartMonths.social.year}
-              onMonthChange={(month, year) => handleChartMonthChange("social", month, year)}
-              habitsState={habitsState}
-            />
-          </div>
-        </div>
-        
         {/* Gym Planning Section */}
         <div className="mt-8 mb-8">
           <GymPlanning 
@@ -460,6 +393,73 @@ const Index = () => {
         {/* Priority Streak Habits Section */}
         <div className="mt-8 mb-8">
           <StreakHabits />
+        </div>
+        
+        {/* Stats section with integrated charts - Now at bottom with horizontal layout */}
+        <div className="mt-8 mb-8">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
+          
+          <div className="space-y-4">
+            {/* Sleep */}
+            <HabitStats 
+              habitType="sleep" 
+              stats={sleepStats} 
+              goal={currentMonthGoals.sleep} 
+              weeklyData={sleepWeeklyStats}
+              viewMonth={chartMonths.sleep.month}
+              viewYear={chartMonths.sleep.year}
+              onMonthChange={(month, year) => handleChartMonthChange("sleep", month, year)}
+              habitsState={habitsState}
+            />
+            
+            {/* Gym */}
+            <HabitStats 
+              habitType="gym" 
+              stats={gymStats} 
+              goal={currentMonthGoals.gym} 
+              weeklyData={gymWeeklyStats}
+              viewMonth={chartMonths.gym.month}
+              viewYear={chartMonths.gym.year}
+              onMonthChange={(month, year) => handleChartMonthChange("gym", month, year)}
+              habitsState={habitsState}
+            />
+            
+            {/* Alcohol */}
+            <HabitStats 
+              habitType="alcohol" 
+              stats={alcoholStats} 
+              goal={currentMonthGoals.alcohol} 
+              weeklyData={alcoholWeeklyStats}
+              viewMonth={chartMonths.alcohol.month}
+              viewYear={chartMonths.alcohol.year}
+              onMonthChange={(month, year) => handleChartMonthChange("alcohol", month, year)}
+              habitsState={habitsState}
+            />
+            
+            {/* Meditation */}
+            <HabitStats 
+              habitType="meditation" 
+              stats={meditationStats} 
+              goal={currentMonthGoals.meditation} 
+              weeklyData={meditationWeeklyStats}
+              viewMonth={chartMonths.meditation.month}
+              viewYear={chartMonths.meditation.year}
+              onMonthChange={(month, year) => handleChartMonthChange("meditation", month, year)}
+              habitsState={habitsState}
+            />
+            
+            {/* Social */}
+            <HabitStats 
+              habitType="social" 
+              stats={socialStats} 
+              goal={currentMonthGoals.social} 
+              weeklyData={socialWeeklyStats}
+              viewMonth={chartMonths.social.month}
+              viewYear={chartMonths.social.year}
+              onMonthChange={(month, year) => handleChartMonthChange("social", month, year)}
+              habitsState={habitsState}
+            />
+          </div>
         </div>
         
         {/* Motivational section */}

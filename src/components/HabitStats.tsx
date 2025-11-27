@@ -70,28 +70,34 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   };
 
   return (
-    <Card className="stats-card h-full flex flex-col" style={{ borderColor: colors.primary }}>
-      <HabitStatsHeader
-        habitType={habitType}
-      />
-      
-      <CardContent className="space-y-4 flex-1 flex flex-col">
-        <HabitStatsMetrics
-          habitType={habitType}
-          stats={stats}
-          sleepQualityStats={sleepQualityStats}
-          habitsState={habitsState}
-        />
+    <Card className="stats-card" style={{ borderColor: colors.primary }}>
+      <div className="flex flex-col md:flex-row md:items-center gap-4 p-4">
+        {/* Left side: Header and Metrics */}
+        <div className="md:w-1/3 space-y-3">
+          <HabitStatsHeader
+            habitType={habitType}
+          />
+          
+          <HabitStatsMetrics
+            habitType={habitType}
+            stats={stats}
+            sleepQualityStats={sleepQualityStats}
+            habitsState={habitsState}
+          />
+        </div>
         
-        <HabitStatsChart
-          habitType={habitType}
-          weeklyData={weeklyData}
-          chartMonth={chartMonth}
-          chartYear={chartYear}
-          onPrevMonth={prevMonth}
-          onNextMonth={nextMonth}
-        />
-      </CardContent>
+        {/* Right side: Chart */}
+        <div className="md:w-2/3 flex-1">
+          <HabitStatsChart
+            habitType={habitType}
+            weeklyData={weeklyData}
+            chartMonth={chartMonth}
+            chartYear={chartYear}
+            onPrevMonth={prevMonth}
+            onNextMonth={nextMonth}
+          />
+        </div>
+      </div>
     </Card>
   );
 };
