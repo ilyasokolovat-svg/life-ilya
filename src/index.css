@@ -5,69 +5,69 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 250 60% 97%;
+    --foreground: 240 10% 15%;
 
-    --card: 240 10% 5%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 15%;
 
-    --popover: 240 10% 5%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 15%;
 
-    --primary: 263 70% 60%;
+    --primary: 263 85% 65%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 250 60% 92%;
+    --secondary-foreground: 240 10% 20%;
 
-    --muted: 240 5% 26%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 250 50% 90%;
+    --muted-foreground: 240 5% 45%;
 
-    --accent: 263 70% 60%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 280 75% 70%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 20%;
-    --input: 240 6% 20%;
-    --ring: 263 70% 60%;
+    --border: 250 40% 88%;
+    --input: 250 40% 88%;
+    --ring: 263 85% 65%;
 
     --radius: 0.75rem;
     
     /* Modern gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(263 70% 60%), hsl(280 70% 70%));
-    --gradient-card: linear-gradient(135deg, hsl(240 10% 5%), hsl(240 10% 7%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 45%), hsl(142 76% 55%));
+    --gradient-primary: linear-gradient(135deg, hsl(263 85% 65%), hsl(280 75% 70%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(250 60% 98%));
+    --gradient-success: linear-gradient(135deg, hsl(142 70% 50%), hsl(142 70% 60%));
     
     /* Shadows */
-    --shadow-glow: 0 0 40px hsl(263 70% 60% / 0.3);
-    --shadow-card: 0 8px 32px hsl(240 10% 0% / 0.4);
+    --shadow-glow: 0 0 40px hsl(263 85% 65% / 0.25);
+    --shadow-card: 0 4px 24px hsl(250 60% 70% / 0.15);
 
-    /* Category theme colors - modernized */
-    --physical-bg: 48 90% 12%;
-    --physical-light: 48 90% 25%;
-    --physical-medium: 45 85% 45%;
-    --physical-dark: 42 80% 55%;
+    /* Category theme colors - bright and modern */
+    --physical-bg: 48 95% 92%;
+    --physical-light: 48 90% 75%;
+    --physical-medium: 45 85% 60%;
+    --physical-dark: 42 80% 50%;
     
-    --mental-bg: 215 90% 12%;
-    --mental-light: 215 80% 25%;
-    --mental-medium: 220 75% 45%;
-    --mental-dark: 225 70% 55%;
+    --mental-bg: 215 95% 92%;
+    --mental-light: 215 85% 75%;
+    --mental-medium: 220 80% 60%;
+    --mental-dark: 225 75% 50%;
     
-    --financial-bg: 140 90% 12%;
-    --financial-light: 140 80% 25%;
-    --financial-medium: 145 75% 45%;
-    --financial-dark: 150 70% 55%;
+    --financial-bg: 140 95% 92%;
+    --financial-light: 140 85% 75%;
+    --financial-medium: 145 80% 60%;
+    --financial-dark: 150 75% 50%;
     
-    --skills-bg: 20 90% 12%;
-    --skills-light: 20 80% 25%;
-    --skills-medium: 25 75% 45%;
-    --skills-dark: 30 70% 55%;
+    --skills-bg: 20 95% 92%;
+    --skills-light: 20 85% 75%;
+    --skills-medium: 25 80% 60%;
+    --skills-dark: 30 75% 50%;
     
     /* Habit tracker colors */
-    --success: 142 76% 45%;
-    --success-light: 142 76% 55%;
+    --success: 142 70% 50%;
+    --success-light: 142 70% 60%;
     --warning: 48 96% 53%;
     --info: 217 91% 60%;
   }
@@ -85,7 +85,7 @@
 
 @layer components {
   .habit-day {
-    @apply relative rounded-lg transition-all duration-300 hover:bg-secondary/80 border border-border;
+    @apply relative rounded-xl transition-all duration-300 hover:bg-secondary/60 border border-border/50 backdrop-blur-sm;
   }
 
   .habit-day-content {
@@ -97,22 +97,22 @@
   }
   
   .planned {
-    @apply bg-info/20 text-info border border-info/30;
+    @apply bg-info/15 text-info border border-info/20;
   }
   
   .completed {
-    @apply bg-success/20 text-success-light border border-success/30 animate-success-pulse;
+    @apply bg-success/15 text-success border border-success/25 animate-success-pulse;
   }
   
   .incomplete {
-    @apply bg-muted/20 text-muted-foreground border border-muted/30;
+    @apply bg-muted/30 text-muted-foreground border border-muted/40;
   }
 
   .habit-card {
-    @apply bg-card rounded-xl shadow-[0_8px_32px_hsl(240_10%_0%/0.4)] p-4 transition-all duration-300 hover:shadow-[0_8px_48px_hsl(263_70%_60%/0.2)] border border-border;
+    @apply bg-card/80 backdrop-blur-md rounded-2xl shadow-[0_4px_24px_hsl(250_60%_70%/0.15)] p-5 transition-all duration-300 hover:shadow-[0_8px_32px_hsl(263_85%_65%/0.2)] border border-border/50;
   }
   
   .stats-card {
-    @apply bg-card rounded-xl shadow-[0_8px_32px_hsl(240_10%_0%/0.4)] p-4 border border-border;
+    @apply bg-card/80 backdrop-blur-md rounded-2xl shadow-[0_4px_24px_hsl(250_60%_70%/0.15)] p-5 border border-border/50;
   }
 }
