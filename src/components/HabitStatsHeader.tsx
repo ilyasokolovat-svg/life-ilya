@@ -46,12 +46,10 @@ const HabitStatsHeader: React.FC<HabitStatsHeaderProps> = ({
   };
 
   return (
-    <CardHeader className="pb-2">
-      <CardTitle className="text-lg flex items-center gap-2">
-        {getHabitIcon(habitType)}
-        {getHabitTitle(habitType)}
-      </CardTitle>
-    </CardHeader>
+    <div className="flex items-center gap-2">
+      {getHabitIcon(habitType)}
+      <h3 className="text-xl font-semibold">{getHabitTitle(habitType)}</h3>
+    </div>
   );
 };
 
