@@ -83,12 +83,12 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({
   };
   
   const content = (
-    <div className={compact ? "h-[120px]" : "h-[140px]"}>
+    <div className={compact ? "h-[140px]" : "h-[180px]"}>
       <ChartContainer config={chartConfig}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={chartData} 
-            margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+            margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
             barCategoryGap={6}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
