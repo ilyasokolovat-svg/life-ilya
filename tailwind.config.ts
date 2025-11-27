@@ -64,17 +64,12 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				// Custom colors for the habit tracker
-				success: '#006400', // Dark green for completed habits
-				blue: {
-					light: '#E5F3FF',
-					DEFAULT: '#3498db',
-					dark: '#2980b9',
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					light: 'hsl(var(--success-light))'
 				},
-				gray: {
-					light: '#f8f9fa',
-					DEFAULT: '#e9ecef',
-					dark: '#dee2e6',
-				},
+				warning: 'hsl(var(--warning))',
+				info: 'hsl(var(--info))',
 				// Category theme colors
 				physical: {
 					bg: 'hsl(var(--physical-bg))',

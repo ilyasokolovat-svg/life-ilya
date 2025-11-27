@@ -343,14 +343,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_habit_days_table: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_habit_goals_table: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      create_habit_days_table: { Args: never; Returns: undefined }
+      create_habit_goals_table: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

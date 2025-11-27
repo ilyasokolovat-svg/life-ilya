@@ -5,56 +5,71 @@
 
 @layer base {
   :root {
-    --background: 210 50% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 240 10% 5%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 240 10% 5%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 263 70% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 5% 26%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 263 70% 60%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 263 70% 60%;
 
-    --radius: 0.5rem;
-
-    /* Category theme colors */
-    --physical-bg: 48 100% 98%;
-    --physical-light: 48 100% 88%;
-    --physical-medium: 45 100% 75%;
-    --physical-dark: 42 100% 65%;
+    --radius: 0.75rem;
     
-    --mental-bg: 215 100% 98%;
-    --mental-light: 215 90% 85%;
-    --mental-medium: 220 85% 75%;
-    --mental-dark: 225 80% 65%;
+    /* Modern gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(263 70% 60%), hsl(280 70% 70%));
+    --gradient-card: linear-gradient(135deg, hsl(240 10% 5%), hsl(240 10% 7%));
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 45%), hsl(142 76% 55%));
     
-    --financial-bg: 140 100% 98%;
-    --financial-light: 140 90% 85%;
-    --financial-medium: 145 85% 75%;
-    --financial-dark: 150 80% 65%;
+    /* Shadows */
+    --shadow-glow: 0 0 40px hsl(263 70% 60% / 0.3);
+    --shadow-card: 0 8px 32px hsl(240 10% 0% / 0.4);
+
+    /* Category theme colors - modernized */
+    --physical-bg: 48 90% 12%;
+    --physical-light: 48 90% 25%;
+    --physical-medium: 45 85% 45%;
+    --physical-dark: 42 80% 55%;
     
-    --skills-bg: 20 100% 98%;
-    --skills-light: 20 90% 85%;
-    --skills-medium: 25 85% 75%;
-    --skills-dark: 30 80% 65%;
+    --mental-bg: 215 90% 12%;
+    --mental-light: 215 80% 25%;
+    --mental-medium: 220 75% 45%;
+    --mental-dark: 225 70% 55%;
+    
+    --financial-bg: 140 90% 12%;
+    --financial-light: 140 80% 25%;
+    --financial-medium: 145 75% 45%;
+    --financial-dark: 150 70% 55%;
+    
+    --skills-bg: 20 90% 12%;
+    --skills-light: 20 80% 25%;
+    --skills-medium: 25 75% 45%;
+    --skills-dark: 30 70% 55%;
+    
+    /* Habit tracker colors */
+    --success: 142 76% 45%;
+    --success-light: 142 76% 55%;
+    --warning: 48 96% 53%;
+    --info: 217 91% 60%;
   }
 }
 
@@ -70,7 +85,7 @@
 
 @layer components {
   .habit-day {
-    @apply relative rounded-md transition-all duration-300 hover:bg-blue-light;
+    @apply relative rounded-lg transition-all duration-300 hover:bg-secondary/80 border border-border;
   }
 
   .habit-day-content {
@@ -82,22 +97,22 @@
   }
   
   .planned {
-    @apply bg-blue-light text-blue-dark;
+    @apply bg-info/20 text-info border border-info/30;
   }
   
   .completed {
-    @apply bg-success text-white animate-success-pulse;
+    @apply bg-success/20 text-success-light border border-success/30 animate-success-pulse;
   }
   
   .incomplete {
-    @apply bg-gray-light text-gray-dark;
+    @apply bg-muted/20 text-muted-foreground border border-muted/30;
   }
 
   .habit-card {
-    @apply bg-white rounded-lg shadow-md p-4 transition-all duration-300 hover:shadow-lg;
+    @apply bg-card rounded-xl shadow-[0_8px_32px_hsl(240_10%_0%/0.4)] p-4 transition-all duration-300 hover:shadow-[0_8px_48px_hsl(263_70%_60%/0.2)] border border-border;
   }
   
   .stats-card {
-    @apply bg-white rounded-lg shadow-md p-4 border border-gray-light;
+    @apply bg-card rounded-xl shadow-[0_8px_32px_hsl(240_10%_0%/0.4)] p-4 border border-border;
   }
 }
