@@ -70,10 +70,10 @@ const HabitStats: React.FC<HabitStatsProps> = ({
   };
 
   return (
-    <Card className="stats-card" style={{ borderColor: colors.primary }}>
+    <Card className="stats-card overflow-hidden" style={{ borderColor: colors.primary }}>
       <div className="flex flex-col md:flex-row md:items-center gap-4 p-4">
         {/* Left side: Header and Metrics */}
-        <div className="md:w-1/3 space-y-3">
+        <div className="md:w-1/3 space-y-3 flex-shrink-0">
           <HabitStatsHeader
             habitType={habitType}
           />
@@ -87,7 +87,7 @@ const HabitStats: React.FC<HabitStatsProps> = ({
         </div>
         
         {/* Right side: Chart */}
-        <div className="md:w-2/3 flex-1">
+        <div className="md:w-2/3 flex-1 min-w-0">
           <HabitStatsChart
             habitType={habitType}
             weeklyData={weeklyData}

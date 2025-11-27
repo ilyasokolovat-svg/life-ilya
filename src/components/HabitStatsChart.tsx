@@ -44,9 +44,9 @@ const HabitStatsChart: React.FC<HabitStatsChartProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-end">
+    <div className="flex-1 flex flex-col">
       {/* Chart navigation */}
-      <div className="flex items-center justify-between text-xs font-medium mb-1">
+      <div className="flex items-center justify-between text-xs font-medium mb-2">
         <Button
           variant="ghost"
           size="icon"
@@ -67,7 +67,7 @@ const HabitStatsChart: React.FC<HabitStatsChartProps> = ({
       </div>
       
       {/* Embedded Weekly Chart */}
-      <div className="mt-1">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <WeeklyChart 
           habitType={habitType} 
           data={weeklyData}
