@@ -67,7 +67,7 @@ const HabitStatsChart: React.FC<HabitStatsChartProps> = ({
       </div>
       
       {/* Embedded Weekly Chart */}
-      <div className="h-[160px]">
+      <div className="h-[130px]">
         <WeeklyChart 
           habitType={habitType} 
           data={weeklyData}
