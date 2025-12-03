@@ -10,7 +10,6 @@ import {
 } from "@/utils/streakUtils";
 import { calculatePresenceStats } from "@/utils/presenceUtils";
 import { calculateTopFriends } from "@/utils/socialUtils";
-import { getDubaiDate } from "@/utils/dateUtils";
 
 interface SleepQualityStats {
   goodSleep: number;
@@ -23,13 +22,17 @@ interface HabitStatsMetricsProps {
   stats: HabitStats;
   sleepQualityStats?: SleepQualityStats;
   habitsState?: HabitsState;
+  viewMonth: number;
+  viewYear: number;
 }
 
 const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
   habitType,
   stats,
   sleepQualityStats,
-  habitsState
+  habitsState,
+  viewMonth,
+  viewYear
 }) => {
   const colors = habitColors[habitType];
 
@@ -54,8 +57,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
 
   // For presence/meditation, show activity breakdown
   if (habitType === 'meditation' && habitsState) {
-    const dubaiDate = getDubaiDate();
-    const presenceStats = calculatePresenceStats(habitsState, dubaiDate.getFullYear(), dubaiDate.getMonth());
+    const presenceStats = calculatePresenceStats(habitsState, viewYear, viewMonth);
     
     return (
       <div className="grid grid-cols-3 gap-2">
@@ -77,8 +79,7 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
 
   // For social, show top 3 friends met
   if (habitType === 'social' && habitsState) {
-    const dubaiDate = getDubaiDate();
-    const topFriends = calculateTopFriends(habitsState, dubaiDate.getFullYear(), dubaiDate.getMonth(), 3);
+    const topFriends = calculateTopFriends(habitsState, viewYear, viewMonth, 3);
     
     if (topFriends.length === 0) {
       return (
