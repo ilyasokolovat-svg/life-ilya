@@ -10,6 +10,10 @@ export interface HabitData {
   socialEvent?: string; // Optional field for social event type
   socialPerson?: string; // Optional field for person met
   highlights?: string; // Optional field for social event highlights
+  // Presence/Meditation tracking fields
+  journaling?: boolean;
+  meditationDone?: boolean;
+  mindfulPhone?: boolean;
 }
 
 export interface DayData {
