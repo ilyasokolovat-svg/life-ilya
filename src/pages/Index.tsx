@@ -398,26 +398,36 @@ const Index = () => {
               habitType="sleep" 
               stats={sleepStats} 
               habitsState={habitsState}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
             />
             <HabitStats 
               habitType="gym" 
               stats={gymStats} 
               habitsState={habitsState}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
             />
             <HabitStats 
               habitType="alcohol" 
               stats={alcoholStats} 
               habitsState={habitsState}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
             />
             <HabitStats 
               habitType="meditation" 
               stats={meditationStats} 
               habitsState={habitsState}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
             />
             <HabitStats 
               habitType="social" 
               stats={socialStats} 
               habitsState={habitsState}
+              viewMonth={viewMonth}
+              viewYear={viewYear}
             />
           </div>
         </div>

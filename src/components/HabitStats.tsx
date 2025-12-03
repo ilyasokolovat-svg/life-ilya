@@ -6,23 +6,23 @@ import { habitColors } from "@/utils/chartUtils";
 import { calculateSleepQualityStats } from "@/utils/habitUtils";
 import HabitStatsHeader from "./HabitStatsHeader";
 import HabitStatsMetrics from "./HabitStatsMetrics";
-import { getDubaiDate } from "@/utils/dateUtils";
 
 interface HabitStatsProps {
   habitType: HabitType;
   stats: HabitStatsType;
   habitsState?: any;
+  viewMonth: number;
+  viewYear: number;
 }
 
 const HabitStats: React.FC<HabitStatsProps> = ({ 
   habitType, 
   stats, 
-  habitsState
+  habitsState,
+  viewMonth,
+  viewYear
 }) => {
   const colors = habitColors[habitType];
-  const dubaiDate = getDubaiDate();
-  const viewMonth = dubaiDate.getMonth();
-  const viewYear = dubaiDate.getFullYear();
   
   // Calculate sleep quality stats if this is sleep habit
   const sleepQualityStats = habitType === 'sleep' && habitsState 
@@ -41,6 +41,8 @@ const HabitStats: React.FC<HabitStatsProps> = ({
           stats={stats}
           sleepQualityStats={sleepQualityStats}
           habitsState={habitsState}
+          viewMonth={viewMonth}
+          viewYear={viewYear}
         />
       </div>
     </Card>
