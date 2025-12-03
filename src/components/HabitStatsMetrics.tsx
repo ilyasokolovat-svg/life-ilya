@@ -9,6 +9,7 @@ import {
   getAlcoholDayStreakStyling
 } from "@/utils/streakUtils";
 import { calculatePresenceStats } from "@/utils/presenceUtils";
+import { calculateTopFriends } from "@/utils/socialUtils";
 import { getDubaiDate } from "@/utils/dateUtils";
 
 interface SleepQualityStats {
@@ -70,6 +71,31 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
           <p className="text-xs text-muted-foreground">📱 Mindful</p>
           <h3 className="text-xl font-bold">{presenceStats.mindfulPhone}</h3>
         </div>
+      </div>
+    );
+  }
+
+  // For social, show top 3 friends met
+  if (habitType === 'social' && habitsState) {
+    const dubaiDate = getDubaiDate();
+    const topFriends = calculateTopFriends(habitsState, dubaiDate.getFullYear(), dubaiDate.getMonth(), 3);
+    
+    if (topFriends.length === 0) {
+      return (
+        <div className="p-2 rounded-md bg-pink-50">
+          <p className="text-xs text-muted-foreground">No friends tracked yet</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="grid grid-cols-1 gap-1">
+        {topFriends.map((friend, index) => (
+          <div key={friend.name} className="p-1.5 rounded-md bg-pink-100 flex justify-between items-center">
+            <p className="text-xs font-medium truncate">{friend.name}</p>
+            <span className="text-xs font-bold text-pink-700">{friend.count}</span>
+          </div>
+        ))}
       </div>
     );
   }
