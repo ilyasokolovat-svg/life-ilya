@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import GymPlanning from "@/components/GymPlanning";
 import SocialPlanning from "@/components/SocialPlanning";
+import PresencePlanning from "@/components/PresencePlanning";
 import TodayHabits from "@/components/TodayHabits";
 import StreakHabits from "@/components/StreakHabits";
 
@@ -94,6 +95,21 @@ const Index = () => {
     };
     
     updateDay(date, 'social', updatedData);
+  };
+  
+  // Handler for presence planning updates
+  const handleUpdatePresencePlan = (dateISO: string, journaling: boolean, meditationDone: boolean, mindfulPhone: boolean) => {
+    const date = new Date(dateISO);
+    const existingData = habitsState.days[dateISO]?.meditation || { planned: false, completed: false };
+    
+    const updatedData = {
+      ...existingData,
+      journaling,
+      meditationDone,
+      mindfulPhone
+    };
+    
+    updateDay(date, 'meditation', updatedData);
   };
   
   // Handle month change for charts and calendar with better bounds checking
@@ -355,6 +371,16 @@ const Index = () => {
             viewMonth={viewMonth}
             viewYear={viewYear}
             onUpdateSocialPlan={handleUpdateSocialPlan}
+          />
+        </div>
+        
+        {/* Presence Planning Section */}
+        <div className="mt-8 mb-8">
+          <PresencePlanning 
+            habitsState={habitsState}
+            viewMonth={viewMonth}
+            viewYear={viewYear}
+            onUpdatePresencePlan={handleUpdatePresencePlan}
           />
         </div>
         

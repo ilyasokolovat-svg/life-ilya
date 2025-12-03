@@ -4,11 +4,12 @@ import { HabitType, HabitStats, HabitsState } from "@/types/habit";
 import { habitColors } from "@/utils/chartUtils";
 import { 
   calculateGymStreakWeeks, 
-  calculateMeditationStreakWeeks, 
   calculateAlcoholStreakDays,
   getWeekStreakStyling,
   getAlcoholDayStreakStyling
 } from "@/utils/streakUtils";
+import { calculatePresenceStats } from "@/utils/presenceUtils";
+import { getDubaiDate } from "@/utils/dateUtils";
 
 interface SleepQualityStats {
   goodSleep: number;
@@ -45,6 +46,29 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
         <div className="p-2 rounded-md bg-red-100">
           <p className="text-xs text-muted-foreground">Bad Sleep 😔</p>
           <h3 className="text-xl font-bold">{sleepQualityStats.badSleep}</h3>
+        </div>
+      </div>
+    );
+  }
+
+  // For presence/meditation, show activity breakdown
+  if (habitType === 'meditation' && habitsState) {
+    const dubaiDate = getDubaiDate();
+    const presenceStats = calculatePresenceStats(habitsState, dubaiDate.getFullYear(), dubaiDate.getMonth());
+    
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-2 rounded-md bg-purple-100">
+          <p className="text-xs text-muted-foreground">📝 Journal</p>
+          <h3 className="text-xl font-bold">{presenceStats.journaling}</h3>
+        </div>
+        <div className="p-2 rounded-md bg-indigo-100">
+          <p className="text-xs text-muted-foreground">🧘 Meditate</p>
+          <h3 className="text-xl font-bold">{presenceStats.meditation}</h3>
+        </div>
+        <div className="p-2 rounded-md bg-blue-100">
+          <p className="text-xs text-muted-foreground">📱 Mindful</p>
+          <h3 className="text-xl font-bold">{presenceStats.mindfulPhone}</h3>
         </div>
       </div>
     );
@@ -93,21 +117,15 @@ const HabitStatsMetrics: React.FC<HabitStatsMetricsProps> = ({
     );
   }
 
-  // Calculate streaks for gym and meditation only
+  // Calculate streaks for gym only
   let streakValue = 0;
   let streakLabel = "";
   let styling = { backgroundColor: '#F8F9FA', color: '#6C757D', stars: 0, label: '0' };
 
-  if (habitsState) {
-    if (habitType === 'gym') {
-      streakValue = calculateGymStreakWeeks(habitsState);
-      streakLabel = "Current streak (perfect weeks)";
-      styling = getWeekStreakStyling(streakValue);
-    } else if (habitType === 'meditation') {
-      streakValue = calculateMeditationStreakWeeks(habitsState);
-      streakLabel = "Current streak (perfect weeks)";
-      styling = getWeekStreakStyling(streakValue);
-    }
+  if (habitsState && habitType === 'gym') {
+    streakValue = calculateGymStreakWeeks(habitsState);
+    streakLabel = "Current streak (perfect weeks)";
+    styling = getWeekStreakStyling(streakValue);
   }
 
   // Render stars if applicable
