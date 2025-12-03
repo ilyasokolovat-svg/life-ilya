@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import Calendar from "@/components/Calendar";
@@ -14,7 +14,6 @@ import {
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getDubaiDate as getDubaiDateFromUtils, formatDateISO, getTodayISO } from "@/utils/dateUtils";
-import { getMonthlyWeeklyStats } from "@/utils/chartUtils";
 import { Moon, Dumbbell, Wine, Brain, Users, Cloud, CloudOff, LogOut, User, Save, ArrowLeft } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,14 +36,6 @@ const Index = () => {
   const [viewMonth, setViewMonth] = useState(dubaiDate.getMonth());
   const [viewYear, setViewYear] = useState(dubaiDate.getFullYear());
   
-  // Track individual chart months/years
-  const [chartMonths, setChartMonths] = useState({
-    sleep: { month: viewMonth, year: viewYear },
-    gym: { month: viewMonth, year: viewYear },
-    alcohol: { month: viewMonth, year: viewYear },
-    meditation: { month: viewMonth, year: viewYear },
-    social: { month: viewMonth, year: viewYear }
-  });
 
   const handleUpdateHabit = (date: Date, type: HabitType, data: HabitData) => {
     updateDay(date, type, data);
@@ -123,23 +114,6 @@ const Index = () => {
     
     setViewMonth(month);
     setViewYear(year);
-    
-    // Also update all chart months
-    setChartMonths({
-      sleep: { month, year },
-      gym: { month, year },
-      alcohol: { month, year },
-      meditation: { month, year },
-      social: { month, year }
-    });
-  };
-  
-  // Handle individual chart month change
-  const handleChartMonthChange = (type: HabitType, month: number, year: number) => {
-    setChartMonths(prev => ({
-      ...prev,
-      [type]: { month, year }
-    }));
   };
   
   // Get goals for current view month - ensure defaults exist
@@ -161,12 +135,6 @@ const Index = () => {
     social: socialStats
   };
   
-  // Get weekly stats for each habit type with their respective months
-  const sleepWeeklyStats = getMonthlyWeeklyStats(habitsState, "sleep", chartMonths.sleep.year, chartMonths.sleep.month);
-  const gymWeeklyStats = getMonthlyWeeklyStats(habitsState, "gym", chartMonths.gym.year, chartMonths.gym.month);
-  const alcoholWeeklyStats = getMonthlyWeeklyStats(habitsState, "alcohol", chartMonths.alcohol.year, chartMonths.alcohol.month);
-  const meditationWeeklyStats = getMonthlyWeeklyStats(habitsState, "meditation", chartMonths.meditation.year, chartMonths.meditation.month);
-  const socialWeeklyStats = getMonthlyWeeklyStats(habitsState, "social", chartMonths.social.year, chartMonths.social.month);
 
   // Toggle cloud sync
   const handleToggleSync = () => {
@@ -395,68 +363,34 @@ const Index = () => {
           <StreakHabits />
         </div>
         
-        {/* Stats section with integrated charts - Now at bottom with horizontal layout */}
+        {/* Stats section - All 5 categories in one horizontal line */}
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           
-          <div className="space-y-4">
-            {/* Sleep */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <HabitStats 
               habitType="sleep" 
               stats={sleepStats} 
-              goal={currentMonthGoals.sleep} 
-              weeklyData={sleepWeeklyStats}
-              viewMonth={chartMonths.sleep.month}
-              viewYear={chartMonths.sleep.year}
-              onMonthChange={(month, year) => handleChartMonthChange("sleep", month, year)}
               habitsState={habitsState}
             />
-            
-            {/* Gym */}
             <HabitStats 
               habitType="gym" 
               stats={gymStats} 
-              goal={currentMonthGoals.gym} 
-              weeklyData={gymWeeklyStats}
-              viewMonth={chartMonths.gym.month}
-              viewYear={chartMonths.gym.year}
-              onMonthChange={(month, year) => handleChartMonthChange("gym", month, year)}
               habitsState={habitsState}
             />
-            
-            {/* Alcohol */}
             <HabitStats 
               habitType="alcohol" 
               stats={alcoholStats} 
-              goal={currentMonthGoals.alcohol} 
-              weeklyData={alcoholWeeklyStats}
-              viewMonth={chartMonths.alcohol.month}
-              viewYear={chartMonths.alcohol.year}
-              onMonthChange={(month, year) => handleChartMonthChange("alcohol", month, year)}
               habitsState={habitsState}
             />
-            
-            {/* Meditation */}
             <HabitStats 
               habitType="meditation" 
               stats={meditationStats} 
-              goal={currentMonthGoals.meditation} 
-              weeklyData={meditationWeeklyStats}
-              viewMonth={chartMonths.meditation.month}
-              viewYear={chartMonths.meditation.year}
-              onMonthChange={(month, year) => handleChartMonthChange("meditation", month, year)}
               habitsState={habitsState}
             />
-            
-            {/* Social */}
             <HabitStats 
               habitType="social" 
               stats={socialStats} 
-              goal={currentMonthGoals.social} 
-              weeklyData={socialWeeklyStats}
-              viewMonth={chartMonths.social.month}
-              viewYear={chartMonths.social.year}
-              onMonthChange={(month, year) => handleChartMonthChange("social", month, year)}
               habitsState={habitsState}
             />
           </div>
