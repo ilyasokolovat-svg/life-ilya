@@ -9,7 +9,8 @@ import {
   Heart,
   LogOut,
   User,
-  Map
+  Map,
+  Plane
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -83,8 +84,8 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Main Navigation Bubbles - Moved to top */}
-        <div className="flex justify-center items-center gap-12 mb-12">
+        {/* Main Navigation Bubbles - Tier 1 */}
+        <div className="flex justify-center items-center gap-12 mb-6">
           {/* Healthy Life Bubble */}
           <Link to="/habits">
             <div className="group relative">
@@ -121,6 +122,22 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Tier 2 Navigation Bubbles */}
+        <div className="flex justify-center items-center gap-8 mb-12">
+          {/* Trip Planning Bubble - Smaller */}
+          <Link to="/trip-planning">
+            <div className="group relative">
+              <div className="w-28 h-28 bg-gradient-to-br from-teal-500 via-cyan-500 to-teal-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
+                <div className="text-center">
+                  <Plane className="w-8 h-8 text-white mb-1 mx-auto" />
+                  <h2 className="text-xs font-bold text-white px-2">Trip Planning</h2>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
         </div>

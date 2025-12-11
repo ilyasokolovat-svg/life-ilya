@@ -1,0 +1,200 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { CalendarDays } from 'lucide-react';
+import { ItineraryDay, Destination } from '@/types/trip';
+import { format, parseISO, isWithinInterval, isSameDay } from 'date-fns';
+
+interface TripItineraryProps {
+  itinerary: ItineraryDay[];
+  destinations: Destination[];
+  onUpdate: (itinerary: ItineraryDay[]) => void;
+}
+
+const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, onUpdate }) => {
+  const updateDay = (date: string, field: keyof ItineraryDay, value: string) => {
+    onUpdate(itinerary.map(day => 
+      day.date === date ? { ...day, [field]: value } : day
+    ));
+  };
+
+  // Get destination for a specific date
+  const getDestinationForDate = (dateStr: string): Destination | null => {
+    const date = parseISO(dateStr);
+    return destinations.find(dest => {
+      const start = parseISO(dest.startDate);
+      const end = parseISO(dest.endDate);
+      return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
+    }) || null;
+  };
+
+  // Check if date is a transition day (belongs to two destinations)
+  const isTransitionDay = (dateStr: string): boolean => {
+    const date = parseISO(dateStr);
+    let count = 0;
+    destinations.forEach(dest => {
+      const start = parseISO(dest.startDate);
+      const end = parseISO(dest.endDate);
+      if (isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end)) {
+        count++;
+      }
+    });
+    return count > 1;
+  };
+
+  // Group itinerary by destination segments
+  const getDestinationSegments = () => {
+    const segments: { destination: Destination; days: ItineraryDay[] }[] = [];
+    let currentDest: Destination | null = null;
+    let currentDays: ItineraryDay[] = [];
+
+    itinerary.forEach(day => {
+      const dest = getDestinationForDate(day.date);
+      if (dest && dest !== currentDest) {
+        if (currentDest && currentDays.length > 0) {
+          segments.push({ destination: currentDest, days: currentDays });
+        }
+        currentDest = dest;
+        currentDays = [day];
+      } else {
+        currentDays.push(day);
+      }
+    });
+
+    if (currentDest && currentDays.length > 0) {
+      segments.push({ destination: currentDest, days: currentDays });
+    }
+
+    return segments;
+  };
+
+  const segments = getDestinationSegments();
+
+  // Color palette for destinations
+  const colors = [
+    { bg: 'from-teal-500 to-cyan-500', light: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700' },
+    { bg: 'from-violet-500 to-purple-500', light: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700' },
+    { bg: 'from-rose-500 to-pink-500', light: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700' },
+    { bg: 'from-amber-500 to-orange-500', light: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
+    { bg: 'from-emerald-500 to-green-500', light: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' },
+  ];
+
+  const getColorForDestination = (destName: string) => {
+    const index = destinations.findIndex(d => d.name === destName);
+    return colors[index % colors.length];
+  };
+
+  return (
+    <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-purple-700">
+          <CalendarDays className="h-5 w-5" />
+          Daily Itinerary
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {segments.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No itinerary days yet.
+          </p>
+        ) : (
+          <div className="space-y-6">
+            {segments.map((segment, segIndex) => {
+              const colorScheme = getColorForDestination(segment.destination.name);
+              
+              return (
+                <div key={segIndex} className="flex gap-3">
+                  {/* Vertical destination indicator */}
+                  <div className="flex flex-col items-center">
+                    <div 
+                      className={`w-10 rounded-lg bg-gradient-to-b ${colorScheme.bg} flex items-center justify-center shadow-md`}
+                      style={{ minHeight: `${segment.days.length * 140}px` }}
+                    >
+                      <span 
+                        className="text-white font-bold text-sm whitespace-nowrap"
+                        style={{ 
+                          writingMode: 'vertical-rl', 
+                          textOrientation: 'mixed',
+                          transform: 'rotate(180deg)'
+                        }}
+                      >
+                        {segment.destination.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Days */}
+                  <div className="flex-1 space-y-3">
+                    {segment.days.map((day, dayIndex) => {
+                      const isTransition = isTransitionDay(day.date);
+                      
+                      return (
+                        <div 
+                          key={day.date} 
+                          className={`p-4 bg-white rounded-lg border ${colorScheme.border} ${isTransition ? 'ring-2 ring-offset-1 ring-purple-300' : ''}`}
+                        >
+                          <div className="grid grid-cols-12 gap-3 items-start">
+                            {/* Date */}
+                            <div className="col-span-2">
+                              <div className={`text-center p-2 rounded-lg ${colorScheme.light}`}>
+                                <div className={`text-xs ${colorScheme.text} font-medium`}>
+                                  {format(parseISO(day.date), 'EEE')}
+                                </div>
+                                <div className={`text-lg font-bold ${colorScheme.text}`}>
+                                  {format(parseISO(day.date), 'd')}
+                                </div>
+                                <div className={`text-xs ${colorScheme.text}`}>
+                                  {format(parseISO(day.date), 'MMM')}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Location */}
+                            <div className="col-span-2">
+                              <label className="text-xs text-muted-foreground">Location</label>
+                              <Input
+                                placeholder="City/Area"
+                                value={day.location}
+                                onChange={(e) => updateDay(day.date, 'location', e.target.value)}
+                                className="mt-1 h-9"
+                              />
+                            </div>
+
+                            {/* Activities */}
+                            <div className="col-span-6">
+                              <label className="text-xs text-muted-foreground">Activities</label>
+                              <Textarea
+                                placeholder="What are you doing this day?"
+                                value={day.activities}
+                                onChange={(e) => updateDay(day.date, 'activities', e.target.value)}
+                                className="mt-1 min-h-[60px] resize-none"
+                              />
+                            </div>
+
+                            {/* Budget */}
+                            <div className="col-span-2">
+                              <label className="text-xs text-muted-foreground">Budget</label>
+                              <Input
+                                placeholder="$0"
+                                value={day.budget}
+                                onChange={(e) => updateDay(day.date, 'budget', e.target.value)}
+                                className="mt-1 h-9"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default TripItinerary;
