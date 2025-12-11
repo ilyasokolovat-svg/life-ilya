@@ -92,7 +92,6 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
           ) : (
           accommodations.map((acc) => {
               const nights = getNights(acc.checkIn, acc.checkOut);
-              console.log('Accommodation:', acc.name, 'checkIn:', acc.checkIn, 'checkOut:', acc.checkOut, 'nights:', nights);
               return (
                 <div 
                   key={acc.id} 
