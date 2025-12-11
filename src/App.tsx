@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import GoalsOverview from "./pages/GoalsOverview";
 import JourneyTimeline from "./pages/JourneyTimeline";
+import TripPlanning from "./pages/TripPlanning";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
@@ -109,6 +110,11 @@ const AppRoutes = () => {
       <Route path="/goals-overview" element={
         <ProtectedRoute>
           <GoalsOverview />
+        </ProtectedRoute>
+      } />
+      <Route path="/trip-planning" element={
+        <ProtectedRoute>
+          <TripPlanning />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
