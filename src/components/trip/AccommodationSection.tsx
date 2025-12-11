@@ -90,8 +90,9 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
               No accommodations added yet.
             </p>
           ) : (
-            accommodations.map((acc) => {
+          accommodations.map((acc) => {
               const nights = getNights(acc.checkIn, acc.checkOut);
+              console.log('Accommodation:', acc.name, 'checkIn:', acc.checkIn, 'checkOut:', acc.checkOut, 'nights:', nights);
               return (
                 <div 
                   key={acc.id} 
