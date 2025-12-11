@@ -5,23 +5,32 @@ import { format, eachDayOfInterval, parseISO } from 'date-fns';
 const STORAGE_KEY = 'trip-planning-data';
 
 export const useTripPlanning = () => {
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [upcomingTrips, setUpcomingTrips] = useState<Trip[]>([]);
+  const [pastTrips, setPastTrips] = useState<Trip[]>([]);
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
+  const [isEditing, setIsEditing] = useState(false); // Track if editing an existing trip
 
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const data = JSON.parse(saved);
-      setTrips(data.trips || []);
+      setUpcomingTrips(data.upcomingTrips || []);
+      setPastTrips(data.pastTrips || []);
       setCurrentTrip(data.currentTrip || null);
+      setIsEditing(data.isEditing || false);
     }
   }, []);
 
   // Save to localStorage whenever data changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ trips, currentTrip }));
-  }, [trips, currentTrip]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+      upcomingTrips, 
+      pastTrips, 
+      currentTrip,
+      isEditing 
+    }));
+  }, [upcomingTrips, pastTrips, currentTrip, isEditing]);
 
   const generateItinerary = (destinations: Destination[]): ItineraryDay[] => {
     const itinerary: ItineraryDay[] = [];
@@ -78,6 +87,7 @@ export const useTripPlanning = () => {
     };
 
     setCurrentTrip(newTrip);
+    setIsEditing(false);
     return newTrip;
   };
 
@@ -88,35 +98,79 @@ export const useTripPlanning = () => {
     }
   };
 
-  const saveToPastTrips = () => {
+  // Save to upcoming trips (new or update existing)
+  const saveToUpcoming = () => {
     if (currentTrip) {
-      const pastTrip = { ...currentTrip, isPastTrip: true };
-      setTrips(prev => [...prev, pastTrip]);
+      const tripToSave = { ...currentTrip, isPastTrip: false };
+      
+      if (isEditing) {
+        // Update existing trip
+        setUpcomingTrips(prev => prev.map(t => 
+          t.id === tripToSave.id ? tripToSave : t
+        ));
+      } else {
+        // Add new trip
+        setUpcomingTrips(prev => [...prev, tripToSave]);
+      }
+      
       setCurrentTrip(null);
+      setIsEditing(false);
     }
   };
 
-  const loadTrip = (tripId: string) => {
+  // Move from upcoming to past trips
+  const moveToPastTrips = (tripId?: string) => {
+    const id = tripId || currentTrip?.id;
+    if (!id) return;
+
+    // Find the trip in upcoming
+    const trip = tripId 
+      ? upcomingTrips.find(t => t.id === tripId)
+      : currentTrip;
+    
+    if (trip) {
+      const pastTrip = { ...trip, isPastTrip: true };
+      setPastTrips(prev => [...prev, pastTrip]);
+      setUpcomingTrips(prev => prev.filter(t => t.id !== id));
+      
+      if (currentTrip?.id === id) {
+        setCurrentTrip(null);
+        setIsEditing(false);
+      }
+    }
+  };
+
+  const loadTrip = (tripId: string, fromPast: boolean = false) => {
+    const trips = fromPast ? pastTrips : upcomingTrips;
     const trip = trips.find(t => t.id === tripId);
     if (trip) {
-      setCurrentTrip({ ...trip, isPastTrip: false });
+      setCurrentTrip({ ...trip });
+      setIsEditing(!fromPast); // Only set editing if from upcoming
     }
   };
 
-  const deleteTrip = (tripId: string) => {
-    setTrips(prev => prev.filter(t => t.id !== tripId));
+  const deleteTrip = (tripId: string, fromPast: boolean = false) => {
+    if (fromPast) {
+      setPastTrips(prev => prev.filter(t => t.id !== tripId));
+    } else {
+      setUpcomingTrips(prev => prev.filter(t => t.id !== tripId));
+    }
   };
 
   const clearCurrentTrip = () => {
     setCurrentTrip(null);
+    setIsEditing(false);
   };
 
   return {
-    trips,
+    upcomingTrips,
+    pastTrips,
     currentTrip,
+    isEditing,
     createTrip,
     updateCurrentTrip,
-    saveToPastTrips,
+    saveToUpcoming,
+    moveToPastTrips,
     loadTrip,
     deleteTrip,
     clearCurrentTrip

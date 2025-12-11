@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, 
@@ -11,7 +11,10 @@ import {
   Archive,
   MapPin,
   DollarSign,
-  Calendar
+  Calendar,
+  Edit,
+  Trash2,
+  Clock
 } from 'lucide-react';
 import { useTripPlanning } from '@/hooks/useTripPlanning';
 import NewTripDialog from '@/components/trip/NewTripDialog';
@@ -23,18 +26,20 @@ import { format, parseISO } from 'date-fns';
 const TripPlanning = () => {
   const navigate = useNavigate();
   const { 
-    trips, 
+    upcomingTrips,
+    pastTrips,
     currentTrip, 
+    isEditing,
     createTrip, 
     updateCurrentTrip, 
-    saveToPastTrips, 
+    saveToUpcoming,
+    moveToPastTrips,
     loadTrip,
+    deleteTrip,
     clearCurrentTrip 
   } = useTripPlanning();
   
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const pastTrips = trips.filter(t => t.isPastTrip);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-sky-50">
@@ -69,12 +74,22 @@ const TripPlanning = () => {
                   Cancel
                 </Button>
                 <Button
-                  onClick={saveToPastTrips}
-                  className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 gap-2"
+                  variant="outline"
+                  onClick={saveToUpcoming}
+                  className="border-teal-300 text-teal-600 hover:bg-teal-50 gap-2"
                 >
-                  <Archive className="h-4 w-4" />
-                  Save to Past Trips
+                  <Save className="h-4 w-4" />
+                  Save
                 </Button>
+                {isEditing && (
+                  <Button
+                    onClick={() => moveToPastTrips()}
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 gap-2"
+                  >
+                    <Archive className="h-4 w-4" />
+                    Move to Past Trips
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -84,7 +99,7 @@ const TripPlanning = () => {
       <main className="container mx-auto px-4 py-8">
         {!currentTrip ? (
           /* Empty state / Start planning */
-          <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex flex-col items-center py-12">
             <div className="text-center mb-8">
               <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-teal-400 to-cyan-400 rounded-full flex items-center justify-center shadow-xl">
                 <Plane className="h-12 w-12 text-white" />
@@ -104,19 +119,24 @@ const TripPlanning = () => {
               Plan a New Trip
             </Button>
 
-            {/* Past Trips */}
-            {pastTrips.length > 0 && (
-              <div className="mt-16 w-full max-w-2xl">
-                <h3 className="text-xl font-semibold text-gray-700 mb-4 text-center">Past Trips</h3>
+            {/* Upcoming Trips */}
+            {upcomingTrips.length > 0 && (
+              <div className="mt-12 w-full max-w-2xl">
+                <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-teal-600" />
+                  Upcoming Trips
+                </h3>
                 <div className="grid gap-3">
-                  {pastTrips.map(trip => (
+                  {upcomingTrips.map(trip => (
                     <Card 
                       key={trip.id} 
-                      className="cursor-pointer hover:shadow-md transition-shadow border-teal-100"
-                      onClick={() => loadTrip(trip.id)}
+                      className="border-teal-200 hover:shadow-md transition-shadow"
                     >
                       <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div 
+                          className="flex items-center gap-3 flex-1 cursor-pointer"
+                          onClick={() => loadTrip(trip.id, false)}
+                        >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center">
                             <MapPin className="h-5 w-5 text-white" />
                           </div>
@@ -127,7 +147,88 @@ const TripPlanning = () => {
                             </p>
                           </div>
                         </div>
-                        <span className="text-teal-600 font-medium">{trip.totalBudget}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-teal-600 font-medium mr-2">{trip.totalBudget}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => loadTrip(trip.id, false)}
+                            className="h-8 w-8 text-gray-500 hover:text-teal-600"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => moveToPastTrips(trip.id)}
+                            className="h-8 w-8 text-gray-500 hover:text-amber-600"
+                            title="Move to past trips"
+                          >
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteTrip(trip.id, false)}
+                            className="h-8 w-8 text-gray-500 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Past Trips */}
+            {pastTrips.length > 0 && (
+              <div className="mt-8 w-full max-w-2xl">
+                <h3 className="text-xl font-semibold text-gray-500 mb-4 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-gray-400" />
+                  Past Trips
+                </h3>
+                <div className="grid gap-3">
+                  {pastTrips.map(trip => (
+                    <Card 
+                      key={trip.id} 
+                      className="border-gray-200 bg-gray-50/50 hover:shadow-md transition-shadow"
+                    >
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div 
+                          className="flex items-center gap-3 flex-1 cursor-pointer"
+                          onClick={() => loadTrip(trip.id, true)}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center">
+                            <MapPin className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-700">{trip.title}</p>
+                            <p className="text-sm text-gray-400">
+                              {format(parseISO(trip.startDate), 'MMM d')} - {format(parseISO(trip.endDate), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500 font-medium mr-2">{trip.totalBudget}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => loadTrip(trip.id, true)}
+                            className="h-8 w-8 text-gray-400 hover:text-gray-600"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteTrip(trip.id, true)}
+                            className="h-8 w-8 text-gray-400 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
