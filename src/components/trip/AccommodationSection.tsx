@@ -159,11 +159,26 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
                       </div>
                     </div>
 
-                    {/* Notes */}
-                    {acc.notes && (
-                      <p className="mt-3 text-sm text-gray-500 italic border-t border-amber-100 pt-2">
-                        {acc.notes}
-                      </p>
+                    {/* Notes and Link */}
+                    {(acc.notes || acc.link) && (
+                      <div className="mt-3 border-t border-amber-100 pt-2 space-y-2">
+                        {acc.notes && (
+                          <p className="text-sm text-gray-500 italic">
+                            {acc.notes}
+                          </p>
+                        )}
+                        {acc.link && (
+                          <a 
+                            href={formatLink(acc.link)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-800 hover:underline transition-colors"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            View Booking
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
