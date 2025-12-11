@@ -14,6 +14,7 @@ export interface Flight {
   flightNumber?: string;
   departureTime?: string;
   arrivalTime?: string;
+  cost?: string;
   notes?: string;
 }
 
@@ -23,7 +24,8 @@ export interface Accommodation {
   location: string;
   checkIn: string;
   checkOut: string;
-  confirmationNumber?: string;
+  cost?: string;
+  link?: string;
   notes?: string;
 }
 

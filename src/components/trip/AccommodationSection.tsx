@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Building2, Edit, MapPin, Calendar, Hash } from 'lucide-react';
+import { Plus, Trash2, Building2, Edit, MapPin, Calendar, DollarSign, ExternalLink } from 'lucide-react';
 import { Accommodation } from '@/types/trip';
 import { format, parseISO, differenceInDays } from 'date-fns';
 
@@ -22,7 +22,8 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
       location: '',
       checkIn: '',
       checkOut: '',
-      confirmationNumber: '',
+      cost: '',
+      link: '',
       notes: ''
     };
     onUpdate([...accommodations, newAccommodation]);
@@ -53,6 +54,14 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
     } catch {
       return null;
     }
+  };
+
+  const formatLink = (link: string) => {
+    if (!link) return '';
+    if (link.startsWith('http://') || link.startsWith('https://')) {
+      return link;
+    }
+    return `https://${link}`;
   };
 
   // Display Mode
@@ -92,19 +101,31 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
                   <div className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-b from-amber-400 to-orange-500" />
                   
                   <div className="pl-6 pr-4 py-4">
-                    {/* Hotel Name and Confirmation */}
+                    {/* Hotel Name and Cost */}
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-bold text-amber-800 text-lg">{acc.name || 'Hotel TBD'}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-amber-800 text-lg">{acc.name || 'Hotel TBD'}</h3>
+                          {acc.link && (
+                            <a 
+                              href={formatLink(acc.link)} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-amber-600 hover:text-amber-800 transition-colors"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1 text-gray-500 text-sm mt-0.5">
                           <MapPin className="h-3.5 w-3.5" />
                           <span>{acc.location || 'Location TBD'}</span>
                         </div>
                       </div>
-                      {acc.confirmationNumber && (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 rounded text-amber-700 text-sm">
-                          <Hash className="h-3.5 w-3.5" />
-                          <span className="font-mono">{acc.confirmationNumber}</span>
+                      {acc.cost && (
+                        <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded text-green-700 text-sm font-semibold">
+                          <DollarSign className="h-3.5 w-3.5" />
+                          <span>{acc.cost}</span>
                         </div>
                       )}
                     </div>
@@ -247,23 +268,33 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Confirmation #</Label>
+                  <Label className="text-xs">Cost</Label>
                   <Input
-                    placeholder="Booking reference"
-                    value={acc.confirmationNumber}
-                    onChange={(e) => updateAccommodation(acc.id, 'confirmationNumber', e.target.value)}
+                    placeholder="e.g., $200/night"
+                    value={acc.cost}
+                    onChange={(e) => updateAccommodation(acc.id, 'cost', e.target.value)}
                     className="mt-1 h-9"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Notes</Label>
+                  <Label className="text-xs">Booking Link</Label>
                   <Input
-                    placeholder="Optional notes"
-                    value={acc.notes}
-                    onChange={(e) => updateAccommodation(acc.id, 'notes', e.target.value)}
+                    placeholder="URL to booking"
+                    value={acc.link}
+                    onChange={(e) => updateAccommodation(acc.id, 'link', e.target.value)}
                     className="mt-1 h-9"
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label className="text-xs">Notes</Label>
+                <Input
+                  placeholder="Optional notes"
+                  value={acc.notes}
+                  onChange={(e) => updateAccommodation(acc.id, 'notes', e.target.value)}
+                  className="mt-1 h-9"
+                />
               </div>
             </div>
           ))
