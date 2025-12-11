@@ -22,6 +22,7 @@ import FlightSection from '@/components/trip/FlightSection';
 import AccommodationSection from '@/components/trip/AccommodationSection';
 import TripItinerary from '@/components/trip/TripItinerary';
 import { format, parseISO } from 'date-fns';
+import { Destination } from '@/types/trip';
 
 const TripPlanning = () => {
   const navigate = useNavigate();
@@ -40,6 +41,33 @@ const TripPlanning = () => {
   } = useTripPlanning();
   
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [flightsEditMode, setFlightsEditMode] = useState(false);
+  const [accommodationsEditMode, setAccommodationsEditMode] = useState(false);
+
+  // When creating a new trip or loading one for the first time, start in edit mode
+  const handleCreateTrip = (
+    title: string,
+    startDate: string,
+    endDate: string,
+    destinations: Destination[],
+    budget: string
+  ) => {
+    createTrip(title, startDate, endDate, destinations, budget);
+    setFlightsEditMode(true);
+    setAccommodationsEditMode(true);
+  };
+
+  const handleSaveToUpcoming = () => {
+    setFlightsEditMode(false);
+    setAccommodationsEditMode(false);
+    saveToUpcoming();
+  };
+
+  const handleLoadTrip = (tripId: string, fromPast: boolean) => {
+    loadTrip(tripId, fromPast);
+    setFlightsEditMode(false);
+    setAccommodationsEditMode(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-sky-50">
@@ -135,7 +163,7 @@ const TripPlanning = () => {
                       <CardContent className="p-4 flex items-center justify-between">
                         <div 
                           className="flex items-center gap-3 flex-1 cursor-pointer"
-                          onClick={() => loadTrip(trip.id, false)}
+                          onClick={() => handleLoadTrip(trip.id, false)}
                         >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center">
                             <MapPin className="h-5 w-5 text-white" />
@@ -152,7 +180,7 @@ const TripPlanning = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => loadTrip(trip.id, false)}
+                            onClick={() => handleLoadTrip(trip.id, false)}
                             className="h-8 w-8 text-gray-500 hover:text-teal-600"
                           >
                             <Edit className="h-4 w-4" />
@@ -198,7 +226,7 @@ const TripPlanning = () => {
                       <CardContent className="p-4 flex items-center justify-between">
                         <div 
                           className="flex items-center gap-3 flex-1 cursor-pointer"
-                          onClick={() => loadTrip(trip.id, true)}
+                          onClick={() => handleLoadTrip(trip.id, true)}
                         >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center">
                             <MapPin className="h-5 w-5 text-white" />
@@ -215,7 +243,7 @@ const TripPlanning = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => loadTrip(trip.id, true)}
+                            onClick={() => handleLoadTrip(trip.id, true)}
                             className="h-8 w-8 text-gray-400 hover:text-gray-600"
                           >
                             <Edit className="h-4 w-4" />
@@ -277,12 +305,16 @@ const TripPlanning = () => {
             <FlightSection 
               flights={currentTrip.flights}
               onUpdate={(flights) => updateCurrentTrip({ flights })}
+              isEditMode={flightsEditMode}
+              onEditModeChange={setFlightsEditMode}
             />
 
             {/* Accommodations */}
             <AccommodationSection
               accommodations={currentTrip.accommodations}
               onUpdate={(accommodations) => updateCurrentTrip({ accommodations })}
+              isEditMode={accommodationsEditMode}
+              onEditModeChange={setAccommodationsEditMode}
             />
 
             {/* Itinerary */}
@@ -298,7 +330,7 @@ const TripPlanning = () => {
       <NewTripDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onCreateTrip={createTrip}
+        onCreateTrip={handleCreateTrip}
       />
     </div>
   );
