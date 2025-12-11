@@ -141,12 +141,8 @@ const AccommodationSection: React.FC<AccommodationSectionProps> = ({ accommodati
                       </div>
 
                       {nights && (
-                        <div className="flex flex-col items-center px-4">
-                          <div className="w-16 border-t-2 border-dashed border-amber-300 relative">
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-100 px-2 py-0.5 rounded-full text-xs font-medium text-amber-700">
-                              {nights} night{nights > 1 ? 's' : ''}
-                            </div>
-                          </div>
+                        <div className="bg-amber-100 px-3 py-1 rounded-full text-xs font-medium text-amber-700">
+                          {nights} night{nights > 1 ? 's' : ''}
                         </div>
                       )}
 
