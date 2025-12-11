@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Plane, Edit, PlaneTakeoff, PlaneLanding } from 'lucide-react';
+import { Plus, Trash2, Plane, Edit, PlaneTakeoff, PlaneLanding, DollarSign } from 'lucide-react';
 import { Flight } from '@/types/trip';
 import { format, parseISO } from 'date-fns';
 
@@ -25,6 +25,7 @@ const FlightSection: React.FC<FlightSectionProps> = ({ flights, onUpdate, isEdit
       flightNumber: '',
       departureTime: '',
       arrivalTime: '',
+      cost: '',
       notes: ''
     };
     onUpdate([...flights, newFlight]);
@@ -98,7 +99,15 @@ const FlightSection: React.FC<FlightSectionProps> = ({ flights, onUpdate, isEdit
                         </span>
                       )}
                     </div>
-                    <span className="text-sm text-gray-500">{formatDate(flight.date)}</span>
+                    <div className="flex items-center gap-3">
+                      {flight.cost && (
+                        <span className="flex items-center gap-1 text-green-600 font-semibold">
+                          <DollarSign className="h-4 w-4" />
+                          {flight.cost}
+                        </span>
+                      )}
+                      <span className="text-sm text-gray-500">{formatDate(flight.date)}</span>
+                    </div>
                   </div>
 
                   {/* Route Display */}
@@ -229,7 +238,7 @@ const FlightSection: React.FC<FlightSectionProps> = ({ flights, onUpdate, isEdit
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <div>
                   <Label className="text-xs">Flight #</Label>
                   <Input
@@ -254,6 +263,15 @@ const FlightSection: React.FC<FlightSectionProps> = ({ flights, onUpdate, isEdit
                     type="time"
                     value={flight.arrivalTime}
                     onChange={(e) => updateFlight(flight.id, 'arrivalTime', e.target.value)}
+                    className="mt-1 h-9"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Cost</Label>
+                  <Input
+                    placeholder="e.g., $350"
+                    value={flight.cost}
+                    onChange={(e) => updateFlight(flight.id, 'cost', e.target.value)}
                     className="mt-1 h-9"
                   />
                 </div>
