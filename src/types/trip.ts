@@ -36,6 +36,13 @@ export interface ItineraryDay {
   budget: string;
 }
 
+export interface PlannedActivity {
+  id: string;
+  name: string;
+  cost: string;
+  assignedDay?: string;
+}
+
 export interface Trip {
   id: string;
   title: string;
@@ -46,6 +53,7 @@ export interface Trip {
   flights: Flight[];
   accommodations: Accommodation[];
   itinerary: ItineraryDay[];
+  plannedActivities: PlannedActivity[];
   isPastTrip: boolean;
   createdAt: string;
   updatedAt: string;

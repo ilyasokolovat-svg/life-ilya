@@ -81,6 +81,7 @@ export const useTripPlanning = () => {
       flights: [],
       accommodations: [],
       itinerary: generateItinerary(destinations),
+      plannedActivities: [],
       isPastTrip: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
