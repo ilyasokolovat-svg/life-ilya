@@ -21,6 +21,7 @@ import NewTripDialog from '@/components/trip/NewTripDialog';
 import FlightSection from '@/components/trip/FlightSection';
 import AccommodationSection from '@/components/trip/AccommodationSection';
 import TripItinerary from '@/components/trip/TripItinerary';
+import ActivitiesPlanning from '@/components/trip/ActivitiesPlanning';
 import { format, parseISO } from 'date-fns';
 import { Destination } from '@/types/trip';
 
@@ -300,6 +301,12 @@ const TripPlanning = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Activities Planning */}
+            <ActivitiesPlanning
+              activities={currentTrip.plannedActivities || []}
+              onUpdate={(plannedActivities) => updateCurrentTrip({ plannedActivities })}
+            />
 
             {/* Flights */}
             <FlightSection 
