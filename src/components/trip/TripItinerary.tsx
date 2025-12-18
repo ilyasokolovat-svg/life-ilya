@@ -14,9 +14,9 @@ interface TripItineraryProps {
 }
 
 const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, onUpdate }) => {
-  const updateDay = (date: string, field: keyof ItineraryDay, value: string | boolean) => {
+  const updateDay = (date: string, updates: Partial<ItineraryDay>) => {
     onUpdate(itinerary.map(day => 
-      day.date === date ? { ...day, [field]: value } : day
+      day.date === date ? { ...day, ...updates } : day
     ));
   };
 
@@ -161,7 +161,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                               <Input
                                 placeholder="City/Area"
                                 value={day.location}
-                                onChange={(e) => updateDay(day.date, 'location', e.target.value)}
+                                onChange={(e) => updateDay(day.date, { location: e.target.value })}
                                 className="mt-1 h-9"
                               />
                             </div>
@@ -172,7 +172,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                               <Textarea
                                 placeholder="What are you doing this day?"
                                 value={day.activities}
-                                onChange={(e) => updateDay(day.date, 'activities', e.target.value)}
+                                onChange={(e) => updateDay(day.date, { activities: e.target.value })}
                                 className="mt-1 min-h-[60px] resize-none"
                               />
                             </div>
@@ -183,7 +183,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                               <Input
                                 placeholder="$0"
                                 value={day.budget}
-                                onChange={(e) => updateDay(day.date, 'budget', e.target.value)}
+                                onChange={(e) => updateDay(day.date, { budget: e.target.value })}
                                 className="mt-1 h-9"
                               />
                             </div>
@@ -194,7 +194,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                                 <Checkbox
                                   id={`no-alcohol-${day.date}`}
                                   checked={day.noAlcohol || false}
-                                  onCheckedChange={(checked) => updateDay(day.date, 'noAlcohol', !!checked)}
+                                  onCheckedChange={(checked) => updateDay(day.date, { noAlcohol: !!checked })}
                                   className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                                 />
                                 <label 
@@ -211,10 +211,10 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                                   id={`sport-${day.date}`}
                                   checked={day.sport || false}
                                   onCheckedChange={(checked) => {
-                                    updateDay(day.date, 'sport', !!checked);
-                                    if (!checked) {
-                                      updateDay(day.date, 'sportLocation', '');
-                                    }
+                                    updateDay(day.date, { 
+                                      sport: !!checked, 
+                                      sportLocation: checked ? day.sportLocation : '' 
+                                    });
                                   }}
                                   className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                                 />
@@ -231,7 +231,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                                 <Input
                                   placeholder="Where?"
                                   value={day.sportLocation || ''}
-                                  onChange={(e) => updateDay(day.date, 'sportLocation', e.target.value)}
+                                  onChange={(e) => updateDay(day.date, { sportLocation: e.target.value })}
                                   className="h-7 text-xs mt-1"
                                 />
                               )}
