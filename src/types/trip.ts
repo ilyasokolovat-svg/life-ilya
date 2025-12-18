@@ -34,6 +34,9 @@ export interface ItineraryDay {
   location: string;
   activities: string;
   budget: string;
+  noAlcohol?: boolean;
+  sport?: boolean;
+  sportLocation?: string;
 }
 
 export interface PlannedActivity {
