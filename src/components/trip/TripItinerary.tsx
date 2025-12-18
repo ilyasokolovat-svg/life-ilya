@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { CalendarDays, Wine, Dumbbell } from 'lucide-react';
 import { ItineraryDay, Destination } from '@/types/trip';
 import { format, parseISO, isWithinInterval, isSameDay } from 'date-fns';
 
@@ -13,7 +14,7 @@ interface TripItineraryProps {
 }
 
 const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, onUpdate }) => {
-  const updateDay = (date: string, field: keyof ItineraryDay, value: string) => {
+  const updateDay = (date: string, field: keyof ItineraryDay, value: string | boolean) => {
     onUpdate(itinerary.map(day => 
       day.date === date ? { ...day, [field]: value } : day
     ));
@@ -132,19 +133,23 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                       return (
                         <div 
                           key={day.date} 
-                          className={`p-4 bg-white rounded-lg border ${colorScheme.border} ${isTransition ? 'ring-2 ring-offset-1 ring-purple-300' : ''}`}
+                          className={`p-4 rounded-lg border transition-all duration-200 ${
+                            day.noAlcohol 
+                              ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 ring-1 ring-emerald-200' 
+                              : 'bg-white ' + colorScheme.border
+                          } ${isTransition ? 'ring-2 ring-offset-1 ring-purple-300' : ''}`}
                         >
                           <div className="grid grid-cols-12 gap-3 items-start">
                             {/* Date */}
                             <div className="col-span-2">
-                              <div className={`text-center p-2 rounded-lg ${colorScheme.light}`}>
-                                <div className={`text-xs ${colorScheme.text} font-medium`}>
+                              <div className={`text-center p-2 rounded-lg ${day.noAlcohol ? 'bg-emerald-100' : colorScheme.light}`}>
+                                <div className={`text-xs font-medium ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
                                   {format(parseISO(day.date), 'EEE')}
                                 </div>
-                                <div className={`text-lg font-bold ${colorScheme.text}`}>
+                                <div className={`text-lg font-bold ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
                                   {format(parseISO(day.date), 'd')}
                                 </div>
-                                <div className={`text-xs ${colorScheme.text}`}>
+                                <div className={`text-xs ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
                                   {format(parseISO(day.date), 'MMM')}
                                 </div>
                               </div>
@@ -162,7 +167,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                             </div>
 
                             {/* Activities */}
-                            <div className="col-span-6">
+                            <div className="col-span-5">
                               <label className="text-xs text-muted-foreground">Activities</label>
                               <Textarea
                                 placeholder="What are you doing this day?"
@@ -173,7 +178,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                             </div>
 
                             {/* Budget */}
-                            <div className="col-span-2">
+                            <div className="col-span-1">
                               <label className="text-xs text-muted-foreground">Budget</label>
                               <Input
                                 placeholder="$0"
@@ -181,6 +186,55 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                                 onChange={(e) => updateDay(day.date, 'budget', e.target.value)}
                                 className="mt-1 h-9"
                               />
+                            </div>
+
+                            {/* Wellness toggles */}
+                            <div className="col-span-2 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`no-alcohol-${day.date}`}
+                                  checked={day.noAlcohol || false}
+                                  onCheckedChange={(checked) => updateDay(day.date, 'noAlcohol', !!checked)}
+                                  className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                                />
+                                <label 
+                                  htmlFor={`no-alcohol-${day.date}`} 
+                                  className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Wine className="h-3 w-3" />
+                                  No alcohol
+                                </label>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`sport-${day.date}`}
+                                  checked={day.sport || false}
+                                  onCheckedChange={(checked) => {
+                                    updateDay(day.date, 'sport', !!checked);
+                                    if (!checked) {
+                                      updateDay(day.date, 'sportLocation', '');
+                                    }
+                                  }}
+                                  className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                                />
+                                <label 
+                                  htmlFor={`sport-${day.date}`} 
+                                  className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Dumbbell className="h-3 w-3" />
+                                  Sport
+                                </label>
+                              </div>
+
+                              {day.sport && (
+                                <Input
+                                  placeholder="Where?"
+                                  value={day.sportLocation || ''}
+                                  onChange={(e) => updateDay(day.date, 'sportLocation', e.target.value)}
+                                  className="h-7 text-xs mt-1"
+                                />
+                              )}
                             </div>
                           </div>
                         </div>
