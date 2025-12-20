@@ -15,7 +15,8 @@ import {
   Edit,
   Trash2,
   Clock,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { useSupabaseTrips } from '@/hooks/useSupabaseTrips';
 import NewTripDialog from '@/components/trip/NewTripDialog';
@@ -36,6 +37,8 @@ const TripPlanning = () => {
     updateTrip,
     deleteTrip,
     moveToPast,
+    hasPendingLocalData,
+    forceMigrateFromLocalStorage,
   } = useSupabaseTrips();
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -168,14 +171,28 @@ const TripPlanning = () => {
               </p>
             </div>
 
-            <Button
-              size="lg"
-              onClick={() => setDialogOpen(true)}
-              className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-lg px-8 py-6 gap-2 shadow-lg"
-            >
-              <Plus className="h-5 w-5" />
-              Plan a New Trip
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                size="lg"
+                onClick={() => setDialogOpen(true)}
+                className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-lg px-8 py-6 gap-2 shadow-lg"
+              >
+                <Plus className="h-5 w-5" />
+                Plan a New Trip
+              </Button>
+
+              {hasPendingLocalData && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={forceMigrateFromLocalStorage}
+                  className="border-amber-400 text-amber-600 hover:bg-amber-50 text-lg px-8 py-6 gap-2"
+                >
+                  <Download className="h-5 w-5" />
+                  Recover Local Trips
+                </Button>
+              )}
+            </div>
 
             {/* Upcoming Trips */}
             {upcomingTrips.length > 0 && (

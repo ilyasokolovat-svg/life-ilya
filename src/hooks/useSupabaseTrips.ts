@@ -45,20 +45,97 @@ export const useSupabaseTrips = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [migrationComplete, setMigrationComplete] = useState(false);
+  const [hasPendingLocalData, setHasPendingLocalData] = useState(false);
 
-  // Migrate localStorage data to Supabase on first load
+  // Check for pending local data on mount
   useEffect(() => {
-    const migrateLocalStorageData = async () => {
+    const legacyData = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyData) {
+      try {
+        const parsed = JSON.parse(legacyData);
+        const allTrips = [
+          ...(parsed.upcomingTrips || []),
+          ...(parsed.pastTrips || []),
+          ...(parsed.currentTrip ? [parsed.currentTrip] : [])
+        ];
+        setHasPendingLocalData(allTrips.length > 0);
+      } catch {
+        setHasPendingLocalData(false);
+      }
+    }
+  }, []);
+
+  // Force migration function (can be called manually)
+  const forceMigrateFromLocalStorage = async () => {
+    if (!user?.id) {
+      toast.error('Please log in first');
+      return;
+    }
+
+    const legacyData = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!legacyData) {
+      toast.error('No local trip data found');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(legacyData);
+      const allTrips: Trip[] = [
+        ...(parsed.upcomingTrips || []),
+        ...(parsed.pastTrips || []),
+        ...(parsed.currentTrip ? [parsed.currentTrip] : [])
+      ];
+
+      if (allTrips.length === 0) {
+        toast.error('No trips found in local storage');
+        return;
+      }
+
+      let migratedCount = 0;
+      for (const trip of allTrips) {
+        const { error } = await supabase.from('trips').insert({
+          user_id: user.id,
+          title: trip.title,
+          start_date: trip.startDate,
+          end_date: trip.endDate,
+          destinations: trip.destinations as unknown as Json,
+          total_budget: trip.totalBudget || null,
+          flights: (trip.flights || []) as unknown as Json,
+          accommodations: (trip.accommodations || []) as unknown as Json,
+          itinerary: (trip.itinerary || []) as unknown as Json,
+          planned_activities: (trip.plannedActivities || []) as unknown as Json,
+          is_past_trip: trip.isPastTrip || false,
+        });
+        
+        if (!error) migratedCount++;
+      }
+
+      if (migratedCount > 0) {
+        toast.success(`Recovered ${migratedCount} trip(s) from local storage!`);
+        localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+        setHasPendingLocalData(false);
+        queryClient.invalidateQueries({ queryKey: ['trips', user.id] });
+      } else {
+        toast.error('Failed to migrate trips');
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+      toast.error('Failed to parse local storage data');
+    }
+  };
+
+  // Auto-migrate on first load (if not already done)
+  useEffect(() => {
+    const autoMigrate = async () => {
       if (!user?.id) return;
       
-      // Check if already migrated
       const migrated = localStorage.getItem(MIGRATION_FLAG_KEY);
       if (migrated === 'true') {
         setMigrationComplete(true);
         return;
       }
 
-      // Check for legacy data
+      // Check if we have legacy data and Supabase is empty
       const legacyData = localStorage.getItem(LEGACY_STORAGE_KEY);
       if (!legacyData) {
         localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
@@ -66,64 +143,25 @@ export const useSupabaseTrips = () => {
         return;
       }
 
-      try {
-        const parsed = JSON.parse(legacyData);
-        const allTrips: Trip[] = [
-          ...(parsed.upcomingTrips || []),
-          ...(parsed.pastTrips || []),
-          ...(parsed.currentTrip ? [parsed.currentTrip] : [])
-        ];
+      const { data: existingTrips } = await supabase
+        .from('trips')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
 
-        if (allTrips.length === 0) {
-          localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-          setMigrationComplete(true);
-          return;
-        }
-
-        // Check if Supabase already has data (don't duplicate)
-        const { data: existingTrips } = await supabase
-          .from('trips')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
-
-        if (existingTrips && existingTrips.length > 0) {
-          // Already have data in Supabase, skip migration
-          localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-          setMigrationComplete(true);
-          return;
-        }
-
-        // Migrate each trip
-        for (const trip of allTrips) {
-          await supabase.from('trips').insert({
-            user_id: user.id,
-            title: trip.title,
-            start_date: trip.startDate,
-            end_date: trip.endDate,
-            destinations: trip.destinations as unknown as Json,
-            total_budget: trip.totalBudget || null,
-            flights: (trip.flights || []) as unknown as Json,
-            accommodations: (trip.accommodations || []) as unknown as Json,
-            itinerary: (trip.itinerary || []) as unknown as Json,
-            planned_activities: (trip.plannedActivities || []) as unknown as Json,
-            is_past_trip: trip.isPastTrip || false,
-          });
-        }
-
-        toast.success(`Migrated ${allTrips.length} trip(s) from local storage!`);
+      if (existingTrips && existingTrips.length > 0) {
         localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-        queryClient.invalidateQueries({ queryKey: ['trips', user.id] });
-      } catch (error) {
-        console.error('Migration error:', error);
-        toast.error('Failed to migrate trips from local storage');
+        setMigrationComplete(true);
+        return;
       }
-      
+
+      // Auto-migrate
+      await forceMigrateFromLocalStorage();
       setMigrationComplete(true);
     };
 
-    migrateLocalStorageData();
-  }, [user?.id, queryClient]);
+    autoMigrate();
+  }, [user?.id]);
 
   // Fetch all trips
   const { data: trips = [], isLoading, refetch } = useQuery({
@@ -309,5 +347,7 @@ export const useSupabaseTrips = () => {
     deleteTrip,
     moveToPast,
     generateItinerary,
+    hasPendingLocalData,
+    forceMigrateFromLocalStorage,
   };
 };
