@@ -5,6 +5,10 @@ import { Trip, Destination, ItineraryDay } from '@/types/trip';
 import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
+import { useEffect, useState } from 'react';
+
+const LEGACY_STORAGE_KEY = 'trip-planning-data';
+const MIGRATION_FLAG_KEY = 'trips-migrated-to-supabase';
 
 const mapDbToTrip = (dbTrip: {
   id: string;
@@ -40,9 +44,89 @@ const mapDbToTrip = (dbTrip: {
 export const useSupabaseTrips = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [migrationComplete, setMigrationComplete] = useState(false);
+
+  // Migrate localStorage data to Supabase on first load
+  useEffect(() => {
+    const migrateLocalStorageData = async () => {
+      if (!user?.id) return;
+      
+      // Check if already migrated
+      const migrated = localStorage.getItem(MIGRATION_FLAG_KEY);
+      if (migrated === 'true') {
+        setMigrationComplete(true);
+        return;
+      }
+
+      // Check for legacy data
+      const legacyData = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (!legacyData) {
+        localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+        setMigrationComplete(true);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(legacyData);
+        const allTrips: Trip[] = [
+          ...(parsed.upcomingTrips || []),
+          ...(parsed.pastTrips || []),
+          ...(parsed.currentTrip ? [parsed.currentTrip] : [])
+        ];
+
+        if (allTrips.length === 0) {
+          localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+          setMigrationComplete(true);
+          return;
+        }
+
+        // Check if Supabase already has data (don't duplicate)
+        const { data: existingTrips } = await supabase
+          .from('trips')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+
+        if (existingTrips && existingTrips.length > 0) {
+          // Already have data in Supabase, skip migration
+          localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+          setMigrationComplete(true);
+          return;
+        }
+
+        // Migrate each trip
+        for (const trip of allTrips) {
+          await supabase.from('trips').insert({
+            user_id: user.id,
+            title: trip.title,
+            start_date: trip.startDate,
+            end_date: trip.endDate,
+            destinations: trip.destinations as unknown as Json,
+            total_budget: trip.totalBudget || null,
+            flights: (trip.flights || []) as unknown as Json,
+            accommodations: (trip.accommodations || []) as unknown as Json,
+            itinerary: (trip.itinerary || []) as unknown as Json,
+            planned_activities: (trip.plannedActivities || []) as unknown as Json,
+            is_past_trip: trip.isPastTrip || false,
+          });
+        }
+
+        toast.success(`Migrated ${allTrips.length} trip(s) from local storage!`);
+        localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+        queryClient.invalidateQueries({ queryKey: ['trips', user.id] });
+      } catch (error) {
+        console.error('Migration error:', error);
+        toast.error('Failed to migrate trips from local storage');
+      }
+      
+      setMigrationComplete(true);
+    };
+
+    migrateLocalStorageData();
+  }, [user?.id, queryClient]);
 
   // Fetch all trips
-  const { data: trips = [], isLoading } = useQuery({
+  const { data: trips = [], isLoading, refetch } = useQuery({
     queryKey: ['trips', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -56,7 +140,7 @@ export const useSupabaseTrips = () => {
       if (error) throw error;
       return (data || []).map(mapDbToTrip);
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && migrationComplete,
   });
 
   const upcomingTrips = trips.filter(t => !t.isPastTrip);
