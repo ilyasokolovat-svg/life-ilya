@@ -32,7 +32,7 @@ const KeyInsights = ({ categories }: KeyInsightsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Top Wins */}
-      <Card className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-emerald-500/30">
+      <Card className="bg-emerald-950/60 border-emerald-600/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-white flex items-center gap-2 text-lg">
             <Trophy className="w-5 h-5 text-emerald-400" />
@@ -58,7 +58,7 @@ const KeyInsights = ({ categories }: KeyInsightsProps) => {
       </Card>
 
       {/* Key Lessons */}
-      <Card className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-500/30">
+      <Card className="bg-amber-950/60 border-amber-600/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-white flex items-center gap-2 text-lg">
             <Lightbulb className="w-5 h-5 text-amber-400" />
@@ -84,7 +84,7 @@ const KeyInsights = ({ categories }: KeyInsightsProps) => {
       </Card>
 
       {/* Areas for Growth */}
-      <Card className="bg-gradient-to-br from-rose-500/20 to-pink-500/20 border-rose-500/30">
+      <Card className="bg-rose-950/60 border-rose-600/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-white flex items-center gap-2 text-lg">
             <TrendingUp className="w-5 h-5 text-rose-400" />

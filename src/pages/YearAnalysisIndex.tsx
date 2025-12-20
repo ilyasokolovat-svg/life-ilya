@@ -128,9 +128,9 @@ const YearAnalysisIndex = () => {
                   key={year}
                   className={`border-white/10 backdrop-blur-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
                     isCurrent 
-                      ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-amber-500/30' 
+                      ? 'bg-amber-950/60 border-amber-600/40' 
                       : isFuture
-                        ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-500/30'
+                        ? 'bg-emerald-950/60 border-emerald-600/40'
                         : 'bg-white/5 hover:bg-white/10'
                   }`}
                   onClick={() => navigate(`/year-analysis/${year}`)}
@@ -203,7 +203,7 @@ const YearAnalysisIndex = () => {
                   navigate(`/year-analysis/${year}`);
                 }
               }}
-              className="border-white/20 text-white/70 hover:text-white hover:bg-white/10"
+              className="border-white/30 text-white bg-white/10 hover:text-white hover:bg-white/20"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Another Year
