@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +21,8 @@ import {
   Sparkles,
   Award,
   Eye,
-  PenLine
+  PenLine,
+  Calendar
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -57,6 +58,10 @@ const categories: Omit<CategoryData, 'yearStartGoal' | 'achievements' | 'challen
 ];
 
 const YearAnalysis = () => {
+  const { year } = useParams<{ year: string }>();
+  const navigate = useNavigate();
+  const selectedYear = year || String(new Date().getFullYear());
+  
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeCategory, setActiveCategory] = useState('career');
@@ -65,7 +70,7 @@ const YearAnalysis = () => {
 
   // Fetch year analysis data
   const { data: analysisData = [], isLoading } = useQuery({
-    queryKey: ['year_analysis', user?.id],
+    queryKey: ['year_analysis', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
       
@@ -74,7 +79,7 @@ const YearAnalysis = () => {
         .select('*')
         .eq('user_id', user.id)
         .eq('period_type', 'year_analysis')
-        .eq('period_key', '2025');
+        .eq('period_key', selectedYear);
         
       if (error) throw error;
       return data || [];
@@ -107,7 +112,7 @@ const YearAnalysis = () => {
           category: 'year_analysis',
           subcategory: categoryData.categoryId,
           period_type: 'year_analysis',
-          period_key: '2025',
+          period_key: selectedYear,
           actual_result: JSON.stringify(currentData),
           updated_at: new Date().toISOString(),
         }, {
@@ -117,7 +122,7 @@ const YearAnalysis = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['year_analysis', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['year_analysis', user?.id, selectedYear] });
     },
     onError: (error) => {
       console.error('Error saving:', error);
@@ -222,15 +227,20 @@ const YearAnalysis = () => {
       <header className="bg-black/30 backdrop-blur-lg border-b border-white/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <Link to="/">
+            <Link to="/year-analysis">
               <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                All Years
               </Button>
             </Link>
             <div className="flex items-center gap-3">
               <Sparkles className="w-8 h-8 text-amber-400" />
-              <h1 className="text-3xl font-bold text-white">Year in Review 2025</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-white">Year in Review</h1>
+                <span className="px-3 py-1 bg-amber-500/30 text-amber-300 text-lg font-bold rounded-lg">
+                  {selectedYear}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
