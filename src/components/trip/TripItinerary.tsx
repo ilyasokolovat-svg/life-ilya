@@ -139,35 +139,86 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                               : 'bg-white ' + colorScheme.border
                           } ${isTransition ? 'ring-2 ring-offset-1 ring-purple-300' : ''}`}
                         >
-                          <div className="grid grid-cols-12 gap-3 items-start">
-                            {/* Date */}
-                            <div className="col-span-2">
-                              <div className={`text-center p-2 rounded-lg ${day.noAlcohol ? 'bg-emerald-100' : colorScheme.light}`}>
-                                <div className={`text-xs font-medium ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
-                                  {format(parseISO(day.date), 'EEE')}
+                        <div className="flex flex-col sm:grid sm:grid-cols-12 gap-3 items-start">
+                            {/* Date - always visible at top on mobile */}
+                            <div className="w-full sm:w-auto sm:col-span-2">
+                              <div className={`text-center p-2 rounded-lg ${day.noAlcohol ? 'bg-emerald-100' : colorScheme.light} sm:block flex items-center justify-between sm:justify-center gap-2`}>
+                                <div className="flex sm:flex-col items-center gap-1 sm:gap-0">
+                                  <div className={`text-xs font-medium ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
+                                    {format(parseISO(day.date), 'EEE')}
+                                  </div>
+                                  <div className={`text-lg font-bold ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
+                                    {format(parseISO(day.date), 'd')}
+                                  </div>
+                                  <div className={`text-xs ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
+                                    {format(parseISO(day.date), 'MMM')}
+                                  </div>
                                 </div>
-                                <div className={`text-lg font-bold ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
-                                  {format(parseISO(day.date), 'd')}
-                                </div>
-                                <div className={`text-xs ${day.noAlcohol ? 'text-emerald-700' : colorScheme.text}`}>
-                                  {format(parseISO(day.date), 'MMM')}
+                                {/* Mobile-only wellness toggles inline with date */}
+                                <div className="flex sm:hidden items-center gap-3">
+                                  <div className="flex items-center gap-1">
+                                    <Checkbox
+                                      id={`no-alcohol-mobile-${day.date}`}
+                                      checked={day.noAlcohol || false}
+                                      onCheckedChange={(checked) => updateDay(day.date, { noAlcohol: !!checked })}
+                                      className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 h-4 w-4"
+                                    />
+                                    <label 
+                                      htmlFor={`no-alcohol-mobile-${day.date}`} 
+                                      className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Wine className="h-3 w-3" />
+                                    </label>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-1">
+                                    <Checkbox
+                                      id={`sport-mobile-${day.date}`}
+                                      checked={day.sport || false}
+                                      onCheckedChange={(checked) => {
+                                        updateDay(day.date, { 
+                                          sport: !!checked, 
+                                          sportLocation: checked ? day.sportLocation : '' 
+                                        });
+                                      }}
+                                      className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 h-4 w-4"
+                                    />
+                                    <label 
+                                      htmlFor={`sport-mobile-${day.date}`} 
+                                      className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Dumbbell className="h-3 w-3" />
+                                    </label>
+                                  </div>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Location */}
-                            <div className="col-span-2">
-                              <label className="text-xs text-muted-foreground">Location</label>
-                              <Input
-                                placeholder="City/Area"
-                                value={day.location}
-                                onChange={(e) => updateDay(day.date, { location: e.target.value })}
-                                className="mt-1 h-9"
-                              />
+                            {/* Location & Budget row on mobile */}
+                            <div className="w-full grid grid-cols-2 gap-2 sm:contents">
+                              <div className="sm:col-span-2">
+                                <label className="text-xs text-muted-foreground">Location</label>
+                                <Input
+                                  placeholder="City/Area"
+                                  value={day.location}
+                                  onChange={(e) => updateDay(day.date, { location: e.target.value })}
+                                  className="mt-1 h-9"
+                                />
+                              </div>
+
+                              <div className="sm:col-span-1 sm:order-last">
+                                <label className="text-xs text-muted-foreground">Budget</label>
+                                <Input
+                                  placeholder="$0"
+                                  value={day.budget}
+                                  onChange={(e) => updateDay(day.date, { budget: e.target.value })}
+                                  className="mt-1 h-9"
+                                />
+                              </div>
                             </div>
 
                             {/* Activities */}
-                            <div className="col-span-5">
+                            <div className="w-full sm:col-span-5">
                               <label className="text-xs text-muted-foreground">Activities</label>
                               <Textarea
                                 placeholder="What are you doing this day?"
@@ -177,19 +228,21 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ itinerary, destinations, 
                               />
                             </div>
 
-                            {/* Budget */}
-                            <div className="col-span-1">
-                              <label className="text-xs text-muted-foreground">Budget</label>
-                              <Input
-                                placeholder="$0"
-                                value={day.budget}
-                                onChange={(e) => updateDay(day.date, { budget: e.target.value })}
-                                className="mt-1 h-9"
-                              />
-                            </div>
+                            {/* Sport location on mobile when sport is checked */}
+                            {day.sport && (
+                              <div className="w-full sm:hidden">
+                                <label className="text-xs text-muted-foreground">Sport location</label>
+                                <Input
+                                  placeholder="Where?"
+                                  value={day.sportLocation || ''}
+                                  onChange={(e) => updateDay(day.date, { sportLocation: e.target.value })}
+                                  className="mt-1 h-9"
+                                />
+                              </div>
+                            )}
 
-                            {/* Wellness toggles */}
-                            <div className="col-span-2 space-y-2">
+                            {/* Desktop-only wellness toggles */}
+                            <div className="hidden sm:block sm:col-span-2 space-y-2">
                               <div className="flex items-center gap-2">
                                 <Checkbox
                                   id={`no-alcohol-${day.date}`}
