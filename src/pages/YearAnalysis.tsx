@@ -249,7 +249,7 @@ const YearAnalysis = () => {
                 onClick={() => setViewMode('edit')}
                 className={viewMode === 'edit' 
                   ? 'bg-white/20 hover:bg-white/30 text-white' 
-                  : 'border-white/30 text-white/70 hover:text-white hover:bg-white/10'}
+                  : 'bg-white/10 border-white/30 text-white hover:bg-white/20'}
               >
                 <PenLine className="w-4 h-4 mr-2" />
                 Edit
@@ -259,8 +259,8 @@ const YearAnalysis = () => {
                 size="sm"
                 onClick={() => setViewMode('summary')}
                 className={viewMode === 'summary' 
-                  ? 'bg-amber-500/80 hover:bg-amber-500 text-white' 
-                  : 'border-white/30 text-white/70 hover:text-white hover:bg-white/10'}
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white' 
+                  : 'bg-white/10 border-white/30 text-white hover:bg-white/20'}
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Summary
@@ -282,7 +282,7 @@ const YearAnalysis = () => {
             {/* Hero Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Overall Score */}
-              <Card className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-500/30 backdrop-blur-lg">
+              <Card className="bg-amber-950/60 border-amber-600/40 backdrop-blur-lg">
                 <CardContent className="p-8 text-center">
                   <Award className="w-16 h-16 text-amber-400 mx-auto mb-4" />
                   <div className="text-7xl font-bold text-white mb-2">{getOverallScore()}</div>
@@ -349,7 +349,7 @@ const YearAnalysis = () => {
             {/* Hero Stats Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               {/* Overall Score Card */}
-              <Card className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-500/30 backdrop-blur-lg col-span-1 md:col-span-1">
+              <Card className="bg-amber-950/60 border-amber-600/40 backdrop-blur-lg col-span-1 md:col-span-1">
                 <CardContent className="p-8 text-center">
                   <Award className="w-16 h-16 text-amber-400 mx-auto mb-4" />
                   <div className="text-6xl font-bold text-white mb-2">{getOverallScore()}</div>
