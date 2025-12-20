@@ -41,6 +41,7 @@ interface CategoryData {
   color: string;
   gradient: string;
   yearStartGoal: string;
+  yearResult: string;
   achievements: string;
   challenges: string;
   lessons: string;
@@ -48,7 +49,7 @@ interface CategoryData {
   nextYearGoal: string;
 }
 
-const categories: Omit<CategoryData, 'yearStartGoal' | 'achievements' | 'challenges' | 'lessons' | 'rating' | 'nextYearGoal'>[] = [
+const categories: Omit<CategoryData, 'yearStartGoal' | 'yearResult' | 'achievements' | 'challenges' | 'lessons' | 'rating' | 'nextYearGoal'>[] = [
   { id: 'career', name: 'Career', icon: Briefcase, color: 'text-blue-500', gradient: 'from-blue-500 to-indigo-600' },
   { id: 'investment', name: 'Investment', icon: TrendingUp, color: 'text-emerald-500', gradient: 'from-emerald-500 to-teal-600' },
   { id: 'health', name: 'Health', icon: Heart, color: 'text-rose-500', gradient: 'from-rose-500 to-pink-600' },
@@ -170,7 +171,7 @@ const YearAnalysis = () => {
 
   // Calculate progress
   const getProgressStats = () => {
-    const fields = ['yearStartGoal', 'achievements', 'challenges', 'lessons', 'rating', 'nextYearGoal'];
+    const fields = ['yearStartGoal', 'yearResult', 'achievements', 'challenges', 'lessons', 'rating', 'nextYearGoal'];
     let totalFields = categories.length * fields.length;
     let filledFields = 0;
 
@@ -468,16 +469,31 @@ const YearAnalysis = () => {
                   </TabsList>
 
                   <TabsContent value="reflect" className="space-y-6">
-                    <div>
-                      <label className="text-white/80 text-sm font-medium mb-2 block">
-                        What was your goal at the start of the year?
-                      </label>
-                      <Textarea
-                        placeholder="Write down what you planned to achieve in this area..."
-                        className="bg-white/5 border-white/20 text-white placeholder:text-white/40 min-h-[120px]"
-                        value={activeCategoryData.yearStartGoal as string || ''}
-                        onChange={(e) => updateField(activeCategory, 'yearStartGoal', e.target.value)}
-                      />
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="text-white/80 text-sm font-medium mb-2 block flex items-center gap-2">
+                          <Target className="w-4 h-4 text-blue-400" />
+                          What was your goal at the start of the year?
+                        </label>
+                        <Textarea
+                          placeholder="Write down what you planned to achieve in this area..."
+                          className="bg-white/5 border-white/20 text-white placeholder:text-white/40 min-h-[120px]"
+                          value={activeCategoryData.yearStartGoal as string || ''}
+                          onChange={(e) => updateField(activeCategory, 'yearStartGoal', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/80 text-sm font-medium mb-2 block flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-emerald-400" />
+                          What was the result?
+                        </label>
+                        <Textarea
+                          placeholder="What actually happened? How did it turn out..."
+                          className="bg-white/5 border-white/20 text-white placeholder:text-white/40 min-h-[120px]"
+                          value={activeCategoryData.yearResult as string || ''}
+                          onChange={(e) => updateField(activeCategory, 'yearResult', e.target.value)}
+                        />
+                      </div>
                     </div>
                   </TabsContent>
 
