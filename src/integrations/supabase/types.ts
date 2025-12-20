@@ -269,6 +269,57 @@ export type Database = {
         }
         Relationships: []
       }
+      trips: {
+        Row: {
+          accommodations: Json
+          created_at: string
+          destinations: Json
+          end_date: string
+          flights: Json
+          id: string
+          is_past_trip: boolean
+          itinerary: Json
+          planned_activities: Json
+          start_date: string
+          title: string
+          total_budget: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accommodations?: Json
+          created_at?: string
+          destinations?: Json
+          end_date: string
+          flights?: Json
+          id?: string
+          is_past_trip?: boolean
+          itinerary?: Json
+          planned_activities?: Json
+          start_date: string
+          title: string
+          total_budget?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accommodations?: Json
+          created_at?: string
+          destinations?: Json
+          end_date?: string
+          flights?: Json
+          id?: string
+          is_past_trip?: boolean
+          itinerary?: Json
+          planned_activities?: Json
+          start_date?: string
+          title?: string
+          total_budget?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subcategory_preferences: {
         Row: {
           category: string

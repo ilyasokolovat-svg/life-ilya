@@ -14,61 +14,90 @@ import {
   Calendar,
   Edit,
   Trash2,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
-import { useTripPlanning } from '@/hooks/useTripPlanning';
+import { useSupabaseTrips } from '@/hooks/useSupabaseTrips';
 import NewTripDialog from '@/components/trip/NewTripDialog';
 import FlightSection from '@/components/trip/FlightSection';
 import AccommodationSection from '@/components/trip/AccommodationSection';
 import TripItinerary from '@/components/trip/TripItinerary';
 import ActivitiesPlanning from '@/components/trip/ActivitiesPlanning';
 import { format, parseISO } from 'date-fns';
-import { Destination } from '@/types/trip';
+import { Trip, Destination } from '@/types/trip';
 
 const TripPlanning = () => {
   const navigate = useNavigate();
   const { 
     upcomingTrips,
     pastTrips,
-    currentTrip, 
-    isEditing,
+    isLoading,
     createTrip, 
-    updateCurrentTrip, 
-    saveToUpcoming,
-    moveToPastTrips,
-    loadTrip,
+    updateTrip,
     deleteTrip,
-    clearCurrentTrip 
-  } = useTripPlanning();
+    moveToPast,
+  } = useSupabaseTrips();
   
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const [flightsEditMode, setFlightsEditMode] = useState(false);
   const [accommodationsEditMode, setAccommodationsEditMode] = useState(false);
 
-  // When creating a new trip or loading one for the first time, start in edit mode
-  const handleCreateTrip = (
+  const handleCreateTrip = async (
     title: string,
     startDate: string,
     endDate: string,
     destinations: Destination[],
     budget: string
   ) => {
-    createTrip(title, startDate, endDate, destinations, budget);
+    const newTrip = await createTrip(title, startDate, endDate, destinations, budget);
+    setCurrentTrip(newTrip);
     setFlightsEditMode(true);
     setAccommodationsEditMode(true);
   };
 
-  const handleSaveToUpcoming = () => {
-    setFlightsEditMode(false);
-    setAccommodationsEditMode(false);
-    saveToUpcoming();
+  const updateCurrentTrip = (updates: Partial<Trip>) => {
+    if (currentTrip) {
+      setCurrentTrip({ ...currentTrip, ...updates });
+    }
   };
 
-  const handleLoadTrip = (tripId: string, fromPast: boolean) => {
-    loadTrip(tripId, fromPast);
+  const handleSave = async () => {
+    if (currentTrip) {
+      await updateTrip(currentTrip.id, currentTrip);
+      setFlightsEditMode(false);
+      setAccommodationsEditMode(false);
+      setCurrentTrip(null);
+    }
+  };
+
+  const handleLoadTrip = (trip: Trip) => {
+    setCurrentTrip(trip);
     setFlightsEditMode(false);
     setAccommodationsEditMode(false);
   };
+
+  const handleMoveToPast = async (tripId: string) => {
+    await moveToPast(tripId);
+    if (currentTrip?.id === tripId) {
+      setCurrentTrip(null);
+    }
+  };
+
+  const handleDelete = async (tripId: string) => {
+    await deleteTrip(tripId);
+    if (currentTrip?.id === tripId) {
+      setCurrentTrip(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-sky-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-sky-50">
@@ -97,22 +126,22 @@ const TripPlanning = () => {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={clearCurrentTrip}
+                  onClick={() => setCurrentTrip(null)}
                   className="border-gray-300"
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={saveToUpcoming}
+                  onClick={handleSave}
                   className="border-teal-300 text-teal-600 hover:bg-teal-50 gap-2"
                 >
                   <Save className="h-4 w-4" />
                   Save
                 </Button>
-                {isEditing && (
+                {!currentTrip.isPastTrip && (
                   <Button
-                    onClick={() => moveToPastTrips()}
+                    onClick={() => handleMoveToPast(currentTrip.id)}
                     className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 gap-2"
                   >
                     <Archive className="h-4 w-4" />
@@ -164,7 +193,7 @@ const TripPlanning = () => {
                       <CardContent className="p-4 flex items-center justify-between">
                         <div 
                           className="flex items-center gap-3 flex-1 cursor-pointer"
-                          onClick={() => handleLoadTrip(trip.id, false)}
+                          onClick={() => handleLoadTrip(trip)}
                         >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center">
                             <MapPin className="h-5 w-5 text-white" />
@@ -181,7 +210,7 @@ const TripPlanning = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleLoadTrip(trip.id, false)}
+                            onClick={() => handleLoadTrip(trip)}
                             className="h-8 w-8 text-gray-500 hover:text-teal-600"
                           >
                             <Edit className="h-4 w-4" />
@@ -189,7 +218,7 @@ const TripPlanning = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => moveToPastTrips(trip.id)}
+                            onClick={() => handleMoveToPast(trip.id)}
                             className="h-8 w-8 text-gray-500 hover:text-amber-600"
                             title="Move to past trips"
                           >
@@ -198,7 +227,7 @@ const TripPlanning = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteTrip(trip.id, false)}
+                            onClick={() => handleDelete(trip.id)}
                             className="h-8 w-8 text-gray-500 hover:text-red-600"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -227,7 +256,7 @@ const TripPlanning = () => {
                       <CardContent className="p-4 flex items-center justify-between">
                         <div 
                           className="flex items-center gap-3 flex-1 cursor-pointer"
-                          onClick={() => handleLoadTrip(trip.id, true)}
+                          onClick={() => handleLoadTrip(trip)}
                         >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center">
                             <MapPin className="h-5 w-5 text-white" />
@@ -244,7 +273,7 @@ const TripPlanning = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleLoadTrip(trip.id, true)}
+                            onClick={() => handleLoadTrip(trip)}
                             className="h-8 w-8 text-gray-400 hover:text-gray-600"
                           >
                             <Edit className="h-4 w-4" />
@@ -252,7 +281,7 @@ const TripPlanning = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteTrip(trip.id, true)}
+                            onClick={() => handleDelete(trip.id)}
                             className="h-8 w-8 text-gray-400 hover:text-red-600"
                           >
                             <Trash2 className="h-4 w-4" />
