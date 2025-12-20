@@ -53,7 +53,7 @@ const categories: Omit<CategoryData, 'yearStartGoal' | 'yearResult' | 'achieveme
   { id: 'career', name: 'Career', icon: Briefcase, color: 'text-blue-500', gradient: 'from-blue-500 to-indigo-600' },
   { id: 'investment', name: 'Investment', icon: TrendingUp, color: 'text-emerald-500', gradient: 'from-emerald-500 to-teal-600' },
   { id: 'health', name: 'Health', icon: Heart, color: 'text-rose-500', gradient: 'from-rose-500 to-pink-600' },
-  { id: 'relationship', name: 'Relationship', icon: Users, color: 'text-purple-500', gradient: 'from-purple-500 to-violet-600' },
+  { id: 'relationship', name: 'Relationships', icon: Users, color: 'text-purple-500', gradient: 'from-purple-500 to-violet-600' },
   { id: 'learning', name: 'Learning', icon: BookOpen, color: 'text-amber-500', gradient: 'from-amber-500 to-orange-600' },
   { id: 'self-awareness', name: 'Self Awareness', icon: Brain, color: 'text-cyan-500', gradient: 'from-cyan-500 to-sky-600' },
 ];
