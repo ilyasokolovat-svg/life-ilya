@@ -2,7 +2,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Target,
@@ -10,7 +9,8 @@ import {
   LogOut,
   User,
   Map,
-  Plane
+  Plane,
+  BarChart3
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -84,14 +84,14 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Main Navigation Bubbles - Tier 1 */}
-        <div className="flex justify-center items-center gap-12 mb-6">
+        {/* Main Navigation Bubbles - Tier 1: Big bubbles */}
+        <div className="flex justify-center items-center gap-12 mb-8">
           {/* Healthy Life Bubble */}
           <Link to="/habits">
             <div className="group relative">
-              <div className="w-44 h-44 bg-gradient-to-br from-red-500 via-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
+              <div className="w-48 h-48 bg-gradient-to-br from-red-500 via-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
                 <div className="text-center">
-                  <Heart className="w-14 h-14 text-white mb-3 mx-auto" />
+                  <Heart className="w-16 h-16 text-white mb-3 mx-auto" />
                   <h2 className="text-xl font-bold text-white">Healthy Life</h2>
                 </div>
               </div>
@@ -99,25 +99,12 @@ const Dashboard = () => {
             </div>
           </Link>
 
-          {/* Journey Timeline Bubble */}
-          <Link to="/journey">
-            <div className="group relative">
-              <div className="w-44 h-44 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
-                <div className="text-center">
-                  <Map className="w-14 h-14 text-white mb-3 mx-auto" />
-                  <h2 className="text-xl font-bold text-white">Journey Timeline</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
-
           {/* Goals Bubble */}
           <Link to="/goals-overview">
             <div className="group relative">
-              <div className="w-44 h-44 bg-gradient-to-br from-blue-500 via-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
+              <div className="w-48 h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
                 <div className="text-center">
-                  <Target className="w-14 h-14 text-white mb-3 mx-auto" />
+                  <Target className="w-16 h-16 text-white mb-3 mx-auto" />
                   <h2 className="text-xl font-bold text-white">Goals</h2>
                 </div>
               </div>
@@ -126,9 +113,9 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {/* Tier 2 Navigation Bubbles */}
-        <div className="flex justify-center items-center gap-8 mb-12">
-          {/* Trip Planning Bubble - Smaller */}
+        {/* Tier 2 Navigation Bubbles - Smaller */}
+        <div className="flex justify-center items-center gap-6 mb-12">
+          {/* Trip Planning Bubble */}
           <Link to="/trip-planning">
             <div className="group relative">
               <div className="w-28 h-28 bg-gradient-to-br from-teal-500 via-cyan-500 to-teal-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
@@ -138,6 +125,32 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            </div>
+          </Link>
+
+          {/* Journey Timeline Bubble */}
+          <Link to="/journey">
+            <div className="group relative">
+              <div className="w-28 h-28 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
+                <div className="text-center">
+                  <Map className="w-8 h-8 text-white mb-1 mx-auto" />
+                  <h2 className="text-xs font-bold text-white px-2 leading-tight">Journey Timeline</h2>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            </div>
+          </Link>
+
+          {/* Year Analysis Bubble */}
+          <Link to="/year-analysis">
+            <div className="group relative">
+              <div className="w-28 h-28 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
+                <div className="text-center">
+                  <BarChart3 className="w-8 h-8 text-white mb-1 mx-auto" />
+                  <h2 className="text-xs font-bold text-white px-2">Year Analysis</h2>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
         </div>
