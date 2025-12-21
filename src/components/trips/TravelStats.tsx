@@ -3,36 +3,37 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Plane, MapPin, Calendar, Globe } from 'lucide-react';
 import { Trip } from '@/types/trip';
 import { differenceInDays, parseISO } from 'date-fns';
+import { getCountryFromDestination } from '@/utils/countryUtils';
 
 interface TravelStatsProps {
   trips: Trip[];
 }
 
 const TravelStats: React.FC<TravelStatsProps> = ({ trips }) => {
-  // Calculate total days traveled
-  const totalDays = trips.reduce((acc, trip) => {
+  // Only count past trips for stats
+  const pastTrips = trips.filter(t => t.isPastTrip);
+
+  // Calculate total days traveled (past trips only)
+  const totalDays = pastTrips.reduce((acc, trip) => {
     const days = differenceInDays(parseISO(trip.endDate), parseISO(trip.startDate)) + 1;
     return acc + days;
   }, 0);
 
   // Get unique destinations
   const uniqueDestinations = new Set<string>();
-  trips.forEach(trip => {
+  pastTrips.forEach(trip => {
     trip.destinations.forEach(dest => {
       uniqueDestinations.add(dest.name);
     });
   });
 
-  // Get unique countries (approximate from destination names)
+  // Get unique countries using proper country extraction
   const countries = new Set<string>();
-  trips.forEach(trip => {
+  pastTrips.forEach(trip => {
     trip.destinations.forEach(dest => {
-      // Try to extract country from destination name (last part after comma)
-      const parts = dest.name.split(',');
-      if (parts.length > 1) {
-        countries.add(parts[parts.length - 1].trim());
-      } else {
-        countries.add(dest.name);
+      const country = getCountryFromDestination(dest.name);
+      if (country) {
+        countries.add(country.code);
       }
     });
   });
@@ -40,7 +41,7 @@ const TravelStats: React.FC<TravelStatsProps> = ({ trips }) => {
   const stats = [
     {
       icon: Plane,
-      value: trips.length,
+      value: pastTrips.length,
       label: 'Total Trips',
       color: 'from-teal-500 to-cyan-500'
     },
@@ -59,7 +60,7 @@ const TravelStats: React.FC<TravelStatsProps> = ({ trips }) => {
     {
       icon: Globe,
       value: countries.size,
-      label: 'Countries',
+      label: 'Countries Visited',
       color: 'from-amber-500 to-orange-500'
     }
   ];

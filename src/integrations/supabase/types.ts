@@ -357,6 +357,9 @@ export type Database = {
           created_at: string
           id: string
           lived_in: boolean
+          lived_in_end_year: number | null
+          lived_in_notes: string | null
+          lived_in_start_year: number | null
           user_id: string
         }
         Insert: {
@@ -365,6 +368,9 @@ export type Database = {
           created_at?: string
           id?: string
           lived_in?: boolean
+          lived_in_end_year?: number | null
+          lived_in_notes?: string | null
+          lived_in_start_year?: number | null
           user_id: string
         }
         Update: {
@@ -373,6 +379,9 @@ export type Database = {
           created_at?: string
           id?: string
           lived_in?: boolean
+          lived_in_end_year?: number | null
+          lived_in_notes?: string | null
+          lived_in_start_year?: number | null
           user_id?: string
         }
         Relationships: []
