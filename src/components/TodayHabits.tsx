@@ -85,10 +85,10 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     {
       type: 'alcohol' as HabitType,
       icon: Wine,
-      name: 'No Alcohol',
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200'
+      name: 'Sober Day',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      borderColor: 'border-emerald-200'
     },
     {
       type: 'meditation' as HabitType,

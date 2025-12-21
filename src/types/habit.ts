@@ -1,5 +1,8 @@
 export type HabitType = 'gym' | 'alcohol' | 'sleep' | 'meditation' | 'social';
 
+// Event type for drinking budget tracking
+export type DrinkingEventType = 'anchor' | 'side' | 'sober_social' | null;
+
 export interface HabitData {
   planned: boolean;
   completed: boolean;
@@ -14,6 +17,8 @@ export interface HabitData {
   journaling?: boolean;
   meditationDone?: boolean;
   mindfulPhone?: boolean;
+  // Drinking budget tracking - used on social events
+  drinkingEventType?: DrinkingEventType;
 }
 
 export interface DayData {

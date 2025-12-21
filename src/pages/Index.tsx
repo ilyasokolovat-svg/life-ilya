@@ -6,7 +6,7 @@ import Calendar from "@/components/Calendar";
 import HabitStats from "@/components/HabitStats";
 import MonthSlider from "@/components/MonthSlider";
 import GoalSetting from "@/components/GoalSetting";
-import { HabitType, HabitData, HabitGoal } from "@/types/habit";
+import { HabitType, HabitData, HabitGoal, DrinkingEventType } from "@/types/habit";
 import { 
   calculateHabitStats, 
   getDubaiDate,
@@ -24,6 +24,7 @@ import SocialPlanning from "@/components/SocialPlanning";
 import PresencePlanning from "@/components/PresencePlanning";
 import TodayHabits from "@/components/TodayHabits";
 import StreakHabits from "@/components/StreakHabits";
+import DrinkingBudget from "@/components/DrinkingBudget";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -82,7 +83,7 @@ const Index = () => {
   };
   
   // Add new handler for social planning updates
-  const handleUpdateSocialPlan = (dateISO: string, socialEvent: string, location: string, socialPerson?: string, highlights?: string) => {
+  const handleUpdateSocialPlan = (dateISO: string, socialEvent: string, location: string, socialPerson?: string, highlights?: string, drinkingEventType?: DrinkingEventType) => {
     const date = new Date(dateISO);
     const existingData = habitsState.days[dateISO]?.social || { planned: false, completed: false };
     
@@ -91,7 +92,8 @@ const Index = () => {
       socialEvent,
       location,
       ...(socialPerson !== undefined && { socialPerson }),
-      ...(highlights !== undefined && { highlights })
+      ...(highlights !== undefined && { highlights }),
+      ...(drinkingEventType !== undefined && { drinkingEventType })
     };
     
     updateDay(date, 'social', updatedData);
@@ -337,6 +339,15 @@ const Index = () => {
             onUpdateGoal={handleUpdateGoal}
             habitStats={habitStats}
             habitsState={habitsState}
+          />
+        </div>
+        
+        {/* Drinking Budget Section */}
+        <div className="mb-8">
+          <DrinkingBudget 
+            habitsState={habitsState}
+            viewMonth={viewMonth}
+            viewYear={viewYear}
           />
         </div>
         
