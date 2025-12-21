@@ -1,8 +1,9 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 import { 
   Target,
   Heart,
@@ -10,16 +11,85 @@ import {
   User,
   Map,
   Plane,
-  BarChart3
+  BarChart3,
+  Shield,
+  Check,
+  Edit3
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 import WeeklySummaryDashboard from "@/components/WeeklySummaryDashboard";
 import TestDataLoader from "@/components/TestDataLoader";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  
+  // Monthly commitment state
+  const currentMonthKey = format(new Date(), 'yyyy-MM');
+  const [commitment, setCommitment] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+
+  // Load commitment from Supabase
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadCommitment = async () => {
+      const { data } = await supabase
+        .from('goals_data')
+        .select('planned_goal')
+        .eq('user_id', user.id)
+        .eq('category', 'monthly_commitment')
+        .eq('subcategory', 'non_negotiable')
+        .eq('period_type', 'month')
+        .eq('period_key', currentMonthKey)
+        .maybeSingle();
+      
+      if (data?.planned_goal) {
+        setCommitment(data.planned_goal);
+      }
+    };
+    
+    loadCommitment();
+  }, [user, currentMonthKey]);
+
+  const saveCommitment = async () => {
+    if (!user) return;
+    
+    const { data: existing } = await supabase
+      .from('goals_data')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('category', 'monthly_commitment')
+      .eq('subcategory', 'non_negotiable')
+      .eq('period_type', 'month')
+      .eq('period_key', currentMonthKey)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('goals_data')
+        .update({ planned_goal: editValue, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('goals_data')
+        .insert({
+          user_id: user.id,
+          category: 'monthly_commitment',
+          subcategory: 'non_negotiable',
+          period_type: 'month',
+          period_key: currentMonthKey,
+          planned_goal: editValue
+        });
+    }
+    
+    setCommitment(editValue);
+    setIsEditing(false);
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -84,6 +154,54 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Non-negotiable Commitment for the Month */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield className="w-6 h-6 text-white" />
+              <h3 className="text-lg font-bold text-white">
+                Non-Negotiable Commitment for {format(new Date(), 'MMMM yyyy')}
+              </h3>
+            </div>
+            
+            {isEditing ? (
+              <div className="flex gap-2">
+                <Input
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder="Enter your one commitment for this month..."
+                  className="bg-white/20 border-white/30 text-white placeholder:text-white/60 flex-1"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveCommitment();
+                    if (e.key === 'Escape') setIsEditing(false);
+                  }}
+                />
+                <Button
+                  size="sm"
+                  onClick={saveCommitment}
+                  className="bg-white/20 hover:bg-white/30 text-white"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div 
+                className="flex items-center justify-between cursor-pointer group"
+                onClick={() => {
+                  setEditValue(commitment);
+                  setIsEditing(true);
+                }}
+              >
+                <p className="text-white/90 text-lg font-medium">
+                  {commitment || 'Click to set your commitment...'}
+                </p>
+                <Edit3 className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Main Navigation Bubbles - Tier 1: Big bubbles */}
         <div className="flex justify-center items-center gap-12 mb-8">
           {/* Healthy Life Bubble */}
