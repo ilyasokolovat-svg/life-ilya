@@ -29,7 +29,7 @@ import ActivitiesPlanning from '@/components/trip/ActivitiesPlanning';
 import PastTripSummary from '@/components/trip/PastTripSummary';
 import TravelStats from '@/components/trips/TravelStats';
 import TravelTimeline from '@/components/trips/TravelTimeline';
-import TravelMap from '@/components/trips/TravelMap';
+import WorldMap from '@/components/trips/WorldMap';
 import { format, parseISO } from 'date-fns';
 import { Trip, Destination } from '@/types/trip';
 
@@ -210,16 +210,6 @@ const TripPlanning = () => {
                   Recover Local
                 </Button>
               )}
-              {!hasAddedPastTrips && (
-                <Button
-                  variant="outline"
-                  onClick={handleAddPastTrips}
-                  className="border-teal-400 text-teal-600 hover:bg-teal-50 gap-2"
-                >
-                  <Archive className="h-4 w-4" />
-                  Add 2025 Trips
-                </Button>
-              )}
             </div>
           </div>
         </div>
@@ -231,12 +221,8 @@ const TripPlanning = () => {
           {/* Travel Stats */}
           <TravelStats trips={trips} />
 
-          {/* Interactive Map */}
-          <TravelMap 
-            trips={trips} 
-            mapboxToken={mapboxToken}
-            onTokenSubmit={handleMapTokenSubmit}
-          />
+          {/* World Map */}
+          <WorldMap trips={trips} />
 
           {/* Horizontal Timeline */}
           <div>

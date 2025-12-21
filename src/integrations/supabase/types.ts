@@ -350,6 +350,30 @@ export type Database = {
         }
         Relationships: []
       }
+      visited_countries: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weekly_tracking: {
         Row: {
           category: string
