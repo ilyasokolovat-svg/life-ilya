@@ -1,0 +1,166 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Trip } from '@/types/trip';
+import { getCountryFromDestination } from '@/utils/countryUtils';
+import { differenceInDays, parseISO } from 'date-fns';
+
+export interface CountryVisitData {
+  countryCode: string;
+  countryName: string;
+  visitCount: number;
+  totalDays: number;
+  trips: Array<{
+    tripTitle: string;
+    startDate: string;
+    endDate: string;
+    days: number;
+  }>;
+  isManualOnly: boolean; // True if only added manually without trip data
+}
+
+export function useVisitedCountries(pastTrips: Trip[]) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch manually added countries from Supabase
+  const { data: manualCountries = [], isLoading } = useQuery({
+    queryKey: ['visited-countries', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('visited_countries')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Compute visited countries from past trips
+  const computeCountriesFromTrips = (): Map<string, CountryVisitData> => {
+    const countryMap = new Map<string, CountryVisitData>();
+    
+    pastTrips.forEach(trip => {
+      // Get unique countries from this trip's destinations
+      const tripCountries = new Set<string>();
+      
+      trip.destinations.forEach(dest => {
+        const country = getCountryFromDestination(dest.name);
+        if (country && !tripCountries.has(country.code)) {
+          tripCountries.add(country.code);
+          
+          const days = differenceInDays(
+            parseISO(dest.endDate),
+            parseISO(dest.startDate)
+          ) + 1;
+          
+          const existing = countryMap.get(country.code);
+          if (existing) {
+            existing.visitCount += 1;
+            existing.totalDays += days;
+            existing.trips.push({
+              tripTitle: trip.title,
+              startDate: dest.startDate,
+              endDate: dest.endDate,
+              days,
+            });
+          } else {
+            countryMap.set(country.code, {
+              countryCode: country.code,
+              countryName: country.name,
+              visitCount: 1,
+              totalDays: days,
+              trips: [{
+                tripTitle: trip.title,
+                startDate: dest.startDate,
+                endDate: dest.endDate,
+                days,
+              }],
+              isManualOnly: false,
+            });
+          }
+        }
+      });
+    });
+    
+    return countryMap;
+  };
+
+  // Merge trip-computed countries with manual countries
+  const getVisitedCountries = (): Map<string, CountryVisitData> => {
+    const countryMap = computeCountriesFromTrips();
+    
+    // Add manual countries that don't have trip data
+    manualCountries.forEach((manual) => {
+      if (!countryMap.has(manual.country_code)) {
+        countryMap.set(manual.country_code, {
+          countryCode: manual.country_code,
+          countryName: manual.country_name,
+          visitCount: 0,
+          totalDays: 0,
+          trips: [],
+          isManualOnly: true,
+        });
+      }
+    });
+    
+    return countryMap;
+  };
+
+  // Add a country manually
+  const addCountryMutation = useMutation({
+    mutationFn: async ({ countryCode, countryName }: { countryCode: string; countryName: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      
+      const { error } = await supabase
+        .from('visited_countries')
+        .insert({
+          user_id: user.id,
+          country_code: countryCode,
+          country_name: countryName,
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visited-countries', user?.id] });
+    },
+  });
+
+  // Remove a manually added country
+  const removeCountryMutation = useMutation({
+    mutationFn: async (countryCode: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      
+      const { error } = await supabase
+        .from('visited_countries')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('country_code', countryCode);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visited-countries', user?.id] });
+    },
+  });
+
+  const visitedCountries = getVisitedCountries();
+  const manualCountryCodes = new Set(manualCountries.map(c => c.country_code));
+
+  return {
+    visitedCountries,
+    manualCountryCodes,
+    isLoading,
+    addCountry: (countryCode: string, countryName: string) => 
+      addCountryMutation.mutateAsync({ countryCode, countryName }),
+    removeCountry: (countryCode: string) => 
+      removeCountryMutation.mutateAsync(countryCode),
+    isAddingCountry: addCountryMutation.isPending,
+    isRemovingCountry: removeCountryMutation.isPending,
+  };
+}
