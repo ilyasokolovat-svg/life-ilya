@@ -7,12 +7,14 @@ import {
 } from 'react-simple-maps';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, Plus, List, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Globe, Plus, List, ZoomIn, ZoomOut, RotateCcw, Home } from 'lucide-react';
 import { Trip } from '@/types/trip';
 import { useVisitedCountries, CountryVisitData } from '@/hooks/useVisitedCountries';
 import AddCountryDialog from './AddCountryDialog';
 import VisitedCountriesList from './VisitedCountriesList';
 import { format, parseISO } from 'date-fns';
+import { COUNTRY_NAMES } from '@/utils/countryUtils';
+import { toast } from 'sonner';
 
 const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
@@ -56,13 +58,18 @@ const COUNTRY_CODE_MAP: Record<string, string> = {
   'YEM': '887', 'ZMB': '894', 'ZWE': '716',
 };
 
+// Reverse mapping for getting country code from numeric ID
+const NUMERIC_TO_CODE: Record<string, string> = Object.fromEntries(
+  Object.entries(COUNTRY_CODE_MAP).map(([code, num]) => [num, code])
+);
+
 interface WorldMapProps {
   trips: Trip[];
 }
 
 const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
   const pastTrips = useMemo(() => trips.filter(t => t.isPastTrip), [trips]);
-  const { visitedCountries, manualCountryCodes, isLoading } = useVisitedCountries(pastTrips);
+  const { visitedCountries, manualCountryCodes, livedInCountryCodes, isLoading, toggleLivedIn, isTogglingLivedIn } = useVisitedCountries(pastTrips);
   
   const [position, setPosition] = useState({ coordinates: [0, 20] as [number, number], zoom: 1 });
   const [tooltipContent, setTooltipContent] = useState<CountryVisitData | null>(null);
@@ -79,9 +86,16 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
     return max;
   }, [visitedCountries]);
 
-  // Get color based on visit count
+  // Get color based on visit count and lived-in status
   const getCountryColor = (countryCode: string): string => {
     const data = visitedCountries.get(countryCode);
+    const isLivedIn = livedInCountryCodes.has(countryCode);
+    
+    // Lived-in countries get a beautiful rose/coral color
+    if (isLivedIn) {
+      return 'hsl(350, 70%, 55%)'; // Rose/coral color
+    }
+    
     if (!data) return '#e5e7eb'; // gray-200
     
     if (data.isManualOnly) {
@@ -119,11 +133,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
     geo: any,
     event: React.MouseEvent<SVGPathElement>
   ) => {
-    const countryId = geo.id;
-    // Find country code from numeric ID
-    const countryCode = Object.entries(COUNTRY_CODE_MAP).find(
-      ([, numId]) => numId === countryId
-    )?.[0];
+    const countryCode = NUMERIC_TO_CODE[geo.id];
     
     if (countryCode) {
       const data = visitedCountries.get(countryCode);
@@ -141,6 +151,25 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
   const handleMouseMove = (event: React.MouseEvent<SVGPathElement>) => {
     if (tooltipContent) {
       setTooltipPosition({ x: event.clientX, y: event.clientY });
+    }
+  };
+
+  const handleCountryClick = async (geo: any) => {
+    const countryCode = NUMERIC_TO_CODE[geo.id];
+    if (!countryCode) return;
+    
+    const countryName = COUNTRY_NAMES[countryCode] || geo.properties?.name || 'Unknown';
+    const isCurrentlyLivedIn = livedInCountryCodes.has(countryCode);
+    
+    try {
+      await toggleLivedIn(countryCode, countryName, !isCurrentlyLivedIn);
+      toast.success(
+        !isCurrentlyLivedIn 
+          ? `Marked ${countryName} as a country you lived in` 
+          : `Removed ${countryName} from lived-in countries`
+      );
+    } catch (error) {
+      toast.error('Failed to update country');
     }
   };
 
@@ -206,17 +235,22 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
 
       {/* Legend */}
       <div className="absolute bottom-4 right-4 z-10 bg-white/90 rounded-lg p-3 shadow-md">
-        <p className="text-xs font-medium text-gray-600 mb-2">Visits</p>
-        <div className="flex items-center gap-1">
+        <p className="text-xs font-medium text-gray-600 mb-2">Legend</p>
+        <div className="flex items-center gap-1 mb-1">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(174, 70%, 85%)' }} />
-          <span className="text-xs text-gray-500">1</span>
+          <span className="text-xs text-gray-500">1 visit</span>
           <div className="w-8 h-4 rounded mx-1" style={{ background: 'linear-gradient(to right, hsl(174, 70%, 75%), hsl(174, 70%, 50%))' }} />
           <span className="text-xs text-gray-500">{maxVisits}+</span>
         </div>
-        <div className="flex items-center gap-1 mt-1">
+        <div className="flex items-center gap-1 mb-1">
           <div className="w-4 h-4 rounded bg-teal-200" />
           <span className="text-xs text-gray-500">Manual only</span>
         </div>
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(350, 70%, 55%)' }} />
+          <span className="text-xs text-gray-500">Lived in</span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2 italic">Click country to mark as lived-in</p>
       </div>
 
       {/* Map */}
@@ -238,15 +272,15 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
           <Geographies geography={GEO_URL}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                const countryCode = Object.entries(COUNTRY_CODE_MAP).find(
-                  ([, numId]) => numId === geo.id
-                )?.[0];
+                const countryCode = NUMERIC_TO_CODE[geo.id];
                 const isVisited = countryCode && visitedCountries.has(countryCode);
+                const isLivedIn = countryCode && livedInCountryCodes.has(countryCode);
                 
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
+                    onClick={() => handleCountryClick(geo)}
                     onMouseEnter={(event) => handleMouseEnter(geo, event)}
                     onMouseLeave={handleMouseLeave}
                     onMouseMove={handleMouseMove}
@@ -258,14 +292,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
                         outline: 'none',
                       },
                       hover: {
-                        fill: isVisited ? '#0d9488' : '#d1d5db',
+                        fill: isLivedIn ? 'hsl(350, 70%, 45%)' : isVisited ? '#0d9488' : '#d1d5db',
                         stroke: '#fff',
                         strokeWidth: 0.5,
                         outline: 'none',
                         cursor: 'pointer',
                       },
                       pressed: {
-                        fill: isVisited ? '#0f766e' : '#9ca3af',
+                        fill: isLivedIn ? 'hsl(350, 70%, 35%)' : isVisited ? '#0f766e' : '#9ca3af',
                         stroke: '#fff',
                         strokeWidth: 0.5,
                         outline: 'none',
@@ -288,8 +322,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
             top: tooltipPosition.y - 10,
           }}
         >
-          <h3 className="font-semibold text-gray-800 mb-2">
+          <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
             {tooltipContent.countryName}
+            {tooltipContent.isLivedIn && (
+              <span className="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Home className="h-3 w-3" />
+                Lived here
+              </span>
+            )}
           </h3>
           {tooltipContent.isManualOnly ? (
             <p className="text-sm text-gray-500 italic">
