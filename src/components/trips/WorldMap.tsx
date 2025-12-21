@@ -12,6 +12,7 @@ import { Trip } from '@/types/trip';
 import { useVisitedCountries, CountryVisitData } from '@/hooks/useVisitedCountries';
 import AddCountryDialog from './AddCountryDialog';
 import VisitedCountriesList from './VisitedCountriesList';
+import LivedInDialog from './LivedInDialog';
 import { format, parseISO } from 'date-fns';
 import { COUNTRY_NAMES } from '@/utils/countryUtils';
 import { toast } from 'sonner';
@@ -69,13 +70,15 @@ interface WorldMapProps {
 
 const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
   const pastTrips = useMemo(() => trips.filter(t => t.isPastTrip), [trips]);
-  const { visitedCountries, manualCountryCodes, livedInCountryCodes, isLoading, toggleLivedIn, isTogglingLivedIn } = useVisitedCountries(pastTrips);
+  const { visitedCountries, manualCountryCodes, livedInCountryCodes, livedInData, isLoading, setLivedIn, isSettingLivedIn } = useVisitedCountries(pastTrips);
   
   const [position, setPosition] = useState({ coordinates: [0, 20] as [number, number], zoom: 1 });
   const [tooltipContent, setTooltipContent] = useState<CountryVisitData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [listDialogOpen, setListDialogOpen] = useState(false);
+  const [livedInDialogOpen, setLivedInDialogOpen] = useState(false);
+  const [selectedCountryForLivedIn, setSelectedCountryForLivedIn] = useState<{ code: string; name: string } | null>(null);
 
   // Get max visit count for gradient calculation
   const maxVisits = useMemo(() => {
@@ -154,23 +157,32 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
     }
   };
 
-  const handleCountryClick = async (geo: any) => {
+  const handleCountryClick = (geo: any) => {
     const countryCode = NUMERIC_TO_CODE[geo.id];
     if (!countryCode) return;
     
     const countryName = COUNTRY_NAMES[countryCode] || geo.properties?.name || 'Unknown';
-    const isCurrentlyLivedIn = livedInCountryCodes.has(countryCode);
     
-    try {
-      await toggleLivedIn(countryCode, countryName, !isCurrentlyLivedIn);
-      toast.success(
-        !isCurrentlyLivedIn 
-          ? `Marked ${countryName} as a country you lived in` 
-          : `Removed ${countryName} from lived-in countries`
-      );
-    } catch (error) {
-      toast.error('Failed to update country');
-    }
+    // Open the lived-in dialog for this country
+    setSelectedCountryForLivedIn({ code: countryCode, name: countryName });
+    setLivedInDialogOpen(true);
+  };
+
+  const handleSaveLivedIn = async (data: { startYear?: number; endYear?: number; notes?: string }) => {
+    if (!selectedCountryForLivedIn) return;
+    await setLivedIn(
+      selectedCountryForLivedIn.code, 
+      selectedCountryForLivedIn.name, 
+      true,
+      data.startYear,
+      data.endYear,
+      data.notes
+    );
+  };
+
+  const handleRemoveLivedIn = async () => {
+    if (!selectedCountryForLivedIn) return;
+    await setLivedIn(selectedCountryForLivedIn.code, selectedCountryForLivedIn.name, false);
   };
 
   if (isLoading) {
@@ -331,7 +343,33 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
               </span>
             )}
           </h3>
-          {tooltipContent.isManualOnly ? (
+          {tooltipContent.isLivedIn ? (
+            // Show lived-in information instead of trip data
+            <div className="space-y-2">
+              {(tooltipContent.livedInStartYear || tooltipContent.livedInEndYear) && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-rose-600 font-medium">
+                    {tooltipContent.livedInStartYear || '?'} - {tooltipContent.livedInEndYear || 'Present'}
+                  </span>
+                  {tooltipContent.livedInStartYear && (
+                    <span className="text-gray-500">
+                      ({(tooltipContent.livedInEndYear || new Date().getFullYear()) - tooltipContent.livedInStartYear} years)
+                    </span>
+                  )}
+                </div>
+              )}
+              {tooltipContent.livedInNotes && (
+                <p className="text-xs text-gray-600 italic border-l-2 border-rose-400 pl-2">
+                  "{tooltipContent.livedInNotes}"
+                </p>
+              )}
+              {!tooltipContent.livedInStartYear && !tooltipContent.livedInNotes && (
+                <p className="text-xs text-gray-500 italic">
+                  Click to add living period details
+                </p>
+              )}
+            </div>
+          ) : tooltipContent.isManualOnly ? (
             <p className="text-sm text-gray-500 italic">
               No trip data yet - add a past journey to see stats
             </p>
@@ -376,6 +414,18 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
         manualCountryCodes={manualCountryCodes}
         pastTrips={pastTrips}
       />
+      {selectedCountryForLivedIn && (
+        <LivedInDialog
+          open={livedInDialogOpen}
+          onOpenChange={setLivedInDialogOpen}
+          countryName={selectedCountryForLivedIn.name}
+          countryCode={selectedCountryForLivedIn.code}
+          existingData={livedInData.get(selectedCountryForLivedIn.code)}
+          onSave={handleSaveLivedIn}
+          onRemove={handleRemoveLivedIn}
+          isRemoving={isSettingLivedIn}
+        />
+      )}
     </Card>
   );
 };

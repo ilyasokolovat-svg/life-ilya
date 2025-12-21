@@ -18,6 +18,9 @@ export interface CountryVisitData {
   }>;
   isManualOnly: boolean; // True if only added manually without trip data
   isLivedIn: boolean; // True if user has lived in this country
+  livedInStartYear?: number;
+  livedInEndYear?: number;
+  livedInNotes?: string;
 }
 
 export function useVisitedCountries(pastTrips: Trip[]) {
@@ -41,9 +44,19 @@ export function useVisitedCountries(pastTrips: Trip[]) {
     enabled: !!user?.id,
   });
 
-  // Get lived-in country codes
+  // Get lived-in country codes and their data
   const livedInCountryCodes = new Set(
     manualCountries.filter(c => c.lived_in).map(c => c.country_code)
+  );
+  
+  const livedInData = new Map(
+    manualCountries
+      .filter(c => c.lived_in)
+      .map(c => [c.country_code, {
+        startYear: c.lived_in_start_year,
+        endYear: c.lived_in_end_year,
+        notes: c.lived_in_notes,
+      }])
   );
 
   // Compute visited countries from past trips
@@ -101,9 +114,15 @@ export function useVisitedCountries(pastTrips: Trip[]) {
   const getVisitedCountries = (): Map<string, CountryVisitData> => {
     const countryMap = computeCountriesFromTrips();
     
-    // Update lived-in status for countries with trip data
+    // Update lived-in status and data for countries with trip data
     countryMap.forEach((data, code) => {
       data.isLivedIn = livedInCountryCodes.has(code);
+      const livedData = livedInData.get(code);
+      if (livedData) {
+        data.livedInStartYear = livedData.startYear ?? undefined;
+        data.livedInEndYear = livedData.endYear ?? undefined;
+        data.livedInNotes = livedData.notes ?? undefined;
+      }
     });
     
     // Add manual countries that don't have trip data
@@ -117,6 +136,9 @@ export function useVisitedCountries(pastTrips: Trip[]) {
           trips: [],
           isManualOnly: true,
           isLivedIn: manual.lived_in || false,
+          livedInStartYear: manual.lived_in_start_year ?? undefined,
+          livedInEndYear: manual.lived_in_end_year ?? undefined,
+          livedInNotes: manual.lived_in_notes ?? undefined,
         });
       }
     });
@@ -162,23 +184,58 @@ export function useVisitedCountries(pastTrips: Trip[]) {
     },
   });
 
-  // Toggle lived-in status for a country
-  const toggleLivedInMutation = useMutation({
-    mutationFn: async ({ countryCode, countryName, livedIn }: { countryCode: string; countryName: string; livedIn: boolean }) => {
+  // Toggle lived-in status for a country (with period data)
+  const setLivedInMutation = useMutation({
+    mutationFn: async ({ 
+      countryCode, 
+      countryName, 
+      livedIn,
+      startYear,
+      endYear,
+      notes 
+    }: { 
+      countryCode: string; 
+      countryName: string; 
+      livedIn: boolean;
+      startYear?: number;
+      endYear?: number;
+      notes?: string;
+    }) => {
       if (!user?.id) throw new Error('Not authenticated');
       
       // Check if country already exists in manual countries
       const existing = manualCountries.find(c => c.country_code === countryCode);
       
       if (existing) {
-        // Update existing record
-        const { error } = await supabase
-          .from('visited_countries')
-          .update({ lived_in: livedIn })
-          .eq('user_id', user.id)
-          .eq('country_code', countryCode);
-        
-        if (error) throw error;
+        if (!livedIn) {
+          // Remove lived-in status
+          const { error } = await supabase
+            .from('visited_countries')
+            .update({ 
+              lived_in: false,
+              lived_in_start_year: null,
+              lived_in_end_year: null,
+              lived_in_notes: null,
+            })
+            .eq('user_id', user.id)
+            .eq('country_code', countryCode);
+          
+          if (error) throw error;
+        } else {
+          // Update existing record
+          const { error } = await supabase
+            .from('visited_countries')
+            .update({ 
+              lived_in: true,
+              lived_in_start_year: startYear ?? null,
+              lived_in_end_year: endYear ?? null,
+              lived_in_notes: notes ?? null,
+            })
+            .eq('user_id', user.id)
+            .eq('country_code', countryCode);
+          
+          if (error) throw error;
+        }
       } else {
         // Insert new record with lived_in set
         const { error } = await supabase
@@ -188,6 +245,9 @@ export function useVisitedCountries(pastTrips: Trip[]) {
             country_code: countryCode,
             country_name: countryName,
             lived_in: livedIn,
+            lived_in_start_year: startYear ?? null,
+            lived_in_end_year: endYear ?? null,
+            lived_in_notes: notes ?? null,
           });
         
         if (error) throw error;
@@ -205,15 +265,22 @@ export function useVisitedCountries(pastTrips: Trip[]) {
     visitedCountries,
     manualCountryCodes,
     livedInCountryCodes,
+    livedInData,
     isLoading,
     addCountry: (countryCode: string, countryName: string) => 
       addCountryMutation.mutateAsync({ countryCode, countryName }),
     removeCountry: (countryCode: string) => 
       removeCountryMutation.mutateAsync(countryCode),
-    toggleLivedIn: (countryCode: string, countryName: string, livedIn: boolean) =>
-      toggleLivedInMutation.mutateAsync({ countryCode, countryName, livedIn }),
+    setLivedIn: (
+      countryCode: string, 
+      countryName: string, 
+      livedIn: boolean,
+      startYear?: number,
+      endYear?: number,
+      notes?: string
+    ) => setLivedInMutation.mutateAsync({ countryCode, countryName, livedIn, startYear, endYear, notes }),
     isAddingCountry: addCountryMutation.isPending,
     isRemovingCountry: removeCountryMutation.isPending,
-    isTogglingLivedIn: toggleLivedInMutation.isPending,
+    isSettingLivedIn: setLivedInMutation.isPending,
   };
 }
