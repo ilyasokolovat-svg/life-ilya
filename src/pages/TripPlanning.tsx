@@ -45,6 +45,7 @@ const TripPlanning = () => {
     moveToPast,
     hasPendingLocalData,
     forceMigrateFromLocalStorage,
+    addPastTripsWithNotes,
   } = useSupabaseTrips();
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,6 +56,54 @@ const TripPlanning = () => {
     localStorage.getItem('mapbox-token') || ''
   );
   const [showPlanningSection, setShowPlanningSection] = useState(false);
+  const [hasAddedPastTrips, setHasAddedPastTrips] = useState(() =>
+    localStorage.getItem('past-trips-added-2025') === 'true'
+  );
+
+  const handleAddPastTrips = async () => {
+    await addPastTripsWithNotes([
+      {
+        title: 'Sri Lanka',
+        startDate: '2025-02-10',
+        endDate: '2025-02-21',
+        destinations: [{ name: 'Sri Lanka', startDate: '2025-02-10', endDate: '2025-02-21' }],
+        notes: 'Great time with my mom'
+      },
+      {
+        title: 'Sri Lanka',
+        startDate: '2025-03-27',
+        endDate: '2025-04-06',
+        destinations: [{ name: 'Sri Lanka', startDate: '2025-03-27', endDate: '2025-04-06' }],
+        notes: 'Travel with Maria and Eren/Duygu. Had an amazing time - fell in love with Sri Lanka. Our last trip together with Maria'
+      },
+      {
+        title: 'Thailand/Vietnam',
+        startDate: '2025-05-10',
+        endDate: '2025-06-08',
+        destinations: [
+          { name: 'Thailand', startDate: '2025-05-10', endDate: '2025-05-25' },
+          { name: 'Vietnam', startDate: '2025-05-25', endDate: '2025-06-08' }
+        ],
+        notes: 'Had a trip after a very hard month of heartbreak, packing the apartment etc. Was a great experience and at times very difficult emotionally despite being in beautiful places'
+      },
+      {
+        title: 'Thailand',
+        startDate: '2025-07-04',
+        endDate: '2025-08-03',
+        destinations: [{ name: 'Thailand', startDate: '2025-07-04', endDate: '2025-08-03' }],
+        notes: 'My trip after a month of staying alone in Dubai to reflect. Much better emotional state than the first Thai trip. Helped mom move to Ko Samui, had a very good time with her. Had a good time meeting the girl Karina'
+      },
+      {
+        title: 'Bali',
+        startDate: '2025-08-03',
+        endDate: '2025-10-01',
+        destinations: [{ name: 'Bali', startDate: '2025-08-03', endDate: '2025-10-01' }],
+        notes: 'The first time since Covid when I had an absolutely amazing time of exploration, party, work and feeling free in Bali. Loved it all. Hundreds of people, connections, great time with Giovanni/Claudio/Yousuf/Jac etc. and some really fun times with girls. Felt at home on this beautiful island again'
+      }
+    ]);
+    localStorage.setItem('past-trips-added-2025', 'true');
+    setHasAddedPastTrips(true);
+  };
 
   const handleCreateTrip = async (
     title: string,
@@ -158,6 +207,16 @@ const TripPlanning = () => {
                 >
                   <Download className="h-4 w-4" />
                   Recover Local
+                </Button>
+              )}
+              {!hasAddedPastTrips && (
+                <Button
+                  variant="outline"
+                  onClick={handleAddPastTrips}
+                  className="border-teal-400 text-teal-600 hover:bg-teal-50 gap-2"
+                >
+                  <Archive className="h-4 w-4" />
+                  Add 2025 Trips
                 </Button>
               )}
             </div>

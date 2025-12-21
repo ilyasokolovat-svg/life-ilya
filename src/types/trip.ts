@@ -41,8 +41,10 @@ export interface ItineraryDay {
 
 export interface PlannedActivity {
   id: string;
-  name: string;
-  cost: string;
+  name?: string;
+  text?: string;
+  cost?: string;
+  category?: string;
   assignedDay?: string;
 }
 

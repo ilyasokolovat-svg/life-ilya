@@ -1,23 +1,24 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, MapPin, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Plane, PercentIcon } from 'lucide-react';
 import { Trip } from '@/types/trip';
-import { format, parseISO, getYear } from 'date-fns';
+import { format, parseISO, getYear, differenceInDays, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
 
 interface TravelTimelineProps {
   trips: Trip[];
   onTripClick?: (trip: Trip) => void;
+  showYearStats?: boolean;
 }
 
-const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick }) => {
+const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick, showYearStats = true }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Sort trips by date (newest first)
+  // Sort trips by date (oldest first for timeline)
   const sortedTrips = [...trips].sort((a, b) => 
-    new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
   );
 
   // Group trips by year
@@ -28,7 +29,35 @@ const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick }) =
     return acc;
   }, {} as Record<number, Trip[]>);
 
-  const years = Object.keys(tripsByYear).map(Number).sort((a, b) => b - a);
+  const years = Object.keys(tripsByYear).map(Number).sort((a, b) => a - b);
+
+  // Calculate travel stats for a year
+  const calculateYearStats = (year: number) => {
+    const yearStart = startOfYear(new Date(year, 0, 1));
+    const yearEnd = endOfYear(new Date(year, 0, 1));
+    const now = new Date();
+    const effectiveEnd = now < yearEnd ? now : yearEnd;
+    
+    let totalDays = 0;
+    tripsByYear[year]?.forEach(trip => {
+      const tripStart = parseISO(trip.startDate);
+      const tripEnd = parseISO(trip.endDate);
+      totalDays += differenceInDays(tripEnd, tripStart) + 1;
+    });
+
+    const daysInYear = year === now.getFullYear() 
+      ? differenceInDays(effectiveEnd, yearStart) + 1
+      : 365;
+    const percentage = Math.round((totalDays / daysInYear) * 100);
+
+    return { totalDays, percentage };
+  };
+
+  // Get notes from trip
+  const getTripNotes = (trip: Trip): string | null => {
+    const noteActivity = trip.plannedActivities?.find(a => a.category === 'notes' || a.category === 'note');
+    return noteActivity?.text || null;
+  };
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -98,21 +127,31 @@ const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick }) =
         className="flex gap-6 overflow-x-auto pb-4 px-8 scrollbar-hide"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {years.map(year => (
+        {years.map(year => {
+          const stats = showYearStats ? calculateYearStats(year) : null;
+          return (
           <div key={year} className="flex-shrink-0">
-            {/* Year marker */}
+            {/* Year marker with stats */}
             <div className="flex items-center gap-2 mb-4">
               <div className="h-px bg-gradient-to-r from-teal-500 to-transparent w-8" />
               <span className="text-lg font-bold text-teal-600">{year}</span>
+              {stats && (
+                <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Plane className="h-3 w-3" />
+                  {stats.totalDays}d ({stats.percentage}%)
+                </span>
+              )}
               <div className="h-px bg-gradient-to-l from-teal-500 to-transparent w-8" />
             </div>
 
             {/* Trips for this year */}
             <div className="flex gap-4">
-              {tripsByYear[year].map(trip => (
+              {tripsByYear[year].map(trip => {
+                const notes = getTripNotes(trip);
+                return (
                 <Card
                   key={trip.id}
-                  className="flex-shrink-0 w-64 cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 border-teal-100 overflow-hidden group"
+                  className="flex-shrink-0 w-72 cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 border-teal-100 overflow-hidden group"
                   onClick={() => onTripClick?.(trip)}
                 >
                   {/* Gradient header */}
@@ -137,13 +176,15 @@ const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick }) =
                       </span>
                     </div>
 
-                    {trip.totalBudget && (
+                    {notes && (
                       <div className="mt-3 pt-3 border-t border-muted">
-                        <span className="text-sm font-medium text-teal-600">{trip.totalBudget}</span>
+                        <p className="text-xs text-muted-foreground italic line-clamp-3">
+                          "{notes}"
+                        </p>
                       </div>
                     )}
 
-                    {trip.isPastTrip && (
+                    {trip.isPastTrip && !notes && (
                       <div className="mt-2">
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                           Past trip
@@ -152,10 +193,12 @@ const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick }) =
                     )}
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Timeline line */}

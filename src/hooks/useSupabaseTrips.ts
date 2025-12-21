@@ -337,6 +337,44 @@ export const useSupabaseTrips = () => {
     return updateMutation.mutateAsync({ id, updates: { isPastTrip: true } });
   };
 
+  // Bulk add past trips with notes
+  const addPastTripsWithNotes = async (pastTripsData: Array<{
+    title: string;
+    startDate: string;
+    endDate: string;
+    destinations: Destination[];
+    notes: string;
+  }>) => {
+    if (!user?.id) {
+      toast.error('Please log in first');
+      return;
+    }
+
+    let addedCount = 0;
+    for (const tripData of pastTripsData) {
+      const itinerary = generateItinerary(tripData.destinations);
+      const { error } = await supabase.from('trips').insert({
+        user_id: user.id,
+        title: tripData.title,
+        start_date: tripData.startDate,
+        end_date: tripData.endDate,
+        destinations: tripData.destinations as unknown as Json,
+        itinerary: itinerary as unknown as Json,
+        flights: [] as unknown as Json,
+        accommodations: [] as unknown as Json,
+        planned_activities: [{ id: 'notes', text: tripData.notes, category: 'notes' }] as unknown as Json,
+        is_past_trip: true,
+      });
+      
+      if (!error) addedCount++;
+    }
+
+    if (addedCount > 0) {
+      toast.success(`Added ${addedCount} past trip(s)!`);
+      queryClient.invalidateQueries({ queryKey: ['trips', user.id] });
+    }
+  };
+
   return {
     trips,
     upcomingTrips,
@@ -349,5 +387,6 @@ export const useSupabaseTrips = () => {
     generateItinerary,
     hasPendingLocalData,
     forceMigrateFromLocalStorage,
+    addPastTripsWithNotes,
   };
 };
