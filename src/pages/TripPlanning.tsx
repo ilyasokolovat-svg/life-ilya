@@ -18,10 +18,12 @@ import {
   Loader2,
   Download,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  History
 } from 'lucide-react';
 import { useSupabaseTrips } from '@/hooks/useSupabaseTrips';
 import NewTripDialog from '@/components/trip/NewTripDialog';
+import AddPastTripDialog from '@/components/trip/AddPastTripDialog';
 import FlightSection from '@/components/trip/FlightSection';
 import AccommodationSection from '@/components/trip/AccommodationSection';
 import TripItinerary from '@/components/trip/TripItinerary';
@@ -50,6 +52,7 @@ const TripPlanning = () => {
   } = useSupabaseTrips();
   
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [pastTripDialogOpen, setPastTripDialogOpen] = useState(false);
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const [flightsEditMode, setFlightsEditMode] = useState(false);
   const [accommodationsEditMode, setAccommodationsEditMode] = useState(false);
@@ -57,9 +60,18 @@ const TripPlanning = () => {
     localStorage.getItem('mapbox-token') || ''
   );
   const [showPlanningSection, setShowPlanningSection] = useState(false);
-  const [hasAddedPastTrips, setHasAddedPastTrips] = useState(() =>
-    localStorage.getItem('past-trips-added-2025') === 'true'
-  );
+
+  const handleAddPastTrip = async (destinations: Array<{ id: string; name: string; startDate: string; endDate: string; notes: string }>) => {
+    for (const dest of destinations) {
+      await addPastTripsWithNotes([{
+        title: dest.name,
+        startDate: dest.startDate,
+        endDate: dest.endDate,
+        destinations: [{ name: dest.name, startDate: dest.startDate, endDate: dest.endDate }],
+        notes: dest.notes,
+      }]);
+    }
+  };
 
   const handleAddPastTrips = async () => {
     await addPastTripsWithNotes([
@@ -193,6 +205,14 @@ const TripPlanning = () => {
             </div>
 
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setPastTripDialogOpen(true)}
+                className="border-amber-400 text-amber-600 hover:bg-amber-50 gap-2"
+              >
+                <History className="h-4 w-4" />
+                Add Past Trip
+              </Button>
               <Button
                 onClick={() => setDialogOpen(true)}
                 className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 gap-2"
@@ -511,7 +531,16 @@ const TripPlanning = () => {
         onOpenChange={setDialogOpen}
         onCreateTrip={handleCreateTrip}
       />
+      <AddPastTripDialog
+        open={pastTripDialogOpen}
+        onOpenChange={setPastTripDialogOpen}
+        onSave={handleAddPastTrip}
+      />
     </div>
+  );
+};
+
+export default TripPlanning;
   );
 };
 

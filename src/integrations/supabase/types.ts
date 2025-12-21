@@ -356,6 +356,7 @@ export type Database = {
           country_name: string
           created_at: string
           id: string
+          lived_in: boolean
           user_id: string
         }
         Insert: {
@@ -363,6 +364,7 @@ export type Database = {
           country_name: string
           created_at?: string
           id?: string
+          lived_in?: boolean
           user_id: string
         }
         Update: {
@@ -370,6 +372,7 @@ export type Database = {
           country_name?: string
           created_at?: string
           id?: string
+          lived_in?: boolean
           user_id?: string
         }
         Relationships: []

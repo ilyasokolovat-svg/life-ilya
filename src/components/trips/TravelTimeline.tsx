@@ -133,7 +133,6 @@ const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick, sho
           <div key={year} className="flex-shrink-0">
             {/* Year marker with stats */}
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-px bg-gradient-to-r from-teal-500 to-transparent w-8" />
               <span className="text-lg font-bold text-teal-600">{year}</span>
               {stats && (
                 <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -141,7 +140,7 @@ const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick, sho
                   {stats.totalDays}d ({stats.percentage}%)
                 </span>
               )}
-              <div className="h-px bg-gradient-to-l from-teal-500 to-transparent w-8" />
+              <div className="h-px bg-gradient-to-r from-teal-400 to-teal-200 flex-1 min-w-[200px]" />
             </div>
 
             {/* Trips for this year */}
@@ -202,7 +201,7 @@ const TravelTimeline: React.FC<TravelTimelineProps> = ({ trips, onTripClick, sho
       </div>
 
       {/* Timeline line */}
-      <div className="absolute bottom-0 left-8 right-8 h-0.5 bg-gradient-to-r from-teal-200 via-cyan-200 to-teal-200" />
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-300 via-cyan-400 to-teal-300" />
     </div>
   );
 };
