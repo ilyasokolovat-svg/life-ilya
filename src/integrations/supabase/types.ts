@@ -359,6 +359,7 @@ export type Database = {
           lived_in: boolean
           lived_in_end_year: number | null
           lived_in_notes: string | null
+          lived_in_periods: Json | null
           lived_in_start_year: number | null
           user_id: string
         }
@@ -370,6 +371,7 @@ export type Database = {
           lived_in?: boolean
           lived_in_end_year?: number | null
           lived_in_notes?: string | null
+          lived_in_periods?: Json | null
           lived_in_start_year?: number | null
           user_id: string
         }
@@ -381,6 +383,7 @@ export type Database = {
           lived_in?: boolean
           lived_in_end_year?: number | null
           lived_in_notes?: string | null
+          lived_in_periods?: Json | null
           lived_in_start_year?: number | null
           user_id?: string
         }

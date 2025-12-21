@@ -89,14 +89,27 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
     return max;
   }, [visitedCountries]);
 
+  // Get max years lived for gradient calculation
+  const maxYearsLived = useMemo(() => {
+    let max = 1;
+    visitedCountries.forEach(country => {
+      if (country.totalYearsLived > max) max = country.totalYearsLived;
+    });
+    return max;
+  }, [visitedCountries]);
+
   // Get color based on visit count and lived-in status
   const getCountryColor = (countryCode: string): string => {
     const data = visitedCountries.get(countryCode);
     const isLivedIn = livedInCountryCodes.has(countryCode);
     
-    // Lived-in countries get a beautiful rose/coral color
-    if (isLivedIn) {
-      return 'hsl(350, 70%, 55%)'; // Rose/coral color
+    // Lived-in countries get bronze/yellow gradient based on years lived
+    if (isLivedIn && data) {
+      const intensity = Math.min(data.totalYearsLived / Math.max(maxYearsLived, 1), 1);
+      // Bronze/gold gradient: from light gold (48, 70%, 75%) to deep bronze (35, 70%, 40%)
+      const hue = 48 - (intensity * 13); // 48 (gold) to 35 (bronze)
+      const lightness = 75 - (intensity * 35); // 75% to 40%
+      return `hsl(${hue}, 70%, ${lightness}%)`;
     }
     
     if (!data) return '#e5e7eb'; // gray-200
@@ -168,21 +181,19 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
     setLivedInDialogOpen(true);
   };
 
-  const handleSaveLivedIn = async (data: { startYear?: number; endYear?: number; notes?: string }) => {
+  const handleSaveLivedIn = async (periods: import('@/hooks/useVisitedCountries').LivedInPeriod[]) => {
     if (!selectedCountryForLivedIn) return;
     await setLivedIn(
       selectedCountryForLivedIn.code, 
       selectedCountryForLivedIn.name, 
       true,
-      data.startYear,
-      data.endYear,
-      data.notes
+      periods
     );
   };
 
   const handleRemoveLivedIn = async () => {
     if (!selectedCountryForLivedIn) return;
-    await setLivedIn(selectedCountryForLivedIn.code, selectedCountryForLivedIn.name, false);
+    await setLivedIn(selectedCountryForLivedIn.code, selectedCountryForLivedIn.name, false, []);
   };
 
   if (isLoading) {
@@ -259,8 +270,8 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
           <span className="text-xs text-gray-500">Manual only</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(350, 70%, 55%)' }} />
-          <span className="text-xs text-gray-500">Lived in</span>
+          <div className="w-8 h-4 rounded" style={{ background: 'linear-gradient(to right, hsl(48, 70%, 75%), hsl(35, 70%, 45%))' }} />
+          <span className="text-xs text-gray-500">Lived in ({maxYearsLived}y max)</span>
         </div>
         <p className="text-xs text-gray-400 mt-2 italic">Click country to mark as lived-in</p>
       </div>
@@ -304,14 +315,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
                         outline: 'none',
                       },
                       hover: {
-                        fill: isLivedIn ? 'hsl(350, 70%, 45%)' : isVisited ? '#0d9488' : '#d1d5db',
+                        fill: isLivedIn ? 'hsl(40, 70%, 45%)' : isVisited ? '#0d9488' : '#d1d5db',
                         stroke: '#fff',
                         strokeWidth: 0.5,
                         outline: 'none',
                         cursor: 'pointer',
                       },
                       pressed: {
-                        fill: isLivedIn ? 'hsl(350, 70%, 35%)' : isVisited ? '#0f766e' : '#9ca3af',
+                        fill: isLivedIn ? 'hsl(35, 70%, 35%)' : isVisited ? '#0f766e' : '#9ca3af',
                         stroke: '#fff',
                         strokeWidth: 0.5,
                         outline: 'none',
@@ -337,7 +348,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
           <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
             {tooltipContent.countryName}
             {tooltipContent.isLivedIn && (
-              <span className="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Home className="h-3 w-3" />
                 Lived here
               </span>
@@ -346,24 +357,25 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
           {tooltipContent.isLivedIn ? (
             // Show lived-in information instead of trip data
             <div className="space-y-2">
-              {(tooltipContent.livedInStartYear || tooltipContent.livedInEndYear) && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-rose-600 font-medium">
-                    {tooltipContent.livedInStartYear || '?'} - {tooltipContent.livedInEndYear || 'Present'}
-                  </span>
-                  {tooltipContent.livedInStartYear && (
-                    <span className="text-gray-500">
-                      ({(tooltipContent.livedInEndYear || new Date().getFullYear()) - tooltipContent.livedInStartYear} years)
-                    </span>
-                  )}
+              {tooltipContent.totalYearsLived > 0 && (
+                <div className="text-sm text-amber-700 font-medium">
+                  ~{tooltipContent.totalYearsLived} years total
                 </div>
               )}
-              {tooltipContent.livedInNotes && (
-                <p className="text-xs text-gray-600 italic border-l-2 border-rose-400 pl-2">
-                  "{tooltipContent.livedInNotes}"
-                </p>
-              )}
-              {!tooltipContent.livedInStartYear && !tooltipContent.livedInNotes && (
+              {tooltipContent.livedInPeriods.length > 0 ? (
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {tooltipContent.livedInPeriods.map((period, idx) => (
+                    <div key={idx} className="text-xs text-gray-600 border-l-2 border-amber-400 pl-2">
+                      <span className="font-medium">
+                        {period.startYear || '?'} - {period.endYear || 'Present'}
+                      </span>
+                      {period.notes && (
+                        <p className="text-gray-500 italic">"{period.notes}"</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
                 <p className="text-xs text-gray-500 italic">
                   Click to add living period details
                 </p>
@@ -420,7 +432,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
           onOpenChange={setLivedInDialogOpen}
           countryName={selectedCountryForLivedIn.name}
           countryCode={selectedCountryForLivedIn.code}
-          existingData={livedInData.get(selectedCountryForLivedIn.code)}
+          existingPeriods={livedInData.get(selectedCountryForLivedIn.code)?.periods || []}
           onSave={handleSaveLivedIn}
           onRemove={handleRemoveLivedIn}
           isRemoving={isSettingLivedIn}

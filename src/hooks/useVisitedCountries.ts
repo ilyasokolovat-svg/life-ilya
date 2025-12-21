@@ -4,6 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Trip } from '@/types/trip';
 import { getCountryFromDestination } from '@/utils/countryUtils';
 import { differenceInDays, parseISO } from 'date-fns';
+import { Json } from '@/integrations/supabase/types';
+
+export interface LivedInPeriod {
+  id: string;
+  startYear?: number;
+  endYear?: number;
+  notes?: string;
+}
 
 export interface CountryVisitData {
   countryCode: string;
@@ -16,11 +24,10 @@ export interface CountryVisitData {
     endDate: string;
     days: number;
   }>;
-  isManualOnly: boolean; // True if only added manually without trip data
-  isLivedIn: boolean; // True if user has lived in this country
-  livedInStartYear?: number;
-  livedInEndYear?: number;
-  livedInNotes?: string;
+  isManualOnly: boolean;
+  isLivedIn: boolean;
+  livedInPeriods: LivedInPeriod[];
+  totalYearsLived: number;
 }
 
 export function useVisitedCountries(pastTrips: Trip[]) {
@@ -52,11 +59,16 @@ export function useVisitedCountries(pastTrips: Trip[]) {
   const livedInData = new Map(
     manualCountries
       .filter(c => c.lived_in)
-      .map(c => [c.country_code, {
-        startYear: c.lived_in_start_year,
-        endYear: c.lived_in_end_year,
-        notes: c.lived_in_notes,
-      }])
+      .map(c => {
+        const periods = (c.lived_in_periods as unknown as LivedInPeriod[]) || [];
+        // Calculate total years from all periods
+        const totalYears = Array.isArray(periods) ? periods.reduce((sum, p) => {
+          const start = p.startYear || 0;
+          const end = p.endYear || new Date().getFullYear();
+          return sum + Math.max(0, end - start);
+        }, 0) : 0;
+        return [c.country_code, { periods: Array.isArray(periods) ? periods : [], totalYears }];
+      })
   );
 
   // Compute visited countries from past trips
@@ -101,6 +113,8 @@ export function useVisitedCountries(pastTrips: Trip[]) {
               }],
               isManualOnly: false,
               isLivedIn: livedInCountryCodes.has(country.code),
+              livedInPeriods: livedInData.get(country.code)?.periods || [],
+              totalYearsLived: livedInData.get(country.code)?.totalYears || 0,
             });
           }
         }
@@ -119,15 +133,22 @@ export function useVisitedCountries(pastTrips: Trip[]) {
       data.isLivedIn = livedInCountryCodes.has(code);
       const livedData = livedInData.get(code);
       if (livedData) {
-        data.livedInStartYear = livedData.startYear ?? undefined;
-        data.livedInEndYear = livedData.endYear ?? undefined;
-        data.livedInNotes = livedData.notes ?? undefined;
+        data.livedInPeriods = livedData.periods;
+        data.totalYearsLived = livedData.totalYears;
       }
     });
     
     // Add manual countries that don't have trip data
     manualCountries.forEach((manual) => {
       if (!countryMap.has(manual.country_code)) {
+        const periods = (manual.lived_in_periods as unknown as LivedInPeriod[]) || [];
+        const periodsArray = Array.isArray(periods) ? periods : [];
+        const totalYears = periodsArray.reduce((sum, p) => {
+          const start = p.startYear || 0;
+          const end = p.endYear || new Date().getFullYear();
+          return sum + Math.max(0, end - start);
+        }, 0);
+        
         countryMap.set(manual.country_code, {
           countryCode: manual.country_code,
           countryName: manual.country_name,
@@ -136,9 +157,8 @@ export function useVisitedCountries(pastTrips: Trip[]) {
           trips: [],
           isManualOnly: true,
           isLivedIn: manual.lived_in || false,
-          livedInStartYear: manual.lived_in_start_year ?? undefined,
-          livedInEndYear: manual.lived_in_end_year ?? undefined,
-          livedInNotes: manual.lived_in_notes ?? undefined,
+          livedInPeriods: periodsArray,
+          totalYearsLived: totalYears,
         });
       }
     });
@@ -184,22 +204,18 @@ export function useVisitedCountries(pastTrips: Trip[]) {
     },
   });
 
-  // Toggle lived-in status for a country (with period data)
+  // Set lived-in status with periods for a country
   const setLivedInMutation = useMutation({
     mutationFn: async ({ 
       countryCode, 
       countryName, 
       livedIn,
-      startYear,
-      endYear,
-      notes 
+      periods,
     }: { 
       countryCode: string; 
       countryName: string; 
       livedIn: boolean;
-      startYear?: number;
-      endYear?: number;
-      notes?: string;
+      periods: LivedInPeriod[];
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
       
@@ -213,9 +229,7 @@ export function useVisitedCountries(pastTrips: Trip[]) {
             .from('visited_countries')
             .update({ 
               lived_in: false,
-              lived_in_start_year: null,
-              lived_in_end_year: null,
-              lived_in_notes: null,
+              lived_in_periods: [],
             })
             .eq('user_id', user.id)
             .eq('country_code', countryCode);
@@ -227,9 +241,7 @@ export function useVisitedCountries(pastTrips: Trip[]) {
             .from('visited_countries')
             .update({ 
               lived_in: true,
-              lived_in_start_year: startYear ?? null,
-              lived_in_end_year: endYear ?? null,
-              lived_in_notes: notes ?? null,
+              lived_in_periods: periods as unknown as Json,
             })
             .eq('user_id', user.id)
             .eq('country_code', countryCode);
@@ -245,9 +257,7 @@ export function useVisitedCountries(pastTrips: Trip[]) {
             country_code: countryCode,
             country_name: countryName,
             lived_in: livedIn,
-            lived_in_start_year: startYear ?? null,
-            lived_in_end_year: endYear ?? null,
-            lived_in_notes: notes ?? null,
+            lived_in_periods: periods as unknown as Json,
           });
         
         if (error) throw error;
@@ -275,10 +285,8 @@ export function useVisitedCountries(pastTrips: Trip[]) {
       countryCode: string, 
       countryName: string, 
       livedIn: boolean,
-      startYear?: number,
-      endYear?: number,
-      notes?: string
-    ) => setLivedInMutation.mutateAsync({ countryCode, countryName, livedIn, startYear, endYear, notes }),
+      periods: LivedInPeriod[] = []
+    ) => setLivedInMutation.mutateAsync({ countryCode, countryName, livedIn, periods }),
     isAddingCountry: addCountryMutation.isPending,
     isRemovingCountry: removeCountryMutation.isPending,
     isSettingLivedIn: setLivedInMutation.isPending,
