@@ -233,29 +233,29 @@ const Dashboard = () => {
 
         {/* Tier 2 Navigation Bubbles - Smaller */}
         <div className="flex justify-center items-center gap-6 mb-12">
-          {/* Trip Planning Bubble */}
+          {/* Trips Bubble */}
           <Link to="/trip-planning">
             <div className="group relative">
               <div className="w-28 h-28 bg-gradient-to-br from-teal-500 via-cyan-500 to-teal-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
                 <div className="text-center">
                   <Plane className="w-8 h-8 text-white mb-1 mx-auto" />
-                  <h2 className="text-xs font-bold text-white px-2">Trip Planning</h2>
+                  <h2 className="text-xs font-bold text-white px-2">Trips</h2>
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
 
-          {/* Journey Timeline Bubble */}
-          <Link to="/journey">
+          {/* Life Events Bubble */}
+          <Link to="/life-events">
             <div className="group relative">
-              <div className="w-28 h-28 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
+              <div className="w-28 h-28 bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
                 <div className="text-center">
                   <Map className="w-8 h-8 text-white mb-1 mx-auto" />
-                  <h2 className="text-xs font-bold text-white px-2 leading-tight">Journey Timeline</h2>
+                  <h2 className="text-xs font-bold text-white px-2 leading-tight">Life Events</h2>
                 </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-yellow-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
 
