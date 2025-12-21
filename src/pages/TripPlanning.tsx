@@ -34,6 +34,7 @@ import TravelTimeline from '@/components/trips/TravelTimeline';
 import WorldMap from '@/components/trips/WorldMap';
 import { format, parseISO } from 'date-fns';
 import { Trip, Destination } from '@/types/trip';
+import { useVisitedCountries } from '@/hooks/useVisitedCountries';
 
 const TripPlanning = () => {
   const navigate = useNavigate();
@@ -50,6 +51,10 @@ const TripPlanning = () => {
     forceMigrateFromLocalStorage,
     addPastTripsWithNotes,
   } = useSupabaseTrips();
+  
+  // Get visited countries count for stats
+  const pastTripsForMap = trips.filter(t => t.isPastTrip);
+  const { visitedCountries } = useVisitedCountries(pastTripsForMap);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pastTripDialogOpen, setPastTripDialogOpen] = useState(false);
@@ -194,7 +199,7 @@ const TripPlanning = () => {
         {/* Visual Overview Section */}
         <section className="space-y-6">
           {/* Travel Stats */}
-          <TravelStats trips={trips} />
+          <TravelStats trips={trips} visitedCountriesCount={visitedCountries.size} />
 
           {/* World Map */}
           <WorldMap trips={trips} />

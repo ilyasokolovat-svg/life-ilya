@@ -3,13 +3,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Plane, MapPin, Calendar, Globe } from 'lucide-react';
 import { Trip } from '@/types/trip';
 import { differenceInDays, parseISO } from 'date-fns';
-import { getCountryFromDestination } from '@/utils/countryUtils';
+
+const TOTAL_COUNTRIES_IN_WORLD = 195; // UN-recognized sovereign states
 
 interface TravelStatsProps {
   trips: Trip[];
+  visitedCountriesCount: number;
 }
 
-const TravelStats: React.FC<TravelStatsProps> = ({ trips }) => {
+const TravelStats: React.FC<TravelStatsProps> = ({ trips, visitedCountriesCount }) => {
   // Only count past trips for stats
   const pastTrips = trips.filter(t => t.isPastTrip);
 
@@ -27,41 +29,37 @@ const TravelStats: React.FC<TravelStatsProps> = ({ trips }) => {
     });
   });
 
-  // Get unique countries using proper country extraction
-  const countries = new Set<string>();
-  pastTrips.forEach(trip => {
-    trip.destinations.forEach(dest => {
-      const country = getCountryFromDestination(dest.name);
-      if (country) {
-        countries.add(country.code);
-      }
-    });
-  });
+  // Calculate world percentage
+  const worldPercentage = Math.round((visitedCountriesCount / TOTAL_COUNTRIES_IN_WORLD) * 100);
 
   const stats = [
     {
       icon: Plane,
       value: pastTrips.length,
       label: 'Total Trips',
-      color: 'from-teal-500 to-cyan-500'
+      color: 'from-teal-500 to-cyan-500',
+      subtitle: null
     },
     {
       icon: Calendar,
       value: totalDays,
       label: 'Days Traveled',
-      color: 'from-blue-500 to-indigo-500'
+      color: 'from-blue-500 to-indigo-500',
+      subtitle: null
     },
     {
       icon: MapPin,
       value: uniqueDestinations.size,
       label: 'Destinations',
-      color: 'from-purple-500 to-pink-500'
+      color: 'from-purple-500 to-pink-500',
+      subtitle: null
     },
     {
       icon: Globe,
-      value: countries.size,
+      value: visitedCountriesCount,
       label: 'Countries Visited',
-      color: 'from-amber-500 to-orange-500'
+      color: 'from-amber-500 to-orange-500',
+      subtitle: `${worldPercentage}% of the world`
     }
   ];
 
@@ -75,6 +73,9 @@ const TravelStats: React.FC<TravelStatsProps> = ({ trips }) => {
                 <div>
                   <p className="text-3xl font-bold">{stat.value}</p>
                   <p className="text-sm opacity-90">{stat.label}</p>
+                  {stat.subtitle && (
+                    <p className="text-xs opacity-75 mt-1">{stat.subtitle}</p>
+                  )}
                 </div>
                 <stat.icon className="h-8 w-8 opacity-80" />
               </div>
