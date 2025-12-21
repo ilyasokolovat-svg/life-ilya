@@ -9,7 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import GoalsOverview from "./pages/GoalsOverview";
-import JourneyTimeline from "./pages/JourneyTimeline";
+import LifeEvents from "./pages/LifeEvents";
 import TripPlanning from "./pages/TripPlanning";
 import YearAnalysis from "./pages/YearAnalysis";
 import YearAnalysisIndex from "./pages/YearAnalysisIndex";
@@ -99,9 +99,9 @@ const AppRoutes = () => {
           <Index />
         </ProtectedRoute>
       } />
-      <Route path="/journey" element={
+      <Route path="/life-events" element={
         <ProtectedRoute>
-          <JourneyTimeline />
+          <LifeEvents />
         </ProtectedRoute>
       } />
       <Route path="/goals/:category" element={
