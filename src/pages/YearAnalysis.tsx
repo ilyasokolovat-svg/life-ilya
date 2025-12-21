@@ -33,6 +33,8 @@ import CategoryComparisonCard from "@/components/year-analysis/CategoryCompariso
 import KeyInsights from "@/components/year-analysis/KeyInsights";
 import NextYearPlanning from "@/components/year-analysis/NextYearPlanning";
 import ProgressTracker from "@/components/year-analysis/ProgressTracker";
+import YearCalendar from "@/components/year-analysis/YearCalendar";
+import useSupabaseHabits from "@/hooks/useSupabaseHabits";
 
 interface CategoryData {
   id: string;
@@ -47,6 +49,12 @@ interface CategoryData {
   lessons: string;
   rating: number;
   nextYearGoal: string;
+}
+
+interface MonthCalendarData {
+  memorableThing: string;
+  soberDaysOverride?: number;
+  sportDaysOverride?: number;
 }
 
 const categories: Omit<CategoryData, 'yearStartGoal' | 'yearResult' | 'achievements' | 'challenges' | 'lessons' | 'rating' | 'nextYearGoal'>[] = [
@@ -68,6 +76,10 @@ const YearAnalysis = () => {
   const [activeCategory, setActiveCategory] = useState('career');
   const [localData, setLocalData] = useState<Record<string, Partial<CategoryData>>>({});
   const [viewMode, setViewMode] = useState<'edit' | 'summary'>('edit');
+  const [monthCalendarData, setMonthCalendarData] = useState<Record<string, MonthCalendarData>>({});
+  
+  // Get habits data
+  const { habitsState } = useSupabaseHabits();
 
   // Fetch year analysis data
   const { data: analysisData = [], isLoading } = useQuery({
@@ -87,6 +99,40 @@ const YearAnalysis = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Fetch monthly calendar data
+  const { data: monthlyCalendarDbData = [] } = useQuery({
+    queryKey: ['year_calendar', user?.id, selectedYear],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('goals_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('period_type', 'year_calendar')
+        .eq('period_key', selectedYear);
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Parse monthly calendar data from DB
+  React.useEffect(() => {
+    const parsed: Record<string, MonthCalendarData> = {};
+    monthlyCalendarDbData.forEach((record) => {
+      if (record.actual_result) {
+        try {
+          parsed[record.subcategory] = JSON.parse(record.actual_result);
+        } catch {
+          // ignore parse errors
+        }
+      }
+    });
+    setMonthCalendarData(parsed);
+  }, [monthlyCalendarDbData]);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -130,6 +176,50 @@ const YearAnalysis = () => {
       toast.error('Failed to save');
     },
   });
+
+  // Save monthly calendar mutation
+  const saveMonthCalendarMutation = useMutation({
+    mutationFn: async ({ monthKey, field, value }: { monthKey: string; field: string; value: string | number }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const existingData = monthCalendarData[monthKey] || { memorableThing: '' };
+      const updatedData = { ...existingData, [field]: value };
+      
+      const { error } = await supabase
+        .from('goals_data')
+        .upsert({
+          user_id: user.id,
+          category: 'year_calendar',
+          subcategory: monthKey,
+          period_type: 'year_calendar',
+          period_key: selectedYear,
+          actual_result: JSON.stringify(updatedData),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,category,subcategory,period_key',
+        });
+        
+      if (error) throw error;
+      return { monthKey, updatedData };
+    },
+    onSuccess: ({ monthKey, updatedData }) => {
+      setMonthCalendarData(prev => ({ ...prev, [monthKey]: updatedData }));
+      queryClient.invalidateQueries({ queryKey: ['year_calendar', user?.id, selectedYear] });
+    },
+    onError: (error) => {
+      console.error('Error saving month calendar:', error);
+      toast.error('Failed to save');
+    },
+  });
+
+  const updateMonthCalendar = (monthKey: string, field: keyof MonthCalendarData, value: string | number) => {
+    // Optimistic update
+    setMonthCalendarData(prev => ({
+      ...prev,
+      [monthKey]: { ...(prev[monthKey] || { memorableThing: '' }), [field]: value }
+    }));
+    saveMonthCalendarMutation.mutate({ monthKey, field, value: value as string | number });
+  };
 
   const getCategoryData = (categoryId: string): Partial<CategoryData> => {
     const dbRecord = analysisData.find(d => d.subcategory === categoryId);
@@ -335,6 +425,14 @@ const YearAnalysis = () => {
 
             {/* Next Year Planning */}
             <NextYearPlanning goals={nextYearGoals} />
+
+            {/* Year Calendar */}
+            <YearCalendar
+              year={selectedYear}
+              monthlyData={monthCalendarData}
+              habitDays={habitsState.days}
+              onUpdateMonth={updateMonthCalendar}
+            />
 
             {/* Inspirational Quote */}
             <div className="text-center py-8">
