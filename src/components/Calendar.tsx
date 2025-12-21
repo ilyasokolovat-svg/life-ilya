@@ -149,7 +149,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
       switch (habitType) {
         case 'sleep': return 'Sleep';
         case 'gym': return 'Gym';
-        case 'alcohol': return 'No Alcohol';
+        case 'alcohol': return 'Sober Day';
         case 'meditation': return 'Presence';
         case 'social': return 'Social';
         default: return '';
@@ -400,7 +400,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 mr-1 rounded border-2 border-yellow-400 bg-white"></div>
-          <span>No alcohol planned</span>
+          <span>Sober day planned</span>
         </div>
       </div>
       
@@ -436,7 +436,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
             </div>
             <div className="flex items-center">
               <WineOff className="h-3.5 w-3.5 mr-1" />
-              <span>No Alcohol</span>
+              <span>Sober Day</span>
             </div>
             <div className="flex items-center">
               <Brain className="h-3.5 w-3.5 mr-1" />
