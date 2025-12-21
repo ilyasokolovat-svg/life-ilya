@@ -66,10 +66,10 @@ const TravelStats: React.FC<TravelStatsProps> = ({ trips, visitedCountriesCount 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {stats.map((stat, index) => (
-        <Card key={index} className="border-none shadow-lg overflow-hidden">
-          <CardContent className="p-0">
-            <div className={`bg-gradient-to-br ${stat.color} p-4 text-white`}>
-              <div className="flex items-center justify-between">
+        <Card key={index} className="border-none shadow-lg overflow-hidden h-full">
+          <CardContent className="p-0 h-full">
+            <div className={`bg-gradient-to-br ${stat.color} p-4 text-white h-full flex items-center`}>
+              <div className="flex items-center justify-between w-full">
                 <div>
                   <p className="text-3xl font-bold">{stat.value}</p>
                   <p className="text-sm opacity-90">{stat.label}</p>
