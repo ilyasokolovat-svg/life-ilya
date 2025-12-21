@@ -26,6 +26,7 @@ import FlightSection from '@/components/trip/FlightSection';
 import AccommodationSection from '@/components/trip/AccommodationSection';
 import TripItinerary from '@/components/trip/TripItinerary';
 import ActivitiesPlanning from '@/components/trip/ActivitiesPlanning';
+import PastTripSummary from '@/components/trip/PastTripSummary';
 import TravelStats from '@/components/trips/TravelStats';
 import TravelTimeline from '@/components/trips/TravelTimeline';
 import TravelMap from '@/components/trips/TravelMap';
@@ -441,7 +442,7 @@ const TripPlanning = () => {
                   </div>
 
                   {/* Trip Header */}
-                  <Card className="border-2 border-teal-200 bg-gradient-to-r from-teal-500 to-cyan-500 text-white">
+                  <Card className={`border-2 ${currentTrip.isPastTrip ? 'border-gray-300 bg-gradient-to-r from-gray-500 to-gray-600' : 'border-teal-200 bg-gradient-to-r from-teal-500 to-cyan-500'} text-white`}>
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
@@ -474,34 +475,44 @@ const TripPlanning = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Activities Planning */}
-                  <ActivitiesPlanning
-                    activities={currentTrip.plannedActivities || []}
-                    onUpdate={(plannedActivities) => updateCurrentTrip({ plannedActivities })}
-                  />
+                  {/* Show different content based on whether it's a past trip */}
+                  {currentTrip.isPastTrip ? (
+                    <PastTripSummary
+                      trip={currentTrip}
+                      onUpdate={updateCurrentTrip}
+                    />
+                  ) : (
+                    <>
+                      {/* Activities Planning */}
+                      <ActivitiesPlanning
+                        activities={currentTrip.plannedActivities || []}
+                        onUpdate={(plannedActivities) => updateCurrentTrip({ plannedActivities })}
+                      />
 
-                  {/* Flights */}
-                  <FlightSection 
-                    flights={currentTrip.flights}
-                    onUpdate={(flights) => updateCurrentTrip({ flights })}
-                    isEditMode={flightsEditMode}
-                    onEditModeChange={setFlightsEditMode}
-                  />
+                      {/* Flights */}
+                      <FlightSection 
+                        flights={currentTrip.flights}
+                        onUpdate={(flights) => updateCurrentTrip({ flights })}
+                        isEditMode={flightsEditMode}
+                        onEditModeChange={setFlightsEditMode}
+                      />
 
-                  {/* Accommodations */}
-                  <AccommodationSection
-                    accommodations={currentTrip.accommodations}
-                    onUpdate={(accommodations) => updateCurrentTrip({ accommodations })}
-                    isEditMode={accommodationsEditMode}
-                    onEditModeChange={setAccommodationsEditMode}
-                  />
+                      {/* Accommodations */}
+                      <AccommodationSection
+                        accommodations={currentTrip.accommodations}
+                        onUpdate={(accommodations) => updateCurrentTrip({ accommodations })}
+                        isEditMode={accommodationsEditMode}
+                        onEditModeChange={setAccommodationsEditMode}
+                      />
 
-                  {/* Itinerary */}
-                  <TripItinerary
-                    itinerary={currentTrip.itinerary}
-                    destinations={currentTrip.destinations}
-                    onUpdate={(itinerary) => updateCurrentTrip({ itinerary })}
-                  />
+                      {/* Itinerary */}
+                      <TripItinerary
+                        itinerary={currentTrip.itinerary}
+                        destinations={currentTrip.destinations}
+                        onUpdate={(itinerary) => updateCurrentTrip({ itinerary })}
+                      />
+                    </>
+                  )}
                 </div>
               )}
             </div>
