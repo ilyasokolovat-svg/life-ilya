@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Home, Plane } from 'lucide-react';
+import { Home, Plane, Trash2, Loader2 } from 'lucide-react';
 import { CountryVisitData, LivedInPeriod } from '@/hooks/useVisitedCountries';
 import LivedInDialog from './LivedInDialog';
 
@@ -20,8 +20,10 @@ interface CountryStatusDialogProps {
   onSaveLivedIn: (periods: LivedInPeriod[]) => Promise<void>;
   onRemoveLivedIn: () => Promise<void>;
   onAddVisited: () => Promise<void>;
+  onRemoveVisited: () => Promise<void>;
   isRemoving: boolean;
   isAddingVisited: boolean;
+  isRemovingVisited: boolean;
 }
 
 const CountryStatusDialog: React.FC<CountryStatusDialogProps> = ({
@@ -34,11 +36,14 @@ const CountryStatusDialog: React.FC<CountryStatusDialogProps> = ({
   onSaveLivedIn,
   onRemoveLivedIn,
   onAddVisited,
+  onRemoveVisited,
   isRemoving,
   isAddingVisited,
+  isRemovingVisited,
 }) => {
   const [showLivedInDialog, setShowLivedInDialog] = useState(false);
   const [isAddingVisit, setIsAddingVisit] = useState(false);
+  const [isRemovingVisit, setIsRemovingVisit] = useState(false);
 
   const isLivedIn = countryData?.isLivedIn || existingPeriods.length > 0;
   const isVisited = countryData && countryData.visitCount > 0;
@@ -55,6 +60,16 @@ const CountryStatusDialog: React.FC<CountryStatusDialogProps> = ({
       onOpenChange(false);
     } finally {
       setIsAddingVisit(false);
+    }
+  };
+
+  const handleRemoveVisitedClick = async () => {
+    setIsRemovingVisit(true);
+    try {
+      await onRemoveVisited();
+      onOpenChange(false);
+    } finally {
+      setIsRemovingVisit(false);
     }
   };
 
@@ -137,13 +152,29 @@ const CountryStatusDialog: React.FC<CountryStatusDialogProps> = ({
 
             <Button
               variant="outline"
-              onClick={handleVisitedClick}
-              disabled={isAddingVisit || isAddingVisited || isVisited || isManualVisited}
-              className="h-24 flex flex-col items-center justify-center gap-2 border-teal-200 hover:bg-teal-50 hover:border-teal-400 disabled:opacity-50"
+              onClick={isManualVisited ? handleRemoveVisitedClick : handleVisitedClick}
+              disabled={isAddingVisit || isAddingVisited || isVisited || isRemovingVisit || isRemovingVisited}
+              className={`h-24 flex flex-col items-center justify-center gap-2 ${
+                isManualVisited 
+                  ? 'border-red-200 hover:bg-red-50 hover:border-red-400' 
+                  : 'border-teal-200 hover:bg-teal-50 hover:border-teal-400'
+              } disabled:opacity-50`}
             >
-              <Plane className="h-8 w-8 text-teal-600" />
-              <span className="text-sm font-medium text-teal-700">
-                {isVisited || isManualVisited ? 'Already Visited' : 'Mark Visited'}
+              {isRemovingVisit || isRemovingVisited ? (
+                <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
+              ) : isManualVisited ? (
+                <Trash2 className="h-8 w-8 text-red-500" />
+              ) : (
+                <Plane className={`h-8 w-8 ${isVisited ? 'text-gray-400' : 'text-teal-600'}`} />
+              )}
+              <span className={`text-sm font-medium ${
+                isManualVisited ? 'text-red-600' : isVisited ? 'text-gray-400' : 'text-teal-700'
+              }`}>
+                {isManualVisited 
+                  ? 'Remove Visited' 
+                  : isVisited 
+                    ? 'Has Trip Data' 
+                    : 'Mark Visited'}
               </span>
             </Button>
           </div>
@@ -151,7 +182,9 @@ const CountryStatusDialog: React.FC<CountryStatusDialogProps> = ({
           <p className="text-xs text-center text-muted-foreground pt-2">
             {isVisited 
               ? 'Trips are automatically tracked from your past journeys'
-              : 'Add a past trip to automatically track visits'}
+              : isManualVisited
+                ? 'This was manually marked as visited'
+                : 'Add a past trip to automatically track visits'}
           </p>
         </div>
       </DialogContent>
