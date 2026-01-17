@@ -70,7 +70,7 @@ interface WorldMapProps {
 
 const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
   const pastTrips = useMemo(() => trips.filter(t => t.isPastTrip), [trips]);
-  const { visitedCountries, manualCountryCodes, livedInCountryCodes, livedInData, isLoading, setLivedIn, isSettingLivedIn, addCountry, isAddingCountry } = useVisitedCountries(pastTrips);
+  const { visitedCountries, manualCountryCodes, livedInCountryCodes, livedInData, isLoading, setLivedIn, isSettingLivedIn, addCountry, isAddingCountry, removeCountry, isRemovingCountry } = useVisitedCountries(pastTrips);
   
   const [position, setPosition] = useState({ coordinates: [0, 20] as [number, number], zoom: 1 });
   const [tooltipContent, setTooltipContent] = useState<CountryVisitData | null>(null);
@@ -200,6 +200,12 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
     if (!selectedCountry) return;
     await addCountry(selectedCountry.code, selectedCountry.name);
     toast.success(`${selectedCountry.name} marked as visited!`);
+  };
+
+  const handleRemoveVisited = async () => {
+    if (!selectedCountry) return;
+    await removeCountry(selectedCountry.code);
+    toast.success(`${selectedCountry.name} removed from visited!`);
   };
 
   if (isLoading) {
@@ -458,8 +464,10 @@ const WorldMap: React.FC<WorldMapProps> = ({ trips }) => {
           onSaveLivedIn={handleSaveLivedIn}
           onRemoveLivedIn={handleRemoveLivedIn}
           onAddVisited={handleAddVisited}
+          onRemoveVisited={handleRemoveVisited}
           isRemoving={isSettingLivedIn}
           isAddingVisited={isAddingCountry}
+          isRemovingVisited={isRemovingCountry}
         />
       )}
     </Card>
