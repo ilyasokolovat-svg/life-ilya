@@ -66,13 +66,13 @@ const TripPlanning = () => {
   );
   const [showPlanningSection, setShowPlanningSection] = useState(false);
 
-  const handleAddPastTrip = async (destinations: Array<{ id: string; name: string; startDate: string; endDate: string; notes: string }>) => {
+  const handleAddPastTrip = async (destinations: Array<{ id: string; name: string; countryCode?: string; startDate: string; endDate: string; notes: string }>) => {
     for (const dest of destinations) {
       await addPastTripsWithNotes([{
         title: dest.name,
         startDate: dest.startDate,
         endDate: dest.endDate,
-        destinations: [{ name: dest.name, startDate: dest.startDate, endDate: dest.endDate }],
+        destinations: [{ name: dest.name, startDate: dest.startDate, endDate: dest.endDate, countryCode: dest.countryCode }],
         notes: dest.notes,
       }]);
     }

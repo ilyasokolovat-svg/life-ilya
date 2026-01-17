@@ -11,10 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import CountrySelector from '@/components/trips/CountrySelector';
 
 interface DestinationEntry {
   id: string;
   name: string;
+  countryCode?: string;
   startDate: string;
   endDate: string;
   notes: string;
@@ -34,14 +36,14 @@ const AddPastTripDialog: React.FC<AddPastTripDialogProps> = ({
   onSave,
 }) => {
   const [destinations, setDestinations] = useState<DestinationEntry[]>([
-    { id: generateId(), name: '', startDate: '', endDate: '', notes: '' }
+    { id: generateId(), name: '', countryCode: undefined, startDate: '', endDate: '', notes: '' }
   ]);
   const [isSaving, setIsSaving] = useState(false);
 
   const addDestination = () => {
     setDestinations([
       ...destinations,
-      { id: generateId(), name: '', startDate: '', endDate: '', notes: '' }
+      { id: generateId(), name: '', countryCode: undefined, startDate: '', endDate: '', notes: '' }
     ]);
   };
 
@@ -57,6 +59,12 @@ const AddPastTripDialog: React.FC<AddPastTripDialogProps> = ({
     ));
   };
 
+  const updateDestinationCountry = (id: string, name: string, countryCode?: string) => {
+    setDestinations(destinations.map(d => 
+      d.id === id ? { ...d, name, countryCode } : d
+    ));
+  };
+
   const handleSave = async () => {
     // Validate all destinations have required fields
     const validDestinations = destinations.filter(d => 
@@ -69,7 +77,7 @@ const AddPastTripDialog: React.FC<AddPastTripDialogProps> = ({
     try {
       await onSave(validDestinations);
       // Reset form
-      setDestinations([{ id: generateId(), name: '', startDate: '', endDate: '', notes: '' }]);
+      setDestinations([{ id: generateId(), name: '', countryCode: undefined, startDate: '', endDate: '', notes: '' }]);
       onOpenChange(false);
     } finally {
       setIsSaving(false);
@@ -116,11 +124,11 @@ const AddPastTripDialog: React.FC<AddPastTripDialogProps> = ({
 
               <div className="space-y-3">
                 <div>
-                  <Label className="text-sm">Destination Name</Label>
-                  <Input
-                    placeholder="e.g., Thailand, Paris, Bali..."
+                  <Label className="text-sm">Country</Label>
+                  <CountrySelector
                     value={dest.name}
-                    onChange={(e) => updateDestination(dest.id, 'name', e.target.value)}
+                    onChange={(name, countryCode) => updateDestinationCountry(dest.id, name, countryCode)}
+                    placeholder="Search for a country..."
                     className="mt-1"
                   />
                 </div>
