@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, Star, Calendar, MapPin, Edit2, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Star, Calendar, MapPin, Edit2, Trash2, Plane, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -557,6 +557,11 @@ const JourneyTimeline = () => {
   };
 
   const travelPercentage = calculateTravelPercentage();
+  
+  // Get countries count for selected year from yearStats
+  const selectedYearStats = yearStats.find(s => s.year === selectedYear);
+  const selectedYearCountries = selectedYearStats?.countriesCount || 0;
+  const selectedYearDays = selectedYearStats?.daysCount || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 relative overflow-hidden">
@@ -987,9 +992,22 @@ const JourneyTimeline = () => {
                   
                   {/* Travel Timeline - Vertical line on right edge */}
                   <div className="absolute -right-8 top-0 h-full">
-                    {/* Travel percentage circle at the top */}
-                    <div className="absolute right-16 -top-8 w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg border-2 border-white">
-                      {travelPercentage}%
+                    {/* Travel stats at the top */}
+                    <div className="absolute right-4 -top-12 flex flex-col items-end gap-1">
+                      {/* Days traveled badge */}
+                      <div className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-blue-500 px-3 py-1 rounded-full shadow-lg">
+                        <Plane className="h-3.5 w-3.5 text-white" />
+                        <span className="text-white text-xs font-bold">
+                          {selectedYearDays}d ({travelPercentage}%)
+                        </span>
+                      </div>
+                      {/* Countries visited badge */}
+                      <div className="flex items-center gap-1.5 bg-gradient-to-r from-teal-500 to-emerald-500 px-3 py-1 rounded-full shadow-lg">
+                        <Globe className="h-3.5 w-3.5 text-white" />
+                        <span className="text-white text-xs font-bold">
+                          {selectedYearCountries} {selectedYearCountries === 1 ? 'country' : 'countries'}
+                        </span>
+                      </div>
                     </div>
                     
                     {/* Main vertical timeline line */}
