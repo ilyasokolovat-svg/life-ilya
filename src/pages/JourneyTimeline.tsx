@@ -11,6 +11,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { YearNavigation } from "@/components/timeline/YearNavigation";
+import { getCountryFromDestination } from "@/utils/countryUtils";
+
+interface YearStats {
+  year: number;
+  daysCount: number;
+  countriesCount: number;
+  hasMilestones: boolean;
+}
 
 interface Milestone {
   id: string;
@@ -51,6 +60,8 @@ const JourneyTimeline = () => {
   const [deletingMilestone, setDeletingMilestone] = useState<Milestone | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
+  const [yearStats, setYearStats] = useState<YearStats[]>([]);
+  const currentYear = new Date().getFullYear();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -132,6 +143,104 @@ const JourneyTimeline = () => {
     fetchMilestones();
     fetchTravelPeriods();
   }, [user, selectedYear]);
+
+  // Fetch all year stats for the year navigation
+  useEffect(() => {
+    fetchYearStats();
+  }, [user]);
+
+  const fetchYearStats = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch all travel periods
+      const { data: allTravel, error: travelError } = await supabase
+        .from('travel_periods')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (travelError) throw travelError;
+
+      // Fetch all milestones to get years with milestones
+      const { data: allMilestones, error: milestonesError } = await supabase
+        .from('milestones')
+        .select('date')
+        .eq('user_id', user.id);
+
+      if (milestonesError) throw milestonesError;
+
+      // Build a map of year -> stats
+      const statsMap = new Map<number, YearStats>();
+
+      // Always include current year
+      statsMap.set(currentYear, { 
+        year: currentYear, 
+        daysCount: 0, 
+        countriesCount: 0, 
+        hasMilestones: false 
+      });
+
+      // Process travel periods
+      (allTravel || []).forEach(period => {
+        const startDate = new Date(period.start_date);
+        const endDate = new Date(period.end_date);
+        const year = startDate.getFullYear();
+        
+        // Calculate days
+        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        // Get country from location
+        const country = getCountryFromDestination(period.location);
+
+        if (!statsMap.has(year)) {
+          statsMap.set(year, { year, daysCount: 0, countriesCount: 0, hasMilestones: false });
+        }
+        
+        const existing = statsMap.get(year)!;
+        existing.daysCount += diffDays;
+        
+        // Track unique countries per year (we need to track sets separately)
+      });
+
+      // Build country sets per year
+      const countrySetsByYear = new Map<number, Set<string>>();
+      (allTravel || []).forEach(period => {
+        const year = new Date(period.start_date).getFullYear();
+        const country = getCountryFromDestination(period.location);
+        
+        if (!countrySetsByYear.has(year)) {
+          countrySetsByYear.set(year, new Set());
+        }
+        if (country) {
+          countrySetsByYear.get(year)!.add(country.code);
+        }
+      });
+
+      // Update countries count
+      countrySetsByYear.forEach((countries, year) => {
+        if (statsMap.has(year)) {
+          statsMap.get(year)!.countriesCount = countries.size;
+        }
+      });
+
+      // Process milestones for hasMilestones flag
+      (allMilestones || []).forEach(m => {
+        const year = new Date(m.date).getFullYear();
+        if (!statsMap.has(year)) {
+          statsMap.set(year, { year, daysCount: 0, countriesCount: 0, hasMilestones: true });
+        } else {
+          statsMap.get(year)!.hasMilestones = true;
+        }
+      });
+
+      // Convert to sorted array
+      const sortedStats = Array.from(statsMap.values()).sort((a, b) => a.year - b.year);
+      setYearStats(sortedStats);
+    } catch (error) {
+      console.error('Error fetching year stats:', error);
+    }
+  };
 
   const fetchMilestones = async () => {
     if (!user) return;
@@ -660,34 +769,14 @@ const JourneyTimeline = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 relative z-10">
-        {/* Year Selector */}
-        <div className="flex justify-center mb-8">
-          <Card className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm border-amber-200 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedYear(selectedYear - 1)}
-                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                >
-                  ←
-                </Button>
-                <span className="text-2xl font-bold text-amber-700 min-w-[80px] text-center">
-                  {selectedYear}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedYear(selectedYear + 1)}
-                  disabled={selectedYear >= new Date().getFullYear()}
-                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                >
-                  →
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Year Navigation */}
+        <div className="mb-8">
+          <YearNavigation
+            years={yearStats}
+            selectedYear={selectedYear}
+            onSelectYear={setSelectedYear}
+            currentYear={currentYear}
+          />
         </div>
 
         {/* Timeline */}
