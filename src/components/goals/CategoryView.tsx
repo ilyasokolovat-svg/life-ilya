@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CategoryThesis from "./CategoryThesis";
 import MultiSubcategoryProgressTracking from "./MultiSubcategoryProgressTracking";
 import MultiSubcategoryWeeklyPlanning from "./MultiSubcategoryWeeklyPlanning";
+import MealPlanWeek from "./MealPlanWeek";
+import SleepScheduleWeek from "./SleepScheduleWeek";
 import TimelineControls from "./TimelineControls";
 import TimelineBubbles from "./TimelineBubbles";
 import { useLastUpdateDate } from "@/hooks/useLastUpdateDate";
@@ -132,24 +134,40 @@ const CategoryView: React.FC<CategoryViewProps> = ({
           <CardContent className="space-y-6">
             {/* Weekly Planning - Only for quarters */}
             {selectedPeriod.type === 'quarter' && (
-              <div className="space-y-4">
-                {/* Toggle for past weeks */}
-                <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-semibold text-gray-700">Weekly Planning by Subcategory</h4>
-                  <button
-                    onClick={() => setHidePastWeeks(!hidePastWeeks)}
-                    className="text-sm px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                  >
-                    {hidePastWeeks ? 'Show past weeks' : 'Hide past weeks'}
-                  </button>
-                </div>
-                <MultiSubcategoryWeeklyPlanning
-                  category={category}
-                  visibleSubcategories={visibleSubcategories}
-                  year={selectedPeriod.year}
-                  quarter={selectedPeriod.quarter!}
-                  hidePastWeeks={hidePastWeeks}
-                />
+              <div className="space-y-6">
+                {/* Toggle for past weeks - only shown for regular subcategories */}
+                {visibleSubcategories.filter(sub => sub !== 'Food' && sub !== 'Sleep').length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-semibold text-gray-700">Weekly Planning by Subcategory</h4>
+                    <button
+                      onClick={() => setHidePastWeeks(!hidePastWeeks)}
+                      className="text-sm px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                    >
+                      {hidePastWeeks ? 'Show past weeks' : 'Hide past weeks'}
+                    </button>
+                  </div>
+                )}
+                
+                {/* Regular weekly planning for non-Food/Sleep subcategories */}
+                {visibleSubcategories.filter(sub => sub !== 'Food' && sub !== 'Sleep').length > 0 && (
+                  <MultiSubcategoryWeeklyPlanning
+                    category={category}
+                    visibleSubcategories={visibleSubcategories.filter(sub => sub !== 'Food' && sub !== 'Sleep')}
+                    year={selectedPeriod.year}
+                    quarter={selectedPeriod.quarter!}
+                    hidePastWeeks={hidePastWeeks}
+                  />
+                )}
+                
+                {/* Sleep Schedule - Special component */}
+                {visibleSubcategories.includes('Sleep') && (
+                  <SleepScheduleWeek category={category} />
+                )}
+                
+                {/* Meal Plan - Special component (shown last for more space) */}
+                {visibleSubcategories.includes('Food') && (
+                  <MealPlanWeek category={category} />
+                )}
               </div>
             )}
           </CardContent>

@@ -192,33 +192,34 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
 
   return (
     <div className="space-y-4">
-      {/* 2025 Strategic Goals */}
+      {/* Current Year Strategic Goals */}
       <Card className={`bg-gradient-to-br ${theme.year.card} shadow-sm`}>
         <CardContent className="p-4">
           <div className={`text-sm font-semibold ${theme.year.text} mb-3 flex items-center gap-2`}>
             <Target className="w-4 h-4" />
-            2025 Strategic Goals
+            {currentYear} Strategic Goals
           </div>
           <div className="space-y-3">
             {visibleSubcategories.map((subcategory) => {
-              const goalValue = getCurrentValue('2025', subcategory);
-              const hasChanges = changedGoals.has(`2025-${subcategory}`);
+              const yearKey = String(currentYear);
+              const goalValue = getCurrentValue(yearKey, subcategory);
+              const hasChanges = changedGoals.has(`${yearKey}-${subcategory}`);
               
               return (
                 <div key={subcategory} className="space-y-2 relative">
                   <div className="flex items-center gap-2">
                     <span className="text-sm">{getSubcategoryEmoji(subcategory)}</span>
                     <div className={`text-xs font-medium ${theme.year.textSecondary}`}>{subcategory}</div>
-                    {getPeriodGoals('2025', subcategory) && !hasChanges && (
+                    {getPeriodGoals(yearKey, subcategory) && !hasChanges && (
                       <div className={theme.year.textSecondary}>{theme.year.emoji}</div>
                     )}
                   </div>
                   <Textarea
-                    placeholder={`Enter your 2025 goals for ${subcategory}...`}
+                    placeholder={`Enter your ${currentYear} goals for ${subcategory}...`}
                     value={goalValue}
-                    onChange={(e) => handleGoalChange('2025', subcategory, e.target.value)}
+                    onChange={(e) => handleGoalChange(yearKey, subcategory, e.target.value)}
                     className={`${theme.year.border} text-xs resize-none transition-all duration-300 ${
-                      getPeriodGoals('2025', subcategory) && !hasChanges
+                      getPeriodGoals(yearKey, subcategory) && !hasChanges
                         ? `${theme.year.savedBg} font-medium shadow-inner`
                         : 'bg-white/70'
                     }`}
@@ -226,7 +227,7 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
                   />
                   {hasChanges && (
                     <Button 
-                      onClick={() => handleSaveGoal('2025', subcategory)}
+                      onClick={() => handleSaveGoal(yearKey, subcategory)}
                       className={`${theme.year.button} text-white`}
                       size="sm"
                     >
