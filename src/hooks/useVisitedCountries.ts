@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trip } from '@/types/trip';
-import { getCountryFromDestination } from '@/utils/countryUtils';
+import { getCountryFromDestination, COUNTRY_NAMES } from '@/utils/countryUtils';
 import { differenceInDays, parseISO } from 'date-fns';
 import { Json } from '@/integrations/supabase/types';
 
@@ -80,7 +80,18 @@ export function useVisitedCountries(pastTrips: Trip[]) {
       const tripCountries = new Set<string>();
       
       trip.destinations.forEach(dest => {
-        const country = getCountryFromDestination(dest.name);
+        // Use stored countryCode if available, otherwise try to detect from name
+        let country: { code: string; name: string } | null = null;
+        
+        if (dest.countryCode) {
+          // Use the stored country code - look up the name from COUNTRY_NAMES
+          const countryName = COUNTRY_NAMES[dest.countryCode] || dest.name;
+          country = { code: dest.countryCode, name: countryName };
+        } else {
+          // Fall back to detection from destination name
+          country = getCountryFromDestination(dest.name);
+        }
+        
         if (country && !tripCountries.has(country.code)) {
           tripCountries.add(country.code);
           
