@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Play, Pause, SkipForward, Square, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Play, Pause, SkipForward, Square, Volume2, VolumeX, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BlockGoalInput } from '@/components/focus/BlockGoalInput';
 import { FocusTimerCircle } from '@/components/focus/FocusTimerCircle';
@@ -8,7 +8,13 @@ import { CompletedBlocksList } from '@/components/focus/CompletedBlocksList';
 import { useFocusBlocks } from '@/hooks/useFocusBlocks';
 import { toast } from 'sonner';
 
-const WORK_DURATION = 60 * 60; // 60 minutes in seconds
+const DURATION_OPTIONS = [
+  { label: '90 min', value: 90 * 60 },
+  { label: '60 min', value: 60 * 60 },
+  { label: '45 min', value: 45 * 60 },
+  { label: '30 min', value: 30 * 60 },
+];
+
 const BREAK_DURATION = 10 * 60; // 10 minutes in seconds
 
 type TimerState = 'idle' | 'working' | 'break';
@@ -18,13 +24,21 @@ export default function FocusTimer() {
   
   const [goal, setGoal] = useState('');
   const [timerState, setTimerState] = useState<TimerState>('idle');
-  const [timeRemaining, setTimeRemaining] = useState(WORK_DURATION);
+  const [workDuration, setWorkDuration] = useState(60 * 60); // Default 60 minutes
+  const [timeRemaining, setTimeRemaining] = useState(workDuration);
   const [isPaused, setIsPaused] = useState(false);
   const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Update timeRemaining when workDuration changes (only in idle state)
+  useEffect(() => {
+    if (timerState === 'idle') {
+      setTimeRemaining(workDuration);
+    }
+  }, [workDuration, timerState]);
 
   // Play notification sound
   const playSound = useCallback(() => {
@@ -54,7 +68,7 @@ export default function FocusTimer() {
               setTimerState('idle');
               setCurrentBlockId(null);
               setGoal('');
-              return WORK_DURATION;
+              return workDuration;
             }
           }
           return prev - 1;
@@ -67,7 +81,7 @@ export default function FocusTimer() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [timerState, isPaused, currentBlockId, completeBlock, playSound]);
+  }, [timerState, isPaused, currentBlockId, completeBlock, playSound, workDuration]);
 
   // Start work block
   const handleStart = async () => {
@@ -80,7 +94,7 @@ export default function FocusTimer() {
       const block = await startBlock(goal.trim());
       setCurrentBlockId(block.id);
       setTimerState('working');
-      setTimeRemaining(WORK_DURATION);
+      setTimeRemaining(workDuration);
       setIsPaused(false);
       toast.success('Focus block started! Stay focused.');
     } catch (error) {
@@ -96,7 +110,7 @@ export default function FocusTimer() {
   // Skip break
   const handleSkipBreak = () => {
     setTimerState('idle');
-    setTimeRemaining(WORK_DURATION);
+    setTimeRemaining(workDuration);
     setGoal('');
     setCurrentBlockId(null);
   };
@@ -107,7 +121,7 @@ export default function FocusTimer() {
       completeBlock({ id: currentBlockId, completed: false });
     }
     setTimerState('idle');
-    setTimeRemaining(WORK_DURATION);
+    setTimeRemaining(workDuration);
     setGoal('');
     setCurrentBlockId(null);
     toast.info('Block ended early');
@@ -152,6 +166,31 @@ export default function FocusTimer() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left: Timer Section */}
           <div className="space-y-6">
+            {/* Duration Selector - only show when idle */}
+            {timerState === 'idle' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Focus Duration
+                </label>
+                <div className="flex gap-2">
+                  {DURATION_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setWorkDuration(option.value)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        workDuration === option.value
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Goal Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -168,7 +207,7 @@ export default function FocusTimer() {
             <div className="py-4">
               <FocusTimerCircle
                 timeRemaining={timeRemaining}
-                totalTime={timerState === 'break' ? BREAK_DURATION : WORK_DURATION}
+                totalTime={timerState === 'break' ? BREAK_DURATION : workDuration}
                 isBreak={timerState === 'break'}
                 isPaused={isPaused}
               />
