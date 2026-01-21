@@ -2,13 +2,19 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Target, Calendar, Save } from "lucide-react";
+import { Target, Calendar, Save, Star } from "lucide-react";
 import { useGoalsData } from "@/hooks/useGoalsData";
+import { toast } from "sonner";
 
 interface MultiSubcategoryProgressTrackingProps {
   category: string;
   visibleSubcategories: string[];
 }
+
+// Helper to count words
+const countWords = (text: string): number => {
+  return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+};
 
 const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackingProps> = ({
   category,
@@ -53,16 +59,30 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
     setChangedGoals(prev => new Set([...prev, `${periodKey}-${subcategory}`]));
   };
 
-  // Save goal
-  const handleSaveGoal = (periodKey: string, subcategory: string) => {
+  // Save goal with validation for main goal word limit
+  const handleSaveGoal = (periodKey: string, subcategory: string, isQuarterly: boolean) => {
     const value = localGoals[periodKey]?.[subcategory] || '';
     
-    // Format with bullet points automatically
-    const formattedValue = value
-      .split('\n')
-      .filter(line => line.trim())
-      .map(line => {
-        const trimmed = line.trim();
+    // Split into lines
+    const lines = value.split('\n').filter(line => line.trim());
+    
+    // Check main goal (first line) word limit for quarterly goals
+    if (isQuarterly && lines.length > 0) {
+      const firstLine = lines[0].replace(/^[•⭐]\s*/, '').trim();
+      const wordCount = countWords(firstLine);
+      if (wordCount > 7) {
+        toast.error(`Main goal must be 7 words or less (currently ${wordCount} words)`);
+        return;
+      }
+    }
+    
+    // Format with bullet points - first line gets star for quarterly goals
+    const formattedValue = lines
+      .map((line, index) => {
+        const trimmed = line.trim().replace(/^[•⭐]\s*/, '');
+        if (isQuarterly && index === 0) {
+          return `⭐ ${trimmed}`;
+        }
         return trimmed.startsWith('•') ? line : `• ${trimmed}`;
       })
       .join('\n');
@@ -227,7 +247,7 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
                   />
                   {hasChanges && (
                     <Button 
-                      onClick={() => handleSaveGoal(yearKey, subcategory)}
+                      onClick={() => handleSaveGoal(yearKey, subcategory, false)}
                       className={`${theme.year.button} text-white`}
                       size="sm"
                     >
@@ -264,20 +284,35 @@ const MultiSubcategoryProgressTracking: React.FC<MultiSubcategoryProgressTrackin
                       <div className={theme.quarter.textSecondary}>{theme.quarter.emoji}</div>
                     )}
                   </div>
-                  <Textarea
-                    placeholder={`Enter your Q${currentQuarter} goals for ${subcategory}...`}
-                    value={goalValue}
-                    onChange={(e) => handleGoalChange(currentQuarterKey, subcategory, e.target.value)}
-                    className={`${theme.quarter.border} text-xs resize-none transition-all duration-300 ${
-                      getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges
-                        ? `${theme.quarter.savedBg} font-medium shadow-inner`
-                        : 'bg-white/70'
-                    }`}
-                    style={{ minHeight: Math.max(40, goalValue.split('\n').length * 16) + 'px' }}
-                  />
+                  <div className="space-y-1">
+                    <Textarea
+                      placeholder={`Line 1 = Main goal (7 words max, shown on dashboard)
+• Additional goals...`}
+                      value={goalValue}
+                      onChange={(e) => handleGoalChange(currentQuarterKey, subcategory, e.target.value)}
+                      className={`${theme.quarter.border} text-xs resize-none transition-all duration-300 ${
+                        getPeriodGoals(currentQuarterKey, subcategory) && !hasChanges
+                          ? `${theme.quarter.savedBg} font-medium shadow-inner`
+                          : 'bg-white/70'
+                      }`}
+                      style={{ minHeight: Math.max(56, goalValue.split('\n').length * 16) + 'px' }}
+                    />
+                    {goalValue && (
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <Star className="w-3 h-3 text-amber-500" />
+                        <span className={`${
+                          countWords(goalValue.split('\n')[0]?.replace(/^[•⭐]\s*/, '') || '') > 7 
+                            ? 'text-red-500 font-medium' 
+                            : 'text-gray-400'
+                        }`}>
+                          Main goal: {countWords(goalValue.split('\n')[0]?.replace(/^[•⭐]\s*/, '') || '')}/7 words
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   {hasChanges && (
                     <Button 
-                      onClick={() => handleSaveGoal(currentQuarterKey, subcategory)}
+                      onClick={() => handleSaveGoal(currentQuarterKey, subcategory, true)}
                       className={`${theme.quarter.button} text-white`}
                       size="sm"
                     >

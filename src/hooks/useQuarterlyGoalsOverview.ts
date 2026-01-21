@@ -2,15 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export interface QuarterlyGoal {
-  category: string;
+export interface SubcategoryMainGoal {
   subcategory: string;
-  planned_goal: string | null;
+  mainGoal: string; // First line (starred goal)
 }
 
 export interface CategoryGoals {
   category: string;
-  goals: { subcategory: string; goal: string }[];
+  subcategoryGoals: SubcategoryMainGoal[];
 }
 
 function getCurrentQuarter(): string {
@@ -18,6 +17,23 @@ function getCurrentQuarter(): string {
   const quarter = Math.ceil((now.getMonth() + 1) / 3);
   return `${now.getFullYear()}-Q${quarter}`;
 }
+
+// Extract main goal (first line) from the goals text
+function extractMainGoal(goalsText: string): string {
+  if (!goalsText) return '';
+  
+  const firstLine = goalsText.split('\n')[0] || '';
+  // Remove bullet/star prefix and trim
+  return firstLine.replace(/^[•⭐]\s*/, '').trim();
+}
+
+// Get subcategory display order
+const subcategoryOrder: Record<string, string[]> = {
+  physical: ['Sport', 'Food', 'Sleep'],
+  mental: ['Networking', 'Activities', 'Phone usage'],
+  financial: ['Spending commitment', 'Trading'],
+  skills: ['Projects', 'Books', 'People Management', 'Arabic']
+};
 
 export function useQuarterlyGoalsOverview() {
   const { user } = useAuth();
@@ -42,24 +58,41 @@ export function useQuarterlyGoalsOverview() {
     enabled: !!user?.id,
   });
 
-  // Group goals by category
+  // Group goals by category with subcategory details
   const groupedGoals: CategoryGoals[] = ['physical', 'mental', 'financial', 'skills'].map(category => {
-    const categoryGoals = goalsData
-      .filter(g => g.category === category && g.planned_goal)
-      .map(g => ({
-        subcategory: g.subcategory,
-        goal: g.planned_goal!
-      }));
+    const categoryData = goalsData.filter(g => g.category === category && g.planned_goal);
+    
+    // Get ordered subcategories for this category
+    const orderedSubcategories = subcategoryOrder[category] || [];
+    
+    // Map subcategories with their main goals
+    const subcategoryGoals: SubcategoryMainGoal[] = orderedSubcategories
+      .map(subcategory => {
+        const goal = categoryData.find(g => g.subcategory === subcategory);
+        if (!goal) return null;
+        
+        const mainGoal = extractMainGoal(goal.planned_goal!);
+        if (!mainGoal) return null;
+        
+        return {
+          subcategory,
+          mainGoal
+        };
+      })
+      .filter((g): g is SubcategoryMainGoal => g !== null);
 
     return {
       category,
-      goals: categoryGoals
+      subcategoryGoals
     };
   });
+
+  const hasAnyGoals = groupedGoals.some(cg => cg.subcategoryGoals.length > 0);
 
   return {
     groupedGoals,
     isLoading,
-    currentQuarter
+    currentQuarter,
+    hasAnyGoals
   };
 }

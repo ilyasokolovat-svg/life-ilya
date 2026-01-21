@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Target, Heart, Brain, DollarSign, Lightbulb } from 'lucide-react';
+import { ChevronDown, ChevronUp, Target, Heart, Brain, DollarSign, Lightbulb, Star } from 'lucide-react';
 import { useQuarterlyGoalsOverview } from '@/hooks/useQuarterlyGoalsOverview';
 import { cn } from '@/lib/utils';
 
-const categoryConfig: Record<string, { icon: React.ElementType; gradient: string; label: string }> = {
-  physical: { icon: Heart, gradient: 'from-red-500 to-pink-500', label: 'Physical' },
-  mental: { icon: Brain, gradient: 'from-purple-500 to-indigo-500', label: 'Mental' },
-  financial: { icon: DollarSign, gradient: 'from-green-500 to-emerald-500', label: 'Financial' },
-  skills: { icon: Lightbulb, gradient: 'from-amber-500 to-orange-500', label: 'Skills' }
+const categoryConfig: Record<string, { icon: React.ElementType; gradient: string; bgLight: string; label: string }> = {
+  physical: { icon: Heart, gradient: 'from-red-500 to-pink-500', bgLight: 'bg-red-50', label: 'Physical' },
+  mental: { icon: Brain, gradient: 'from-purple-500 to-indigo-500', bgLight: 'bg-purple-50', label: 'Mental' },
+  financial: { icon: DollarSign, gradient: 'from-green-500 to-emerald-500', bgLight: 'bg-green-50', label: 'Financial' },
+  skills: { icon: Lightbulb, gradient: 'from-amber-500 to-orange-500', bgLight: 'bg-amber-50', label: 'Skills' }
+};
+
+// Emoji map for subcategories
+const subcategoryEmoji: Record<string, string> = {
+  'Sport': '🏃',
+  'Food': '🍎',
+  'Sleep': '😴',
+  'Networking': '🤝',
+  'Activities': '🎯',
+  'Phone usage': '📱',
+  'Spending commitment': '💰',
+  'Trading': '📈',
+  'Projects': '🚀',
+  'Books': '📚',
+  'People Management': '👥',
+  'Arabic': '🗣️'
 };
 
 export function QuarterlyGoalsOverview() {
-  const { groupedGoals, isLoading, currentQuarter } = useQuarterlyGoalsOverview();
+  const { groupedGoals, isLoading, currentQuarter, hasAnyGoals } = useQuarterlyGoalsOverview();
   
   // Load collapsed state from localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -24,8 +40,6 @@ export function QuarterlyGoalsOverview() {
   useEffect(() => {
     localStorage.setItem('quarterly-goals-collapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
-
-  const hasAnyGoals = groupedGoals.some(cg => cg.goals.length > 0);
 
   if (isLoading) {
     return (
@@ -65,8 +79,8 @@ export function QuarterlyGoalsOverview() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {groupedGoals.map(({ category, goals }) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {groupedGoals.map(({ category, subcategoryGoals }) => {
                 const config = categoryConfig[category];
                 const Icon = config.icon;
 
@@ -76,32 +90,42 @@ export function QuarterlyGoalsOverview() {
                     to={`/goals/${category}`}
                     className="group block"
                   >
-                    <div className="bg-gray-50 rounded-lg p-3 h-full border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all">
+                    <div className={cn(
+                      "rounded-lg p-3 h-full border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all",
+                      config.bgLight
+                    )}>
                       {/* Category Header */}
                       <div className="flex items-center gap-2 mb-2">
                         <div className={cn(
-                          "w-7 h-7 rounded-full flex items-center justify-center bg-gradient-to-br",
+                          "w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br",
                           config.gradient
                         )}>
-                          <Icon className="w-4 h-4 text-white" />
+                          <Icon className="w-3.5 h-3.5 text-white" />
                         </div>
                         <span className="font-semibold text-gray-800 text-sm">{config.label}</span>
                       </div>
 
-                      {/* Goals List */}
-                      {goals.length > 0 ? (
-                        <ul className="space-y-1">
-                          {goals.slice(0, 4).map((g, idx) => (
-                            <li key={idx} className="text-xs text-gray-600 truncate flex items-start gap-1">
-                              <span className="text-gray-400 mt-0.5">•</span>
-                              <span className="truncate" title={g.goal}>{g.goal}</span>
+                      {/* Subcategory Main Goals */}
+                      {subcategoryGoals.length > 0 ? (
+                        <ul className="space-y-1.5">
+                          {subcategoryGoals.map((sg) => (
+                            <li key={sg.subcategory} className="flex items-start gap-1.5">
+                              <span className="text-xs flex-shrink-0 mt-0.5">
+                                {subcategoryEmoji[sg.subcategory] || '📋'}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <span className="text-[10px] text-gray-400 block leading-tight">
+                                  {sg.subcategory}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Star className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />
+                                  <span className="text-xs text-gray-700 font-medium truncate" title={sg.mainGoal}>
+                                    {sg.mainGoal}
+                                  </span>
+                                </div>
+                              </div>
                             </li>
                           ))}
-                          {goals.length > 4 && (
-                            <li className="text-xs text-gray-400 italic">
-                              +{goals.length - 4} more
-                            </li>
-                          )}
                         </ul>
                       ) : (
                         <p className="text-xs text-gray-400 italic">No goals set</p>
