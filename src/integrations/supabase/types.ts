@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      focus_blocks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          goal: string
+          id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          goal: string
+          id?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          goal?: string
+          id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals_data: {
         Row: {
           actual_result: string | null
