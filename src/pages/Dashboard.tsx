@@ -14,7 +14,8 @@ import {
   BarChart3,
   Shield,
   Check,
-  Edit3
+  Edit3,
+  Timer
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import WeeklySummaryDashboard from "@/components/WeeklySummaryDashboard";
 import TestDataLoader from "@/components/TestDataLoader";
+import { QuarterlyGoalsOverview } from "@/components/dashboard/QuarterlyGoalsOverview";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -154,6 +156,11 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Q1 Goals Overview */}
+        <div className="max-w-4xl mx-auto mb-6">
+          <QuarterlyGoalsOverview />
+        </div>
+
         {/* Non-negotiable Commitment for the Month */}
         <div className="max-w-2xl mx-auto mb-8">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 shadow-lg">
@@ -269,6 +276,19 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            </div>
+          </Link>
+
+          {/* Focus Mode Bubble */}
+          <Link to="/focus">
+            <div className="group relative">
+              <div className="w-28 h-28 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
+                <div className="text-center">
+                  <Timer className="w-8 h-8 text-white mb-1 mx-auto" />
+                  <h2 className="text-xs font-bold text-white px-2">Focus Mode</h2>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
         </div>

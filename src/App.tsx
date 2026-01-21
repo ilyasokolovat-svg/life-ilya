@@ -13,6 +13,7 @@ import LifeEvents from "./pages/LifeEvents";
 import TripPlanning from "./pages/TripPlanning";
 import YearAnalysis from "./pages/YearAnalysis";
 import YearAnalysisIndex from "./pages/YearAnalysisIndex";
+import FocusTimer from "./pages/FocusTimer";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
@@ -127,6 +128,11 @@ const AppRoutes = () => {
       <Route path="/year-analysis/:year" element={
         <ProtectedRoute>
           <YearAnalysis />
+        </ProtectedRoute>
+      } />
+      <Route path="/focus" element={
+        <ProtectedRoute>
+          <FocusTimer />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
