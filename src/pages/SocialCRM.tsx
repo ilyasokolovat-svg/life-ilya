@@ -4,14 +4,25 @@ import { ArrowLeft, Users, Calendar, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSocialCRM } from '@/hooks/useSocialCRM';
+import useLocalStorage from '@/hooks/useLocalStorage';
 import PeopleCRM from '@/components/social/PeopleCRM';
 import ExperienceRepository from '@/components/social/ExperienceRepository';
 import WeeklyPlanner from '@/components/social/WeeklyPlanner';
 import SundayResetDashboard from '@/components/social/SundayResetDashboard';
+import { CIRCLES, STATUSES } from '@/types/social';
 
 const SocialCRM = () => {
   const [activeTab, setActiveTab] = useState('people');
   const crm = useSocialCRM();
+  
+  const [customCircles, setCustomCircles] = useLocalStorage<string[]>(
+    'social-crm-circles', 
+    [...CIRCLES]
+  );
+  const [customStatuses, setCustomStatuses] = useLocalStorage<string[]>(
+    'social-crm-statuses', 
+    [...STATUSES]
+  );
 
   if (crm.loading) {
     return (
@@ -72,31 +83,31 @@ const SocialCRM = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-[#1a1a1a] border border-slate-800 p-1">
+          <TabsList className="bg-slate-900 border border-slate-700 p-1">
             <TabsTrigger 
               value="people" 
-              className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500 text-slate-400"
+              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
             >
               <Users className="w-4 h-4 mr-2" />
               People CRM
             </TabsTrigger>
             <TabsTrigger 
               value="experiences" 
-              className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500 text-slate-400"
+              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Experiences
             </TabsTrigger>
             <TabsTrigger 
               value="weekly" 
-              className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500 text-slate-400"
+              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
             >
               <Calendar className="w-4 h-4 mr-2" />
               Weekly Planner
             </TabsTrigger>
             <TabsTrigger 
               value="sunday" 
-              className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500 text-slate-400"
+              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Sunday Reset
@@ -106,9 +117,13 @@ const SocialCRM = () => {
           <TabsContent value="people" className="space-y-4">
             <PeopleCRM 
               contacts={crm.contacts}
+              circles={customCircles}
+              statuses={customStatuses}
               onAdd={crm.addContact}
               onUpdate={crm.updateContact}
               onDelete={crm.deleteContact}
+              onUpdateCircles={setCustomCircles}
+              onUpdateStatuses={setCustomStatuses}
             />
           </TabsContent>
 
