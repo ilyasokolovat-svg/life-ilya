@@ -3,9 +3,12 @@ export interface SocialContact {
   user_id: string;
   name: string;
   instagram: string | null;
-  circle: 'YP Club' | 'Cape Town' | 'Padel' | 'Romantic' | 'Connectors' | 'Other';
+  circle: string;
   vibe_score: number;
-  status: 'Lead' | 'Invited' | 'Attended' | 'Inner Circle';
+  status: string;
+  closeness: string;
+  where_met: string | null;
+  interesting_note: string | null;
   last_contacted: string | null;
   next_action: string | null;
   notes: string | null;
@@ -32,6 +35,7 @@ export interface WeeklySocialPlan {
   user_id: string;
   week_start: string;
   day_of_week: number;
+  slot_type: 'mid_week' | 'weekend' | null;
   experience_id: string | null;
   custom_title: string | null;
   guest_ids: string[];
@@ -39,6 +43,19 @@ export interface WeeklySocialPlan {
   created_at: string;
   updated_at: string;
   experience?: SocialExperience;
+}
+
+export interface WeeklyOutreach {
+  id: string;
+  user_id: string;
+  week_start: string;
+  contact_id: string | null;
+  contacted: boolean;
+  confirmed_for: 'mid_week' | 'weekend' | null;
+  order_index: number | null;
+  created_at: string;
+  updated_at: string;
+  contact?: SocialContact;
 }
 
 export interface SundayOutreachTask {
@@ -53,10 +70,25 @@ export interface SundayOutreachTask {
   contact?: SocialContact;
 }
 
-export const CIRCLES = ['YP Club', 'Cape Town', 'Padel', 'Romantic', 'Connectors', 'Other'] as const;
-export const STATUSES = ['Lead', 'Invited', 'Attended', 'Inner Circle'] as const;
+export const DEFAULT_CLOSENESS_TAGS = [
+  'Just Met',
+  'Met Once', 
+  'Acquaintance',
+  'Friend',
+  'Close Friend',
+  'MyCrew'
+] as const;
+
+export const CLOSENESS_COLORS: Record<string, string> = {
+  'Just Met': 'bg-slate-600',
+  'Met Once': 'bg-slate-500',
+  'Acquaintance': 'bg-blue-600',
+  'Friend': 'bg-emerald-600',
+  'Close Friend': 'bg-amber-600',
+  'MyCrew': 'bg-amber-500',
+};
+
 export const TIERS = ['Low', 'Mid', 'High'] as const;
-export const OUTREACH_TYPES = ['Inner Circle', 'New Leads', 'Romantic'] as const;
 
 export const DEFAULT_EXPERIENCES: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>[] = [
   // Tier 1: Low Cost

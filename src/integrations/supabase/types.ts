@@ -230,9 +230,11 @@ export type Database = {
       social_contacts: {
         Row: {
           circle: string
+          closeness: string | null
           created_at: string
           id: string
           instagram: string | null
+          interesting_note: string | null
           last_contacted: string | null
           name: string
           next_action: string | null
@@ -241,12 +243,15 @@ export type Database = {
           updated_at: string
           user_id: string
           vibe_score: number
+          where_met: string | null
         }
         Insert: {
           circle?: string
+          closeness?: string | null
           created_at?: string
           id?: string
           instagram?: string | null
+          interesting_note?: string | null
           last_contacted?: string | null
           name: string
           next_action?: string | null
@@ -255,12 +260,15 @@ export type Database = {
           updated_at?: string
           user_id: string
           vibe_score?: number
+          where_met?: string | null
         }
         Update: {
           circle?: string
+          closeness?: string | null
           created_at?: string
           id?: string
           instagram?: string | null
+          interesting_note?: string | null
           last_contacted?: string | null
           name?: string
           next_action?: string | null
@@ -269,6 +277,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vibe_score?: number
+          where_met?: string | null
         }
         Relationships: []
       }
@@ -550,6 +559,50 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_outreach: {
+        Row: {
+          confirmed_for: string | null
+          contact_id: string | null
+          contacted: boolean | null
+          created_at: string | null
+          id: string
+          order_index: number | null
+          updated_at: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          confirmed_for?: string | null
+          contact_id?: string | null
+          contacted?: boolean | null
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          updated_at?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          confirmed_for?: string | null
+          contact_id?: string | null
+          contacted?: boolean | null
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_outreach_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "social_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_social_plans: {
         Row: {
           created_at: string
@@ -559,6 +612,7 @@ export type Database = {
           guest_ids: string[] | null
           id: string
           notes: string | null
+          slot_type: string | null
           updated_at: string
           user_id: string
           week_start: string
@@ -571,6 +625,7 @@ export type Database = {
           guest_ids?: string[] | null
           id?: string
           notes?: string | null
+          slot_type?: string | null
           updated_at?: string
           user_id: string
           week_start: string
@@ -583,6 +638,7 @@ export type Database = {
           guest_ids?: string[] | null
           id?: string
           notes?: string | null
+          slot_type?: string | null
           updated_at?: string
           user_id?: string
           week_start?: string
