@@ -1,163 +1,66 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Users, Calendar, Sparkles, RefreshCw } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSocialCRM } from '@/hooks/useSocialCRM';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import PeopleCRM from '@/components/social/PeopleCRM';
-import ExperienceRepository from '@/components/social/ExperienceRepository';
-import WeeklyPlanner from '@/components/social/WeeklyPlanner';
-import SundayResetDashboard from '@/components/social/SundayResetDashboard';
-import { CIRCLES, STATUSES } from '@/types/social';
+import { DEFAULT_CLOSENESS_TAGS, SocialContact } from '@/types/social';
+import QuickAddBar from '@/components/social/QuickAddBar';
+import PeopleDatabase from '@/components/social/PeopleDatabase';
+import EventSlots from '@/components/social/EventSlots';
+import WeeklyOutreach from '@/components/social/WeeklyOutreach';
 
-const SocialCRM = () => {
-  const [activeTab, setActiveTab] = useState('people');
-  const crm = useSocialCRM();
-  
-  const [customCircles, setCustomCircles] = useLocalStorage<string[]>(
-    'social-crm-circles', 
-    [...CIRCLES]
-  );
-  const [customStatuses, setCustomStatuses] = useLocalStorage<string[]>(
-    'social-crm-statuses', 
-    [...STATUSES]
-  );
+const SocialCRM: React.FC = () => {
+  const navigate = useNavigate();
+  const {
+    contacts, experiences, outreachItems, loading,
+    addContact, updateContact, deleteContact,
+    addExperience, deleteExperience,
+    addToOutreach, removeFromOutreach, toggleOutreachContacted, confirmForEvent, removeGuestFromEvent,
+    selectEventExperience, clearEventSlot,
+    getMidWeekExperienceId, getWeekendExperienceId, getMidWeekGuests, getWeekendGuests,
+  } = useSocialCRM();
 
-  if (crm.loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4" />
-          <p className="text-slate-400">Loading Social Architect...</p>
-        </div>
-      </div>
-    );
+  const [closenessTags, setClosenessTags] = useLocalStorage<string[]>('social-closeness-tags', [...DEFAULT_CLOSENESS_TAGS]);
+  const outreachContactIds = useMemo(() => new Set(outreachItems.map(i => i.contact_id).filter(Boolean) as string[]), [outreachItems]);
+
+  const handleQuickAdd = async (data: { name: string; instagram: string; interesting_note: string }) => {
+    await addContact({
+      name: data.name, instagram: data.instagram || null, circle: 'Other', vibe_score: 3, status: 'Lead',
+      closeness: 'Just Met', where_met: null, interesting_note: data.interesting_note || null,
+      last_contacted: null, next_action: null, notes: null,
+    });
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><div className="text-amber-500">Loading...</div></div>;
   }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-amber-500/20">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/">
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-amber-500 hover:bg-amber-500/10">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent">
-                  Social Architect
-                </h1>
-                <p className="text-sm text-slate-500">Dubai Personal Life Management</p>
-              </div>
-            </div>
-
-            {/* Stats bar */}
-            <div className="hidden md:flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-amber-500">{crm.contacts.length}</div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">Network</div>
-              </div>
-              <div className="w-px h-8 bg-slate-700" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-500">
-                  {crm.contacts.filter(c => c.status === 'Inner Circle').length}
-                </div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">Inner Circle</div>
-              </div>
-              <div className="w-px h-8 bg-slate-700" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-500">
-                  {crm.outreachTasks.filter(t => t.completed).length}/15
-                </div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">Outreach</div>
-              </div>
-            </div>
+      <div className="border-b border-slate-800 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-slate-400 hover:text-white"><ArrowLeft className="w-5 h-5" /></Button>
+            <div className="flex items-center gap-2"><Users className="w-5 h-5 text-amber-500" /><h1 className="text-lg font-semibold">Social Command Center</h1></div>
+          </div>
+          <div className="text-sm text-slate-500">{contacts.length} people • {outreachItems.filter(i => i.contacted).length}/{outreachItems.length} reached</div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto p-4 space-y-4">
+        <QuickAddBar onAdd={handleQuickAdd} />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-180px)]">
+          <div className="lg:col-span-4 h-full">
+            <PeopleDatabase contacts={contacts} closenessTags={closenessTags} onAddToOutreach={addToOutreach} onUpdateContact={updateContact} onDeleteContact={deleteContact} onUpdateClosenessTags={setClosenessTags} outreachContactIds={outreachContactIds} />
+          </div>
+          <div className="lg:col-span-4 h-full">
+            <EventSlots experiences={experiences} contacts={contacts} midWeekExperienceId={getMidWeekExperienceId()} weekendExperienceId={getWeekendExperienceId()} midWeekGuests={getMidWeekGuests()} weekendGuests={getWeekendGuests()} onSelectExperience={selectEventExperience} onRemoveGuest={removeGuestFromEvent} onClearSlot={clearEventSlot} onAddExperience={addExperience} onDeleteExperience={deleteExperience} />
+          </div>
+          <div className="lg:col-span-4 h-full">
+            <WeeklyOutreach outreachItems={outreachItems} contacts={contacts} onToggleContacted={toggleOutreachContacted} onConfirmForEvent={confirmForEvent} onRemoveFromOutreach={removeFromOutreach} />
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-slate-900 border border-slate-700 p-1">
-            <TabsTrigger 
-              value="people" 
-              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              People CRM
-            </TabsTrigger>
-            <TabsTrigger 
-              value="experiences" 
-              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Experiences
-            </TabsTrigger>
-            <TabsTrigger 
-              value="weekly" 
-              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Weekly Planner
-            </TabsTrigger>
-            <TabsTrigger 
-              value="sunday" 
-              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-slate-400"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Sunday Reset
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="people" className="space-y-4">
-            <PeopleCRM 
-              contacts={crm.contacts}
-              circles={customCircles}
-              statuses={customStatuses}
-              onAdd={crm.addContact}
-              onUpdate={crm.updateContact}
-              onDelete={crm.deleteContact}
-              onUpdateCircles={setCustomCircles}
-              onUpdateStatuses={setCustomStatuses}
-            />
-          </TabsContent>
-
-          <TabsContent value="experiences" className="space-y-4">
-            <ExperienceRepository
-              experiences={crm.experiences}
-              weeklyPlans={crm.weeklyPlans}
-              onAdd={crm.addExperience}
-              onUpdate={crm.updateExperience}
-              onDelete={crm.deleteExperience}
-              onSelectForWeek={crm.addOrUpdateWeeklyPlan}
-            />
-          </TabsContent>
-
-          <TabsContent value="weekly" className="space-y-4">
-            <WeeklyPlanner
-              weeklyPlans={crm.weeklyPlans}
-              experiences={crm.experiences}
-              contacts={crm.contacts}
-              onUpdatePlan={crm.addOrUpdateWeeklyPlan}
-              onRemovePlan={crm.removeWeeklyPlan}
-            />
-          </TabsContent>
-
-          <TabsContent value="sunday" className="space-y-4">
-            <SundayResetDashboard
-              outreachTasks={crm.outreachTasks}
-              contacts={crm.contacts}
-              onGenerateTasks={crm.generateOutreachTasks}
-              onToggleTask={crm.toggleOutreachTask}
-            />
-          </TabsContent>
-        </Tabs>
-      </main>
+      </div>
     </div>
   );
 };
