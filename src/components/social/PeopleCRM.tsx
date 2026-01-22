@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { SocialContact } from '@/types/social';
 import { format, differenceInDays } from 'date-fns';
+import ContactFormFields from './ContactFormFields';
 
 interface PeopleCRMProps {
   contacts: SocialContact[];
@@ -54,17 +55,6 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
   const [editingContact, setEditingContact] = useState<SocialContact | null>(null);
   const [newCircle, setNewCircle] = useState('');
   const [newStatus, setNewStatus] = useState('');
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    instagram: '',
-    circle: 'Other',
-    vibe_score: 3,
-    status: 'Lead',
-    last_contacted: '',
-    next_action: '',
-    notes: '',
-  });
 
   const filteredContacts = contacts.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -90,20 +80,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
     return colors[status] || 'bg-slate-600';
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      instagram: '',
-      circle: 'Other',
-      vibe_score: 3,
-      status: 'Lead',
-      last_contacted: '',
-      next_action: '',
-      notes: '',
-    });
-  };
-
-  const handleAdd = async () => {
+  const handleAdd = async (formData: any) => {
     await onAdd({
       ...formData,
       circle: formData.circle as SocialContact['circle'],
@@ -113,25 +90,14 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
       notes: formData.notes || null,
       instagram: formData.instagram || null,
     });
-    resetForm();
     setIsAddOpen(false);
   };
 
   const handleEdit = (contact: SocialContact) => {
     setEditingContact(contact);
-    setFormData({
-      name: contact.name,
-      instagram: contact.instagram || '',
-      circle: contact.circle,
-      vibe_score: contact.vibe_score,
-      status: contact.status,
-      last_contacted: contact.last_contacted || '',
-      next_action: contact.next_action || '',
-      notes: contact.notes || '',
-    });
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (formData: any) => {
     if (!editingContact) return;
     await onUpdate(editingContact.id, {
       ...formData,
@@ -143,7 +109,6 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
       instagram: formData.instagram || null,
     });
     setEditingContact(null);
-    resetForm();
   };
 
   const handleAddCircle = () => {
@@ -167,106 +132,6 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
   const handleRemoveStatus = (status: string) => {
     onUpdateStatuses(statuses.filter(s => s !== status));
   };
-
-  const ContactForm = ({ isEdit = false, onSubmit }: { isEdit?: boolean; onSubmit: () => void }) => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm text-slate-400 mb-1 block">Name *</label>
-          <Input
-            value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            className="bg-slate-900 border-slate-600 text-white"
-            placeholder="John Doe"
-          />
-        </div>
-        <div>
-          <label className="text-sm text-slate-400 mb-1 block">Instagram</label>
-          <Input
-            value={formData.instagram}
-            onChange={(e) => setFormData(prev => ({ ...prev, instagram: e.target.value }))}
-            className="bg-slate-900 border-slate-600 text-white"
-            placeholder="@username"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm text-slate-400 mb-1 block">Circle</label>
-          <Select value={formData.circle} onValueChange={(v) => setFormData(prev => ({ ...prev, circle: v }))}>
-            <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-600 z-50">
-              {circles.map(c => (
-                <SelectItem key={c} value={c} className="text-white hover:bg-slate-700 focus:bg-slate-700">{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="text-sm text-slate-400 mb-1 block">Status</label>
-          <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}>
-            <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-600 z-50">
-              {statuses.map(s => (
-                <SelectItem key={s} value={s} className="text-white hover:bg-slate-700 focus:bg-slate-700">{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div>
-        <label className="text-sm text-slate-400 mb-2 block">Vibe Score</label>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map(score => (
-            <button
-              key={score}
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, vibe_score: score }))}
-              className="focus:outline-none"
-            >
-              <Star 
-                className={`w-6 h-6 ${score <= formData.vibe_score ? 'fill-amber-500 text-amber-500' : 'text-slate-600'}`} 
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className="text-sm text-slate-400 mb-1 block">Last Contacted</label>
-        <Input
-          type="date"
-          value={formData.last_contacted}
-          onChange={(e) => setFormData(prev => ({ ...prev, last_contacted: e.target.value }))}
-          className="bg-slate-900 border-slate-600 text-white"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm text-slate-400 mb-1 block">Next Action</label>
-        <Input
-          value={formData.next_action}
-          onChange={(e) => setFormData(prev => ({ ...prev, next_action: e.target.value }))}
-          className="bg-slate-900 border-slate-600 text-white"
-          placeholder="Invite to Wednesday Walk"
-        />
-      </div>
-
-      <Button 
-        onClick={onSubmit} 
-        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-        disabled={!formData.name}
-      >
-        {isEdit ? 'Update Contact' : 'Add Contact'}
-      </Button>
-    </div>
-  );
 
   return (
     <div className="space-y-4">
@@ -339,10 +204,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
               </div>
             </DialogContent>
           </Dialog>
-          <Dialog open={isAddOpen} onOpenChange={(open) => {
-            setIsAddOpen(open);
-            if (!open) resetForm();
-          }}>
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="bg-amber-600 hover:bg-amber-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
@@ -353,7 +215,12 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
               <DialogHeader>
                 <DialogTitle className="text-amber-400">Add New Contact</DialogTitle>
               </DialogHeader>
-              <ContactForm onSubmit={handleAdd} />
+              <ContactFormFields
+                circles={circles}
+                statuses={statuses}
+                onSubmit={handleAdd}
+                submitLabel="Add Contact"
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -424,10 +291,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
                   <TableCell>
                     <div className="flex gap-1">
                       <Dialog open={editingContact?.id === contact.id} onOpenChange={(open) => {
-                        if (!open) {
-                          setEditingContact(null);
-                          resetForm();
-                        }
+                        if (!open) setEditingContact(null);
                       }}>
                         <DialogTrigger asChild>
                           <Button 
@@ -443,7 +307,22 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({
                           <DialogHeader>
                             <DialogTitle className="text-amber-400">Edit Contact</DialogTitle>
                           </DialogHeader>
-                          <ContactForm isEdit onSubmit={handleUpdate} />
+                          <ContactFormFields
+                            circles={circles}
+                            statuses={statuses}
+                            onSubmit={handleUpdate}
+                            submitLabel="Update Contact"
+                            initialData={{
+                              name: contact.name,
+                              instagram: contact.instagram || '',
+                              circle: contact.circle,
+                              vibe_score: contact.vibe_score,
+                              status: contact.status,
+                              last_contacted: contact.last_contacted || '',
+                              next_action: contact.next_action || '',
+                              notes: contact.notes || '',
+                            }}
+                          />
                         </DialogContent>
                       </Dialog>
                       <Button 
