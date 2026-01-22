@@ -57,9 +57,9 @@ const ExperienceRepository: React.FC<ExperienceRepositoryProps> = ({
   };
 
   const tierColors = {
-    Low: { bg: 'from-slate-800 to-slate-900', border: 'border-slate-600', badge: 'bg-slate-600' },
-    Mid: { bg: 'from-blue-900/30 to-slate-900', border: 'border-blue-600/50', badge: 'bg-blue-600' },
-    High: { bg: 'from-amber-900/30 to-slate-900', border: 'border-amber-600/50', badge: 'bg-amber-600' },
+    Low: { bg: 'bg-slate-900', border: 'border-slate-700', badge: 'bg-slate-600', text: 'text-slate-200' },
+    Mid: { bg: 'bg-slate-900', border: 'border-blue-700/50', badge: 'bg-blue-700', text: 'text-slate-200' },
+    High: { bg: 'bg-slate-900', border: 'border-amber-700/50', badge: 'bg-amber-700', text: 'text-slate-200' },
   };
 
   const tierLabels = {
@@ -245,7 +245,7 @@ const ExperienceRepository: React.FC<ExperienceRepositoryProps> = ({
             {groupedByTier[tier].map(exp => (
               <Card
                 key={exp.id}
-                className={`bg-gradient-to-br ${tierColors[tier].bg} border ${tierColors[tier].border} p-4 hover:border-amber-500/50 transition-colors`}
+                className={`${tierColors[tier].bg} border ${tierColors[tier].border} p-4 hover:border-amber-500/50 transition-colors`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="font-semibold text-white">{exp.title}</h4>
@@ -309,23 +309,22 @@ const ExperienceRepository: React.FC<ExperienceRepositoryProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full border-amber-600/50 text-amber-500 hover:bg-amber-600/20"
+                      className="w-full border-amber-600 text-amber-400 hover:bg-amber-600/20 hover:text-amber-300"
                       onClick={() => setSelectingDay(exp.id)}
                     >
                       <Calendar className="w-3 h-3 mr-2" />
                       Select for This Week
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-[#0f0f0f] border-slate-700 text-white max-w-xs">
+                  <DialogContent className="bg-[#0a0a0a] border-slate-600 text-white max-w-xs">
                     <DialogHeader>
-                      <DialogTitle className="text-amber-500">Choose Day</DialogTitle>
+                      <DialogTitle className="text-amber-400">Choose Day</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-2">
                       {dayOptions.map(day => (
                         <Button
                           key={day.value}
-                          variant="outline"
-                          className="border-slate-700 text-white hover:bg-amber-600/20 hover:border-amber-600"
+                          className="bg-slate-800 border border-slate-600 text-white hover:bg-amber-700 hover:border-amber-600"
                           onClick={() => handleSelectForWeek(exp.id, day.value)}
                         >
                           {day.label}

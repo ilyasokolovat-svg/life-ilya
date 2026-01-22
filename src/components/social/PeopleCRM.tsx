@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Star, Instagram, Trash2, Edit2, ExternalLink } from 'lucide-react';
+import { Plus, Search, Star, Instagram, Trash2, Edit2, ExternalLink, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -24,26 +24,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SocialContact, CIRCLES, STATUSES } from '@/types/social';
+import { SocialContact } from '@/types/social';
 import { format, differenceInDays } from 'date-fns';
 
 interface PeopleCRMProps {
   contacts: SocialContact[];
+  circles: string[];
+  statuses: string[];
   onAdd: (contact: Omit<SocialContact, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onUpdate: (id: string, updates: Partial<SocialContact>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onUpdateCircles: (circles: string[]) => void;
+  onUpdateStatuses: (statuses: string[]) => void;
 }
 
-const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDelete }) => {
+const PeopleCRM: React.FC<PeopleCRMProps> = ({ 
+  contacts, 
+  circles,
+  statuses,
+  onAdd, 
+  onUpdate, 
+  onDelete,
+  onUpdateCircles,
+  onUpdateStatuses,
+}) => {
   const [search, setSearch] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<SocialContact | null>(null);
+  const [newCircle, setNewCircle] = useState('');
+  const [newStatus, setNewStatus] = useState('');
+  
   const [formData, setFormData] = useState({
     name: '',
     instagram: '',
-    circle: 'Other' as SocialContact['circle'],
+    circle: 'Other',
     vibe_score: 3,
-    status: 'Lead' as SocialContact['status'],
+    status: 'Lead',
     last_contacted: '',
     next_action: '',
     notes: '',
@@ -64,13 +81,13 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
   };
 
   const getStatusBadge = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       'Lead': 'bg-slate-600',
       'Invited': 'bg-blue-600',
       'Attended': 'bg-purple-600',
       'Inner Circle': 'bg-amber-600',
     };
-    return colors[status as keyof typeof colors] || 'bg-slate-600';
+    return colors[status] || 'bg-slate-600';
   };
 
   const resetForm = () => {
@@ -89,6 +106,8 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
   const handleAdd = async () => {
     await onAdd({
       ...formData,
+      circle: formData.circle as SocialContact['circle'],
+      status: formData.status as SocialContact['status'],
       last_contacted: formData.last_contacted || null,
       next_action: formData.next_action || null,
       notes: formData.notes || null,
@@ -116,6 +135,8 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
     if (!editingContact) return;
     await onUpdate(editingContact.id, {
       ...formData,
+      circle: formData.circle as SocialContact['circle'],
+      status: formData.status as SocialContact['status'],
       last_contacted: formData.last_contacted || null,
       next_action: formData.next_action || null,
       notes: formData.notes || null,
@@ -125,7 +146,29 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
     resetForm();
   };
 
-  const ContactForm = ({ isEdit = false }: { isEdit?: boolean }) => (
+  const handleAddCircle = () => {
+    if (newCircle.trim() && !circles.includes(newCircle.trim())) {
+      onUpdateCircles([...circles, newCircle.trim()]);
+      setNewCircle('');
+    }
+  };
+
+  const handleRemoveCircle = (circle: string) => {
+    onUpdateCircles(circles.filter(c => c !== circle));
+  };
+
+  const handleAddStatus = () => {
+    if (newStatus.trim() && !statuses.includes(newStatus.trim())) {
+      onUpdateStatuses([...statuses, newStatus.trim()]);
+      setNewStatus('');
+    }
+  };
+
+  const handleRemoveStatus = (status: string) => {
+    onUpdateStatuses(statuses.filter(s => s !== status));
+  };
+
+  const ContactForm = ({ isEdit = false, onSubmit }: { isEdit?: boolean; onSubmit: () => void }) => (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -133,7 +176,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
           <Input
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            className="bg-[#1a1a1a] border-slate-700 text-white"
+            className="bg-slate-900 border-slate-600 text-white"
             placeholder="John Doe"
           />
         </div>
@@ -142,7 +185,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
           <Input
             value={formData.instagram}
             onChange={(e) => setFormData(prev => ({ ...prev, instagram: e.target.value }))}
-            className="bg-[#1a1a1a] border-slate-700 text-white"
+            className="bg-slate-900 border-slate-600 text-white"
             placeholder="@username"
           />
         </div>
@@ -151,26 +194,26 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="text-sm text-slate-400 mb-1 block">Circle</label>
-          <Select value={formData.circle} onValueChange={(v) => setFormData(prev => ({ ...prev, circle: v as SocialContact['circle'] }))}>
-            <SelectTrigger className="bg-[#1a1a1a] border-slate-700 text-white">
+          <Select value={formData.circle} onValueChange={(v) => setFormData(prev => ({ ...prev, circle: v }))}>
+            <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#1a1a1a] border-slate-700">
-              {CIRCLES.map(c => (
-                <SelectItem key={c} value={c} className="text-white hover:bg-slate-800">{c}</SelectItem>
+            <SelectContent className="bg-slate-900 border-slate-600 z-50">
+              {circles.map(c => (
+                <SelectItem key={c} value={c} className="text-white hover:bg-slate-700 focus:bg-slate-700">{c}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div>
           <label className="text-sm text-slate-400 mb-1 block">Status</label>
-          <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v as SocialContact['status'] }))}>
-            <SelectTrigger className="bg-[#1a1a1a] border-slate-700 text-white">
+          <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}>
+            <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#1a1a1a] border-slate-700">
-              {STATUSES.map(s => (
-                <SelectItem key={s} value={s} className="text-white hover:bg-slate-800">{s}</SelectItem>
+            <SelectContent className="bg-slate-900 border-slate-600 z-50">
+              {statuses.map(s => (
+                <SelectItem key={s} value={s} className="text-white hover:bg-slate-700 focus:bg-slate-700">{s}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -183,6 +226,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
           {[1, 2, 3, 4, 5].map(score => (
             <button
               key={score}
+              type="button"
               onClick={() => setFormData(prev => ({ ...prev, vibe_score: score }))}
               className="focus:outline-none"
             >
@@ -200,7 +244,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
           type="date"
           value={formData.last_contacted}
           onChange={(e) => setFormData(prev => ({ ...prev, last_contacted: e.target.value }))}
-          className="bg-[#1a1a1a] border-slate-700 text-white"
+          className="bg-slate-900 border-slate-600 text-white"
         />
       </div>
 
@@ -209,13 +253,13 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
         <Input
           value={formData.next_action}
           onChange={(e) => setFormData(prev => ({ ...prev, next_action: e.target.value }))}
-          className="bg-[#1a1a1a] border-slate-700 text-white"
+          className="bg-slate-900 border-slate-600 text-white"
           placeholder="Invite to Wednesday Walk"
         />
       </div>
 
       <Button 
-        onClick={isEdit ? handleUpdate : handleAdd} 
+        onClick={onSubmit} 
         className="w-full bg-amber-600 hover:bg-amber-700 text-white"
         disabled={!formData.name}
       >
@@ -234,30 +278,92 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search contacts..."
-            className="pl-10 bg-[#1a1a1a] border-slate-700 text-white placeholder:text-slate-500"
+            className="pl-10 bg-slate-900 border-slate-600 text-white placeholder:text-slate-500"
           />
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-amber-600 hover:bg-amber-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Contact
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-[#0f0f0f] border-slate-700 text-white">
-            <DialogHeader>
-              <DialogTitle className="text-amber-500">Add New Contact</DialogTitle>
-            </DialogHeader>
-            <ContactForm />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#0a0a0a] border-slate-600 text-white max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-amber-400">Manage Circles & Statuses</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-sm text-slate-400 mb-2 block font-semibold">Circles</label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {circles.map(circle => (
+                      <span key={circle} className="flex items-center gap-1 px-2 py-1 bg-slate-800 rounded text-sm text-white">
+                        {circle}
+                        <button onClick={() => handleRemoveCircle(circle)} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={newCircle}
+                      onChange={(e) => setNewCircle(e.target.value)}
+                      placeholder="New circle name..."
+                      className="bg-slate-900 border-slate-600 text-white"
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddCircle()}
+                    />
+                    <Button onClick={handleAddCircle} className="bg-amber-600 hover:bg-amber-700">Add</Button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-slate-400 mb-2 block font-semibold">Statuses (Funnel Stages)</label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {statuses.map(status => (
+                      <span key={status} className="flex items-center gap-1 px-2 py-1 bg-slate-800 rounded text-sm text-white">
+                        {status}
+                        <button onClick={() => handleRemoveStatus(status)} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={newStatus}
+                      onChange={(e) => setNewStatus(e.target.value)}
+                      placeholder="New status name..."
+                      className="bg-slate-900 border-slate-600 text-white"
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
+                    />
+                    <Button onClick={handleAddStatus} className="bg-amber-600 hover:bg-amber-700">Add</Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isAddOpen} onOpenChange={(open) => {
+            setIsAddOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="bg-amber-600 hover:bg-amber-700 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Contact
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#0a0a0a] border-slate-600 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-amber-400">Add New Contact</DialogTitle>
+              </DialogHeader>
+              <ContactForm onSubmit={handleAdd} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="bg-[#0f0f0f] border border-slate-800 rounded-lg overflow-hidden">
+      <div className="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-800 hover:bg-transparent">
+            <TableRow className="border-slate-700 hover:bg-transparent">
               <TableHead className="text-slate-400">Name</TableHead>
               <TableHead className="text-slate-400">Instagram</TableHead>
               <TableHead className="text-slate-400">Circle</TableHead>
@@ -277,7 +383,7 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
               </TableRow>
             ) : (
               filteredContacts.map(contact => (
-                <TableRow key={contact.id} className="border-slate-800 hover:bg-slate-900/50">
+                <TableRow key={contact.id} className="border-slate-700 hover:bg-slate-800/50">
                   <TableCell className="font-medium text-white">{contact.name}</TableCell>
                   <TableCell>
                     {contact.instagram && (
@@ -317,7 +423,12 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Dialog open={editingContact?.id === contact.id} onOpenChange={(open) => !open && setEditingContact(null)}>
+                      <Dialog open={editingContact?.id === contact.id} onOpenChange={(open) => {
+                        if (!open) {
+                          setEditingContact(null);
+                          resetForm();
+                        }
+                      }}>
                         <DialogTrigger asChild>
                           <Button 
                             variant="ghost" 
@@ -328,11 +439,11 @@ const PeopleCRM: React.FC<PeopleCRMProps> = ({ contacts, onAdd, onUpdate, onDele
                             <Edit2 className="w-4 h-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-[#0f0f0f] border-slate-700 text-white">
+                        <DialogContent className="bg-[#0a0a0a] border-slate-600 text-white">
                           <DialogHeader>
-                            <DialogTitle className="text-amber-500">Edit Contact</DialogTitle>
+                            <DialogTitle className="text-amber-400">Edit Contact</DialogTitle>
                           </DialogHeader>
-                          <ContactForm isEdit />
+                          <ContactForm isEdit onSubmit={handleUpdate} />
                         </DialogContent>
                       </Dialog>
                       <Button 

@@ -77,6 +77,10 @@ const SundayResetDashboard: React.FC<SundayResetDashboardProps> = ({
     },
   };
 
+  // Check if tasks need to be generated or if no contacts match
+  const hasContacts = contacts.length > 0;
+  const noTasksGenerated = outreachTasks.length === 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -94,8 +98,28 @@ const SundayResetDashboard: React.FC<SundayResetDashboardProps> = ({
         </Button>
       </div>
 
+      {/* Info Box */}
+      {noTasksGenerated && (
+        <Card className="bg-blue-900/20 border-blue-600/30 p-4">
+          <p className="text-sm text-blue-300">
+            <strong>How it works:</strong> Click "Generate This Week's Tasks" to create 15 outreach slots. 
+            The system will automatically assign contacts from your CRM based on their status:
+          </p>
+          <ul className="text-sm text-blue-200 mt-2 list-disc pl-5 space-y-1">
+            <li><strong>Inner Circle (5 slots):</strong> Contacts with status "Inner Circle"</li>
+            <li><strong>New Leads (5 slots):</strong> Contacts with status "Lead"</li>
+            <li><strong>Romantic (5 slots):</strong> Contacts in the "Romantic" circle</li>
+          </ul>
+          {!hasContacts && (
+            <p className="text-sm text-amber-400 mt-3">
+              ⚠️ You have no contacts yet. Add some in the People CRM tab first!
+            </p>
+          )}
+        </Card>
+      )}
+
       {/* Progress Bar */}
-      <Card className="bg-[#0f0f0f] border-slate-800 p-4">
+      <Card className="bg-slate-900 border-slate-700 p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-slate-400">Weekly Outreach Progress</span>
           <span className="text-lg font-bold text-amber-500">{completedCount}/{totalTasks}</span>
@@ -122,7 +146,7 @@ const SundayResetDashboard: React.FC<SundayResetDashboardProps> = ({
           return (
             <Card
               key={group.type}
-              className={`${colors.bg} border ${colors.border} p-4`}
+              className={`bg-slate-900 border ${colors.border} p-4`}
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className={`p-2 rounded-lg bg-black/30`}>
@@ -150,14 +174,14 @@ const SundayResetDashboard: React.FC<SundayResetDashboardProps> = ({
                         key={task.id}
                         className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
                           task.completed 
-                            ? 'bg-emerald-900/20 border border-emerald-600/30' 
-                            : 'bg-black/20 hover:bg-black/40'
+                            ? 'bg-emerald-900/30 border border-emerald-700/50' 
+                            : 'bg-slate-800/50 hover:bg-slate-800'
                         }`}
                       >
                         <Checkbox
                           checked={task.completed}
                           onCheckedChange={(checked) => onToggleTask(task.id, !!checked)}
-                          className="border-slate-600"
+                          className="border-slate-500"
                         />
                         <div className="flex-1 min-w-0">
                           {contact ? (
@@ -171,7 +195,7 @@ const SundayResetDashboard: React.FC<SundayResetDashboardProps> = ({
                             </>
                           ) : (
                             <div className="text-sm text-slate-500 italic">
-                              Empty slot #{idx + 1}
+                              Empty slot - add more {group.type.toLowerCase()} contacts
                             </div>
                           )}
                         </div>
@@ -189,12 +213,12 @@ const SundayResetDashboard: React.FC<SundayResetDashboardProps> = ({
       </div>
 
       {/* Tips */}
-      <Card className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-slate-800 p-4">
-        <h3 className="font-semibold text-amber-500 mb-2">💡 Outreach Tips</h3>
+      <Card className="bg-slate-900 border-slate-700 p-4">
+        <h3 className="font-semibold text-amber-400 mb-2">💡 Outreach Tips</h3>
         <ul className="text-sm text-slate-400 space-y-1">
-          <li>• <strong>Inner Circle:</strong> Send a voice note, share something personal, or make plans</li>
-          <li>• <strong>New Leads:</strong> React to their stories, comment on posts, or send a casual "thinking of you"</li>
-          <li>• <strong>Romantic:</strong> Be intentional - suggest a specific day and activity</li>
+          <li>• <strong className="text-slate-300">Inner Circle:</strong> Send a voice note, share something personal, or make plans</li>
+          <li>• <strong className="text-slate-300">New Leads:</strong> React to their stories, comment on posts, or send a casual "thinking of you"</li>
+          <li>• <strong className="text-slate-300">Romantic:</strong> Be intentional - suggest a specific day and activity</li>
         </ul>
       </Card>
     </div>
