@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Search, Settings, Star, Instagram, ExternalLink, Plus, Trash2, X } from 'lucide-react';
+import { Search, Settings, Star, Instagram, Plus, Trash2, X, Edit2, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { SocialContact, DEFAULT_CLOSENESS_TAGS, CLOSENESS_COLORS } from '@/types/social';
-import { formatDistanceToNow, differenceInDays, parseISO } from 'date-fns';
+import { formatDistanceToNow, differenceInDays, parseISO, format } from 'date-fns';
 
 interface PeopleDatabaseProps {
   contacts: SocialContact[];
@@ -29,7 +31,9 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
   const [search, setSearch] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
-  const [editingContact, setEditingContact] = useState<string | null>(null);
+  const [editingCloseness, setEditingCloseness] = useState<string | null>(null);
+  const [editContactOpen, setEditContactOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<SocialContact | null>(null);
 
   const filteredContacts = contacts.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -55,7 +59,7 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
 
   const handleClosenessChange = async (contactId: string, closeness: string) => {
     await onUpdateContact(contactId, { closeness });
-    setEditingContact(null);
+    setEditingCloseness(null);
   };
 
   const handleAddTag = () => {
@@ -69,6 +73,27 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
     if (!DEFAULT_CLOSENESS_TAGS.includes(tag as any)) {
       onUpdateClosenessTags(closenessTags.filter(t => t !== tag));
     }
+  };
+
+  const openEditContact = (contact: SocialContact, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingContact({ ...contact });
+    setEditContactOpen(true);
+  };
+
+  const handleSaveContact = async () => {
+    if (!editingContact) return;
+    await onUpdateContact(editingContact.id, {
+      name: editingContact.name,
+      instagram: editingContact.instagram,
+      closeness: editingContact.closeness,
+      vibe_score: editingContact.vibe_score,
+      last_contacted: editingContact.last_contacted,
+      interesting_note: editingContact.interesting_note,
+      notes: editingContact.notes,
+    });
+    setEditContactOpen(false);
+    setEditingContact(null);
   };
 
   return (
@@ -170,7 +195,7 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
                       
                       {/* Closeness Tag */}
                       <div className="mt-1">
-                        {editingContact === contact.id ? (
+                        {editingCloseness === contact.id ? (
                           <div className="flex flex-wrap gap-1">
                             {closenessTags.map(tag => (
                               <button
@@ -191,7 +216,7 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setEditingContact(contact.id);
+                              setEditingCloseness(contact.id);
                             }}
                             className={`px-1.5 py-0.5 rounded text-[10px] text-white ${
                               CLOSENESS_COLORS[contact.closeness] || 'bg-slate-600'
@@ -238,16 +263,24 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
                         {getLastContactedText(contact.last_contacted)}
                       </span>
 
-                      {/* Delete */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteContact(contact.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-opacity"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => openEditContact(contact, e)}
+                          className="text-slate-500 hover:text-amber-400"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteContact(contact.id);
+                          }}
+                          className="text-slate-500 hover:text-red-400"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -267,6 +300,116 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
       <div className="p-2 border-t border-slate-800 text-xs text-slate-500">
         {contacts.length} contacts
       </div>
+
+      {/* Edit Contact Dialog */}
+      <Dialog open={editContactOpen} onOpenChange={setEditContactOpen}>
+        <DialogContent className="bg-slate-900 border-slate-700 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Contact</DialogTitle>
+          </DialogHeader>
+          {editingContact && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Name</label>
+                <Input
+                  value={editingContact.name}
+                  onChange={(e) => setEditingContact({ ...editingContact, name: e.target.value })}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Instagram</label>
+                <Input
+                  value={editingContact.instagram || ''}
+                  onChange={(e) => setEditingContact({ ...editingContact, instagram: e.target.value })}
+                  placeholder="@username"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">How Close</label>
+                  <Select 
+                    value={editingContact.closeness || 'Just Met'} 
+                    onValueChange={(v) => setEditingContact({ ...editingContact, closeness: v })}
+                  >
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {closenessTags.map(tag => (
+                        <SelectItem key={tag} value={tag} className="text-white">{tag}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Vibe Score</label>
+                  <div className="flex items-center gap-1 h-10 px-3 bg-slate-800 border border-slate-700 rounded-md">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditingContact({ ...editingContact, vibe_score: star })}
+                        className="focus:outline-none"
+                      >
+                        <Star
+                          className={`w-5 h-5 transition-colors ${
+                            star <= editingContact.vibe_score
+                              ? 'text-amber-400 fill-amber-400'
+                              : 'text-slate-600'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Last Contacted</label>
+                <Input
+                  type="date"
+                  value={editingContact.last_contacted || ''}
+                  onChange={(e) => setEditingContact({ ...editingContact, last_contacted: e.target.value || null })}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Interesting Note</label>
+                <Input
+                  value={editingContact.interesting_note || ''}
+                  onChange={(e) => setEditingContact({ ...editingContact, interesting_note: e.target.value })}
+                  placeholder="Where you met, something memorable..."
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Notes</label>
+                <Textarea
+                  value={editingContact.notes || ''}
+                  onChange={(e) => setEditingContact({ ...editingContact, notes: e.target.value })}
+                  placeholder="Additional notes..."
+                  className="bg-slate-800 border-slate-700 text-white"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="ghost" onClick={() => setEditContactOpen(false)}>Cancel</Button>
+                <Button onClick={handleSaveContact} className="bg-amber-600 hover:bg-amber-700">
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

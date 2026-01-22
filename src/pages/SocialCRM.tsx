@@ -15,7 +15,7 @@ const SocialCRM: React.FC = () => {
   const {
     contacts, experiences, outreachItems, loading,
     addContact, updateContact, deleteContact,
-    addExperience, deleteExperience,
+    addExperience, updateExperience, deleteExperience,
     addToOutreach, removeFromOutreach, toggleOutreachContacted, confirmForEvent, removeGuestFromEvent,
     selectEventExperience, clearEventSlot,
     getMidWeekExperienceId, getWeekendExperienceId, getMidWeekGuests, getWeekendGuests,
@@ -54,7 +54,7 @@ const SocialCRM: React.FC = () => {
             <PeopleDatabase contacts={contacts} closenessTags={closenessTags} onAddToOutreach={addToOutreach} onUpdateContact={updateContact} onDeleteContact={deleteContact} onUpdateClosenessTags={setClosenessTags} outreachContactIds={outreachContactIds} />
           </div>
           <div className="lg:col-span-4 h-full">
-            <EventSlots experiences={experiences} contacts={contacts} midWeekExperienceId={getMidWeekExperienceId()} weekendExperienceId={getWeekendExperienceId()} midWeekGuests={getMidWeekGuests()} weekendGuests={getWeekendGuests()} onSelectExperience={selectEventExperience} onRemoveGuest={removeGuestFromEvent} onClearSlot={clearEventSlot} onAddExperience={addExperience} onDeleteExperience={deleteExperience} />
+            <EventSlots experiences={experiences} contacts={contacts} midWeekExperienceId={getMidWeekExperienceId()} weekendExperienceId={getWeekendExperienceId()} midWeekGuests={getMidWeekGuests()} weekendGuests={getWeekendGuests()} onSelectExperience={selectEventExperience} onRemoveGuest={removeGuestFromEvent} onClearSlot={clearEventSlot} onAddExperience={addExperience} onUpdateExperience={updateExperience} onDeleteExperience={deleteExperience} />
           </div>
           <div className="lg:col-span-4 h-full">
             <WeeklyOutreach outreachItems={outreachItems} contacts={contacts} onToggleContacted={toggleOutreachContacted} onConfirmForEvent={confirmForEvent} onRemoveFromOutreach={removeFromOutreach} />
