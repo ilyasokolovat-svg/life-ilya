@@ -141,6 +141,20 @@ export function useSocialCRM() {
     }
   };
 
+  const updateExperience = async (id: string, updates: Partial<SocialExperience>) => {
+    const { error } = await fromTable('social_experiences')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Failed to update experience');
+      console.error(error);
+    } else {
+      setExperiences(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      toast.success('Experience updated!');
+    }
+  };
+
   const deleteExperience = async (id: string) => {
     const { error } = await fromTable('social_experiences').delete().eq('id', id);
 
@@ -346,6 +360,7 @@ export function useSocialCRM() {
     deleteContact,
     // Experience operations
     addExperience,
+    updateExperience,
     deleteExperience,
     // Outreach operations
     addToOutreach,

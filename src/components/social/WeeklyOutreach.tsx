@@ -1,8 +1,9 @@
-import React from 'react';
-import { Check, X, Calendar, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, X, Calendar, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SocialContact, WeeklyOutreach as WeeklyOutreachType } from '@/types/social';
 
 interface WeeklyOutreachProps {
@@ -20,6 +21,12 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
   onConfirmForEvent,
   onRemoveFromOutreach,
 }) => {
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; outreachId: string; contactName: string }>({
+    open: false,
+    outreachId: '',
+    contactName: '',
+  });
+
   const getContactById = (id: string | null) => {
     if (!id) return null;
     return contacts.find(c => c.id === id);
@@ -33,15 +40,19 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
   const contactedItems = outreachItems.filter(i => i.contacted && !i.confirmed_for);
   const confirmedItems = outreachItems.filter(i => i.confirmed_for);
 
+  const openConfirmDialog = (outreachId: string, contactName: string) => {
+    setConfirmDialog({ open: true, outreachId, contactName });
+  };
+
+  const handleConfirm = (slotType: 'mid_week' | 'weekend') => {
+    onConfirmForEvent(confirmDialog.outreachId, slotType);
+    setConfirmDialog({ open: false, outreachId: '', contactName: '' });
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
-      {/* Header */}
       <div className="p-3 border-b border-slate-800">
-        <h2 className="text-sm font-semibold text-amber-500 uppercase tracking-wider mb-3">
-          Weekly Outreach
-        </h2>
-        
-        {/* Progress */}
+        <h2 className="text-sm font-semibold text-amber-500 uppercase tracking-wider mb-3">Weekly Outreach</h2>
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400">Contacted</span>
@@ -51,7 +62,6 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
         </div>
       </div>
 
-      {/* Outreach List */}
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-3">
           {outreachItems.length === 0 ? (
@@ -60,7 +70,6 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
             </div>
           ) : (
             <>
-              {/* Pending */}
               {pendingItems.length > 0 && (
                 <div>
                   <h4 className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 px-1">
@@ -72,10 +81,7 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
                       if (!contact) return null;
                       
                       return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between bg-slate-800/50 rounded-lg p-2 group"
-                        >
+                        <div key={item.id} className="flex items-center justify-between bg-slate-800/50 rounded-lg p-2 group">
                           <div className="flex items-center gap-2 min-w-0">
                             <button
                               onClick={() => onToggleContacted(item.id, true)}
@@ -98,11 +104,10 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
                 </div>
               )}
 
-              {/* Contacted (ready to confirm) */}
               {contactedItems.length > 0 && (
                 <div>
                   <h4 className="text-[10px] uppercase tracking-wider text-emerald-500 mb-2 px-1">
-                    Contacted - Confirm for Event ({contactedItems.length})
+                    Contacted ({contactedItems.length})
                   </h4>
                   <div className="space-y-1">
                     {contactedItems.map(item => {
@@ -110,10 +115,7 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
                       if (!contact) return null;
                       
                       return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between bg-emerald-900/20 border border-emerald-800/30 rounded-lg p-2"
-                        >
+                        <div key={item.id} className="flex items-center justify-between bg-emerald-900/20 border border-emerald-800/30 rounded-lg p-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <button
                               onClick={() => onToggleContacted(item.id, false)}
@@ -123,24 +125,14 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
                             </button>
                             <span className="text-sm text-white truncate">{contact.name}</span>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onConfirmForEvent(item.id, 'mid_week')}
-                              className="h-6 px-2 text-xs text-slate-400 hover:text-amber-400"
-                            >
-                              Mid
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onConfirmForEvent(item.id, 'weekend')}
-                              className="h-6 px-2 text-xs text-slate-400 hover:text-amber-400"
-                            >
-                              Wknd
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => openConfirmDialog(item.id, contact.name)}
+                            className="h-6 px-2 text-xs bg-amber-600 hover:bg-amber-700 text-white"
+                          >
+                            <UserCheck className="w-3 h-3 mr-1" />
+                            Confirm
+                          </Button>
                         </div>
                       );
                     })}
@@ -148,7 +140,6 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
                 </div>
               )}
 
-              {/* Confirmed for events */}
               {confirmedItems.length > 0 && (
                 <div>
                   <h4 className="text-[10px] uppercase tracking-wider text-amber-500 mb-2 px-1">
@@ -160,10 +151,7 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
                       if (!contact) return null;
                       
                       return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between bg-amber-900/20 border border-amber-700/30 rounded-lg p-2"
-                        >
+                        <div key={item.id} className="flex items-center justify-between bg-amber-900/20 border border-amber-700/30 rounded-lg p-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
                             <span className="text-sm text-white truncate">{contact.name}</span>
@@ -182,7 +170,6 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Footer */}
       <div className="p-2 border-t border-slate-800 text-xs text-slate-500 text-center">
         {totalCount === 0 
           ? 'Start by adding people from your database'
@@ -191,6 +178,36 @@ const WeeklyOutreach: React.FC<WeeklyOutreachProps> = ({
             : `${totalCount - contactedCount} left to contact`
         }
       </div>
+
+      {/* Confirm Event Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog({ open: false, outreachId: '', contactName: '' })}>
+        <DialogContent className="bg-slate-900 border-slate-700 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white">Confirm for Event</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-400">
+              Which event is <span className="text-white font-medium">{confirmDialog.contactName}</span> attending?
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => handleConfirm('mid_week')}
+                className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 h-16 flex-col"
+              >
+                <Calendar className="w-5 h-5 mb-1 text-amber-500" />
+                Mid-Week
+              </Button>
+              <Button
+                onClick={() => handleConfirm('weekend')}
+                className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 h-16 flex-col"
+              >
+                <Calendar className="w-5 h-5 mb-1 text-amber-500" />
+                Weekend
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
