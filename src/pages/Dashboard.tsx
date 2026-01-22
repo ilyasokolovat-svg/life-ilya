@@ -15,7 +15,8 @@ import {
   Shield,
   Check,
   Edit3,
-  Timer
+  Timer,
+  Users
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -289,6 +290,19 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            </div>
+          </Link>
+
+          {/* Social CRM Bubble */}
+          <Link to="/social">
+            <div className="group relative">
+              <div className="w-28 h-28 bg-gradient-to-br from-amber-600 via-yellow-600 to-amber-700 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
+                <div className="text-center">
+                  <Users className="w-8 h-8 text-white mb-1 mx-auto" />
+                  <h2 className="text-xs font-bold text-white px-2">Social CRM</h2>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </div>
           </Link>
         </div>

@@ -227,6 +227,93 @@ export type Database = {
         }
         Relationships: []
       }
+      social_contacts: {
+        Row: {
+          circle: string
+          created_at: string
+          id: string
+          instagram: string | null
+          last_contacted: string | null
+          name: string
+          next_action: string | null
+          notes: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          vibe_score: number
+        }
+        Insert: {
+          circle?: string
+          created_at?: string
+          id?: string
+          instagram?: string | null
+          last_contacted?: string | null
+          name: string
+          next_action?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          vibe_score?: number
+        }
+        Update: {
+          circle?: string
+          created_at?: string
+          id?: string
+          instagram?: string | null
+          last_contacted?: string | null
+          name?: string
+          next_action?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vibe_score?: number
+        }
+        Relationships: []
+      }
+      social_experiences: {
+        Row: {
+          created_at: string
+          description: string | null
+          estimated_cost: number
+          id: string
+          ideal_group_size: string | null
+          is_default: boolean
+          location: string | null
+          tier: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number
+          id?: string
+          ideal_group_size?: string | null
+          is_default?: boolean
+          location?: string | null
+          tier?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number
+          id?: string
+          ideal_group_size?: string | null
+          is_default?: boolean
+          location?: string | null
+          tier?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       standalone_todos: {
         Row: {
           completed: boolean
@@ -259,6 +346,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      sunday_outreach_tasks: {
+        Row: {
+          completed: boolean
+          contact_id: string | null
+          created_at: string
+          id: string
+          outreach_type: string
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          completed?: boolean
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          outreach_type: string
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          completed?: boolean
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          outreach_type?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sunday_outreach_tasks_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "social_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       travel_periods: {
         Row: {
@@ -421,6 +549,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      weekly_social_plans: {
+        Row: {
+          created_at: string
+          custom_title: string | null
+          day_of_week: number
+          experience_id: string | null
+          guest_ids: string[] | null
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          custom_title?: string | null
+          day_of_week: number
+          experience_id?: string | null
+          guest_ids?: string[] | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          custom_title?: string | null
+          day_of_week?: number
+          experience_id?: string | null
+          guest_ids?: string[] | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_social_plans_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "social_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       weekly_tracking: {
         Row: {
