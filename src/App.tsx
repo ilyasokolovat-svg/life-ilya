@@ -14,6 +14,7 @@ import TripPlanning from "./pages/TripPlanning";
 import YearAnalysis from "./pages/YearAnalysis";
 import YearAnalysisIndex from "./pages/YearAnalysisIndex";
 import FocusTimer from "./pages/FocusTimer";
+import SocialCRM from "./pages/SocialCRM";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
@@ -133,6 +134,11 @@ const AppRoutes = () => {
       <Route path="/focus" element={
         <ProtectedRoute>
           <FocusTimer />
+        </ProtectedRoute>
+      } />
+      <Route path="/social" element={
+        <ProtectedRoute>
+          <SocialCRM />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
