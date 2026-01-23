@@ -57,9 +57,17 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
         case 'vibe_asc':
           return a.vibe_score - b.vibe_score;
         case 'oldest_first':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          // Those contacted longest ago first (null = never contacted = very old)
+          if (!a.last_contacted && !b.last_contacted) return a.name.localeCompare(b.name);
+          if (!a.last_contacted) return -1;
+          if (!b.last_contacted) return 1;
+          return new Date(a.last_contacted).getTime() - new Date(b.last_contacted).getTime();
         case 'newest_first':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          // Those contacted most recently first (null = never contacted = at the end)
+          if (!a.last_contacted && !b.last_contacted) return a.name.localeCompare(b.name);
+          if (!a.last_contacted) return 1;
+          if (!b.last_contacted) return -1;
+          return new Date(b.last_contacted).getTime() - new Date(a.last_contacted).getTime();
         default:
           return a.name.localeCompare(b.name);
       }
