@@ -10,6 +10,7 @@ import PeopleDatabase from '@/components/social/PeopleDatabase';
 import EventSlots from '@/components/social/EventSlots';
 import WeeklyOutreach from '@/components/social/WeeklyOutreach';
 import MonthlyStats from '@/components/social/MonthlyStats';
+import HostPlaybook from '@/components/social/HostPlaybook';
 
 const SocialCRM: React.FC = () => {
   const navigate = useNavigate();
@@ -116,6 +117,9 @@ const SocialCRM: React.FC = () => {
             />
           </div>
         </div>
+
+        {/* Host's Playbook */}
+        <HostPlaybook />
       </div>
     </div>
   );
