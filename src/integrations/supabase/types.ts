@@ -227,6 +227,39 @@ export type Database = {
         }
         Relationships: []
       }
+      playbook_tips: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          order_index: number
+          section: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          order_index?: number
+          section: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          order_index?: number
+          section?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_contacts: {
         Row: {
           circle: string
