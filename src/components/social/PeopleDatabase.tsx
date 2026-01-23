@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Search, Settings, Star, Instagram, Plus, Trash2, X, Edit2, Calendar } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Settings, Star, Instagram, Plus, Trash2, X, Edit2, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { SocialContact, DEFAULT_CLOSENESS_TAGS, CLOSENESS_COLORS } from '@/types/social';
-import { formatDistanceToNow, differenceInDays, parseISO, format } from 'date-fns';
+import { SocialContact, DEFAULT_CLOSENESS_TAGS, CLOSENESS_COLORS, FRIENDS_CLOSENESS, NEW_CONNECTIONS_CLOSENESS, ROMANTIC_CLOSENESS, SortOption } from '@/types/social';
+import { formatDistanceToNow, differenceInDays, parseISO } from 'date-fns';
 
 interface PeopleDatabaseProps {
   contacts: SocialContact[];
@@ -19,6 +19,14 @@ interface PeopleDatabaseProps {
   outreachContactIds: Set<string>;
 }
 
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'name', label: 'Name' },
+  { value: 'vibe_desc', label: 'Vibe ↓' },
+  { value: 'vibe_asc', label: 'Vibe ↑' },
+  { value: 'oldest_first', label: 'Oldest First' },
+  { value: 'newest_first', label: 'Recent First' },
+];
+
 const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
   contacts,
   closenessTags,
@@ -29,16 +37,46 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
   outreachContactIds,
 }) => {
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('name');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [editingCloseness, setEditingCloseness] = useState<string | null>(null);
   const [editContactOpen, setEditContactOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<SocialContact | null>(null);
 
-  const filteredContacts = contacts.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.instagram && c.instagram.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filterAndSort = (list: SocialContact[]) => {
+    let filtered = list.filter(c =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.instagram && c.instagram.toLowerCase().includes(search.toLowerCase()))
+    );
+
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'vibe_desc':
+          return b.vibe_score - a.vibe_score;
+        case 'vibe_asc':
+          return a.vibe_score - b.vibe_score;
+        case 'oldest_first':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'newest_first':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+  };
+
+  const groupedContacts = useMemo(() => {
+    const friends = contacts.filter(c => FRIENDS_CLOSENESS.includes(c.closeness as any));
+    const newConnections = contacts.filter(c => NEW_CONNECTIONS_CLOSENESS.includes(c.closeness as any));
+    const romantic = contacts.filter(c => c.closeness === 'Romantic');
+
+    return {
+      friends: filterAndSort(friends),
+      newConnections: filterAndSort(newConnections),
+      romantic: filterAndSort(romantic),
+    };
+  }, [contacts, search, sortBy]);
 
   const getLastContactedColor = (lastContacted: string | null) => {
     if (!lastContacted) return 'text-slate-500';
@@ -53,7 +91,8 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
     return formatDistanceToNow(parseISO(lastContacted), { addSuffix: true });
   };
 
-  const handleVibeChange = async (contactId: string, newVibe: number) => {
+  const handleVibeChange = async (contactId: string, newVibe: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     await onUpdateContact(contactId, { vibe_score: newVibe });
   };
 
@@ -96,53 +135,198 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
     setEditingContact(null);
   };
 
+  const ContactCard: React.FC<{ contact: SocialContact }> = ({ contact }) => {
+    const isInOutreach = outreachContactIds.has(contact.id);
+
+    return (
+      <div
+        className={`group p-2 rounded-lg transition-all cursor-pointer ${
+          isInOutreach 
+            ? 'bg-amber-900/20 border border-amber-700/30' 
+            : 'bg-slate-800/30 hover:bg-slate-800/60 border border-transparent'
+        }`}
+        onClick={() => !isInOutreach && onAddToOutreach(contact.id)}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-white text-xs truncate">{contact.name}</span>
+              {contact.instagram && (
+                <a
+                  href={`https://instagram.com/${contact.instagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-slate-500 hover:text-pink-400"
+                >
+                  <Instagram className="w-2.5 h-2.5" />
+                </a>
+              )}
+            </div>
+            
+            {/* Closeness Tag */}
+            <div className="mt-0.5">
+              {editingCloseness === contact.id ? (
+                <div className="flex flex-wrap gap-0.5">
+                  {closenessTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClosenessChange(contact.id, tag);
+                      }}
+                      className={`px-1 py-0.5 rounded text-[8px] text-white transition-opacity ${
+                        CLOSENESS_COLORS[tag] || 'bg-slate-600'
+                      } ${contact.closeness === tag ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingCloseness(contact.id);
+                  }}
+                  className={`px-1 py-0.5 rounded text-[8px] text-white ${
+                    CLOSENESS_COLORS[contact.closeness] || 'bg-slate-600'
+                  }`}
+                >
+                  {contact.closeness || 'Just Met'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-0.5">
+            {/* Vibe Score */}
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  onClick={(e) => handleVibeChange(contact.id, star, e)}
+                  className="focus:outline-none"
+                >
+                  <Star
+                    className={`w-2.5 h-2.5 transition-colors ${
+                      star <= contact.vibe_score
+                        ? 'text-amber-400 fill-amber-400'
+                        : 'text-slate-600'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+
+            {/* Last Contacted */}
+            <span className={`text-[8px] ${getLastContactedColor(contact.last_contacted)}`}>
+              {getLastContactedText(contact.last_contacted)}
+            </span>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={(e) => openEditContact(contact, e)} className="text-slate-500 hover:text-amber-400">
+                <Edit2 className="w-2.5 h-2.5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDeleteContact(contact.id); }}
+                className="text-slate-500 hover:text-red-400"
+              >
+                <Trash2 className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {isInOutreach && (
+          <div className="mt-0.5 text-[8px] text-amber-500 flex items-center gap-0.5">
+            <Plus className="w-2 h-2" /> In outreach
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const ContactColumn: React.FC<{ title: string; icon: string; contacts: SocialContact[]; color: string }> = ({ title, icon, contacts: columnContacts, color }) => (
+    <div className="flex flex-col h-full min-w-0">
+      <div className="flex items-center gap-1.5 mb-2 px-1">
+        <span>{icon}</span>
+        <span className={`text-xs font-semibold uppercase tracking-wider ${color}`}>{title}</span>
+        <span className="text-[10px] text-slate-500">({columnContacts.length})</span>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="space-y-1 pr-1">
+          {columnContacts.length === 0 ? (
+            <div className="text-center py-4 text-slate-500 text-[10px]">No contacts</div>
+          ) : (
+            columnContacts.map(contact => <ContactCard key={contact.id} contact={contact} />)
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="p-3 border-b border-slate-800">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-amber-500 uppercase tracking-wider">People</h2>
-          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-white">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-slate-900 border-slate-700">
-              <DialogHeader>
-                <DialogTitle className="text-white">Manage "How Close" Tags</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="New tag name..."
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                  />
-                  <Button onClick={handleAddTag} className="bg-amber-600 hover:bg-amber-700">
-                    <Plus className="w-4 h-4" />
-                  </Button>
+          <div className="flex items-center gap-1">
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+              <SelectTrigger className="h-7 w-[100px] bg-slate-800 border-slate-700 text-white text-xs">
+                <ArrowUpDown className="w-3 h-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                {SORT_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value} className="text-white text-xs">{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-white">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-900 border-slate-700">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Manage "How Close" Tags</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="New tag name..."
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                    />
+                    <Button onClick={handleAddTag} className="bg-amber-600 hover:bg-amber-700">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {closenessTags.map(tag => (
+                      <div
+                        key={tag}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs text-white ${CLOSENESS_COLORS[tag] || 'bg-slate-600'}`}
+                      >
+                        {tag}
+                        {!DEFAULT_CLOSENESS_TAGS.includes(tag as any) && (
+                          <button onClick={() => handleRemoveTag(tag)} className="hover:text-red-300">
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {closenessTags.map(tag => (
-                    <div
-                      key={tag}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs text-white ${CLOSENESS_COLORS[tag] || 'bg-slate-600'}`}
-                    >
-                      {tag}
-                      {!DEFAULT_CLOSENESS_TAGS.includes(tag as any) && (
-                        <button onClick={() => handleRemoveTag(tag)} className="hover:text-red-300">
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -155,150 +339,16 @@ const PeopleDatabase: React.FC<PeopleDatabaseProps> = ({
         </div>
       </div>
 
-      {/* Contact List */}
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
-          {filteredContacts.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-sm">
-              {search ? 'No matches found' : 'Add your first contact above'}
-            </div>
-          ) : (
-            filteredContacts.map(contact => {
-              const isInOutreach = outreachContactIds.has(contact.id);
-              
-              return (
-                <div
-                  key={contact.id}
-                  className={`group p-2 rounded-lg transition-all cursor-pointer ${
-                    isInOutreach 
-                      ? 'bg-amber-900/20 border border-amber-700/30' 
-                      : 'bg-slate-800/30 hover:bg-slate-800/60 border border-transparent'
-                  }`}
-                  onClick={() => !isInOutreach && onAddToOutreach(contact.id)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-white text-sm truncate">{contact.name}</span>
-                        {contact.instagram && (
-                          <a
-                            href={`https://instagram.com/${contact.instagram.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-slate-500 hover:text-pink-400"
-                          >
-                            <Instagram className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
-                      
-                      {/* Closeness Tag */}
-                      <div className="mt-1">
-                        {editingCloseness === contact.id ? (
-                          <div className="flex flex-wrap gap-1">
-                            {closenessTags.map(tag => (
-                              <button
-                                key={tag}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleClosenessChange(contact.id, tag);
-                                }}
-                                className={`px-1.5 py-0.5 rounded text-[10px] text-white transition-opacity ${
-                                  CLOSENESS_COLORS[tag] || 'bg-slate-600'
-                                } ${contact.closeness === tag ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
-                              >
-                                {tag}
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingCloseness(contact.id);
-                            }}
-                            className={`px-1.5 py-0.5 rounded text-[10px] text-white ${
-                              CLOSENESS_COLORS[contact.closeness] || 'bg-slate-600'
-                            }`}
-                          >
-                            {contact.closeness || 'Just Met'}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Interesting note */}
-                      {contact.interesting_note && (
-                        <p className="text-[10px] text-slate-500 mt-1 truncate">
-                          {contact.interesting_note}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      {/* Vibe Score */}
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <button
-                            key={star}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleVibeChange(contact.id, star);
-                            }}
-                            className="focus:outline-none"
-                          >
-                            <Star
-                              className={`w-3 h-3 transition-colors ${
-                                star <= contact.vibe_score
-                                  ? 'text-amber-400 fill-amber-400'
-                                  : 'text-slate-600'
-                              }`}
-                            />
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Last Contacted */}
-                      <span className={`text-[10px] ${getLastContactedColor(contact.last_contacted)}`}>
-                        {getLastContactedText(contact.last_contacted)}
-                      </span>
-
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => openEditContact(contact, e)}
-                          className="text-slate-500 hover:text-amber-400"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteContact(contact.id);
-                          }}
-                          className="text-slate-500 hover:text-red-400"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isInOutreach && (
-                    <div className="mt-1 text-[10px] text-amber-500 flex items-center gap-1">
-                      <Plus className="w-3 h-3" /> In this week's outreach
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </ScrollArea>
+      {/* Three Columns */}
+      <div className="flex-1 grid grid-cols-3 gap-2 p-2 min-h-0">
+        <ContactColumn title="Friends" icon="👥" contacts={groupedContacts.friends} color="text-emerald-400" />
+        <ContactColumn title="New" icon="🌟" contacts={groupedContacts.newConnections} color="text-blue-400" />
+        <ContactColumn title="Romantic" icon="💕" contacts={groupedContacts.romantic} color="text-pink-400" />
+      </div>
 
       {/* Footer Stats */}
       <div className="p-2 border-t border-slate-800 text-xs text-slate-500">
-        {contacts.length} contacts
+        {contacts.length} total contacts
       </div>
 
       {/* Edit Contact Dialog */}

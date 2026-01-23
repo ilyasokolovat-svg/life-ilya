@@ -35,7 +35,7 @@ export interface WeeklySocialPlan {
   user_id: string;
   week_start: string;
   day_of_week: number;
-  slot_type: 'mid_week' | 'weekend' | null;
+  slot_type: 'mid_week' | 'weekend' | 'date' | null;
   experience_id: string | null;
   custom_title: string | null;
   guest_ids: string[];
@@ -51,7 +51,7 @@ export interface WeeklyOutreach {
   week_start: string;
   contact_id: string | null;
   contacted: boolean;
-  confirmed_for: 'mid_week' | 'weekend' | null;
+  confirmed_for: 'mid_week' | 'weekend' | 'date' | null;
   order_index: number | null;
   created_at: string;
   updated_at: string;
@@ -76,7 +76,8 @@ export const DEFAULT_CLOSENESS_TAGS = [
   'Acquaintance',
   'Friend',
   'Close Friend',
-  'MyCrew'
+  'MyCrew',
+  'Romantic'
 ] as const;
 
 export const CLOSENESS_COLORS: Record<string, string> = {
@@ -86,9 +87,17 @@ export const CLOSENESS_COLORS: Record<string, string> = {
   'Friend': 'bg-emerald-600',
   'Close Friend': 'bg-amber-600',
   'MyCrew': 'bg-amber-500',
+  'Romantic': 'bg-pink-600',
 };
 
+// Groupings for the three columns
+export const FRIENDS_CLOSENESS = ['Friend', 'Close Friend', 'MyCrew'] as const;
+export const NEW_CONNECTIONS_CLOSENESS = ['Just Met', 'Met Once', 'Acquaintance'] as const;
+export const ROMANTIC_CLOSENESS = ['Romantic'] as const;
+
 export const TIERS = ['Low', 'Mid', 'High'] as const;
+
+export type SortOption = 'name' | 'vibe_desc' | 'vibe_asc' | 'oldest_first' | 'newest_first';
 
 export const DEFAULT_EXPERIENCES: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>[] = [
   // Tier 1: Low Cost
@@ -105,4 +114,14 @@ export const DEFAULT_EXPERIENCES: Omit<SocialExperience, 'id' | 'user_id' | 'cre
   { title: 'Curated Home Dinner', tier: 'High', estimated_cost: 750, ideal_group_size: '6-10', description: 'Gold standard for VIP networking. Use Mamazu or a private chef', location: 'Home', is_default: true },
   { title: 'Speakeasy Mocktail Round', tier: 'High', estimated_cost: 300, ideal_group_size: '4-6', description: 'Night out vibe without the alcohol', location: 'Galaxy Bar / The Library Bar', is_default: true },
   { title: 'Yacht Morning (Sober)', tier: 'High', estimated_cost: 2000, ideal_group_size: '6-8', description: '10 AM Wellness & Swim yacht - feels ultra-exclusive', location: 'Dubai Marina', is_default: true },
+];
+
+// Romantic date experiences
+export const DEFAULT_DATE_EXPERIENCES: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>[] = [
+  { title: 'Coffee & Walk', tier: 'Low', estimated_cost: 50, ideal_group_size: '1', description: 'Low-stakes first date, perfect for getting to know someone', location: 'La Petite Maison Café', is_default: true },
+  { title: 'Art Gallery Date', tier: 'Low', estimated_cost: 0, ideal_group_size: '1', description: 'Cultural, interesting conversation starter', location: 'Alserkal Avenue', is_default: true },
+  { title: 'Sunset Dinner', tier: 'Mid', estimated_cost: 400, ideal_group_size: '1', description: 'Classic romantic dinner with a view', location: 'Pier 7', is_default: true },
+  { title: 'Beach Club Day', tier: 'Mid', estimated_cost: 500, ideal_group_size: '1', description: 'Relaxed vibe, great for building connection', location: 'Nikki Beach', is_default: true },
+  { title: 'Fine Dining Experience', tier: 'High', estimated_cost: 1200, ideal_group_size: '1', description: 'Special occasion, impressive atmosphere', location: 'Zuma / Nobu', is_default: true },
+  { title: 'Helicopter Ride', tier: 'High', estimated_cost: 2500, ideal_group_size: '1', description: 'Once in a lifetime experience', location: 'Dubai Marina', is_default: true },
 ];

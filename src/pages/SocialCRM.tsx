@@ -9,16 +9,18 @@ import QuickAddBar from '@/components/social/QuickAddBar';
 import PeopleDatabase from '@/components/social/PeopleDatabase';
 import EventSlots from '@/components/social/EventSlots';
 import WeeklyOutreach from '@/components/social/WeeklyOutreach';
+import MonthlyStats from '@/components/social/MonthlyStats';
 
 const SocialCRM: React.FC = () => {
   const navigate = useNavigate();
   const {
-    contacts, experiences, outreachItems, loading,
+    contacts, experiences, dateExperiences, outreachItems, loading,
     addContact, updateContact, deleteContact,
     addExperience, updateExperience, deleteExperience,
     addToOutreach, removeFromOutreach, toggleOutreachContacted, confirmForEvent, removeGuestFromEvent,
     selectEventExperience, clearEventSlot,
-    getMidWeekExperienceId, getWeekendExperienceId, getMidWeekGuests, getWeekendGuests,
+    getMidWeekExperienceId, getWeekendExperienceId, getDateExperienceId,
+    getMidWeekGuests, getWeekendGuests, getDateGuests,
   } = useSocialCRM();
 
   const [closenessTags, setClosenessTags] = useLocalStorage<string[]>('social-closeness-tags', [...DEFAULT_CLOSENESS_TAGS]);
@@ -32,13 +34,18 @@ const SocialCRM: React.FC = () => {
     });
   };
 
+  const midWeekGuests = getMidWeekGuests();
+  const weekendGuests = getWeekendGuests();
+  const dateGuests = getDateGuests();
+
   if (loading) {
     return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><div className="text-amber-500">Loading...</div></div>;
   }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="border-b border-slate-800 px-4 py-3">
+      {/* Header */}
+      <div className="border-b border-slate-800 px-4 py-3 sticky top-0 bg-[#0a0a0a] z-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-slate-400 hover:text-white"><ArrowLeft className="w-5 h-5" /></Button>
@@ -47,17 +54,66 @@ const SocialCRM: React.FC = () => {
           <div className="text-sm text-slate-500">{contacts.length} people • {outreachItems.filter(i => i.contacted).length}/{outreachItems.length} reached</div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto p-4 space-y-4">
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-4 space-y-4 pb-8">
+        {/* Monthly Stats */}
+        <MonthlyStats 
+          contacts={contacts} 
+          outreachItems={outreachItems}
+          midWeekGuestCount={midWeekGuests.length}
+          weekendGuestCount={weekendGuests.length}
+          dateGuestCount={dateGuests.length}
+        />
+
+        {/* Quick Add */}
         <QuickAddBar onAdd={handleQuickAdd} />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-180px)]">
-          <div className="lg:col-span-4 h-full">
-            <PeopleDatabase contacts={contacts} closenessTags={closenessTags} onAddToOutreach={addToOutreach} onUpdateContact={updateContact} onDeleteContact={deleteContact} onUpdateClosenessTags={setClosenessTags} outreachContactIds={outreachContactIds} />
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* People Database - 5 cols */}
+          <div className="lg:col-span-5 min-h-[600px]">
+            <PeopleDatabase 
+              contacts={contacts} 
+              closenessTags={closenessTags} 
+              onAddToOutreach={addToOutreach} 
+              onUpdateContact={updateContact} 
+              onDeleteContact={deleteContact} 
+              onUpdateClosenessTags={setClosenessTags} 
+              outreachContactIds={outreachContactIds} 
+            />
           </div>
-          <div className="lg:col-span-4 h-full">
-            <EventSlots experiences={experiences} contacts={contacts} midWeekExperienceId={getMidWeekExperienceId()} weekendExperienceId={getWeekendExperienceId()} midWeekGuests={getMidWeekGuests()} weekendGuests={getWeekendGuests()} onSelectExperience={selectEventExperience} onRemoveGuest={removeGuestFromEvent} onClearSlot={clearEventSlot} onAddExperience={addExperience} onUpdateExperience={updateExperience} onDeleteExperience={deleteExperience} />
+
+          {/* Event Slots - 4 cols */}
+          <div className="lg:col-span-4">
+            <EventSlots 
+              experiences={experiences} 
+              dateExperiences={dateExperiences}
+              contacts={contacts} 
+              midWeekExperienceId={getMidWeekExperienceId()} 
+              weekendExperienceId={getWeekendExperienceId()} 
+              dateExperienceId={getDateExperienceId()}
+              midWeekGuests={midWeekGuests} 
+              weekendGuests={weekendGuests} 
+              dateGuests={dateGuests}
+              onSelectExperience={selectEventExperience} 
+              onRemoveGuest={removeGuestFromEvent} 
+              onClearSlot={clearEventSlot} 
+              onAddExperience={addExperience} 
+              onUpdateExperience={updateExperience} 
+              onDeleteExperience={deleteExperience} 
+            />
           </div>
-          <div className="lg:col-span-4 h-full">
-            <WeeklyOutreach outreachItems={outreachItems} contacts={contacts} onToggleContacted={toggleOutreachContacted} onConfirmForEvent={confirmForEvent} onRemoveFromOutreach={removeFromOutreach} />
+
+          {/* Weekly Outreach - 3 cols */}
+          <div className="lg:col-span-3 min-h-[600px]">
+            <WeeklyOutreach 
+              outreachItems={outreachItems} 
+              contacts={contacts} 
+              onToggleContacted={toggleOutreachContacted} 
+              onConfirmForEvent={confirmForEvent} 
+              onRemoveFromOutreach={removeFromOutreach} 
+            />
           </div>
         </div>
       </div>

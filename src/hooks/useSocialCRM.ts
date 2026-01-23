@@ -6,7 +6,8 @@ import {
   SocialExperience, 
   WeeklySocialPlan, 
   WeeklyOutreach,
-  DEFAULT_EXPERIENCES 
+  DEFAULT_EXPERIENCES,
+  DEFAULT_DATE_EXPERIENCES
 } from '@/types/social';
 import { startOfWeek, format } from 'date-fns';
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ export function useSocialCRM() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<SocialContact[]>([]);
   const [experiences, setExperiences] = useState<SocialExperience[]>([]);
+  const [dateExperiences, setDateExperiences] = useState<SocialExperience[]>([]);
   const [weeklyPlans, setWeeklyPlans] = useState<WeeklySocialPlan[]>([]);
   const [outreachItems, setOutreachItems] = useState<WeeklyOutreach[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,21 @@ export function useSocialCRM() {
       ]);
 
       if (contactsRes.data) setContacts(contactsRes.data as unknown as SocialContact[]);
-      if (experiencesRes.data) setExperiences(experiencesRes.data as unknown as SocialExperience[]);
+      if (experiencesRes.data) {
+        const allExperiences = experiencesRes.data as unknown as SocialExperience[];
+        // Separate social experiences from date experiences based on ideal_group_size
+        const socialExp = allExperiences.filter(e => e.ideal_group_size !== '1' || !e.description?.toLowerCase().includes('date'));
+        const dateExp = allExperiences.filter(e => e.ideal_group_size === '1' && (e.description?.toLowerCase().includes('date') || e.title.toLowerCase().includes('date') || e.title.toLowerCase().includes('dinner') || e.title.toLowerCase().includes('coffee')));
+        
+        // If we can't determine by description, just show all in social and filter manually
+        if (dateExp.length === 0) {
+          setExperiences(allExperiences);
+          setDateExperiences([]);
+        } else {
+          setExperiences(socialExp);
+          setDateExperiences(dateExp);
+        }
+      }
       if (plansRes.data) setWeeklyPlans(plansRes.data as unknown as WeeklySocialPlan[]);
       if (outreachRes.data) setOutreachItems(outreachRes.data as unknown as WeeklyOutreach[]);
 
@@ -59,21 +75,29 @@ export function useSocialCRM() {
   const seedDefaultExperiences = async () => {
     if (!user) return;
 
-    const experiencesToInsert = DEFAULT_EXPERIENCES.map(exp => ({
+    const socialExperiencesToInsert = DEFAULT_EXPERIENCES.map(exp => ({
       ...exp,
       user_id: user.id,
     }));
 
-    const { data, error } = await fromTable('social_experiences')
-      .insert(experiencesToInsert)
-      .select();
+    const dateExperiencesToInsert = DEFAULT_DATE_EXPERIENCES.map(exp => ({
+      ...exp,
+      user_id: user.id,
+    }));
 
-    if (error) {
-      console.error('Error seeding experiences:', error);
-    } else if (data) {
-      setExperiences(data as unknown as SocialExperience[]);
-      toast.success('Default experiences added!');
+    const [socialRes, dateRes] = await Promise.all([
+      fromTable('social_experiences').insert(socialExperiencesToInsert).select(),
+      fromTable('social_experiences').insert(dateExperiencesToInsert).select(),
+    ]);
+
+    if (socialRes.data) {
+      setExperiences(socialRes.data as unknown as SocialExperience[]);
     }
+    if (dateRes.data) {
+      setDateExperiences(dateRes.data as unknown as SocialExperience[]);
+    }
+    
+    toast.success('Default experiences added!');
   };
 
   useEffect(() => {
@@ -124,7 +148,7 @@ export function useSocialCRM() {
   };
 
   // Experience CRUD
-  const addExperience = async (experience: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addExperience = async (experience: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>, isDateExperience: boolean = false) => {
     if (!user) return;
 
     const { data, error } = await fromTable('social_experiences')
@@ -136,7 +160,11 @@ export function useSocialCRM() {
       toast.error('Failed to add experience');
       console.error(error);
     } else if (data) {
-      setExperiences(prev => [...prev, data as unknown as SocialExperience]);
+      if (isDateExperience) {
+        setDateExperiences(prev => [...prev, data as unknown as SocialExperience]);
+      } else {
+        setExperiences(prev => [...prev, data as unknown as SocialExperience]);
+      }
       toast.success('Experience added!');
     }
   };
@@ -151,6 +179,7 @@ export function useSocialCRM() {
       console.error(error);
     } else {
       setExperiences(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      setDateExperiences(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
       toast.success('Experience updated!');
     }
   };
@@ -163,6 +192,7 @@ export function useSocialCRM() {
       console.error(error);
     } else {
       setExperiences(prev => prev.filter(e => e.id !== id));
+      setDateExperiences(prev => prev.filter(e => e.id !== id));
       toast.success('Experience deleted!');
     }
   };
@@ -240,7 +270,7 @@ export function useSocialCRM() {
     }
   };
 
-  const confirmForEvent = async (outreachId: string, slotType: 'mid_week' | 'weekend') => {
+  const confirmForEvent = async (outreachId: string, slotType: 'mid_week' | 'weekend' | 'date') => {
     const { error } = await fromTable('weekly_outreach')
       .update({ confirmed_for: slotType, updated_at: new Date().toISOString() })
       .eq('id', outreachId);
@@ -251,11 +281,12 @@ export function useSocialCRM() {
       setOutreachItems(prev => prev.map(i => 
         i.id === outreachId ? { ...i, confirmed_for: slotType } : i
       ));
-      toast.success(`Confirmed for ${slotType === 'mid_week' ? 'Mid-Week' : 'Weekend'}!`);
+      const label = slotType === 'mid_week' ? 'Mid-Week' : slotType === 'weekend' ? 'Weekend' : 'Date';
+      toast.success(`Confirmed for ${label}!`);
     }
   };
 
-  const removeGuestFromEvent = async (slotType: 'mid_week' | 'weekend', contactId: string) => {
+  const removeGuestFromEvent = async (slotType: 'mid_week' | 'weekend' | 'date', contactId: string) => {
     const outreachItem = outreachItems.find(i => i.contact_id === contactId && i.confirmed_for === slotType);
     if (!outreachItem) return;
 
@@ -273,7 +304,7 @@ export function useSocialCRM() {
   };
 
   // Event Slot Plans
-  const selectEventExperience = async (slotType: 'mid_week' | 'weekend', experienceId: string | null) => {
+  const selectEventExperience = async (slotType: 'mid_week' | 'weekend' | 'date', experienceId: string | null) => {
     if (!user) return;
 
     const existing = weeklyPlans.find(p => p.slot_type === slotType);
@@ -289,11 +320,12 @@ export function useSocialCRM() {
         ));
       }
     } else {
+      const dayOfWeek = slotType === 'mid_week' ? 3 : slotType === 'weekend' ? 6 : 5; // Wed, Sat, or Fri for dates
       const { data, error } = await fromTable('weekly_social_plans')
         .insert({
           user_id: user.id,
           week_start: currentWeekStart,
-          day_of_week: slotType === 'mid_week' ? 3 : 6, // Wed or Sat
+          day_of_week: dayOfWeek,
           slot_type: slotType,
           experience_id: experienceId,
           guest_ids: [],
@@ -307,7 +339,7 @@ export function useSocialCRM() {
     }
   };
 
-  const clearEventSlot = async (slotType: 'mid_week' | 'weekend') => {
+  const clearEventSlot = async (slotType: 'mid_week' | 'weekend' | 'date') => {
     // Clear the experience selection
     await selectEventExperience(slotType, null);
     
@@ -333,6 +365,10 @@ export function useSocialCRM() {
     return weeklyPlans.find(p => p.slot_type === 'weekend')?.experience_id || null;
   };
 
+  const getDateExperienceId = () => {
+    return weeklyPlans.find(p => p.slot_type === 'date')?.experience_id || null;
+  };
+
   const getMidWeekGuests = () => {
     return outreachItems
       .filter(i => i.confirmed_for === 'mid_week' && i.contact_id)
@@ -347,9 +383,17 @@ export function useSocialCRM() {
       .filter(Boolean) as SocialContact[];
   };
 
+  const getDateGuests = () => {
+    return outreachItems
+      .filter(i => i.confirmed_for === 'date' && i.contact_id)
+      .map(i => contacts.find(c => c.id === i.contact_id))
+      .filter(Boolean) as SocialContact[];
+  };
+
   return {
     contacts,
     experiences,
+    dateExperiences,
     weeklyPlans,
     outreachItems,
     loading,
@@ -373,8 +417,10 @@ export function useSocialCRM() {
     clearEventSlot,
     getMidWeekExperienceId,
     getWeekendExperienceId,
+    getDateExperienceId,
     getMidWeekGuests,
     getWeekendGuests,
+    getDateGuests,
     // Refresh
     refresh: loadData,
   };
