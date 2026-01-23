@@ -283,6 +283,7 @@ export type Database = {
       }
       social_experiences: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           estimated_cost: number
@@ -296,6 +297,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           estimated_cost?: number
@@ -309,6 +311,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           estimated_cost?: number

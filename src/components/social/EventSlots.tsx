@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SocialExperience, SocialContact, TIERS } from '@/types/social';
+import { SocialExperience, SocialContact, TIERS, EXPERIENCE_CATEGORIES, ExperienceCategory, CATEGORY_COLORS } from '@/types/social';
 
 interface EventSlotProps {
   slotType: 'mid_week' | 'weekend' | 'date';
@@ -20,6 +20,8 @@ interface EventSlotProps {
   onRemoveGuest: (contactId: string) => void;
   onClear: () => void;
   accentColor: string;
+  categoryFilter: string;
+  onCategoryFilterChange: (category: string) => void;
 }
 
 const EventSlot: React.FC<EventSlotProps> = ({
@@ -33,7 +35,12 @@ const EventSlot: React.FC<EventSlotProps> = ({
   onRemoveGuest,
   onClear,
   accentColor,
+  categoryFilter,
+  onCategoryFilterChange,
 }) => {
+  const filteredExperiences = categoryFilter === 'all' 
+    ? experiences 
+    : experiences.filter(e => e.category === categoryFilter);
   const selectedExperience = experiences.find(e => e.id === experienceId);
   const totalCost = selectedExperience 
     ? selectedExperience.estimated_cost * Math.max(1, confirmedGuests.length)
@@ -53,17 +60,46 @@ const EventSlot: React.FC<EventSlotProps> = ({
         )}
       </div>
 
+      {/* Category Filter Chips */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        <button
+          onClick={() => onCategoryFilterChange('all')}
+          className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+            categoryFilter === 'all' 
+              ? 'bg-slate-600 text-white' 
+              : 'bg-slate-800 text-slate-400 hover:text-white'
+          }`}
+        >
+          All
+        </button>
+        {EXPERIENCE_CATEGORIES.map(cat => {
+          const hasExperiences = experiences.some(e => e.category === cat);
+          if (!hasExperiences) return null;
+          return (
+            <button
+              key={cat}
+              onClick={() => onCategoryFilterChange(cat)}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                categoryFilter === cat 
+                  ? `${CATEGORY_COLORS[cat]} text-white` 
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
+
       <Select value={experienceId || ''} onValueChange={(val) => onSelectExperience(val || null)}>
         <SelectTrigger className="bg-slate-800 border-slate-700 text-white mb-3 h-9 text-sm">
           <SelectValue placeholder="Select experience..." />
         </SelectTrigger>
         <SelectContent className="bg-slate-800 border-slate-700">
-          {experiences.map(exp => (
+          {filteredExperiences.map(exp => (
             <SelectItem key={exp.id} value={exp.id} className="text-white text-sm">
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${
-                  exp.tier === 'Low' ? 'bg-emerald-500' : exp.tier === 'Mid' ? 'bg-amber-500' : 'bg-red-500'
-                }`} />
+                <span className={`w-2 h-2 rounded-full ${CATEGORY_COLORS[exp.category] || 'bg-slate-500'}`} />
                 {exp.title} ({exp.estimated_cost} AED)
               </div>
             </SelectItem>
@@ -134,6 +170,7 @@ interface EventSlotsProps {
 const emptyFormData = {
   title: '',
   tier: 'Mid' as 'Low' | 'Mid' | 'High',
+  category: 'Chill' as ExperienceCategory,
   estimated_cost: 0,
   location: '',
   ideal_group_size: '',
@@ -163,6 +200,11 @@ const EventSlots: React.FC<EventSlotsProps> = ({
   const [formData, setFormData] = useState(emptyFormData);
   const [isDateForm, setIsDateForm] = useState(false);
   const [activeTab, setActiveTab] = useState<'events' | 'dates'>('events');
+  
+  // Category filter state for each slot
+  const [midWeekCategoryFilter, setMidWeekCategoryFilter] = useState('all');
+  const [weekendCategoryFilter, setWeekendCategoryFilter] = useState('all');
+  const [dateCategoryFilter, setDateCategoryFilter] = useState('all');
 
   const openAddForm = (forDates: boolean = false) => {
     setEditingId(null);
@@ -176,6 +218,7 @@ const EventSlots: React.FC<EventSlotsProps> = ({
     setFormData({
       title: exp.title,
       tier: exp.tier,
+      category: exp.category || 'Chill',
       estimated_cost: exp.estimated_cost,
       location: exp.location || '',
       ideal_group_size: exp.ideal_group_size || '',
@@ -206,7 +249,7 @@ const EventSlots: React.FC<EventSlotsProps> = ({
         if (tierExperiences.length === 0) return null;
         
         return (
-          <div key={tier}>
+          <div key={tier} className="mb-4">
             <h4 className={`text-xs uppercase tracking-wider mb-1.5 ${
               tier === 'Low' ? 'text-emerald-400' : tier === 'Mid' ? 'text-amber-400' : 'text-red-400'
             }`}>
@@ -216,8 +259,13 @@ const EventSlots: React.FC<EventSlotsProps> = ({
               {tierExperiences.map(exp => (
                 <div key={exp.id} className="flex items-center justify-between bg-slate-800 rounded px-3 py-2 group">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white">{exp.title}</div>
-                    <div className="text-xs text-slate-500">{exp.location} • {exp.estimated_cost} AED</div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium text-white ${CATEGORY_COLORS[exp.category] || 'bg-slate-600'}`}>
+                        {exp.category || 'Chill'}
+                      </span>
+                      <span className="text-sm text-white">{exp.title}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">{exp.location} • {exp.estimated_cost} AED</div>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEditForm(exp, forDates)} className="text-slate-500 hover:text-amber-400 p-1">
@@ -280,7 +328,7 @@ const EventSlots: React.FC<EventSlotsProps> = ({
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="bg-slate-700 border-slate-600 text-white"
                 />
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Select value={formData.tier} onValueChange={(v: 'Low' | 'Mid' | 'High') => setFormData({ ...formData, tier: v })}>
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue />
@@ -291,6 +339,23 @@ const EventSlots: React.FC<EventSlotsProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
+                  <Select value={formData.category} onValueChange={(v: ExperienceCategory) => setFormData({ ...formData, category: v })}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {EXPERIENCE_CATEGORIES.map(c => (
+                        <SelectItem key={c} value={c} className="text-white">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${CATEGORY_COLORS[c]}`} />
+                            {c}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <Input
                     type="number"
                     placeholder="Cost (AED)"
@@ -365,6 +430,8 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           onRemoveGuest={(id) => onRemoveGuest('mid_week', id)}
           onClear={() => onClearSlot('mid_week')}
           accentColor="text-amber-400"
+          categoryFilter={midWeekCategoryFilter}
+          onCategoryFilterChange={setMidWeekCategoryFilter}
         />
 
         <EventSlot
@@ -378,6 +445,8 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           onRemoveGuest={(id) => onRemoveGuest('weekend', id)}
           onClear={() => onClearSlot('weekend')}
           accentColor="text-amber-400"
+          categoryFilter={weekendCategoryFilter}
+          onCategoryFilterChange={setWeekendCategoryFilter}
         />
 
         <EventSlot
@@ -391,6 +460,8 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           onRemoveGuest={(id) => onRemoveGuest('date', id)}
           onClear={() => onClearSlot('date')}
           accentColor="text-pink-400"
+          categoryFilter={dateCategoryFilter}
+          onCategoryFilterChange={setDateCategoryFilter}
         />
       </div>
     </div>
