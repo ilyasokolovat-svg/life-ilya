@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Users, DollarSign, Settings, Plus, X, Trash2, Edit2, Heart } from 'lucide-react';
+import { Calendar, Users, DollarSign, Settings, Plus, X, Trash2, Edit2, Heart, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SocialExperience, SocialContact, TIERS, EXPERIENCE_CATEGORIES, ExperienceCategory, CATEGORY_COLORS } from '@/types/social';
+import { SocialExperience, SocialContact, WeeklySocialPlan, TIERS, EXPERIENCE_CATEGORIES, ExperienceCategory, CATEGORY_COLORS } from '@/types/social';
 
 interface EventSlotProps {
   slotType: 'mid_week' | 'weekend' | 'date';
@@ -16,9 +16,11 @@ interface EventSlotProps {
   experienceId: string | null;
   experiences: SocialExperience[];
   confirmedGuests: SocialContact[];
+  plan?: WeeklySocialPlan;
   onSelectExperience: (experienceId: string | null) => void;
   onRemoveGuest: (contactId: string) => void;
   onClear: () => void;
+  onMarkComplete?: () => void;
   accentColor: string;
   categoryFilter: string;
   onCategoryFilterChange: (category: string) => void;
@@ -31,9 +33,11 @@ const EventSlot: React.FC<EventSlotProps> = ({
   experienceId,
   experiences,
   confirmedGuests,
+  plan,
   onSelectExperience,
   onRemoveGuest,
   onClear,
+  onMarkComplete,
   accentColor,
   categoryFilter,
   onCategoryFilterChange,
@@ -45,6 +49,10 @@ const EventSlot: React.FC<EventSlotProps> = ({
   const totalCost = selectedExperience 
     ? selectedExperience.estimated_cost * Math.max(1, confirmedGuests.length)
     : 0;
+  
+  const isCompleted = plan?.completed;
+  const hasActivity = experienceId || confirmedGuests.length > 0;
+  const canMarkComplete = hasActivity && !isCompleted && onMarkComplete;
 
   return (
     <Card className="bg-slate-900/80 border-slate-700 p-3 flex flex-col h-full">
@@ -138,12 +146,31 @@ const EventSlot: React.FC<EventSlotProps> = ({
         )}
       </div>
 
-      <div className="mt-3 pt-2 border-t border-slate-700 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-slate-400">
-          <DollarSign className="w-3 h-3" />
-          <span className="text-[10px] uppercase tracking-wider">Est. Cost</span>
+      {/* Cost and Complete Button */}
+      <div className="mt-3 pt-2 border-t border-slate-700 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <DollarSign className="w-3 h-3" />
+            <span className="text-[10px] uppercase tracking-wider">Est. Cost</span>
+          </div>
+          <span className={`text-base font-bold ${accentColor}`}>{totalCost > 0 ? `${totalCost} AED` : '—'}</span>
         </div>
-        <span className={`text-base font-bold ${accentColor}`}>{totalCost > 0 ? `${totalCost} AED` : '—'}</span>
+        
+        {isCompleted ? (
+          <div className="flex items-center justify-center gap-1.5 text-emerald-500 text-xs py-1">
+            <CheckCircle className="w-4 h-4" />
+            <span>Completed</span>
+          </div>
+        ) : canMarkComplete && (
+          <Button
+            size="sm"
+            onClick={onMarkComplete}
+            className="w-full h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+          >
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Mark Complete
+          </Button>
+        )}
       </div>
     </Card>
   );
@@ -156,12 +183,16 @@ interface EventSlotsProps {
   midWeekExperienceId: string | null;
   weekendExperienceId: string | null;
   dateExperienceId: string | null;
+  midWeekPlan?: WeeklySocialPlan;
+  weekendPlan?: WeeklySocialPlan;
+  datePlan?: WeeklySocialPlan;
   midWeekGuests: SocialContact[];
   weekendGuests: SocialContact[];
   dateGuests: SocialContact[];
   onSelectExperience: (slotType: 'mid_week' | 'weekend' | 'date', experienceId: string | null) => void;
   onRemoveGuest: (slotType: 'mid_week' | 'weekend' | 'date', contactId: string) => void;
   onClearSlot: (slotType: 'mid_week' | 'weekend' | 'date') => void;
+  onMarkComplete: (slotType: 'mid_week' | 'weekend' | 'date') => void;
   onAddExperience: (experience: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>, isDateExperience?: boolean) => Promise<void>;
   onUpdateExperience: (id: string, updates: Partial<SocialExperience>) => Promise<void>;
   onDeleteExperience: (id: string) => Promise<void>;
@@ -184,12 +215,16 @@ const EventSlots: React.FC<EventSlotsProps> = ({
   midWeekExperienceId,
   weekendExperienceId,
   dateExperienceId,
+  midWeekPlan,
+  weekendPlan,
+  datePlan,
   midWeekGuests,
   weekendGuests,
   dateGuests,
   onSelectExperience,
   onRemoveGuest,
   onClearSlot,
+  onMarkComplete,
   onAddExperience,
   onUpdateExperience,
   onDeleteExperience,
@@ -426,9 +461,11 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           experienceId={midWeekExperienceId}
           experiences={experiences}
           confirmedGuests={midWeekGuests}
+          plan={midWeekPlan}
           onSelectExperience={(id) => onSelectExperience('mid_week', id)}
           onRemoveGuest={(id) => onRemoveGuest('mid_week', id)}
           onClear={() => onClearSlot('mid_week')}
+          onMarkComplete={() => onMarkComplete('mid_week')}
           accentColor="text-amber-400"
           categoryFilter={midWeekCategoryFilter}
           onCategoryFilterChange={setMidWeekCategoryFilter}
@@ -441,9 +478,11 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           experienceId={weekendExperienceId}
           experiences={experiences}
           confirmedGuests={weekendGuests}
+          plan={weekendPlan}
           onSelectExperience={(id) => onSelectExperience('weekend', id)}
           onRemoveGuest={(id) => onRemoveGuest('weekend', id)}
           onClear={() => onClearSlot('weekend')}
+          onMarkComplete={() => onMarkComplete('weekend')}
           accentColor="text-amber-400"
           categoryFilter={weekendCategoryFilter}
           onCategoryFilterChange={setWeekendCategoryFilter}
@@ -456,9 +495,11 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           experienceId={dateExperienceId}
           experiences={dateExperiences}
           confirmedGuests={dateGuests}
+          plan={datePlan}
           onSelectExperience={(id) => onSelectExperience('date', id)}
           onRemoveGuest={(id) => onRemoveGuest('date', id)}
           onClear={() => onClearSlot('date')}
+          onMarkComplete={() => onMarkComplete('date')}
           accentColor="text-pink-400"
           categoryFilter={dateCategoryFilter}
           onCategoryFilterChange={setDateCategoryFilter}

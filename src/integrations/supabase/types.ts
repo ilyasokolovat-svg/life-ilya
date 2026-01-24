@@ -314,6 +314,51 @@ export type Database = {
         }
         Relationships: []
       }
+      social_event_archive: {
+        Row: {
+          completed_at: string
+          created_at: string
+          experience_cost: number | null
+          experience_location: string | null
+          experience_title: string | null
+          guest_count: number | null
+          guest_names: string[] | null
+          id: string
+          notes: string | null
+          slot_type: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          experience_cost?: number | null
+          experience_location?: string | null
+          experience_title?: string | null
+          guest_count?: number | null
+          guest_names?: string[] | null
+          id?: string
+          notes?: string | null
+          slot_type: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          experience_cost?: number | null
+          experience_location?: string | null
+          experience_title?: string | null
+          guest_count?: number | null
+          guest_names?: string[] | null
+          id?: string
+          notes?: string | null
+          slot_type?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       social_experiences: {
         Row: {
           category: string | null
@@ -641,6 +686,8 @@ export type Database = {
       }
       weekly_social_plans: {
         Row: {
+          completed: boolean
+          completed_at: string | null
           created_at: string
           custom_title: string | null
           day_of_week: number
@@ -654,6 +701,8 @@ export type Database = {
           week_start: string
         }
         Insert: {
+          completed?: boolean
+          completed_at?: string | null
           created_at?: string
           custom_title?: string | null
           day_of_week: number
@@ -667,6 +716,8 @@ export type Database = {
           week_start: string
         }
         Update: {
+          completed?: boolean
+          completed_at?: string | null
           created_at?: string
           custom_title?: string | null
           day_of_week?: number
