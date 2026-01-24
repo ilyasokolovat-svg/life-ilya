@@ -1,30 +1,35 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocialCRM } from '@/hooks/useSocialCRM';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import { DEFAULT_CLOSENESS_TAGS, SocialContact } from '@/types/social';
+import { DEFAULT_CLOSENESS_TAGS, SocialContact, WeeklySocialPlan } from '@/types/social';
 import QuickAddBar from '@/components/social/QuickAddBar';
 import PeopleDatabase from '@/components/social/PeopleDatabase';
 import EventSlots from '@/components/social/EventSlots';
 import WeeklyOutreach from '@/components/social/WeeklyOutreach';
 import MonthlyStats from '@/components/social/MonthlyStats';
 import HostPlaybook from '@/components/social/HostPlaybook';
+import EventArchive from '@/components/social/EventArchive';
+import WeekCatchupDialog from '@/components/social/WeekCatchupDialog';
 
 const SocialCRM: React.FC = () => {
   const navigate = useNavigate();
   const {
-    contacts, experiences, dateExperiences, outreachItems, loading,
+    contacts, experiences, dateExperiences, outreachItems, weeklyPlans, archivedEvents, pendingCatchupPlans, loading,
     addContact, updateContact, deleteContact,
     addExperience, updateExperience, deleteExperience,
     addToOutreach, removeFromOutreach, toggleOutreachContacted, confirmForEvent, removeGuestFromEvent,
-    selectEventExperience, clearEventSlot,
+    selectEventExperience, clearEventSlot, markEventComplete,
     getMidWeekExperienceId, getWeekendExperienceId, getDateExperienceId,
+    getMidWeekPlan, getWeekendPlan, getDatePlan,
     getMidWeekGuests, getWeekendGuests, getDateGuests,
+    dismissCatchup, dismissAllCatchups,
   } = useSocialCRM();
 
   const [closenessTags, setClosenessTags] = useLocalStorage<string[]>('social-closeness-tags', [...DEFAULT_CLOSENESS_TAGS]);
+  const [catchupOpen, setCatchupOpen] = useState(true);
   const outreachContactIds = useMemo(() => new Set(outreachItems.map(i => i.contact_id).filter(Boolean) as string[]), [outreachItems]);
 
   const handleQuickAdd = async (data: { name: string; instagram: string; interesting_note: string }) => {
@@ -34,6 +39,24 @@ const SocialCRM: React.FC = () => {
       last_contacted: null, next_action: null, notes: null,
     });
   };
+
+  const handleMarkComplete = async (slotType: 'mid_week' | 'weekend' | 'date') => {
+    const plan = slotType === 'mid_week' ? getMidWeekPlan() : slotType === 'weekend' ? getWeekendPlan() : getDatePlan();
+    if (plan) await markEventComplete(plan.id);
+  };
+
+  const handleCatchupComplete = async (planId: string) => {
+    await markEventComplete(planId);
+  };
+
+  // Prepare catchup events with experience and guest data
+  const catchupEventsWithData = useMemo(() => {
+    return pendingCatchupPlans.map(plan => ({
+      plan,
+      experience: plan.experience_id ? [...experiences, ...dateExperiences].find(e => e.id === plan.experience_id) || null : null,
+      guests: [] as SocialContact[], // Previous week's outreach data not loaded
+    }));
+  }, [pendingCatchupPlans, experiences, dateExperiences]);
 
   const midWeekGuests = getMidWeekGuests();
   const weekendGuests = getWeekendGuests();
@@ -45,6 +68,16 @@ const SocialCRM: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
+      {/* Catchup Dialog */}
+      <WeekCatchupDialog
+        open={catchupOpen && pendingCatchupPlans.length > 0}
+        onOpenChange={setCatchupOpen}
+        pendingEvents={catchupEventsWithData}
+        onMarkComplete={handleCatchupComplete}
+        onDismiss={dismissCatchup}
+        onDismissAll={dismissAllCatchups}
+      />
+
       {/* Header */}
       <div className="border-b border-slate-800 px-4 py-3 sticky top-0 bg-[#0a0a0a] z-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -94,12 +127,16 @@ const SocialCRM: React.FC = () => {
               midWeekExperienceId={getMidWeekExperienceId()} 
               weekendExperienceId={getWeekendExperienceId()} 
               dateExperienceId={getDateExperienceId()}
+              midWeekPlan={getMidWeekPlan()}
+              weekendPlan={getWeekendPlan()}
+              datePlan={getDatePlan()}
               midWeekGuests={midWeekGuests} 
               weekendGuests={weekendGuests} 
               dateGuests={dateGuests}
               onSelectExperience={selectEventExperience} 
               onRemoveGuest={removeGuestFromEvent} 
-              onClearSlot={clearEventSlot} 
+              onClearSlot={clearEventSlot}
+              onMarkComplete={handleMarkComplete}
               onAddExperience={addExperience} 
               onUpdateExperience={updateExperience} 
               onDeleteExperience={deleteExperience} 
@@ -120,6 +157,9 @@ const SocialCRM: React.FC = () => {
 
         {/* Host's Playbook */}
         <HostPlaybook />
+
+        {/* Event Archive */}
+        <EventArchive events={archivedEvents} loading={loading} />
       </div>
     </div>
   );

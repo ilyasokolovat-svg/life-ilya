@@ -53,6 +53,8 @@ export interface WeeklySocialPlan {
   custom_title: string | null;
   guest_ids: string[];
   notes: string | null;
+  completed: boolean;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
   experience?: SocialExperience;
@@ -81,6 +83,21 @@ export interface SundayOutreachTask {
   created_at: string;
   updated_at: string;
   contact?: SocialContact;
+}
+
+export interface SocialEventArchive {
+  id: string;
+  user_id: string;
+  week_start: string;
+  slot_type: string;
+  experience_title: string | null;
+  experience_location: string | null;
+  experience_cost: number;
+  guest_names: string[];
+  guest_count: number;
+  completed_at: string;
+  notes: string | null;
+  created_at: string;
 }
 
 export const DEFAULT_CLOSENESS_TAGS = [

@@ -6,10 +6,11 @@ import {
   SocialExperience, 
   WeeklySocialPlan, 
   WeeklyOutreach,
+  SocialEventArchive,
   DEFAULT_EXPERIENCES,
   DEFAULT_DATE_EXPERIENCES
 } from '@/types/social';
-import { startOfWeek, format } from 'date-fns';
+import { startOfWeek, format, subWeeks, isBefore, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
 // Type helper to work with tables not yet in generated types
@@ -24,9 +25,13 @@ export function useSocialCRM() {
   const [dateExperiences, setDateExperiences] = useState<SocialExperience[]>([]);
   const [weeklyPlans, setWeeklyPlans] = useState<WeeklySocialPlan[]>([]);
   const [outreachItems, setOutreachItems] = useState<WeeklyOutreach[]>([]);
+  const [archivedEvents, setArchivedEvents] = useState<SocialEventArchive[]>([]);
+  const [pendingCatchupPlans, setPendingCatchupPlans] = useState<WeeklySocialPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  // Week starts on Sunday (weekStartsOn: 0)
+  const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 0 }), 'yyyy-MM-dd');
+  const previousWeekStart = format(subWeeks(startOfWeek(new Date(), { weekStartsOn: 0 }), 1), 'yyyy-MM-dd');
 
   // Load all data
   const loadData = useCallback(async () => {
@@ -34,21 +39,22 @@ export function useSocialCRM() {
     setLoading(true);
 
     try {
-      const [contactsRes, experiencesRes, plansRes, outreachRes] = await Promise.all([
+      const [contactsRes, experiencesRes, plansRes, outreachRes, archiveRes, previousPlansRes] = await Promise.all([
         fromTable('social_contacts').select('*').eq('user_id', user.id).order('name'),
         fromTable('social_experiences').select('*').eq('user_id', user.id).order('tier', { ascending: true }),
         fromTable('weekly_social_plans').select('*').eq('user_id', user.id).eq('week_start', currentWeekStart),
         fromTable('weekly_outreach').select('*').eq('user_id', user.id).eq('week_start', currentWeekStart).order('order_index'),
+        fromTable('social_event_archive').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
+        // Get previous week's plans to check for catchup
+        fromTable('weekly_social_plans').select('*').eq('user_id', user.id).eq('week_start', previousWeekStart).eq('completed', false),
       ]);
 
       if (contactsRes.data) setContacts(contactsRes.data as unknown as SocialContact[]);
       if (experiencesRes.data) {
         const allExperiences = experiencesRes.data as unknown as SocialExperience[];
-        // Separate social experiences from date experiences based on ideal_group_size
         const socialExp = allExperiences.filter(e => e.ideal_group_size !== '1' || !e.description?.toLowerCase().includes('date'));
         const dateExp = allExperiences.filter(e => e.ideal_group_size === '1' && (e.description?.toLowerCase().includes('date') || e.title.toLowerCase().includes('date') || e.title.toLowerCase().includes('dinner') || e.title.toLowerCase().includes('coffee')));
         
-        // If we can't determine by description, just show all in social and filter manually
         if (dateExp.length === 0) {
           setExperiences(allExperiences);
           setDateExperiences([]);
@@ -59,6 +65,15 @@ export function useSocialCRM() {
       }
       if (plansRes.data) setWeeklyPlans(plansRes.data as unknown as WeeklySocialPlan[]);
       if (outreachRes.data) setOutreachItems(outreachRes.data as unknown as WeeklyOutreach[]);
+      if (archiveRes.data) setArchivedEvents(archiveRes.data as unknown as SocialEventArchive[]);
+      
+      // Check for uncompleted plans from previous week that had activity
+      if (previousPlansRes.data) {
+        const plansToCheck = (previousPlansRes.data as unknown as WeeklySocialPlan[]).filter(plan => 
+          plan.experience_id || (plan.guest_ids && plan.guest_ids.length > 0)
+        );
+        setPendingCatchupPlans(plansToCheck);
+      }
 
       // Seed default experiences if none exist
       if (experiencesRes.data?.length === 0) {
@@ -69,7 +84,7 @@ export function useSocialCRM() {
     } finally {
       setLoading(false);
     }
-  }, [user, currentWeekStart]);
+  }, [user, currentWeekStart, previousWeekStart]);
 
   // Seed default experiences
   const seedDefaultExperiences = async () => {
@@ -201,7 +216,6 @@ export function useSocialCRM() {
   const addToOutreach = async (contactId: string) => {
     if (!user) return;
     
-    // Check if already in outreach
     if (outreachItems.some(i => i.contact_id === contactId)) {
       toast.info('Already in this week\'s outreach');
       return;
@@ -252,7 +266,6 @@ export function useSocialCRM() {
         i.id === outreachId ? { ...i, contacted } : i
       ));
 
-      // Update last_contacted on the contact
       if (contacted) {
         const outreachItem = outreachItems.find(i => i.id === outreachId);
         if (outreachItem?.contact_id) {
@@ -320,7 +333,7 @@ export function useSocialCRM() {
         ));
       }
     } else {
-      const dayOfWeek = slotType === 'mid_week' ? 3 : slotType === 'weekend' ? 6 : 5; // Wed, Sat, or Fri for dates
+      const dayOfWeek = slotType === 'mid_week' ? 3 : slotType === 'weekend' ? 6 : 5;
       const { data, error } = await fromTable('weekly_social_plans')
         .insert({
           user_id: user.id,
@@ -329,6 +342,7 @@ export function useSocialCRM() {
           slot_type: slotType,
           experience_id: experienceId,
           guest_ids: [],
+          completed: false,
         })
         .select()
         .single();
@@ -340,10 +354,8 @@ export function useSocialCRM() {
   };
 
   const clearEventSlot = async (slotType: 'mid_week' | 'weekend' | 'date') => {
-    // Clear the experience selection
     await selectEventExperience(slotType, null);
     
-    // Unconfirm all guests from this slot
     const guestsToUnconfirm = outreachItems.filter(i => i.confirmed_for === slotType);
     for (const guest of guestsToUnconfirm) {
       await fromTable('weekly_outreach')
@@ -354,6 +366,88 @@ export function useSocialCRM() {
     setOutreachItems(prev => prev.map(i => 
       i.confirmed_for === slotType ? { ...i, confirmed_for: null } : i
     ));
+  };
+
+  // Mark event as complete and archive it
+  const markEventComplete = async (planId: string, notes?: string) => {
+    if (!user) return;
+
+    const plan = weeklyPlans.find(p => p.id === planId) || pendingCatchupPlans.find(p => p.id === planId);
+    if (!plan) return;
+
+    const allExperiences = [...experiences, ...dateExperiences];
+    const experience = plan.experience_id ? allExperiences.find(e => e.id === plan.experience_id) : null;
+    
+    // Get guest names from confirmed outreach
+    const guestItems = outreachItems.filter(i => i.confirmed_for === plan.slot_type);
+    const guestNames = guestItems
+      .map(i => contacts.find(c => c.id === i.contact_id)?.name)
+      .filter(Boolean) as string[];
+
+    // Create archive entry
+    const archiveEntry = {
+      user_id: user.id,
+      week_start: plan.week_start,
+      slot_type: plan.slot_type || 'event',
+      experience_title: experience?.title || null,
+      experience_location: experience?.location || null,
+      experience_cost: experience ? experience.estimated_cost * Math.max(1, guestNames.length) : 0,
+      guest_names: guestNames,
+      guest_count: guestNames.length,
+      notes: notes || null,
+    };
+
+    const { data: archiveData, error: archiveError } = await fromTable('social_event_archive')
+      .insert(archiveEntry)
+      .select()
+      .single();
+
+    if (archiveError) {
+      toast.error('Failed to archive event');
+      console.error(archiveError);
+      return;
+    }
+
+    // Mark plan as complete
+    const { error: updateError } = await fromTable('weekly_social_plans')
+      .update({ completed: true, completed_at: new Date().toISOString() })
+      .eq('id', planId);
+
+    if (updateError) {
+      toast.error('Failed to mark complete');
+      console.error(updateError);
+      return;
+    }
+
+    // Update local state
+    if (archiveData) {
+      setArchivedEvents(prev => [archiveData as unknown as SocialEventArchive, ...prev]);
+    }
+    setWeeklyPlans(prev => prev.map(p => 
+      p.id === planId ? { ...p, completed: true, completed_at: new Date().toISOString() } : p
+    ));
+    setPendingCatchupPlans(prev => prev.filter(p => p.id !== planId));
+    
+    toast.success('Event archived! 🎉');
+  };
+
+  // Dismiss a pending catchup without marking complete
+  const dismissCatchup = async (planId: string) => {
+    // Just mark it as completed without archiving (it didn't happen)
+    await fromTable('weekly_social_plans')
+      .update({ completed: true })
+      .eq('id', planId);
+    
+    setPendingCatchupPlans(prev => prev.filter(p => p.id !== planId));
+  };
+
+  const dismissAllCatchups = async () => {
+    for (const plan of pendingCatchupPlans) {
+      await fromTable('weekly_social_plans')
+        .update({ completed: true })
+        .eq('id', plan.id);
+    }
+    setPendingCatchupPlans([]);
   };
 
   // Get event slot data
@@ -368,6 +462,10 @@ export function useSocialCRM() {
   const getDateExperienceId = () => {
     return weeklyPlans.find(p => p.slot_type === 'date')?.experience_id || null;
   };
+
+  const getMidWeekPlan = () => weeklyPlans.find(p => p.slot_type === 'mid_week');
+  const getWeekendPlan = () => weeklyPlans.find(p => p.slot_type === 'weekend');
+  const getDatePlan = () => weeklyPlans.find(p => p.slot_type === 'date');
 
   const getMidWeekGuests = () => {
     return outreachItems
@@ -396,6 +494,8 @@ export function useSocialCRM() {
     dateExperiences,
     weeklyPlans,
     outreachItems,
+    archivedEvents,
+    pendingCatchupPlans,
     loading,
     currentWeekStart,
     // Contact operations
@@ -415,12 +515,19 @@ export function useSocialCRM() {
     // Event slot operations
     selectEventExperience,
     clearEventSlot,
+    markEventComplete,
     getMidWeekExperienceId,
     getWeekendExperienceId,
     getDateExperienceId,
+    getMidWeekPlan,
+    getWeekendPlan,
+    getDatePlan,
     getMidWeekGuests,
     getWeekendGuests,
     getDateGuests,
+    // Catchup operations
+    dismissCatchup,
+    dismissAllCatchups,
     // Refresh
     refresh: loadData,
   };
