@@ -22,20 +22,17 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
 
-  // People met this month (based on last_contacted)
-  const peopleMet = contacts.filter(c => {
-    if (!c.last_contacted) return false;
-    const contactDate = parseISO(c.last_contacted);
-    return isWithinInterval(contactDate, { start: monthStart, end: monthEnd });
-  }).length;
+  // Total network size (all contacts)
+  const totalNetwork = contacts.length;
 
-  // New connections (not close friends) met this month
-  const newConnectionsMet = contacts.filter(c => {
-    if (!c.last_contacted) return false;
-    const contactDate = parseISO(c.last_contacted);
-    const isThisMonth = isWithinInterval(contactDate, { start: monthStart, end: monthEnd });
-    const isNotClose = !FRIENDS_CLOSENESS.includes(c.closeness as any);
-    return isThisMonth && isNotClose;
+  // New connections added this month (Just Met, Met Once, Acquaintance categories)
+  const NEW_CONNECTION_CLOSENESS = ['Just Met', 'Met Once', 'Acquaintance'];
+  const newConnectionsThisMonth = contacts.filter(c => {
+    if (!c.created_at) return false;
+    const createdDate = parseISO(c.created_at);
+    const isCreatedThisMonth = isWithinInterval(createdDate, { start: monthStart, end: monthEnd });
+    const isNewConnection = NEW_CONNECTION_CLOSENESS.includes(c.closeness || '');
+    return isCreatedThisMonth && isNewConnection;
   }).length;
 
   // Events organized (mid-week + weekend with confirmed guests)
@@ -45,8 +42,8 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({
   const romanticDates = dateGuestCount;
 
   const stats = [
-    { label: 'People Met', value: peopleMet, icon: Users, color: 'text-amber-400' },
-    { label: 'New Connections', value: newConnectionsMet, icon: UserPlus, color: 'text-blue-400' },
+    { label: 'My Network', value: totalNetwork, icon: Users, color: 'text-amber-400' },
+    { label: 'New Connections', value: newConnectionsThisMonth, icon: UserPlus, color: 'text-blue-400' },
     { label: 'Events', value: eventsOrganized, icon: Calendar, color: 'text-emerald-400' },
     { label: 'Dates', value: romanticDates, icon: Heart, color: 'text-pink-400' },
   ];
