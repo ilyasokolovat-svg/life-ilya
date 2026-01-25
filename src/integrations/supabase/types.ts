@@ -327,6 +327,7 @@ export type Database = {
           notes: string | null
           slot_type: string
           user_id: string
+          vibe_rating: number | null
           week_start: string
         }
         Insert: {
@@ -341,6 +342,7 @@ export type Database = {
           notes?: string | null
           slot_type: string
           user_id: string
+          vibe_rating?: number | null
           week_start: string
         }
         Update: {
@@ -355,6 +357,7 @@ export type Database = {
           notes?: string | null
           slot_type?: string
           user_id?: string
+          vibe_rating?: number | null
           week_start?: string
         }
         Relationships: []

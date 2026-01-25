@@ -4,7 +4,7 @@ import { ArrowLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocialCRM } from '@/hooks/useSocialCRM';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import { DEFAULT_CLOSENESS_TAGS, SocialContact, WeeklySocialPlan } from '@/types/social';
+import { DEFAULT_CLOSENESS_TAGS, SocialContact, WeeklySocialPlan, EventCompletionData } from '@/types/social';
 import QuickAddBar from '@/components/social/QuickAddBar';
 import PeopleDatabase from '@/components/social/PeopleDatabase';
 import EventSlots from '@/components/social/EventSlots';
@@ -26,6 +26,7 @@ const SocialCRM: React.FC = () => {
     getMidWeekPlan, getWeekendPlan, getDatePlan,
     getMidWeekGuests, getWeekendGuests, getDateGuests,
     dismissCatchup, dismissAllCatchups,
+    updateArchivedEvent,
   } = useSocialCRM();
 
   const [closenessTags, setClosenessTags] = useLocalStorage<string[]>('social-closeness-tags', [...DEFAULT_CLOSENESS_TAGS]);
@@ -45,8 +46,8 @@ const SocialCRM: React.FC = () => {
     if (plan) await markEventComplete(plan.id);
   };
 
-  const handleCatchupComplete = async (planId: string) => {
-    await markEventComplete(planId);
+  const handleCatchupComplete = async (planId: string, completionData: EventCompletionData) => {
+    await markEventComplete(planId, completionData);
   };
 
   // Prepare catchup events with experience and guest data
@@ -159,7 +160,7 @@ const SocialCRM: React.FC = () => {
         <HostPlaybook />
 
         {/* Event Archive */}
-        <EventArchive events={archivedEvents} loading={loading} />
+        <EventArchive events={archivedEvents} loading={loading} onUpdateEvent={updateArchivedEvent} />
       </div>
     </div>
   );

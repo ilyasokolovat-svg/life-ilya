@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Calendar, Users } from 'lucide-react';
-import { WeeklySocialPlan, SocialContact, SocialExperience } from '@/types/social';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle, XCircle, Calendar, Users, Star, DollarSign } from 'lucide-react';
+import { WeeklySocialPlan, SocialContact, SocialExperience, EventCompletionData } from '@/types/social';
 
 interface PendingEvent {
   plan: WeeklySocialPlan;
@@ -14,7 +16,7 @@ interface WeekCatchupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pendingEvents: PendingEvent[];
-  onMarkComplete: (planId: string) => Promise<void>;
+  onMarkComplete: (planId: string, completionData: EventCompletionData) => Promise<void>;
   onDismiss: (planId: string) => void;
   onDismissAll: () => void;
 }
@@ -34,21 +36,63 @@ const WeekCatchupDialog: React.FC<WeekCatchupDialogProps> = ({
   onDismissAll,
 }) => {
   const [processing, setProcessing] = useState<string | null>(null);
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const [completionData, setCompletionData] = useState<Record<string, EventCompletionData>>({});
 
-  const handleComplete = async (planId: string) => {
+  const getEventData = (planId: string, experience: SocialExperience | null): EventCompletionData => {
+    return completionData[planId] || {
+      vibeRating: 0,
+      actualCost: experience?.estimated_cost || 0,
+      notes: '',
+    };
+  };
+
+  const updateEventData = (planId: string, field: keyof EventCompletionData, value: number | string) => {
+    setCompletionData(prev => ({
+      ...prev,
+      [planId]: {
+        ...getEventData(planId, null),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleComplete = async (planId: string, experience: SocialExperience | null) => {
+    const data = getEventData(planId, experience);
+    if (data.vibeRating === 0) {
+      // Expand to show the form if no rating
+      setExpandedEvent(planId);
+      return;
+    }
+    
     setProcessing(planId);
     try {
-      await onMarkComplete(planId);
+      await onMarkComplete(planId, data);
     } finally {
       setProcessing(null);
+      setExpandedEvent(null);
     }
+  };
+
+  const handleExpandAndFill = (planId: string, experience: SocialExperience | null) => {
+    if (!completionData[planId]) {
+      setCompletionData(prev => ({
+        ...prev,
+        [planId]: {
+          vibeRating: 0,
+          actualCost: experience?.estimated_cost || 0,
+          notes: '',
+        },
+      }));
+    }
+    setExpandedEvent(expandedEvent === planId ? null : planId);
   };
 
   if (pendingEvents.length === 0) return null;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-slate-900 border-slate-700 max-w-md">
+      <AlertDialogContent className="bg-slate-900 border-slate-700 max-w-lg max-h-[85vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-white flex items-center gap-2">
             <Calendar className="w-5 h-5 text-amber-500" />
@@ -63,6 +107,8 @@ const WeekCatchupDialog: React.FC<WeekCatchupDialogProps> = ({
           {pendingEvents.map(({ plan, experience, guests }) => {
             const slotInfo = SLOT_LABELS[plan.slot_type || ''] || { label: 'Event', color: 'text-slate-400' };
             const isProcessing = processing === plan.id;
+            const isExpanded = expandedEvent === plan.id;
+            const eventData = getEventData(plan.id, experience);
 
             return (
               <div
@@ -100,7 +146,7 @@ const WeekCatchupDialog: React.FC<WeekCatchupDialogProps> = ({
                     <Button
                       size="sm"
                       className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white"
-                      onClick={() => handleComplete(plan.id)}
+                      onClick={() => handleExpandAndFill(plan.id, experience)}
                       disabled={isProcessing}
                     >
                       {isProcessing ? (
@@ -114,6 +160,80 @@ const WeekCatchupDialog: React.FC<WeekCatchupDialogProps> = ({
                     </Button>
                   </div>
                 </div>
+
+                {/* Expanded completion form */}
+                {isExpanded && (
+                  <div className="mt-4 pt-4 border-t border-slate-700 space-y-4">
+                    {/* Vibe Rating */}
+                    <div>
+                      <label className="text-xs text-slate-400 mb-2 block">How was the vibe?</label>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => updateEventData(plan.id, 'vibeRating', star)}
+                            className="p-1 transition-transform hover:scale-110"
+                          >
+                            <Star
+                              className={`w-6 h-6 ${
+                                star <= eventData.vibeRating
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-slate-600'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Actual Cost */}
+                    <div>
+                      <label className="text-xs text-slate-400 mb-2 block">Actual money spent (AED)</label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <Input
+                          type="number"
+                          value={eventData.actualCost}
+                          onChange={(e) => updateEventData(plan.id, 'actualCost', parseInt(e.target.value) || 0)}
+                          className="pl-9 bg-slate-900 border-slate-600 text-white"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="text-xs text-slate-400 mb-2 block">Anything memorable?</label>
+                      <Textarea
+                        value={eventData.notes}
+                        onChange={(e) => updateEventData(plan.id, 'notes', e.target.value)}
+                        className="bg-slate-900 border-slate-600 text-white resize-none"
+                        placeholder="Key moments, insights, or things to remember..."
+                        rows={2}
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <Button
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => handleComplete(plan.id, experience)}
+                      disabled={isProcessing || eventData.vibeRating === 0}
+                    >
+                      {isProcessing ? (
+                        <span className="animate-pulse">Saving...</span>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Complete & Archive
+                        </>
+                      )}
+                    </Button>
+                    {eventData.vibeRating === 0 && (
+                      <p className="text-xs text-amber-400 text-center">Please rate the vibe to continue</p>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
