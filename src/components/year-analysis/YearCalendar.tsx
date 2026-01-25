@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Pencil, Check, Wine, Dumbbell, Star } from 'lucide-react';
+import { Pencil, Check, Wine, Dumbbell, Star, CheckCircle2 } from 'lucide-react';
 import { DayData } from '@/types/habit';
+import { MonthProgressData } from './MonthCard';
 
 interface MonthData {
   memorableThing: string;
@@ -15,6 +16,7 @@ interface YearCalendarProps {
   year: string;
   monthlyData: Record<string, MonthData>;
   habitDays: Record<string, DayData>;
+  monthlyProgressData?: Record<string, MonthProgressData>;
   onUpdateMonth: (monthKey: string, field: keyof MonthData, value: string | number) => void;
 }
 
@@ -24,10 +26,19 @@ const MONTHS = [
   'September', 'October', 'November', 'December'
 ];
 
+const isMonthProgressComplete = (data: MonthProgressData | undefined): boolean => {
+  if (!data) return false;
+  const goalsChecked = Object.values(data.goalAccomplishment).filter(Boolean).length;
+  const hasWins = data.topWins.some(w => w.trim());
+  const hasLearnings = data.topLearnings.some(l => l.trim());
+  return goalsChecked >= 3 && hasWins && hasLearnings;
+};
+
 const YearCalendar: React.FC<YearCalendarProps> = ({
   year,
   monthlyData,
   habitDays,
+  monthlyProgressData = {},
   onUpdateMonth
 }) => {
   const [editingMonth, setEditingMonth] = useState<string | null>(null);
@@ -102,6 +113,8 @@ const YearCalendar: React.FC<YearCalendarProps> = ({
           const monthNum = index + 1;
           const monthKey = `${year}-${String(monthNum).padStart(2, '0')}`;
           const data = monthlyData[monthKey] || { memorableThing: '' };
+          const progressData = monthlyProgressData[monthKey];
+          const isReviewed = isMonthProgressComplete(progressData);
           const soberDays = getSoberDays(monthKey);
           const sportDays = getSportDays(monthKey);
           const isEditingSober = editingMonth === monthKey && editingField === 'sober';
@@ -110,13 +123,18 @@ const YearCalendar: React.FC<YearCalendarProps> = ({
           return (
             <Card 
               key={monthKey} 
-              className="bg-white/5 border-white/10 backdrop-blur-lg hover:bg-white/10 transition-all"
+              className={`bg-white/5 border-white/10 backdrop-blur-lg hover:bg-white/10 transition-all ${
+                isReviewed ? 'ring-1 ring-emerald-500/30' : ''
+              }`}
             >
               <CardContent className="p-4">
                 {/* Month Header */}
-                <div className="text-center mb-3">
+                <div className="text-center mb-3 relative">
                   <h3 className="text-lg font-semibold text-white">{monthName}</h3>
                   <p className="text-xs text-white/50">{year}</p>
+                  {isReviewed && (
+                    <CheckCircle2 className="absolute top-0 right-0 w-4 h-4 text-emerald-400" />
+                  )}
                 </div>
                 
                 {/* Stats Row */}
