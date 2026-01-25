@@ -34,6 +34,8 @@ import KeyInsights from "@/components/year-analysis/KeyInsights";
 import NextYearPlanning from "@/components/year-analysis/NextYearPlanning";
 import ProgressTracker from "@/components/year-analysis/ProgressTracker";
 import YearCalendar from "@/components/year-analysis/YearCalendar";
+import MonthlyProgress from "@/components/year-analysis/MonthlyProgress";
+import { MonthProgressData } from "@/components/year-analysis/MonthCard";
 import useSupabaseHabits from "@/hooks/useSupabaseHabits";
 
 interface CategoryData {
@@ -77,6 +79,7 @@ const YearAnalysis = () => {
   const [localData, setLocalData] = useState<Record<string, Partial<CategoryData>>>({});
   const [viewMode, setViewMode] = useState<'edit' | 'summary'>('edit');
   const [monthCalendarData, setMonthCalendarData] = useState<Record<string, MonthCalendarData>>({});
+  const [monthlyProgressData, setMonthlyProgressData] = useState<Record<string, MonthProgressData>>({});
   
   // Get habits data
   const { habitsState } = useSupabaseHabits();
@@ -119,6 +122,25 @@ const YearAnalysis = () => {
     enabled: !!user?.id,
   });
 
+  // Fetch monthly progress data
+  const { data: monthlyProgressDbData = [] } = useQuery({
+    queryKey: ['monthly_progress', user?.id, selectedYear],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('goals_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('period_type', 'monthly_progress')
+        .eq('period_key', selectedYear);
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Parse monthly calendar data from DB
   React.useEffect(() => {
     const parsed: Record<string, MonthCalendarData> = {};
@@ -133,6 +155,21 @@ const YearAnalysis = () => {
     });
     setMonthCalendarData(parsed);
   }, [monthlyCalendarDbData]);
+
+  // Parse monthly progress data from DB
+  React.useEffect(() => {
+    const parsed: Record<string, MonthProgressData> = {};
+    monthlyProgressDbData.forEach((record) => {
+      if (record.actual_result) {
+        try {
+          parsed[record.subcategory] = JSON.parse(record.actual_result);
+        } catch {
+          // ignore parse errors
+        }
+      }
+    });
+    setMonthlyProgressData(parsed);
+  }, [monthlyProgressDbData]);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -219,6 +256,76 @@ const YearAnalysis = () => {
       [monthKey]: { ...(prev[monthKey] || { memorableThing: '' }), [field]: value }
     }));
     saveMonthCalendarMutation.mutate({ monthKey, field, value: value as string | number });
+  };
+
+  // Save monthly progress mutation
+  const saveMonthlyProgressMutation = useMutation({
+    mutationFn: async ({ monthKey, field, value }: { monthKey: string; field: keyof MonthProgressData; value: any }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const defaultData: MonthProgressData = {
+        goalAccomplishment: {
+          career: false,
+          investment: false,
+          health: false,
+          relationship: false,
+          learning: false,
+          selfAwareness: false,
+        },
+        topWins: ['', '', ''],
+        topLearnings: ['', '', ''],
+      };
+      
+      const existingData = monthlyProgressData[monthKey] || defaultData;
+      const updatedData = { ...existingData, [field]: value };
+      
+      const { error } = await supabase
+        .from('goals_data')
+        .upsert({
+          user_id: user.id,
+          category: 'monthly_progress',
+          subcategory: monthKey,
+          period_type: 'monthly_progress',
+          period_key: selectedYear,
+          actual_result: JSON.stringify(updatedData),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,category,subcategory,period_key',
+        });
+        
+      if (error) throw error;
+      return { monthKey, updatedData };
+    },
+    onSuccess: ({ monthKey, updatedData }) => {
+      setMonthlyProgressData(prev => ({ ...prev, [monthKey]: updatedData }));
+      queryClient.invalidateQueries({ queryKey: ['monthly_progress', user?.id, selectedYear] });
+    },
+    onError: (error) => {
+      console.error('Error saving monthly progress:', error);
+      toast.error('Failed to save');
+    },
+  });
+
+  const updateMonthlyProgress = (monthKey: string, field: keyof MonthProgressData, value: any) => {
+    const defaultData: MonthProgressData = {
+      goalAccomplishment: {
+        career: false,
+        investment: false,
+        health: false,
+        relationship: false,
+        learning: false,
+        selfAwareness: false,
+      },
+      topWins: ['', '', ''],
+      topLearnings: ['', '', ''],
+    };
+    
+    // Optimistic update
+    setMonthlyProgressData(prev => ({
+      ...prev,
+      [monthKey]: { ...(prev[monthKey] || defaultData), [field]: value }
+    }));
+    saveMonthlyProgressMutation.mutate({ monthKey, field, value });
   };
 
   const getCategoryData = (categoryId: string): Partial<CategoryData> => {
@@ -312,6 +419,20 @@ const YearAnalysis = () => {
   const activeCategoryData = getCategoryData(activeCategory);
   const { totalFields, filledFields } = getProgressStats();
 
+  // Calculate months reviewed count
+  const monthsReviewed = React.useMemo(() => {
+    const MONTHS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+    return MONTHS.filter(month => {
+      const monthKey = `${selectedYear}-${month}`;
+      const data = monthlyProgressData[monthKey];
+      if (!data) return false;
+      const goalsChecked = Object.values(data.goalAccomplishment).filter(Boolean).length;
+      const hasWins = data.topWins.some(w => w.trim());
+      const hasLearnings = data.topLearnings.some(l => l.trim());
+      return goalsChecked > 0 || hasWins || hasLearnings;
+    }).length;
+  }, [monthlyProgressData, selectedYear]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -364,7 +485,20 @@ const YearAnalysis = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Progress Tracker */}
         <div className="mb-6">
-          <ProgressTracker totalFields={totalFields} filledFields={filledFields} />
+          <ProgressTracker totalFields={totalFields} filledFields={filledFields} monthsReviewed={monthsReviewed} />
+        </div>
+
+        {/* Monthly Progress - available in both views */}
+        <div className="mb-8">
+          <Card className="bg-white/5 border-white/10 backdrop-blur-lg">
+            <CardContent className="p-6">
+              <MonthlyProgress
+                year={selectedYear}
+                monthlyProgressData={monthlyProgressData}
+                onUpdateMonth={updateMonthlyProgress}
+              />
+            </CardContent>
+          </Card>
         </div>
 
         {viewMode === 'summary' ? (
@@ -431,6 +565,7 @@ const YearAnalysis = () => {
               year={selectedYear}
               monthlyData={monthCalendarData}
               habitDays={habitsState.days}
+              monthlyProgressData={monthlyProgressData}
               onUpdateMonth={updateMonthCalendar}
             />
 
