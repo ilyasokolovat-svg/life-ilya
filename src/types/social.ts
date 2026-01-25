@@ -97,7 +97,14 @@ export interface SocialEventArchive {
   guest_count: number;
   completed_at: string;
   notes: string | null;
+  vibe_rating: number | null;
   created_at: string;
+}
+
+export interface EventCompletionData {
+  vibeRating: number;
+  actualCost: number;
+  notes: string;
 }
 
 export const DEFAULT_CLOSENESS_TAGS = [

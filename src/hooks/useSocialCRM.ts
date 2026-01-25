@@ -7,6 +7,7 @@ import {
   WeeklySocialPlan, 
   WeeklyOutreach,
   SocialEventArchive,
+  EventCompletionData,
   DEFAULT_EXPERIENCES,
   DEFAULT_DATE_EXPERIENCES
 } from '@/types/social';
@@ -369,7 +370,7 @@ export function useSocialCRM() {
   };
 
   // Mark event as complete and archive it
-  const markEventComplete = async (planId: string, notes?: string) => {
+  const markEventComplete = async (planId: string, completionData?: EventCompletionData) => {
     if (!user) return;
 
     const plan = weeklyPlans.find(p => p.id === planId) || pendingCatchupPlans.find(p => p.id === planId);
@@ -384,6 +385,9 @@ export function useSocialCRM() {
       .map(i => contacts.find(c => c.id === i.contact_id)?.name)
       .filter(Boolean) as string[];
 
+    // Use completion data if provided, otherwise calculate defaults
+    const actualCost = completionData?.actualCost ?? (experience ? experience.estimated_cost * Math.max(1, guestNames.length) : 0);
+
     // Create archive entry
     const archiveEntry = {
       user_id: user.id,
@@ -391,10 +395,11 @@ export function useSocialCRM() {
       slot_type: plan.slot_type || 'event',
       experience_title: experience?.title || null,
       experience_location: experience?.location || null,
-      experience_cost: experience ? experience.estimated_cost * Math.max(1, guestNames.length) : 0,
+      experience_cost: actualCost,
       guest_names: guestNames,
       guest_count: guestNames.length,
-      notes: notes || null,
+      notes: completionData?.notes || null,
+      vibe_rating: completionData?.vibeRating || null,
     };
 
     const { data: archiveData, error: archiveError } = await fromTable('social_event_archive')
@@ -429,6 +434,21 @@ export function useSocialCRM() {
     setPendingCatchupPlans(prev => prev.filter(p => p.id !== planId));
     
     toast.success('Event archived! 🎉');
+  };
+
+  // Update an archived event
+  const updateArchivedEvent = async (id: string, updates: Partial<SocialEventArchive>) => {
+    const { error } = await fromTable('social_event_archive')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Failed to update event');
+      console.error(error);
+    } else {
+      setArchivedEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      toast.success('Event updated!');
+    }
   };
 
   // Dismiss a pending catchup without marking complete
@@ -485,7 +505,7 @@ export function useSocialCRM() {
     return outreachItems
       .filter(i => i.confirmed_for === 'date' && i.contact_id)
       .map(i => contacts.find(c => c.id === i.contact_id))
-      .filter(Boolean) as SocialContact[];
+    .filter(Boolean) as SocialContact[];
   };
 
   return {
@@ -528,6 +548,8 @@ export function useSocialCRM() {
     // Catchup operations
     dismissCatchup,
     dismissAllCatchups,
+    // Archive operations
+    updateArchivedEvent,
     // Refresh
     refresh: loadData,
   };
