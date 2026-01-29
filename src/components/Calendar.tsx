@@ -1,18 +1,19 @@
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain, Wine } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HabitType, DayData } from "@/types/habit";
+import { HabitType, DayData, DrinkingEventType } from "@/types/habit";
 import HabitTracker from "./HabitTracker";
 import { formatDateISO, getDaysInMonth, getDayCompletionPercentage } from "@/utils/habitUtils";
 import { getDubaiDate, getTodayISO } from "@/utils/dateUtils";
 import { Separator } from "@/components/ui/separator";
 import { habitColors } from "@/utils/chartUtils";
 import { useMediaQuery } from "@/hooks/use-mobile";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CalendarProps {
   days: Record<string, DayData>;
-  onUpdateHabit: (date: Date, type: HabitType, data: { planned: boolean; completed: boolean; sleepHours?: number }) => void;
+  onUpdateHabit: (date: Date, type: HabitType, data: Partial<import("@/types/habit").HabitData>) => void;
   onUpdateLocation?: (date: Date, location: string) => void;
   viewMonth?: number;
   viewYear?: number;
@@ -122,6 +123,9 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
     const isAlcoholPlanned = dayData?.alcohol?.planned || false;
     const isAlcoholCompleted = dayData?.alcohol?.completed || false;
     
+    // Check drinking event type (anchor/side)
+    const drinkingEventType = dayData?.alcohol?.drinkingEventType;
+    
     // Check if this is a past day
     const isPastDay = isoDate < todayISO;
     
@@ -141,6 +145,24 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
         ? 'border-2 border-yellow-400 bg-white hover:shadow-md transition-shadow duration-200'
         : 'border border-gray-200 bg-white hover:shadow-md transition-shadow duration-200';
     }
+
+    // Get drinking event emoji
+    const getDrinkingEmoji = (type: DrinkingEventType) => {
+      switch (type) {
+        case 'anchor': return '🍷🍷';
+        case 'side': return '🍷';
+        default: return null;
+      }
+    };
+
+    // Handle drinking event type change
+    const handleDrinkingEventChange = (type: DrinkingEventType) => {
+      const currentAlcoholData = dayData?.alcohol || { planned: false, completed: false };
+      onUpdateHabit(date, 'alcohol', {
+        ...currentAlcoholData,
+        drinkingEventType: type
+      });
+    };
 
     // Reordering habits to put sleep first, then gym, alcohol, meditation (no social)
     const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
@@ -188,6 +210,42 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
               {date.toLocaleString('default', { weekday: 'short' })} {date.getDate()}
             </span>
             <div className="flex items-center gap-2">
+              {/* Drinking event type indicator/selector */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="p-1 hover:bg-gray-200 rounded transition-colors">
+                    {drinkingEventType ? (
+                      <span className="text-lg">{getDrinkingEmoji(drinkingEventType)}</span>
+                    ) : (
+                      <Wine className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-40 p-2" align="end">
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => handleDrinkingEventChange('anchor')}
+                      className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 flex items-center gap-2 ${drinkingEventType === 'anchor' ? 'bg-purple-100 text-purple-700' : ''}`}
+                    >
+                      <span>🍷🍷</span> Anchor
+                    </button>
+                    <button
+                      onClick={() => handleDrinkingEventChange('side')}
+                      className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 flex items-center gap-2 ${drinkingEventType === 'side' ? 'bg-blue-100 text-blue-700' : ''}`}
+                    >
+                      <span>🍷</span> Side
+                    </button>
+                    {drinkingEventType && (
+                      <button
+                        onClick={() => handleDrinkingEventChange(null)}
+                        className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 text-gray-500"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
               {shouldShowYellowHighlight && (
                 <WineOff className="h-4 w-4 text-yellow-600" />
               )}
@@ -270,6 +328,42 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
             {date.toLocaleString('default', { weekday: 'short' })} {date.getDate()}
           </span>
           <div className="flex items-center gap-1">
+            {/* Drinking event type indicator/selector - Desktop */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-0.5 hover:bg-gray-200 rounded transition-colors">
+                  {drinkingEventType ? (
+                    <span className="text-sm">{getDrinkingEmoji(drinkingEventType)}</span>
+                  ) : (
+                    <Wine className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-36 p-1.5" align="end">
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => handleDrinkingEventChange('anchor')}
+                    className={`w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-100 flex items-center gap-2 ${drinkingEventType === 'anchor' ? 'bg-purple-100 text-purple-700' : ''}`}
+                  >
+                    <span>🍷🍷</span> Anchor
+                  </button>
+                  <button
+                    onClick={() => handleDrinkingEventChange('side')}
+                    className={`w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-100 flex items-center gap-2 ${drinkingEventType === 'side' ? 'bg-blue-100 text-blue-700' : ''}`}
+                  >
+                    <span>🍷</span> Side
+                  </button>
+                  {drinkingEventType && (
+                    <button
+                      onClick={() => handleDrinkingEventChange(null)}
+                      className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-100 text-gray-500"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
             {shouldShowYellowHighlight && (
               <WineOff className="h-3 w-3 text-yellow-600" />
             )}
