@@ -471,6 +471,49 @@ export function useSocialCRM() {
     }
   };
 
+  // Un-mark an event as complete (move from archive back to active)
+  const unmarkEventComplete = async (archiveId: string) => {
+    if (!user) return;
+
+    const archivedEvent = archivedEvents.find(e => e.id === archiveId);
+    if (!archivedEvent) return;
+
+    // Find the corresponding weekly plan
+    const { data: planData } = await fromTable('weekly_social_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('week_start', archivedEvent.week_start)
+      .eq('slot_type', archivedEvent.slot_type)
+      .eq('completed', true)
+      .maybeSingle();
+
+    // Delete the archive entry
+    const { error: deleteError } = await fromTable('social_event_archive')
+      .delete()
+      .eq('id', archiveId);
+
+    if (deleteError) {
+      toast.error('Failed to undo completion');
+      console.error(deleteError);
+      return;
+    }
+
+    // If we found the plan, mark it as not completed
+    if (planData) {
+      await fromTable('weekly_social_plans')
+        .update({ completed: false, completed_at: null })
+        .eq('id', (planData as any).id);
+
+      setWeeklyPlans(prev => prev.map(p => 
+        p.id === (planData as any).id ? { ...p, completed: false, completed_at: null } : p
+      ));
+    }
+
+    // Remove from archived events
+    setArchivedEvents(prev => prev.filter(e => e.id !== archiveId));
+    toast.success('Event unmarked as complete');
+  };
+
   // Dismiss a pending catchup without marking complete
   const dismissCatchup = async (planId: string) => {
     // Just mark it as completed without archiving (it didn't happen)
@@ -571,6 +614,7 @@ export function useSocialCRM() {
     dismissAllCatchups,
     // Archive operations
     updateArchivedEvent,
+    unmarkEventComplete,
     // Refresh
     refresh: loadData,
   };

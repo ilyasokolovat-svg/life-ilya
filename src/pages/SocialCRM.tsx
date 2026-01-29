@@ -26,7 +26,7 @@ const SocialCRM: React.FC = () => {
     getMidWeekPlan, getWeekendPlan, getDatePlan,
     getMidWeekGuests, getWeekendGuests, getDateGuests,
     dismissCatchup, dismissAllCatchups,
-    updateArchivedEvent,
+    updateArchivedEvent, unmarkEventComplete,
   } = useSocialCRM();
 
   const [closenessTags, setClosenessTags] = useLocalStorage<string[]>('social-closeness-tags', [...DEFAULT_CLOSENESS_TAGS]);
@@ -161,7 +161,7 @@ const SocialCRM: React.FC = () => {
         <HostPlaybook />
 
         {/* Event Archive */}
-        <EventArchive events={archivedEvents} loading={loading} onUpdateEvent={updateArchivedEvent} />
+        <EventArchive events={archivedEvents} loading={loading} onUpdateEvent={updateArchivedEvent} onUnmarkComplete={unmarkEventComplete} />
       </div>
     </div>
   );
