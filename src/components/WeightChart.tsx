@@ -133,10 +133,33 @@ const WeightChart: React.FC<WeightChartProps> = ({
     return date.toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
-  // Custom dot component that handles clicks
+  // Custom dot component that handles clicks - shows for all days
   const CustomDot = (props: any) => {
-    const { cx, cy, payload, dataKey } = props;
-    if (!cx || !cy || !payload[dataKey]) return null;
+    const { cx, cy, payload, dataKey, index } = props;
+    if (!cx) return null;
+    
+    const hasData = payload[dataKey] !== null && payload[dataKey] !== undefined;
+    
+    // For days without data, show a small clickable empty circle at a fixed position
+    if (!hasData) {
+      // Only show empty dots for the weight line to avoid duplicates
+      if (dataKey !== 'weight') return null;
+      return (
+        <circle
+          cx={cx}
+          cy={props.height ? props.height / 2 : 125} // Center vertically if no data
+          r={4}
+          fill="transparent"
+          stroke="hsl(var(--muted-foreground))"
+          strokeWidth={1}
+          strokeDasharray="2 2"
+          style={{ cursor: 'pointer', opacity: 0.5 }}
+          onClick={() => handleDotClick({ payload })}
+        />
+      );
+    }
+    
+    if (!cy) return null;
     
     return (
       <circle
@@ -195,7 +218,7 @@ const WeightChart: React.FC<WeightChartProps> = ({
               </span>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Click on any data point to edit</p>
+          <p className="text-xs text-muted-foreground mt-2">Click any dot to add or edit weight data</p>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
