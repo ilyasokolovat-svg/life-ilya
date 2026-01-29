@@ -415,6 +415,7 @@ const Index = () => {
             habitsState={habitsState}
             viewMonth={viewMonth}
             viewYear={viewYear}
+            onUpdateHabit={handleUpdateHabit}
           />
         </div>
         

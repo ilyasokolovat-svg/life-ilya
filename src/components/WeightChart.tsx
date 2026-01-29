@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HabitsState } from "@/types/habit";
+import { HabitsState, HabitType, HabitData } from "@/types/habit";
 import { formatDateISO } from "@/utils/habitUtils";
 import { Scale, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import {
@@ -8,19 +8,34 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ReferenceLine } from "recharts";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface WeightChartProps {
   habitsState: HabitsState;
   viewMonth: number;
   viewYear: number;
+  onUpdateHabit?: (date: Date, type: HabitType, data: HabitData) => void;
 }
 
 const WeightChart: React.FC<WeightChartProps> = ({
   habitsState,
   viewMonth,
-  viewYear
+  viewYear,
+  onUpdateHabit
 }) => {
+  const [selectedDay, setSelectedDay] = useState<{ date: string; day: number; weight: number | null; bodyFat: number | null } | null>(null);
+  const [editWeight, setEditWeight] = useState<string>("");
+  const [editBodyFat, setEditBodyFat] = useState<string>("");
+
   // Get all days in the current month with weight data
   const getWeightData = () => {
     const weightData: { date: string; day: number; weight: number | null; bodyFat: number | null }[] = [];
@@ -88,6 +103,55 @@ const WeightChart: React.FC<WeightChartProps> = ({
   // Get month name
   const monthName = new Date(viewYear, viewMonth, 1).toLocaleString('default', { month: 'long' });
 
+  const handleDotClick = (data: any) => {
+    if (data && data.payload) {
+      const dayData = data.payload;
+      setSelectedDay(dayData);
+      setEditWeight(dayData.weight?.toString() || "");
+      setEditBodyFat(dayData.bodyFat?.toString() || "");
+    }
+  };
+
+  const handleSave = () => {
+    if (!selectedDay || !onUpdateHabit) return;
+    
+    const date = new Date(selectedDay.date);
+    const existingSleepData = habitsState.days[selectedDay.date]?.sleep || { planned: false, completed: false };
+    
+    const updatedSleepData = {
+      ...existingSleepData,
+      weight: editWeight ? parseFloat(editWeight) : undefined,
+      bodyFat: editBodyFat ? parseFloat(editBodyFat) : undefined
+    };
+    
+    onUpdateHabit(date, 'sleep', updatedSleepData);
+    setSelectedDay(null);
+  };
+
+  const formatSelectedDate = (dateISO: string) => {
+    const date = new Date(dateISO);
+    return date.toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  // Custom dot component that handles clicks
+  const CustomDot = (props: any) => {
+    const { cx, cy, payload, dataKey } = props;
+    if (!cx || !cy || !payload[dataKey]) return null;
+    
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={6}
+        fill={dataKey === 'weight' ? "hsl(var(--primary))" : "hsl(var(--secondary))"}
+        stroke="white"
+        strokeWidth={2}
+        style={{ cursor: 'pointer' }}
+        onClick={() => handleDotClick({ payload })}
+      />
+    );
+  };
+
   if (entriesWithWeight.length === 0) {
     return (
       <Card>
@@ -107,101 +171,149 @@ const WeightChart: React.FC<WeightChartProps> = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Scale className="h-5 w-5" />
-          Weight Tracking - {monthName} {viewYear}
-        </CardTitle>
-        <div className="flex flex-wrap gap-4 mt-2 text-sm">
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Current:</span>
-            <span className="font-semibold">{latestWeight} kg</span>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Scale className="h-5 w-5" />
+            Weight Tracking - {monthName} {viewYear}
+          </CardTitle>
+          <div className="flex flex-wrap gap-4 mt-2 text-sm">
+            <div className="flex items-center gap-1">
+              <span className="text-muted-foreground">Current:</span>
+              <span className="font-semibold">{latestWeight} kg</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-muted-foreground">Average:</span>
+              <span className="font-semibold">{avgWeight} kg</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-muted-foreground">Change:</span>
+              <span className="font-semibold flex items-center gap-1">
+                {getTrendIcon()}
+                {weightChange ? `${parseFloat(weightChange) > 0 ? '+' : ''}${weightChange} kg` : 'N/A'}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Average:</span>
-            <span className="font-semibold">{avgWeight} kg</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Change:</span>
-            <span className="font-semibold flex items-center gap-1">
-              {getTrendIcon()}
-              {weightChange ? `${parseFloat(weightChange) > 0 ? '+' : ''}${weightChange} kg` : 'N/A'}
-            </span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[250px] w-full">
-          <LineChart 
-            data={weightData}
-            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-          >
-            <XAxis 
-              dataKey="day" 
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `${value}`}
-            />
-            <YAxis 
-              domain={['auto', 'auto']}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `${value}`}
-              width={40}
-            />
-            {avgWeight && (
-              <ReferenceLine 
-                y={parseFloat(avgWeight)} 
-                stroke="hsl(var(--muted-foreground))" 
-                strokeDasharray="3 3" 
-                label={{ value: 'Avg', position: 'right', fontSize: 10 }}
+          <p className="text-xs text-muted-foreground mt-2">Click on any data point to edit</p>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[250px] w-full">
+            <LineChart 
+              data={weightData}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
+              <XAxis 
+                dataKey="day" 
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => `${value}`}
               />
-            )}
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value, name) => {
-                    if (name === 'weight') return [`${value} kg`, 'Weight'];
-                    if (name === 'bodyFat') return [`${value}%`, 'Body Fat'];
-                    return [value, name];
-                  }}
+              <YAxis 
+                domain={['auto', 'auto']}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => `${value}`}
+                width={40}
+              />
+              {avgWeight && (
+                <ReferenceLine 
+                  y={parseFloat(avgWeight)} 
+                  stroke="hsl(var(--muted-foreground))" 
+                  strokeDasharray="3 3" 
+                  label={{ value: 'Avg', position: 'right', fontSize: 10 }}
                 />
-              }
-            />
-            <Line
-              type="monotone"
-              dataKey="weight"
-              stroke="hsl(var(--primary))"
-              strokeWidth={2}
-              dot={{ r: 3, fill: "hsl(var(--primary))" }}
-              connectNulls
-            />
-            <Line
-              type="monotone"
-              dataKey="bodyFat"
-              stroke="hsl(var(--secondary))"
-              strokeWidth={2}
-              dot={{ r: 3, fill: "hsl(var(--secondary))" }}
-              connectNulls
-            />
-          </LineChart>
-        </ChartContainer>
-        
-        <div className="flex justify-center gap-6 mt-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-primary"></div>
-            <span className="text-muted-foreground">Weight (kg)</span>
+              )}
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, name) => {
+                      if (name === 'weight') return [`${value} kg`, 'Weight'];
+                      if (name === 'bodyFat') return [`${value}%`, 'Body Fat'];
+                      return [value, name];
+                    }}
+                  />
+                }
+              />
+              <Line
+                type="monotone"
+                dataKey="weight"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={<CustomDot dataKey="weight" />}
+                activeDot={{ r: 8, cursor: 'pointer', onClick: (e: any, payload: any) => handleDotClick(payload) }}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="bodyFat"
+                stroke="hsl(var(--secondary))"
+                strokeWidth={2}
+                dot={<CustomDot dataKey="bodyFat" />}
+                activeDot={{ r: 8, cursor: 'pointer', onClick: (e: any, payload: any) => handleDotClick(payload) }}
+                connectNulls
+              />
+            </LineChart>
+          </ChartContainer>
+          
+          <div className="flex justify-center gap-6 mt-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-primary"></div>
+              <span className="text-muted-foreground">Weight (kg)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-secondary"></div>
+              <span className="text-muted-foreground">Body Fat (%)</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-secondary"></div>
-            <span className="text-muted-foreground">Body Fat (%)</span>
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!selectedDay} onOpenChange={(open) => !open && setSelectedDay(null)}>
+        <DialogContent className="sm:max-w-[320px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scale className="h-5 w-5" />
+              {selectedDay && formatSelectedDate(selectedDay.date)}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input
+                id="weight"
+                type="number"
+                step="0.1"
+                placeholder="e.g., 75.5"
+                value={editWeight}
+                onChange={(e) => setEditWeight(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bodyFat">Body Fat (%)</Label>
+              <Input
+                id="bodyFat"
+                type="number"
+                step="0.1"
+                placeholder="e.g., 15.0"
+                value={editBodyFat}
+                onChange={(e) => setEditBodyFat(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setSelectedDay(null)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleSave}>
+                Save
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
