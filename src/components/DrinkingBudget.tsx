@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { HabitsState, DrinkingEventType } from "@/types/habit";
 import { formatDateISO } from "@/utils/habitUtils";
-import { Target, Wine, Sparkles, Check, AlertTriangle } from "lucide-react";
+import { getTodayISO } from "@/utils/dateUtils";
+import { Target, Wine, Sparkles, Check, AlertTriangle, Calendar } from "lucide-react";
 
 interface DrinkingBudgetProps {
   habitsState: HabitsState;
@@ -15,7 +16,7 @@ interface DrinkingEvent {
   date: Date;
   dateISO: string;
   type: DrinkingEventType;
-  socialEvent: string;
+  isPast: boolean;
   location: string;
 }
 
@@ -24,7 +25,9 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
   viewMonth,
   viewYear
 }) => {
-  // Get all drinking events for the current month
+  const todayISO = getTodayISO();
+
+  // Get all drinking events for the current month from alcohol.drinkingEventType
   const getDrinkingEvents = (): DrinkingEvent[] => {
     const events: DrinkingEvent[] = [];
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -34,15 +37,15 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
       const dateISO = formatDateISO(date);
       const dayData = habitsState.days[dateISO];
       
-      // Check if this is a drinking event (social event with drinkingEventType set to anchor or side)
-      if (dayData?.social?.drinkingEventType && 
-          (dayData.social.drinkingEventType === 'anchor' || dayData.social.drinkingEventType === 'side')) {
+      // Check if this is a drinking event (alcohol.drinkingEventType set to anchor or side)
+      if (dayData?.alcohol?.drinkingEventType && 
+          (dayData.alcohol.drinkingEventType === 'anchor' || dayData.alcohol.drinkingEventType === 'side')) {
         events.push({
           date,
           dateISO,
-          type: dayData.social.drinkingEventType,
-          socialEvent: dayData.social.socialEvent || '',
-          location: dayData.social.location || ''
+          type: dayData.alcohol.drinkingEventType,
+          isPast: dateISO < todayISO,
+          location: dayData.location || ''
         });
       }
     }
@@ -53,7 +56,6 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
   // Calculate sober days for the month
   const getSoberDaysCount = (): number => {
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const today = new Date();
     let soberCount = 0;
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -62,7 +64,7 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
       const dayData = habitsState.days[dateISO];
       
       // Only count days up to today
-      if (date <= today) {
+      if (dateISO <= todayISO) {
         // A sober day is when alcohol is planned (sober day intended) and completed (stayed sober)
         if (dayData?.alcohol?.planned && dayData?.alcohol?.completed) {
           soberCount++;
@@ -78,11 +80,17 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
   const sideEvents = drinkingEvents.filter(e => e.type === 'side');
   const soberDays = getSoberDaysCount();
   
-  const anchorUsed = anchorEvents.length;
-  const sideUsed = sideEvents.length;
+  // Count past (used) vs future (planned)
+  const anchorUsed = anchorEvents.filter(e => e.isPast).length;
+  const anchorPlanned = anchorEvents.filter(e => !e.isPast).length;
+  const sideUsed = sideEvents.filter(e => e.isPast).length;
+  const sidePlanned = sideEvents.filter(e => !e.isPast).length;
   
-  const isAnchorOver = anchorUsed > 1;
-  const isSideOver = sideUsed > 2;
+  const totalAnchor = anchorUsed + anchorPlanned;
+  const totalSide = sideUsed + sidePlanned;
+  
+  const isAnchorOver = totalAnchor > 1;
+  const isSideOver = totalSide > 2;
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { 
@@ -114,22 +122,34 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
           <div className={`p-3 rounded-lg border-2 ${
             isAnchorOver 
               ? 'border-red-400 bg-red-50' 
-              : anchorUsed === 1 
+              : anchorUsed >= 1 
                 ? 'border-green-400 bg-green-50'
-                : 'border-amber-300 bg-white'
+                : totalAnchor >= 1
+                  ? 'border-blue-300 bg-blue-50'
+                  : 'border-amber-300 bg-white'
           }`}>
             <div className="flex items-center gap-1 mb-2">
               <Target className="h-4 w-4 text-amber-600" />
               <span className="text-xs font-semibold text-amber-800">ANCHOR</span>
             </div>
             <div className="text-2xl font-bold text-center">
-              <span className={anchorUsed > 0 ? 'text-green-600' : 'text-gray-400'}>
-                {anchorUsed}
-              </span>
+              {anchorUsed > 0 ? (
+                <span className="text-green-600">{anchorUsed}</span>
+              ) : anchorPlanned > 0 ? (
+                <span className="text-blue-500">({anchorPlanned})</span>
+              ) : (
+                <span className="text-gray-400">0</span>
+              )}
               <span className="text-gray-400">/1</span>
             </div>
+            {anchorPlanned > 0 && anchorUsed === 0 && (
+              <div className="flex items-center gap-1 text-xs text-blue-600 mt-1 justify-center">
+                <Calendar className="h-3 w-3" />
+                Planned
+              </div>
+            )}
             {isAnchorOver && (
-              <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
+              <div className="flex items-center gap-1 text-xs text-red-600 mt-1 justify-center">
                 <AlertTriangle className="h-3 w-3" />
                 Over budget!
               </div>
@@ -142,20 +162,37 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
               ? 'border-red-400 bg-red-50' 
               : sideUsed >= 1 
                 ? 'border-green-400 bg-green-50'
-                : 'border-amber-300 bg-white'
+                : totalSide >= 1
+                  ? 'border-blue-300 bg-blue-50'
+                  : 'border-amber-300 bg-white'
           }`}>
             <div className="flex items-center gap-1 mb-2">
               <Sparkles className="h-4 w-4 text-blue-500" />
               <span className="text-xs font-semibold text-amber-800">SIDE</span>
             </div>
             <div className="text-2xl font-bold text-center">
-              <span className={sideUsed > 0 ? 'text-green-600' : 'text-gray-400'}>
-                {sideUsed}
-              </span>
+              {sideUsed > 0 || sidePlanned > 0 ? (
+                <>
+                  {sideUsed > 0 && <span className="text-green-600">{sideUsed}</span>}
+                  {sidePlanned > 0 && (
+                    <span className="text-blue-500">
+                      {sideUsed > 0 ? `+` : ''}({sidePlanned})
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-gray-400">0</span>
+              )}
               <span className="text-gray-400">/2</span>
             </div>
+            {sidePlanned > 0 && sideUsed === 0 && (
+              <div className="flex items-center gap-1 text-xs text-blue-600 mt-1 justify-center">
+                <Calendar className="h-3 w-3" />
+                Planned
+              </div>
+            )}
             {isSideOver && (
-              <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
+              <div className="flex items-center gap-1 text-xs text-red-600 mt-1 justify-center">
                 <AlertTriangle className="h-3 w-3" />
                 Over budget!
               </div>
@@ -185,12 +222,17 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
                   variant="outline"
                   className={`${
                     event.type === 'anchor' 
-                      ? 'border-amber-500 bg-amber-100 text-amber-800' 
-                      : 'border-blue-400 bg-blue-50 text-blue-700'
+                      ? event.isPast
+                        ? 'border-amber-500 bg-amber-100 text-amber-800'
+                        : 'border-purple-400 bg-purple-50 text-purple-700'
+                      : event.isPast
+                        ? 'border-blue-400 bg-blue-100 text-blue-700'
+                        : 'border-blue-300 bg-blue-50 text-blue-600'
                   }`}
                 >
-                  {event.type === 'anchor' ? '🎯' : '🍺'} {formatDate(event.date)}
-                  {event.socialEvent && ` - ${event.socialEvent}`}
+                  {event.type === 'anchor' ? '🍷🍷' : '🍷'} {formatDate(event.date)}
+                  {!event.isPast && ' (planned)'}
+                  {event.location && ` - ${event.location}`}
                 </Badge>
               ))}
             </div>
@@ -199,7 +241,7 @@ const DrinkingBudget: React.FC<DrinkingBudgetProps> = ({
 
         {/* Tips */}
         <div className="text-xs text-amber-700 bg-amber-100 p-2 rounded">
-          💡 Mark your drinking events in the Social Planning section below
+          💡 Use the wine icon on calendar days to plan your anchor/side events
         </div>
       </CardContent>
     </Card>
