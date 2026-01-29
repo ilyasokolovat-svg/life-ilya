@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Dumbbell, WineOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HabitType, DayData } from "@/types/habit";
 import HabitTracker from "./HabitTracker";
@@ -142,8 +142,8 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
         : 'border border-gray-200 bg-white hover:shadow-md transition-shadow duration-200';
     }
 
-    // Reordering habits to put sleep first, then gym, alcohol, meditation, and social
-    const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation', 'social'];
+    // Reordering habits to put sleep first, then gym, alcohol, meditation (no social)
+    const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
 
     const getHabitLabel = (habitType: HabitType) => {
       switch (habitType) {
@@ -151,7 +151,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
         case 'gym': return 'Gym';
         case 'alcohol': return 'Sober Day';
         case 'meditation': return 'Presence';
-        case 'social': return 'Social';
         default: return '';
       }
     };
@@ -167,8 +166,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
           return <WineOff {...iconProps} />;
         case "meditation":
           return <Brain {...iconProps} />;
-        case "social":
-          return <Users {...iconProps} />;
         default:
           return null;
       }
@@ -441,10 +438,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
             <div className="flex items-center">
               <Brain className="h-3.5 w-3.5 mr-1" />
               <span>Presence</span>
-            </div>
-            <div className="flex items-center">
-              <Users className="h-3.5 w-3.5 mr-1" />
-              <span>Social</span>
             </div>
           </div>
         </div>
