@@ -19,6 +19,9 @@ export interface HabitData {
   mindfulPhone?: boolean;
   // Drinking budget tracking - used on social events
   drinkingEventType?: DrinkingEventType;
+  // Weight/body composition tracking (stored with sleep habit for daily check-in)
+  weight?: number; // Weight in kg
+  bodyFat?: number; // Body fat percentage
 }
 
 export interface DayData {

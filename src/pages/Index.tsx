@@ -6,7 +6,7 @@ import Calendar from "@/components/Calendar";
 import HabitStats from "@/components/HabitStats";
 import MonthSlider from "@/components/MonthSlider";
 import GoalSetting from "@/components/GoalSetting";
-import { HabitType, HabitData, HabitGoal, DrinkingEventType } from "@/types/habit";
+import { HabitType, HabitData, HabitGoal } from "@/types/habit";
 import { 
   calculateHabitStats, 
   getDubaiDate,
@@ -14,17 +14,17 @@ import {
   getMonthGoals
 } from "@/utils/habitUtils";
 import { getDubaiDate as getDubaiDateFromUtils, formatDateISO, getTodayISO } from "@/utils/dateUtils";
-import { Moon, Dumbbell, Wine, Brain, Users, Cloud, CloudOff, LogOut, User, Save, ArrowLeft } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Cloud, CloudOff, LogOut, User, Save, ArrowLeft } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import GymPlanning from "@/components/GymPlanning";
-import SocialPlanning from "@/components/SocialPlanning";
 import PresencePlanning from "@/components/PresencePlanning";
 import TodayHabits from "@/components/TodayHabits";
 import StreakHabits from "@/components/StreakHabits";
 import DrinkingBudget from "@/components/DrinkingBudget";
+import WeightChart from "@/components/WeightChart";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -82,22 +82,6 @@ const Index = () => {
     updateDay(date, 'gym', updatedData);
   };
   
-  // Add new handler for social planning updates
-  const handleUpdateSocialPlan = (dateISO: string, socialEvent: string, location: string, socialPerson?: string, highlights?: string, drinkingEventType?: DrinkingEventType) => {
-    const date = new Date(dateISO);
-    const existingData = habitsState.days[dateISO]?.social || { planned: false, completed: false };
-    
-    const updatedData = {
-      ...existingData,
-      socialEvent,
-      location,
-      ...(socialPerson !== undefined && { socialPerson }),
-      ...(highlights !== undefined && { highlights }),
-      ...(drinkingEventType !== undefined && { drinkingEventType })
-    };
-    
-    updateDay(date, 'social', updatedData);
-  };
   
   // Handler for presence planning updates
   const handleUpdatePresencePlan = (dateISO: string, journaling: boolean, meditationDone: boolean, mindfulPhone: boolean) => {
@@ -142,15 +126,13 @@ const Index = () => {
   const gymStats = calculateHabitStats(habitsState, "gym", viewYear, viewMonth);
   const alcoholStats = calculateHabitStats(habitsState, "alcohol", viewYear, viewMonth);
   const meditationStats = calculateHabitStats(habitsState, "meditation", viewYear, viewMonth);
-  const socialStats = calculateHabitStats(habitsState, "social", viewYear, viewMonth);
 
   // Create habit stats object for GoalSetting
   const habitStats = {
     sleep: sleepStats,
     gym: gymStats,
     alcohol: alcoholStats,
-    meditation: meditationStats,
-    social: socialStats
+    meditation: meditationStats
   };
   
 
@@ -375,15 +357,6 @@ const Index = () => {
           />
         </div>
         
-        {/* Social Planning Section */}
-        <div className="mt-8 mb-8">
-          <SocialPlanning 
-            habitsState={habitsState}
-            viewMonth={viewMonth}
-            viewYear={viewYear}
-            onUpdateSocialPlan={handleUpdateSocialPlan}
-          />
-        </div>
         
         {/* Presence Planning Section */}
         <div className="mt-8 mb-8">
@@ -400,11 +373,11 @@ const Index = () => {
           <StreakHabits />
         </div>
         
-        {/* Stats section - All 5 categories in one horizontal line */}
+        {/* Stats section - All 4 categories in one horizontal line */}
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <HabitStats 
               habitType="sleep" 
               stats={sleepStats} 
@@ -433,14 +406,16 @@ const Index = () => {
               viewMonth={viewMonth}
               viewYear={viewYear}
             />
-            <HabitStats 
-              habitType="social" 
-              stats={socialStats} 
-              habitsState={habitsState}
-              viewMonth={viewMonth}
-              viewYear={viewYear}
-            />
           </div>
+        </div>
+        
+        {/* Weight Tracking Chart */}
+        <div className="mt-8 mb-8">
+          <WeightChart 
+            habitsState={habitsState}
+            viewMonth={viewMonth}
+            viewYear={viewYear}
+          />
         </div>
         
         {/* Motivational section */}
@@ -470,12 +445,6 @@ const Index = () => {
                 <Brain className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Stay Mindful</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="bg-blue-light p-4 rounded-full mb-2">
-                <Users className="h-8 w-8 text-blue-dark" />
-              </div>
-              <p className="text-sm">Stay Social</p>
             </div>
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto">

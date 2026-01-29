@@ -4,15 +4,18 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { HabitType, HabitGoal, HabitStats } from "@/types/habit";
-import { Dumbbell, Wine, Moon, Brain, Users } from "lucide-react";
+import { Dumbbell, Wine, Moon, Brain } from "lucide-react";
 import { getDaysInMonth, formatDateISO } from "@/utils/habitUtils";
+
+// Define the habit types we track (excluding social)
+type TrackedHabitType = 'gym' | 'alcohol' | 'sleep' | 'meditation';
 
 interface GoalSettingProps {
   goals: Record<HabitType, HabitGoal>;
   viewMonth: number;
   viewYear: number;
   onUpdateGoal: (type: HabitType, goal: HabitGoal) => void;
-  habitStats: Record<HabitType, HabitStats>;
+  habitStats: Record<TrackedHabitType, HabitStats>;
   habitsState?: any;
 }
 
@@ -24,7 +27,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   habitStats,
   habitsState 
 }) => {
-  const getHabitIcon = (habitType: HabitType) => {
+  const getHabitIcon = (habitType: TrackedHabitType) => {
     switch (habitType) {
       case "gym":
         return <Dumbbell className="h-4 w-4" />;
@@ -34,14 +37,12 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
         return <Moon className="h-4 w-4" />;
       case "meditation":
         return <Brain className="h-4 w-4" />;
-      case "social":
-        return <Users className="h-4 w-4" />;
       default:
         return null;
     }
   };
 
-  const getHabitTitle = (habitType: HabitType) => {
+  const getHabitTitle = (habitType: TrackedHabitType) => {
     switch (habitType) {
       case "gym":
         return "Gym";
@@ -51,8 +52,6 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
         return "Good Sleep";
       case "meditation":
         return "Presence";
-      case "social":
-        return "Social";
       default:
         return "";
     }
@@ -64,7 +63,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   };
 
   // Calculate planned days for a habit type in the entire month
-  const getPlannedDaysCount = (habitType: HabitType) => {
+  const getPlannedDaysCount = (habitType: TrackedHabitType) => {
     if (habitType === 'sleep') {
       // For sleep, planned days = total days in month (we should sleep every day)
       const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
@@ -92,7 +91,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   };
 
   // Calculate completed days for a habit type in the current month (only up to today)
-  const getCompletedDaysCount = (habitType: HabitType) => {
+  const getCompletedDaysCount = (habitType: TrackedHabitType) => {
     if (!habitsState?.days) return 0;
     
     const daysInCurrentMonth = getDaysInMonth(viewYear, viewMonth);
@@ -124,7 +123,7 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   };
 
   // Calculate progress for each habit
-  const getProgressData = (habitType: HabitType) => {
+  const getProgressData = (habitType: TrackedHabitType) => {
     const totalDays = getPlannedDaysCount(habitType);
     const completed = getCompletedDaysCount(habitType);
     
@@ -140,14 +139,14 @@ const GoalSetting: React.FC<GoalSettingProps> = ({
   };
 
   // Define habit types to ensure consistent ordering
-  const habitTypes: HabitType[] = ['gym', 'alcohol', 'sleep', 'meditation', 'social'];
+  const habitTypes: TrackedHabitType[] = ['gym', 'alcohol', 'sleep', 'meditation'];
 
   return (
     <div>
       <h3 className="text-lg font-medium mb-3">
         Goals for {getMonthName(viewMonth)} {viewYear}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {habitTypes.map((habitType) => {
           const progressData = getProgressData(habitType);
           

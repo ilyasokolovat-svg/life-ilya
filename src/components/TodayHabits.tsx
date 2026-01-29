@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Moon, Dumbbell, Wine, Brain, Users } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Scale } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
 import { getDubaiDate, formatDateISO } from "@/utils/dateUtils";
 
@@ -64,6 +64,44 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     }
   };
 
+  const handleWeightChange = (value: string) => {
+    const currentHabitData = todayData?.sleep || { planned: false, completed: false };
+    const weight = parseFloat(value);
+    
+    if (!isNaN(weight) && weight > 0) {
+      const updatedHabitData: HabitData = {
+        ...currentHabitData,
+        weight
+      };
+      onUpdateHabit(today, 'sleep', updatedHabitData);
+    } else if (value === "") {
+      const updatedHabitData: HabitData = {
+        ...currentHabitData,
+        weight: undefined
+      };
+      onUpdateHabit(today, 'sleep', updatedHabitData);
+    }
+  };
+
+  const handleBodyFatChange = (value: string) => {
+    const currentHabitData = todayData?.sleep || { planned: false, completed: false };
+    const bodyFat = parseFloat(value);
+    
+    if (!isNaN(bodyFat) && bodyFat >= 0 && bodyFat <= 100) {
+      const updatedHabitData: HabitData = {
+        ...currentHabitData,
+        bodyFat
+      };
+      onUpdateHabit(today, 'sleep', updatedHabitData);
+    } else if (value === "") {
+      const updatedHabitData: HabitData = {
+        ...currentHabitData,
+        bodyFat: undefined
+      };
+      onUpdateHabit(today, 'sleep', updatedHabitData);
+    }
+  };
+
   const habits = [
     {
       type: 'sleep' as HabitType,
@@ -98,15 +136,6 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200'
-    },
-    {
-      type: 'social' as HabitType,
-      icon: Users,
-      name: 'Social',
-      description: 'Networking, meeting friends, quality social fulfilment',
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-50',
-      borderColor: 'border-pink-200'
     }
   ];
 
@@ -125,12 +154,10 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {habits.map((habit) => {
             const Icon = habit.icon;
             const habitData = todayData?.[habit.type] || { planned: false, completed: false };
-            
-            console.log(`TodayHabits: Rendering ${habit.type} with data:`, habitData);
             
             return (
               <div
@@ -200,6 +227,48 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
               </div>
             );
           })}
+        </div>
+        
+        {/* Weight Tracking Section */}
+        <div className="mt-6 p-6 rounded-lg border-2 border-orange-200 bg-orange-50">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-full bg-orange-100">
+              <Scale className="h-6 w-6 text-orange-600" />
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 text-lg">Body Composition</div>
+              <div className="text-sm text-gray-600 mt-1">Track your weight and body fat percentage</div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Weight (kg)</label>
+              <Input
+                type="number"
+                value={todayData?.sleep?.weight?.toString() || ""}
+                onChange={(e) => handleWeightChange(e.target.value)}
+                placeholder="e.g. 75.5"
+                className="w-full text-center"
+                min="0"
+                max="500"
+                step="0.1"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Body Fat (%)</label>
+              <Input
+                type="number"
+                value={todayData?.sleep?.bodyFat?.toString() || ""}
+                onChange={(e) => handleBodyFatChange(e.target.value)}
+                placeholder="e.g. 15.0"
+                className="w-full text-center"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
