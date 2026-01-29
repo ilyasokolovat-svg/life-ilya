@@ -300,6 +300,26 @@ export function useSocialCRM() {
     }
   };
 
+  // Confirm for multiple events at once (e.g., padel date that's also a social event)
+  const confirmForMultipleEvents = async (outreachId: string, slotTypes: ('mid_week' | 'weekend' | 'date')[]) => {
+    // Store as comma-separated string: "mid_week,date" or "weekend,date"
+    const confirmedFor = slotTypes.join(',');
+    
+    const { error } = await fromTable('weekly_outreach')
+      .update({ confirmed_for: confirmedFor, updated_at: new Date().toISOString() })
+      .eq('id', outreachId);
+
+    if (error) {
+      toast.error('Failed to confirm');
+    } else {
+      setOutreachItems(prev => prev.map(i => 
+        i.id === outreachId ? { ...i, confirmed_for: confirmedFor } : i
+      ));
+      const labels = slotTypes.map(s => s === 'mid_week' ? 'Mid-Week' : s === 'weekend' ? 'Weekend' : 'Date');
+      toast.success(`Confirmed for ${labels.join(' + ')}!`);
+    }
+  };
+
   const removeGuestFromEvent = async (slotType: 'mid_week' | 'weekend' | 'date', contactId: string) => {
     const outreachItem = outreachItems.find(i => i.contact_id === contactId && i.confirmed_for === slotType);
     if (!outreachItem) return;
@@ -489,21 +509,21 @@ export function useSocialCRM() {
 
   const getMidWeekGuests = () => {
     return outreachItems
-      .filter(i => i.confirmed_for === 'mid_week' && i.contact_id)
+      .filter(i => i.confirmed_for?.includes('mid_week') && i.contact_id)
       .map(i => contacts.find(c => c.id === i.contact_id))
       .filter(Boolean) as SocialContact[];
   };
 
   const getWeekendGuests = () => {
     return outreachItems
-      .filter(i => i.confirmed_for === 'weekend' && i.contact_id)
+      .filter(i => i.confirmed_for?.includes('weekend') && i.contact_id)
       .map(i => contacts.find(c => c.id === i.contact_id))
       .filter(Boolean) as SocialContact[];
   };
 
   const getDateGuests = () => {
     return outreachItems
-      .filter(i => i.confirmed_for === 'date' && i.contact_id)
+      .filter(i => i.confirmed_for?.includes('date') && i.contact_id)
       .map(i => contacts.find(c => c.id === i.contact_id))
     .filter(Boolean) as SocialContact[];
   };
@@ -531,6 +551,7 @@ export function useSocialCRM() {
     removeFromOutreach,
     toggleOutreachContacted,
     confirmForEvent,
+    confirmForMultipleEvents,
     removeGuestFromEvent,
     // Event slot operations
     selectEventExperience,

@@ -66,7 +66,7 @@ export interface WeeklyOutreach {
   week_start: string;
   contact_id: string | null;
   contacted: boolean;
-  confirmed_for: 'mid_week' | 'weekend' | 'date' | null;
+  confirmed_for: string | null; // Can be single slot or comma-separated for multiple (e.g., "mid_week,date")
   order_index: number | null;
   created_at: string;
   updated_at: string;

@@ -20,7 +20,7 @@ const SocialCRM: React.FC = () => {
     contacts, experiences, dateExperiences, outreachItems, weeklyPlans, archivedEvents, pendingCatchupPlans, loading,
     addContact, updateContact, deleteContact,
     addExperience, updateExperience, deleteExperience,
-    addToOutreach, removeFromOutreach, toggleOutreachContacted, confirmForEvent, removeGuestFromEvent,
+    addToOutreach, removeFromOutreach, toggleOutreachContacted, confirmForEvent, confirmForMultipleEvents, removeGuestFromEvent,
     selectEventExperience, clearEventSlot, markEventComplete,
     getMidWeekExperienceId, getWeekendExperienceId, getDateExperienceId,
     getMidWeekPlan, getWeekendPlan, getDatePlan,
@@ -150,7 +150,8 @@ const SocialCRM: React.FC = () => {
               outreachItems={outreachItems} 
               contacts={contacts} 
               onToggleContacted={toggleOutreachContacted} 
-              onConfirmForEvent={confirmForEvent} 
+              onConfirmForEvent={confirmForEvent}
+              onConfirmForMultipleEvents={confirmForMultipleEvents}
               onRemoveFromOutreach={removeFromOutreach} 
             />
           </div>
