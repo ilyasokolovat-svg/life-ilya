@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Archive, Calendar, Users, MapPin, DollarSign, Star, Pencil, X, Check } from 'lucide-react';
+import { Archive, Calendar, Users, MapPin, DollarSign, Star, Pencil, X, Check, Undo2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ interface EventArchiveProps {
   events: SocialEventArchive[];
   loading?: boolean;
   onUpdateEvent?: (id: string, updates: Partial<SocialEventArchive>) => Promise<void>;
+  onUnmarkComplete?: (archiveId: string) => Promise<void>;
 }
 
 const SLOT_LABELS: Record<string, { label: string; color: string }> = {
@@ -20,7 +21,7 @@ const SLOT_LABELS: Record<string, { label: string; color: string }> = {
   'date': { label: 'Date Night', color: 'text-pink-400' },
 };
 
-const EventArchive: React.FC<EventArchiveProps> = ({ events, loading, onUpdateEvent }) => {
+const EventArchive: React.FC<EventArchiveProps> = ({ events, loading, onUpdateEvent, onUnmarkComplete }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<SocialEventArchive>>({});
 
@@ -296,6 +297,17 @@ const EventArchive: React.FC<EventArchiveProps> = ({ events, loading, onUpdateEv
                           </div>
                           
                           <div className="flex items-center gap-2">
+                            {onUnmarkComplete && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
+                                onClick={() => onUnmarkComplete(event.id)}
+                                title="Undo completion"
+                              >
+                                <Undo2 className="w-3 h-3" />
+                              </Button>
+                            )}
                             {onUpdateEvent && (
                               <Button
                                 size="sm"
