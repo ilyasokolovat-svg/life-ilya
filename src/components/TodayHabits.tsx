@@ -64,6 +64,16 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     }
   };
 
+  const handleWellRestedChange = (checked: boolean) => {
+    const currentHabitData = todayData?.sleep || { planned: false, completed: false };
+    const updatedHabitData: HabitData = {
+      ...currentHabitData,
+      wellRested: checked
+    };
+    console.log(`TodayHabits: Well rested update for ${todayISO}:`, updatedHabitData);
+    onUpdateHabit(today, 'sleep', updatedHabitData);
+  };
+
   const handleWeightChange = (value: string) => {
     const currentHabitData = todayData?.sleep || { planned: false, completed: false };
     const weight = parseFloat(value);
@@ -181,7 +191,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                 </div>
                 
                 {habit.isSpecial ? (
-                  // Sleep hours input
+                  // Sleep hours input + well rested checkbox
                   <div className="space-y-3">
                     <Input
                       type="number"
@@ -202,6 +212,20 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                           ✓ Completed
                         </div>
                       )}
+                    </div>
+                    {/* Well Rested Checkbox */}
+                    <div 
+                      className="flex items-center justify-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors border border-dashed border-blue-200"
+                      onClick={() => handleWellRestedChange(!habitData.wellRested)}
+                    >
+                      <Checkbox
+                        checked={habitData.wellRested || false}
+                        onCheckedChange={(checked) => handleWellRestedChange(!!checked)}
+                        className="h-5 w-5 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                      />
+                      <label className="text-sm font-medium text-blue-700 cursor-pointer">
+                        😴 Felt well rested
+                      </label>
                     </div>
                   </div>
                 ) : (
