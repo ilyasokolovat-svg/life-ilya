@@ -53,16 +53,13 @@ export function useSocialCRM() {
       if (contactsRes.data) setContacts(contactsRes.data as unknown as SocialContact[]);
       if (experiencesRes.data) {
         const allExperiences = experiencesRes.data as unknown as SocialExperience[];
-        const socialExp = allExperiences.filter(e => e.ideal_group_size !== '1' || !e.description?.toLowerCase().includes('date'));
-        const dateExp = allExperiences.filter(e => e.ideal_group_size === '1' && (e.description?.toLowerCase().includes('date') || e.title.toLowerCase().includes('date') || e.title.toLowerCase().includes('dinner') || e.title.toLowerCase().includes('coffee')));
+        // Simple categorization: group_size of '1' = date experience
+        // This ensures newly created date experiences are properly categorized
+        const dateExp = allExperiences.filter(e => e.ideal_group_size === '1');
+        const socialExp = allExperiences.filter(e => e.ideal_group_size !== '1');
         
-        if (dateExp.length === 0) {
-          setExperiences(allExperiences);
-          setDateExperiences([]);
-        } else {
-          setExperiences(socialExp);
-          setDateExperiences(dateExp);
-        }
+        setExperiences(socialExp);
+        setDateExperiences(dateExp);
       }
       if (plansRes.data) setWeeklyPlans(plansRes.data as unknown as WeeklySocialPlan[]);
       if (outreachRes.data) setOutreachItems(outreachRes.data as unknown as WeeklyOutreach[]);

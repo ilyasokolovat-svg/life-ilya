@@ -41,9 +41,9 @@ const SocialCRM: React.FC = () => {
     });
   };
 
-  const handleMarkComplete = async (slotType: 'mid_week' | 'weekend' | 'date') => {
+  const handleMarkComplete = async (slotType: 'mid_week' | 'weekend' | 'date', completionData: EventCompletionData) => {
     const plan = slotType === 'mid_week' ? getMidWeekPlan() : slotType === 'weekend' ? getWeekendPlan() : getDatePlan();
-    if (plan) await markEventComplete(plan.id);
+    if (plan) await markEventComplete(plan.id, completionData);
   };
 
   const handleCatchupComplete = async (planId: string, completionData: EventCompletionData) => {
