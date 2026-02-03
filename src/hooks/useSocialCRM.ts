@@ -164,8 +164,13 @@ export function useSocialCRM() {
   const addExperience = async (experience: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>, isDateExperience: boolean = false) => {
     if (!user) return;
 
+    // For date experiences, ensure ideal_group_size is '1' so it's categorized correctly on reload
+    const experienceToInsert = isDateExperience 
+      ? { ...experience, user_id: user.id, ideal_group_size: '1' }
+      : { ...experience, user_id: user.id };
+
     const { data, error } = await fromTable('social_experiences')
-      .insert({ ...experience, user_id: user.id })
+      .insert(experienceToInsert)
       .select()
       .single();
 
