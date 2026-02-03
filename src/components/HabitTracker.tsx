@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { HabitType, HabitData } from "@/types/habit";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Smile } from "lucide-react";
 
 interface HabitTrackerProps {
   date: Date;
@@ -59,6 +61,11 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     }
   };
 
+  const handleWellRestedChange = (checked: boolean) => {
+    console.log(`HabitTracker: Well rested change for ${habitType}:`, checked);
+    onUpdate(habitType, { ...habitData, wellRested: checked });
+  };
+
   console.log(`HabitTracker: Rendering ${habitType} with data:`, habitData);
 
   const checkboxSize = isMobile ? "h-5 w-5" : "h-3 w-3";
@@ -79,6 +86,36 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
             max="24"
             step="0.5"
           />
+          {/* Well rested indicator/toggle */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button 
+                className={`p-1 rounded transition-colors ${
+                  habitData.wellRested 
+                    ? 'bg-blue-100 text-blue-600' 
+                    : 'hover:bg-gray-100 text-gray-400'
+                }`}
+                title={habitData.wellRested ? "Felt well rested" : "Mark as well rested"}
+              >
+                <Smile className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-44 p-2" align="end">
+              <div 
+                className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100"
+                onClick={() => handleWellRestedChange(!habitData.wellRested)}
+              >
+                <Checkbox
+                  checked={habitData.wellRested || false}
+                  onCheckedChange={(checked) => handleWellRestedChange(!!checked)}
+                  className="h-4 w-4 data-[state=checked]:bg-blue-500"
+                />
+                <label className="text-sm cursor-pointer">
+                  😴 Felt well rested
+                </label>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       ) : (
         <div className={`flex items-center ${spacing}`}>
