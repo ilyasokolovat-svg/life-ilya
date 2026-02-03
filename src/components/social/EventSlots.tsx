@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SocialExperience, SocialContact, WeeklySocialPlan, TIERS, EXPERIENCE_CATEGORIES, ExperienceCategory, CATEGORY_COLORS } from '@/types/social';
+import { SocialExperience, SocialContact, WeeklySocialPlan, TIERS, EXPERIENCE_CATEGORIES, ExperienceCategory, CATEGORY_COLORS, EventCompletionData } from '@/types/social';
+import EventCompletionDialog from './EventCompletionDialog';
 
 interface EventSlotProps {
   slotType: 'mid_week' | 'weekend' | 'date';
@@ -192,7 +193,7 @@ interface EventSlotsProps {
   onSelectExperience: (slotType: 'mid_week' | 'weekend' | 'date', experienceId: string | null) => void;
   onRemoveGuest: (slotType: 'mid_week' | 'weekend' | 'date', contactId: string) => void;
   onClearSlot: (slotType: 'mid_week' | 'weekend' | 'date') => void;
-  onMarkComplete: (slotType: 'mid_week' | 'weekend' | 'date') => void;
+  onMarkComplete: (slotType: 'mid_week' | 'weekend' | 'date', completionData: EventCompletionData) => void;
   onAddExperience: (experience: Omit<SocialExperience, 'id' | 'user_id' | 'created_at' | 'updated_at'>, isDateExperience?: boolean) => Promise<void>;
   onUpdateExperience: (id: string, updates: Partial<SocialExperience>) => Promise<void>;
   onDeleteExperience: (id: string) => Promise<void>;
@@ -240,6 +241,34 @@ const EventSlots: React.FC<EventSlotsProps> = ({
   const [midWeekCategoryFilter, setMidWeekCategoryFilter] = useState('all');
   const [weekendCategoryFilter, setWeekendCategoryFilter] = useState('all');
   const [dateCategoryFilter, setDateCategoryFilter] = useState('all');
+  
+  // Completion dialog state
+  const [completionDialog, setCompletionDialog] = useState<{
+    open: boolean;
+    slotType: 'mid_week' | 'weekend' | 'date';
+  }>({ open: false, slotType: 'mid_week' });
+
+  const openCompletionDialog = (slotType: 'mid_week' | 'weekend' | 'date') => {
+    setCompletionDialog({ open: true, slotType });
+  };
+
+  const handleCompleteEvent = (data: EventCompletionData) => {
+    onMarkComplete(completionDialog.slotType, data);
+    setCompletionDialog({ open: false, slotType: 'mid_week' });
+  };
+
+  const getCompletionDialogExperience = () => {
+    const experienceId = completionDialog.slotType === 'mid_week' ? midWeekExperienceId 
+      : completionDialog.slotType === 'weekend' ? weekendExperienceId 
+      : dateExperienceId;
+    return experienceId ? [...experiences, ...dateExperiences].find(e => e.id === experienceId) || null : null;
+  };
+
+  const getCompletionDialogGuests = () => {
+    return completionDialog.slotType === 'mid_week' ? midWeekGuests 
+      : completionDialog.slotType === 'weekend' ? weekendGuests 
+      : dateGuests;
+  };
 
   const openAddForm = (forDates: boolean = false) => {
     setEditingId(null);
@@ -392,10 +421,12 @@ const EventSlots: React.FC<EventSlotsProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Cost (AED)"
                     value={formData.estimated_cost || ''}
-                    onChange={(e) => setFormData({ ...formData, estimated_cost: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, estimated_cost: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0 })}
                     className="bg-slate-700 border-slate-600 text-white"
                   />
                   <Input
@@ -465,7 +496,7 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           onSelectExperience={(id) => onSelectExperience('mid_week', id)}
           onRemoveGuest={(id) => onRemoveGuest('mid_week', id)}
           onClear={() => onClearSlot('mid_week')}
-          onMarkComplete={() => onMarkComplete('mid_week')}
+          onMarkComplete={() => openCompletionDialog('mid_week')}
           accentColor="text-amber-400"
           categoryFilter={midWeekCategoryFilter}
           onCategoryFilterChange={setMidWeekCategoryFilter}
@@ -482,7 +513,7 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           onSelectExperience={(id) => onSelectExperience('weekend', id)}
           onRemoveGuest={(id) => onRemoveGuest('weekend', id)}
           onClear={() => onClearSlot('weekend')}
-          onMarkComplete={() => onMarkComplete('weekend')}
+          onMarkComplete={() => openCompletionDialog('weekend')}
           accentColor="text-amber-400"
           categoryFilter={weekendCategoryFilter}
           onCategoryFilterChange={setWeekendCategoryFilter}
@@ -499,12 +530,22 @@ const EventSlots: React.FC<EventSlotsProps> = ({
           onSelectExperience={(id) => onSelectExperience('date', id)}
           onRemoveGuest={(id) => onRemoveGuest('date', id)}
           onClear={() => onClearSlot('date')}
-          onMarkComplete={() => onMarkComplete('date')}
+          onMarkComplete={() => openCompletionDialog('date')}
           accentColor="text-pink-400"
           categoryFilter={dateCategoryFilter}
           onCategoryFilterChange={setDateCategoryFilter}
         />
       </div>
+
+      {/* Event Completion Dialog */}
+      <EventCompletionDialog
+        open={completionDialog.open}
+        onOpenChange={(open) => setCompletionDialog(prev => ({ ...prev, open }))}
+        slotType={completionDialog.slotType}
+        experience={getCompletionDialogExperience()}
+        guests={getCompletionDialogGuests()}
+        onComplete={handleCompleteEvent}
+      />
     </div>
   );
 };
