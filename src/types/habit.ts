@@ -9,6 +9,7 @@ export interface HabitData {
   sleepHours?: number; // Optional field for tracking sleep hours
   wellRested?: boolean; // Optional field for tracking if user felt well rested
   workoutType?: string; // Optional field for gym workout type
+  workoutIntensity?: 'full' | 'hiit' | 'walk' | 'stretch'; // Workout intensity level
   location?: string; // Optional field for gym location
   calories?: string; // Optional field for gym calories burned
   socialEvent?: string; // Optional field for social event type
