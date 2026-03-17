@@ -21,24 +21,39 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
   console.log('TodayHabits: Using date:', todayISO, 'Date object:', today);
   console.log('TodayHabits: Received todayData:', todayData);
 
+  const workoutIntensityConfig = {
+    full: { label: 'Full Workout', emoji: '🏋️', color: 'bg-green-500' },
+    hiit: { label: 'Quick HIIT', emoji: '🔥', color: 'bg-orange-500' },
+    walk: { label: 'Walk/Cardio', emoji: '🚶', color: 'bg-blue-400' },
+    stretch: { label: 'Stretching', emoji: '🧘', color: 'bg-purple-400' },
+  };
+
   const handleHabitComplete = (habitType: HabitType, completed: boolean) => {
-    // Get current data for this habit or create default
     const currentHabitData = todayData?.[habitType] || { planned: false, completed: false };
     
-    // Create updated habit data - when completed, also mark as planned
     const updatedHabitData: HabitData = {
       ...currentHabitData,
       completed,
-      planned: completed ? true : currentHabitData.planned // Keep planned true if it was already true
+      planned: completed ? true : currentHabitData.planned
     };
     
-    console.log(`TodayHabits: Updating ${habitType} for ${todayISO}:`, { 
-      current: currentHabitData, 
-      updated: updatedHabitData 
-    });
+    // For gym, default to 'full' intensity
+    if (habitType === 'gym') {
+      updatedHabitData.workoutIntensity = completed ? (currentHabitData.workoutIntensity || 'full') : undefined;
+    }
     
-    // Call the update function which will sync to calendar
     onUpdateHabit(today, habitType, updatedHabitData);
+  };
+
+  const handleWorkoutIntensity = (intensity: 'full' | 'hiit' | 'walk' | 'stretch') => {
+    const currentHabitData = todayData?.gym || { planned: false, completed: false };
+    const updatedHabitData: HabitData = {
+      ...currentHabitData,
+      completed: true,
+      planned: true,
+      workoutIntensity: intensity,
+    };
+    onUpdateHabit(today, 'gym', updatedHabitData);
   };
 
   const handleSleepHoursChange = (value: string) => {
