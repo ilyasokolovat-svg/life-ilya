@@ -13,6 +13,15 @@ const workoutIntensityConfig = {
   stretch: { label: 'Stretching', emoji: '🧘', icon: StretchHorizontal, color: 'bg-purple-400 text-white' },
 } as const;
 
+type IntensityKey = 'full' | 'hiit' | 'walk' | 'stretch';
+
+// Helper to normalize workoutIntensity to array
+const getIntensityArray = (wi: HabitData['workoutIntensity']): IntensityKey[] => {
+  if (!wi) return [];
+  if (Array.isArray(wi)) return wi;
+  return [wi];
+};
+
 interface HabitTrackerProps {
   date: Date;
   habitType: HabitType;
@@ -30,7 +39,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
 }) => {
   const [sleepHours, setSleepHours] = useState(habitData.sleepHours?.toString() || "");
 
-  // Update local state when habitData changes
   useEffect(() => {
     setSleepHours(habitData.sleepHours?.toString() || "");
   }, [habitData.sleepHours]);
@@ -41,7 +49,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
 
   const handleCompletedChange = (checked: boolean) => {
     if (habitType === 'gym' && checked) {
-      // Default to 'full' when checking completed
       onUpdate(habitType, { ...habitData, completed: true, workoutIntensity: habitData.workoutIntensity || 'full' });
     } else if (habitType === 'gym' && !checked) {
       onUpdate(habitType, { ...habitData, completed: false, workoutIntensity: undefined });
@@ -50,8 +57,19 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
     }
   };
 
-  const handleWorkoutIntensityChange = (intensity: 'full' | 'hiit' | 'walk' | 'stretch') => {
-    onUpdate(habitType, { ...habitData, completed: true, planned: true, workoutIntensity: intensity });
+  const handleToggleIntensity = (intensity: IntensityKey) => {
+    const current = getIntensityArray(habitData.workoutIntensity);
+    let updated: IntensityKey[];
+    if (current.includes(intensity)) {
+      updated = current.filter(i => i !== intensity);
+    } else {
+      updated = [...current, intensity];
+    }
+    if (updated.length === 0) {
+      onUpdate(habitType, { ...habitData, completed: false, planned: habitData.planned, workoutIntensity: undefined });
+    } else {
+      onUpdate(habitType, { ...habitData, completed: true, planned: true, workoutIntensity: updated });
+    }
   };
 
   const handleSleepHoursChange = (value: string) => {
@@ -71,6 +89,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   const checkboxSize = isMobile ? "h-5 w-5" : "h-3 w-3";
   const inputSize = isMobile ? "w-16 h-8 text-sm" : "w-12 h-6 text-xs";
   const spacing = isMobile ? "space-x-3" : "space-x-1";
+
+  const intensityArr = getIntensityArray(habitData.workoutIntensity);
 
   return (
     <div className={`flex items-center ${spacing}`}>
@@ -123,19 +143,18 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
             onCheckedChange={handlePlannedChange}
             className={`${checkboxSize} border-gray-400`}
           />
-          {/* Workout intensity selector replaces simple completed checkbox */}
           <Popover>
             <PopoverTrigger asChild>
               <button
                 className={`rounded transition-colors flex items-center gap-0.5 ${
-                  habitData.completed && habitData.workoutIntensity
-                    ? `px-1 py-0.5 ${workoutIntensityConfig[habitData.workoutIntensity]?.color || 'bg-green-500 text-white'} text-xs rounded`
+                  habitData.completed && intensityArr.length > 0
+                    ? 'px-1 py-0.5 bg-green-500 text-white text-xs rounded'
                     : ''
                 }`}
               >
-                {habitData.completed && habitData.workoutIntensity ? (
+                {habitData.completed && intensityArr.length > 0 ? (
                   <span className={isMobile ? "text-base" : "text-xs"}>
-                    {workoutIntensityConfig[habitData.workoutIntensity]?.emoji || '✓'}
+                    {intensityArr.map(k => workoutIntensityConfig[k]?.emoji).join('')}
                   </span>
                 ) : (
                   <Checkbox
@@ -148,17 +167,20 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
             </PopoverTrigger>
             <PopoverContent className="w-44 p-1.5" align="end">
               <div className="space-y-0.5">
-                {(Object.entries(workoutIntensityConfig) as [string, typeof workoutIntensityConfig[keyof typeof workoutIntensityConfig]][]).map(([key, cfg]) => (
-                  <button
-                    key={key}
-                    onClick={() => handleWorkoutIntensityChange(key as any)}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                      habitData.workoutIntensity === key ? `${cfg.color} hover:opacity-90` : ''
-                    }`}
-                  >
-                    <span>{cfg.emoji}</span> {cfg.label}
-                  </button>
-                ))}
+                {(Object.entries(workoutIntensityConfig) as [IntensityKey, typeof workoutIntensityConfig[IntensityKey]][]).map(([key, cfg]) => {
+                  const isSelected = intensityArr.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => handleToggleIntensity(key)}
+                      className={`w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                        isSelected ? `${cfg.color} hover:opacity-90` : ''
+                      }`}
+                    >
+                      <span>{cfg.emoji}</span> {cfg.label}
+                    </button>
+                  );
+                })}
                 {habitData.completed && (
                   <button
                     onClick={() => {

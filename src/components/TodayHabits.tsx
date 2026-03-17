@@ -3,10 +3,24 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Moon, Dumbbell, Wine, Brain, Scale, Flame, Footprints, StretchHorizontal } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Scale } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
 import { getDubaiDate, formatDateISO } from "@/utils/dateUtils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+type IntensityKey = 'full' | 'hiit' | 'walk' | 'stretch';
+
+const workoutIntensityConfig: Record<IntensityKey, { label: string; emoji: string; color: string }> = {
+  full: { label: 'Full Workout', emoji: '🏋️', color: 'bg-green-500' },
+  hiit: { label: 'Quick HIIT', emoji: '🔥', color: 'bg-orange-500' },
+  walk: { label: 'Walk/Cardio', emoji: '🚶', color: 'bg-blue-400' },
+  stretch: { label: 'Stretching', emoji: '🧘', color: 'bg-purple-400' },
+};
+
+const getIntensityArray = (wi: HabitData['workoutIntensity']): IntensityKey[] => {
+  if (!wi) return [];
+  if (Array.isArray(wi)) return wi;
+  return [wi];
+};
 
 interface TodayHabitsProps {
   todayData: DayData | null;
@@ -14,19 +28,8 @@ interface TodayHabitsProps {
 }
 
 const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) => {
-  // Use Dubai date consistently with the rest of the app
   const today = getDubaiDate();
   const todayISO = formatDateISO(today);
-
-  console.log('TodayHabits: Using date:', todayISO, 'Date object:', today);
-  console.log('TodayHabits: Received todayData:', todayData);
-
-  const workoutIntensityConfig = {
-    full: { label: 'Full Workout', emoji: '🏋️', color: 'bg-green-500' },
-    hiit: { label: 'Quick HIIT', emoji: '🔥', color: 'bg-orange-500' },
-    walk: { label: 'Walk/Cardio', emoji: '🚶', color: 'bg-blue-400' },
-    stretch: { label: 'Stretching', emoji: '🧘', color: 'bg-purple-400' },
-  };
 
   const handleHabitComplete = (habitType: HabitType, completed: boolean) => {
     const currentHabitData = todayData?.[habitType] || { planned: false, completed: false };
@@ -37,7 +40,6 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
       planned: completed ? true : currentHabitData.planned
     };
     
-    // For gym, default to 'full' intensity
     if (habitType === 'gym') {
       updatedHabitData.workoutIntensity = completed ? (currentHabitData.workoutIntensity || 'full') : undefined;
     }
@@ -45,15 +47,21 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     onUpdateHabit(today, habitType, updatedHabitData);
   };
 
-  const handleWorkoutIntensity = (intensity: 'full' | 'hiit' | 'walk' | 'stretch') => {
+  const handleToggleIntensity = (intensity: IntensityKey) => {
     const currentHabitData = todayData?.gym || { planned: false, completed: false };
-    const updatedHabitData: HabitData = {
-      ...currentHabitData,
-      completed: true,
-      planned: true,
-      workoutIntensity: intensity,
-    };
-    onUpdateHabit(today, 'gym', updatedHabitData);
+    const current = getIntensityArray(currentHabitData.workoutIntensity);
+    let updated: IntensityKey[];
+    if (current.includes(intensity)) {
+      updated = current.filter(i => i !== intensity);
+    } else {
+      updated = [...current, intensity];
+    }
+    
+    if (updated.length === 0) {
+      onUpdateHabit(today, 'gym', { ...currentHabitData, completed: false, planned: currentHabitData.planned, workoutIntensity: undefined });
+    } else {
+      onUpdateHabit(today, 'gym', { ...currentHabitData, completed: true, planned: true, workoutIntensity: updated });
+    }
   };
 
   const handleSleepHoursChange = (value: string) => {
@@ -61,33 +69,15 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     const hours = parseFloat(value);
     
     if (!isNaN(hours) && hours >= 0) {
-      const updatedHabitData: HabitData = {
-        ...currentHabitData,
-        sleepHours: hours,
-        planned: true,
-        completed: hours >= 7 // Auto-complete if 7+ hours
-      };
-      console.log(`TodayHabits: Sleep hours update for ${todayISO}:`, updatedHabitData);
-      onUpdateHabit(today, 'sleep', updatedHabitData);
+      onUpdateHabit(today, 'sleep', { ...currentHabitData, sleepHours: hours, planned: true, completed: hours >= 7 });
     } else if (value === "") {
-      const updatedHabitData: HabitData = {
-        ...currentHabitData,
-        sleepHours: undefined,
-        completed: false
-      };
-      console.log(`TodayHabits: Sleep hours cleared for ${todayISO}:`, updatedHabitData);
-      onUpdateHabit(today, 'sleep', updatedHabitData);
+      onUpdateHabit(today, 'sleep', { ...currentHabitData, sleepHours: undefined, completed: false });
     }
   };
 
   const handleWellRestedChange = (checked: boolean) => {
     const currentHabitData = todayData?.sleep || { planned: false, completed: false };
-    const updatedHabitData: HabitData = {
-      ...currentHabitData,
-      wellRested: checked
-    };
-    console.log(`TodayHabits: Well rested update for ${todayISO}:`, updatedHabitData);
-    onUpdateHabit(today, 'sleep', updatedHabitData);
+    onUpdateHabit(today, 'sleep', { ...currentHabitData, wellRested: checked });
   };
 
   const handleWeightChange = (value: string) => {
@@ -95,17 +85,9 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     const weight = parseFloat(value);
     
     if (!isNaN(weight) && weight > 0) {
-      const updatedHabitData: HabitData = {
-        ...currentHabitData,
-        weight
-      };
-      onUpdateHabit(today, 'sleep', updatedHabitData);
+      onUpdateHabit(today, 'sleep', { ...currentHabitData, weight });
     } else if (value === "") {
-      const updatedHabitData: HabitData = {
-        ...currentHabitData,
-        weight: undefined
-      };
-      onUpdateHabit(today, 'sleep', updatedHabitData);
+      onUpdateHabit(today, 'sleep', { ...currentHabitData, weight: undefined });
     }
   };
 
@@ -114,56 +96,21 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     const bodyFat = parseFloat(value);
     
     if (!isNaN(bodyFat) && bodyFat >= 0 && bodyFat <= 100) {
-      const updatedHabitData: HabitData = {
-        ...currentHabitData,
-        bodyFat
-      };
-      onUpdateHabit(today, 'sleep', updatedHabitData);
+      onUpdateHabit(today, 'sleep', { ...currentHabitData, bodyFat });
     } else if (value === "") {
-      const updatedHabitData: HabitData = {
-        ...currentHabitData,
-        bodyFat: undefined
-      };
-      onUpdateHabit(today, 'sleep', updatedHabitData);
+      onUpdateHabit(today, 'sleep', { ...currentHabitData, bodyFat: undefined });
     }
   };
 
   const habits = [
-    {
-      type: 'sleep' as HabitType,
-      icon: Moon,
-      name: 'Sleep (7+ hrs)',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
-      isSpecial: true
-    },
-    {
-      type: 'gym' as HabitType,
-      icon: Dumbbell,
-      name: 'Gym',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200'
-    },
-    {
-      type: 'alcohol' as HabitType,
-      icon: Wine,
-      name: 'Sober Day',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200'
-    },
-    {
-      type: 'meditation' as HabitType,
-      icon: Brain,
-      name: 'Presence',
-      description: 'Meditate, Journal and mindful phone usage',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200'
-    }
+    { type: 'sleep' as HabitType, icon: Moon, name: 'Sleep (7+ hrs)', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', isSpecial: true },
+    { type: 'gym' as HabitType, icon: Dumbbell, name: 'Gym', color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
+    { type: 'alcohol' as HabitType, icon: Wine, name: 'Sober Day', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
+    { type: 'meditation' as HabitType, icon: Brain, name: 'Presence', description: 'Meditate, Journal and mindful phone usage', color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
   ];
+
+  const gymData = todayData?.gym || { planned: false, completed: false };
+  const gymIntensityArr = getIntensityArray(gymData.workoutIntensity);
 
   return (
     <Card className="mb-6">
@@ -171,11 +118,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
         <CardTitle className="flex items-center gap-2">
           <span>Today's Habits</span>
           <span className="text-sm font-normal text-gray-500">
-            {today.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'short', 
-              day: 'numeric' 
-            })} ({todayISO})
+            {today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} ({todayISO})
           </span>
         </CardTitle>
       </CardHeader>
@@ -207,7 +150,6 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                 </div>
                 
                 {habit.isSpecial ? (
-                  // Sleep hours input + well rested checkbox
                   <div className="space-y-3">
                     <Input
                       type="number"
@@ -215,21 +157,14 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                       onChange={(e) => handleSleepHoursChange(e.target.value)}
                       placeholder="Hours slept"
                       className="w-full text-center text-lg py-3"
-                      min="0"
-                      max="24"
-                      step="0.5"
+                      min="0" max="24" step="0.5"
                     />
                     <div className="text-center">
-                      <div className="text-sm text-gray-600 mb-2">
-                        Hours: {habitData.sleepHours || 0}
-                      </div>
+                      <div className="text-sm text-gray-600 mb-2">Hours: {habitData.sleepHours || 0}</div>
                       {habitData.completed && (
-                        <div className="text-green-600 font-medium flex items-center justify-center gap-1">
-                          ✓ Completed
-                        </div>
+                        <div className="text-green-600 font-medium flex items-center justify-center gap-1">✓ Completed</div>
                       )}
                     </div>
-                    {/* Well Rested Checkbox */}
                     <div 
                       className="flex items-center justify-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors border border-dashed border-blue-200"
                       onClick={() => handleWellRestedChange(!habitData.wellRested)}
@@ -239,21 +174,18 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                         onCheckedChange={(checked) => handleWellRestedChange(!!checked)}
                         className="h-5 w-5 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                       />
-                      <label className="text-sm font-medium text-blue-700 cursor-pointer">
-                        😴 Felt well rested
-                      </label>
+                      <label className="text-sm font-medium text-blue-700 cursor-pointer">😴 Felt well rested</label>
                     </div>
                   </div>
                 ) : habit.type === 'gym' ? (
-                  // Gym with workout intensity selector
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
-                      {(Object.entries(workoutIntensityConfig) as [string, { label: string; emoji: string; color: string }][]).map(([key, cfg]) => {
-                        const isSelected = habitData.completed && habitData.workoutIntensity === key;
+                      {(Object.entries(workoutIntensityConfig) as [IntensityKey, { label: string; emoji: string; color: string }][]).map(([key, cfg]) => {
+                        const isSelected = gymIntensityArr.includes(key);
                         return (
                           <button
                             key={key}
-                            onClick={() => handleWorkoutIntensity(key as any)}
+                            onClick={() => handleToggleIntensity(key)}
                             className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm font-medium ${
                               isSelected
                                 ? `${cfg.color} text-white border-transparent shadow-md`
@@ -266,17 +198,16 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                         );
                       })}
                     </div>
-                    {habitData.completed && (
+                    {gymData.completed && (
                       <button
                         onClick={() => handleHabitComplete('gym', false)}
                         className="w-full text-xs text-gray-400 hover:text-gray-600 py-1"
                       >
-                        Clear
+                        Clear all
                       </button>
                     )}
                   </div>
                 ) : (
-                  // Completed checkbox for other habits
                   <div className="flex items-center justify-center">
                     <div 
                       className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors"
@@ -284,14 +215,10 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                     >
                       <Checkbox
                         checked={habitData.completed || false}
-                        onCheckedChange={(checked) => {
-                          handleHabitComplete(habit.type, !!checked);
-                        }}
+                        onCheckedChange={(checked) => handleHabitComplete(habit.type, !!checked)}
                         className="h-6 w-6 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
-                      <label className="text-lg font-medium text-gray-700 cursor-pointer">
-                        Completed
-                      </label>
+                      <label className="text-lg font-medium text-gray-700 cursor-pointer">Completed</label>
                     </div>
                   </div>
                 )}
@@ -311,7 +238,6 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
               <div className="text-sm text-gray-600 mt-1">Track your weight and body fat percentage</div>
             </div>
           </div>
-          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Weight (kg)</label>
@@ -321,9 +247,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                 onChange={(e) => handleWeightChange(e.target.value)}
                 placeholder="e.g. 75.5"
                 className="w-full text-center"
-                min="0"
-                max="500"
-                step="0.1"
+                min="0" max="500" step="0.1"
               />
             </div>
             <div className="space-y-2">
@@ -334,9 +258,7 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                 onChange={(e) => handleBodyFatChange(e.target.value)}
                 placeholder="e.g. 15.0"
                 className="w-full text-center"
-                min="0"
-                max="100"
-                step="0.1"
+                min="0" max="100" step="0.1"
               />
             </div>
           </div>
