@@ -275,6 +275,25 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                       </button>
                     )}
                   </div>
+                ) : (
+                  // Completed checkbox for other habits
+                  <div className="flex items-center justify-center">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors"
+                      onClick={() => handleHabitComplete(habit.type, !habitData.completed)}
+                    >
+                      <Checkbox
+                        checked={habitData.completed || false}
+                        onCheckedChange={(checked) => {
+                          handleHabitComplete(habit.type, !!checked);
+                        }}
+                        className="h-6 w-6 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                      />
+                      <label className="text-lg font-medium text-gray-700 cursor-pointer">
+                        Completed
+                      </label>
+                    </div>
+                  </div>
                 )}
               </div>
             );
