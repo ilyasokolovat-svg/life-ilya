@@ -3,9 +3,10 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Moon, Dumbbell, Wine, Brain, Scale } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Scale, Flame, Footprints, StretchHorizontal } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
 import { getDubaiDate, formatDateISO } from "@/utils/dateUtils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface TodayHabitsProps {
   todayData: DayData | null;
@@ -20,24 +21,39 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
   console.log('TodayHabits: Using date:', todayISO, 'Date object:', today);
   console.log('TodayHabits: Received todayData:', todayData);
 
+  const workoutIntensityConfig = {
+    full: { label: 'Full Workout', emoji: '🏋️', color: 'bg-green-500' },
+    hiit: { label: 'Quick HIIT', emoji: '🔥', color: 'bg-orange-500' },
+    walk: { label: 'Walk/Cardio', emoji: '🚶', color: 'bg-blue-400' },
+    stretch: { label: 'Stretching', emoji: '🧘', color: 'bg-purple-400' },
+  };
+
   const handleHabitComplete = (habitType: HabitType, completed: boolean) => {
-    // Get current data for this habit or create default
     const currentHabitData = todayData?.[habitType] || { planned: false, completed: false };
     
-    // Create updated habit data - when completed, also mark as planned
     const updatedHabitData: HabitData = {
       ...currentHabitData,
       completed,
-      planned: completed ? true : currentHabitData.planned // Keep planned true if it was already true
+      planned: completed ? true : currentHabitData.planned
     };
     
-    console.log(`TodayHabits: Updating ${habitType} for ${todayISO}:`, { 
-      current: currentHabitData, 
-      updated: updatedHabitData 
-    });
+    // For gym, default to 'full' intensity
+    if (habitType === 'gym') {
+      updatedHabitData.workoutIntensity = completed ? (currentHabitData.workoutIntensity || 'full') : undefined;
+    }
     
-    // Call the update function which will sync to calendar
     onUpdateHabit(today, habitType, updatedHabitData);
+  };
+
+  const handleWorkoutIntensity = (intensity: 'full' | 'hiit' | 'walk' | 'stretch') => {
+    const currentHabitData = todayData?.gym || { planned: false, completed: false };
+    const updatedHabitData: HabitData = {
+      ...currentHabitData,
+      completed: true,
+      planned: true,
+      workoutIntensity: intensity,
+    };
+    onUpdateHabit(today, 'gym', updatedHabitData);
   };
 
   const handleSleepHoursChange = (value: string) => {
@@ -227,6 +243,37 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                         😴 Felt well rested
                       </label>
                     </div>
+                  </div>
+                ) : habit.type === 'gym' ? (
+                  // Gym with workout intensity selector
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {(Object.entries(workoutIntensityConfig) as [string, { label: string; emoji: string; color: string }][]).map(([key, cfg]) => {
+                        const isSelected = habitData.completed && habitData.workoutIntensity === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => handleWorkoutIntensity(key as any)}
+                            className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                              isSelected
+                                ? `${cfg.color} text-white border-transparent shadow-md`
+                                : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                            }`}
+                          >
+                            <span className="text-lg">{cfg.emoji}</span>
+                            {cfg.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {habitData.completed && (
+                      <button
+                        onClick={() => handleHabitComplete('gym', false)}
+                        className="w-full text-xs text-gray-400 hover:text-gray-600 py-1"
+                      >
+                        Clear
+                      </button>
+                    )}
                   </div>
                 ) : (
                   // Completed checkbox for other habits

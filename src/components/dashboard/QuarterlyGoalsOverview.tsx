@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Target, Heart, Brain, DollarSign, Lightbulb, Star } from 'lucide-react';
 import { useQuarterlyGoalsOverview } from '@/hooks/useQuarterlyGoalsOverview';
+import { QuarterlyGoalsEditDialog } from './QuarterlyGoalsEditDialog';
 import { cn } from '@/lib/utils';
 
 const categoryConfig: Record<string, { icon: React.ElementType; gradient: string; bgLight: string; label: string }> = {
@@ -29,6 +29,7 @@ const subcategoryEmoji: Record<string, string> = {
 
 export function QuarterlyGoalsOverview() {
   const { groupedGoals, isLoading, currentQuarter, hasAnyGoals } = useQuarterlyGoalsOverview();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   // Load collapsed state from localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -55,89 +56,100 @@ export function QuarterlyGoalsOverview() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      {/* Header */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Target className="w-5 h-5" />
-          <h3 className="font-bold text-lg">{currentQuarter} Goals Overview</h3>
-        </div>
-        {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-      </button>
+    <>
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* Header */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5" />
+            <h3 className="font-bold text-lg">{currentQuarter} Goals Overview</h3>
+          </div>
+          {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+        </button>
 
-      {/* Content */}
-      {!isCollapsed && (
-        <div className="p-4">
-          {!hasAnyGoals ? (
-            <div className="text-center py-6 text-gray-500">
-              <p>No quarterly goals set yet.</p>
-              <Link to="/goals-overview" className="text-blue-600 hover:underline text-sm mt-1 inline-block">
-                Set your {currentQuarter} goals →
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {groupedGoals.map(({ category, subcategoryGoals }) => {
-                const config = categoryConfig[category];
-                const Icon = config.icon;
+        {/* Content */}
+        {!isCollapsed && (
+          <div className="p-4">
+            {!hasAnyGoals ? (
+              <div className="text-center py-6 text-gray-500">
+                <p>No quarterly goals set yet.</p>
+                <button
+                  onClick={() => setSelectedCategory('physical')}
+                  className="text-blue-600 hover:underline text-sm mt-1 inline-block"
+                >
+                  Set your {currentQuarter} goals →
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {groupedGoals.map(({ category, subcategoryGoals }) => {
+                  const config = categoryConfig[category];
+                  const Icon = config.icon;
 
-                return (
-                  <Link
-                    key={category}
-                    to={`/goals/${category}`}
-                    className="group block"
-                  >
-                    <div className={cn(
-                      "rounded-lg p-3 h-full border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all",
-                      config.bgLight
-                    )}>
-                      {/* Category Header */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br",
-                          config.gradient
-                        )}>
-                          <Icon className="w-3.5 h-3.5 text-white" />
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className="group block text-left w-full"
+                    >
+                      <div className={cn(
+                        "rounded-lg p-3 h-full border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all",
+                        config.bgLight
+                      )}>
+                        {/* Category Header */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br",
+                            config.gradient
+                          )}>
+                            <Icon className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <span className="font-semibold text-gray-800 text-sm">{config.label}</span>
                         </div>
-                        <span className="font-semibold text-gray-800 text-sm">{config.label}</span>
-                      </div>
 
-                      {/* Subcategory Main Goals */}
-                      {subcategoryGoals.length > 0 ? (
-                        <ul className="space-y-1.5">
-                          {subcategoryGoals.map((sg) => (
-                            <li key={sg.subcategory} className="flex items-start gap-1.5">
-                              <span className="text-xs flex-shrink-0 mt-0.5">
-                                {subcategoryEmoji[sg.subcategory] || '📋'}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <span className="text-[10px] text-gray-400 block leading-tight">
-                                  {sg.subcategory}
+                        {/* Subcategory Main Goals */}
+                        {subcategoryGoals.length > 0 ? (
+                          <ul className="space-y-1.5">
+                            {subcategoryGoals.map((sg) => (
+                              <li key={sg.subcategory} className="flex items-start gap-1.5">
+                                <span className="text-xs flex-shrink-0 mt-0.5">
+                                  {subcategoryEmoji[sg.subcategory] || '📋'}
                                 </span>
-                                <div className="flex items-center gap-1">
-                                  <Star className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />
-                                  <span className="text-xs text-gray-700 font-medium truncate" title={sg.mainGoal}>
-                                    {sg.mainGoal}
+                                <div className="min-w-0 flex-1">
+                                  <span className="text-[10px] text-gray-400 block leading-tight">
+                                    {sg.subcategory}
                                   </span>
+                                  <div className="flex items-center gap-1">
+                                    <Star className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />
+                                    <span className="text-xs text-gray-700 font-medium truncate" title={sg.mainGoal}>
+                                      {sg.mainGoal}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-xs text-gray-400 italic">No goals set</p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">No goals set</p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <QuarterlyGoalsEditDialog
+        category={selectedCategory}
+        open={!!selectedCategory}
+        onOpenChange={(open) => { if (!open) setSelectedCategory(null); }}
+      />
+    </>
   );
 }
