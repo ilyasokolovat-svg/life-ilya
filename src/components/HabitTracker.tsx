@@ -4,7 +4,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { HabitType, HabitData } from "@/types/habit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Smile } from "lucide-react";
+import { Smile, Dumbbell, Flame, Footprints, StretchHorizontal } from "lucide-react";
+
+const workoutIntensityConfig = {
+  full: { label: 'Full Workout', emoji: '🏋️', icon: Dumbbell, color: 'bg-green-500 text-white' },
+  hiit: { label: 'Quick HIIT', emoji: '🔥', icon: Flame, color: 'bg-orange-500 text-white' },
+  walk: { label: 'Walk/Cardio', emoji: '🚶', icon: Footprints, color: 'bg-blue-400 text-white' },
+  stretch: { label: 'Stretching', emoji: '🧘', icon: StretchHorizontal, color: 'bg-purple-400 text-white' },
+} as const;
 
 interface HabitTrackerProps {
   date: Date;
@@ -29,44 +36,37 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
   }, [habitData.sleepHours]);
 
   const handlePlannedChange = (checked: boolean) => {
-    console.log(`HabitTracker: Planned change for ${habitType}:`, checked);
     onUpdate(habitType, { ...habitData, planned: checked });
   };
 
   const handleCompletedChange = (checked: boolean) => {
-    console.log(`HabitTracker: Completed change for ${habitType}:`, checked);
-    onUpdate(habitType, { ...habitData, completed: checked });
+    if (habitType === 'gym' && checked) {
+      // Default to 'full' when checking completed
+      onUpdate(habitType, { ...habitData, completed: true, workoutIntensity: habitData.workoutIntensity || 'full' });
+    } else if (habitType === 'gym' && !checked) {
+      onUpdate(habitType, { ...habitData, completed: false, workoutIntensity: undefined });
+    } else {
+      onUpdate(habitType, { ...habitData, completed: checked });
+    }
+  };
+
+  const handleWorkoutIntensityChange = (intensity: 'full' | 'hiit' | 'walk' | 'stretch') => {
+    onUpdate(habitType, { ...habitData, completed: true, planned: true, workoutIntensity: intensity });
   };
 
   const handleSleepHoursChange = (value: string) => {
     setSleepHours(value);
     const hours = parseFloat(value);
     if (!isNaN(hours) && hours >= 0) {
-      const updatedData = {
-        ...habitData,
-        sleepHours: hours,
-        planned: true,
-        completed: hours >= 7
-      };
-      console.log(`HabitTracker: Sleep hours change for ${habitType}:`, updatedData);
-      onUpdate(habitType, updatedData);
+      onUpdate(habitType, { ...habitData, sleepHours: hours, planned: true, completed: hours >= 7 });
     } else if (value === "") {
-      const updatedData = {
-        ...habitData,
-        sleepHours: undefined,
-        completed: false
-      };
-      console.log(`HabitTracker: Sleep hours cleared for ${habitType}:`, updatedData);
-      onUpdate(habitType, updatedData);
+      onUpdate(habitType, { ...habitData, sleepHours: undefined, completed: false });
     }
   };
 
   const handleWellRestedChange = (checked: boolean) => {
-    console.log(`HabitTracker: Well rested change for ${habitType}:`, checked);
     onUpdate(habitType, { ...habitData, wellRested: checked });
   };
-
-  console.log(`HabitTracker: Rendering ${habitType} with data:`, habitData);
 
   const checkboxSize = isMobile ? "h-5 w-5" : "h-3 w-3";
   const inputSize = isMobile ? "w-16 h-8 text-sm" : "w-12 h-6 text-xs";
@@ -86,7 +86,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
             max="24"
             step="0.5"
           />
-          {/* Well rested indicator/toggle */}
           <Popover>
             <PopoverTrigger asChild>
               <button 
@@ -113,6 +112,63 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({
                 <label className="text-sm cursor-pointer">
                   😴 Felt well rested
                 </label>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      ) : habitType === "gym" ? (
+        <div className={`flex items-center ${spacing}`}>
+          <Checkbox
+            checked={habitData.planned || false}
+            onCheckedChange={handlePlannedChange}
+            className={`${checkboxSize} border-gray-400`}
+          />
+          {/* Workout intensity selector replaces simple completed checkbox */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className={`rounded transition-colors flex items-center gap-0.5 ${
+                  habitData.completed && habitData.workoutIntensity
+                    ? `px-1 py-0.5 ${workoutIntensityConfig[habitData.workoutIntensity]?.color || 'bg-green-500 text-white'} text-xs rounded`
+                    : ''
+                }`}
+              >
+                {habitData.completed && habitData.workoutIntensity ? (
+                  <span className={isMobile ? "text-base" : "text-xs"}>
+                    {workoutIntensityConfig[habitData.workoutIntensity]?.emoji || '✓'}
+                  </span>
+                ) : (
+                  <Checkbox
+                    checked={habitData.completed || false}
+                    onCheckedChange={handleCompletedChange}
+                    className={`${checkboxSize} border-green-500`}
+                  />
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-44 p-1.5" align="end">
+              <div className="space-y-0.5">
+                {(Object.entries(workoutIntensityConfig) as [string, typeof workoutIntensityConfig[keyof typeof workoutIntensityConfig]][]).map(([key, cfg]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleWorkoutIntensityChange(key as any)}
+                    className={`w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                      habitData.workoutIntensity === key ? `${cfg.color} hover:opacity-90` : ''
+                    }`}
+                  >
+                    <span>{cfg.emoji}</span> {cfg.label}
+                  </button>
+                ))}
+                {habitData.completed && (
+                  <button
+                    onClick={() => {
+                      onUpdate(habitType, { ...habitData, completed: false, workoutIntensity: undefined });
+                    }}
+                    className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-100 text-gray-500"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
             </PopoverContent>
           </Popover>
