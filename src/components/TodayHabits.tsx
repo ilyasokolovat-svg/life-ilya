@@ -3,9 +3,10 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Moon, Dumbbell, Wine, Brain, Scale } from "lucide-react";
+import { Moon, Dumbbell, Wine, Brain, Scale, Flame, Footprints, StretchHorizontal } from "lucide-react";
 import { HabitType, HabitData, DayData } from "@/types/habit";
 import { getDubaiDate, formatDateISO } from "@/utils/dateUtils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface TodayHabitsProps {
   todayData: DayData | null;
