@@ -244,24 +244,36 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                       </label>
                     </div>
                   </div>
-                ) : (
-                  // Completed checkbox for other habits
-                  <div className="flex items-center justify-center">
-                    <div 
-                      className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors"
-                      onClick={() => handleHabitComplete(habit.type, !habitData.completed)}
-                    >
-                      <Checkbox
-                        checked={habitData.completed || false}
-                        onCheckedChange={(checked) => {
-                          handleHabitComplete(habit.type, !!checked);
-                        }}
-                        className="h-6 w-6 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                      />
-                      <label className="text-lg font-medium text-gray-700 cursor-pointer">
-                        Completed
-                      </label>
+                ) : habit.type === 'gym' ? (
+                  // Gym with workout intensity selector
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {(Object.entries(workoutIntensityConfig) as [string, { label: string; emoji: string; color: string }][]).map(([key, cfg]) => {
+                        const isSelected = habitData.completed && habitData.workoutIntensity === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => handleWorkoutIntensity(key as any)}
+                            className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                              isSelected
+                                ? `${cfg.color} text-white border-transparent shadow-md`
+                                : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                            }`}
+                          >
+                            <span className="text-lg">{cfg.emoji}</span>
+                            {cfg.label}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {habitData.completed && (
+                      <button
+                        onClick={() => handleHabitComplete('gym', false)}
+                        className="w-full text-xs text-gray-400 hover:text-gray-600 py-1"
+                      >
+                        Clear
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
