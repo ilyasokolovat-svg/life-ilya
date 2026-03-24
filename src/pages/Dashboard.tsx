@@ -4,31 +4,21 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
-import { 
-  Target,
-  Heart,
-  LogOut,
-  User,
-  Map,
-  Plane,
-  BarChart3,
-  Shield,
-  Check,
-  Edit3,
-  Timer,
-  Users
-} from "lucide-react";
+import { Shield, Check, Edit3, User, LogOut, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import WeeklySummaryDashboard from "@/components/WeeklySummaryDashboard";
 import TestDataLoader from "@/components/TestDataLoader";
-import { QuarterlyGoalsOverview } from "@/components/dashboard/QuarterlyGoalsOverview";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { HabitStreakSummary } from "@/components/dashboard/HabitStreakSummary";
+import { GoalsProgressSection } from "@/components/dashboard/GoalsProgressSection";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // Monthly commitment state
   const currentMonthKey = format(new Date(), 'yyyy-MM');
@@ -39,7 +29,6 @@ const Dashboard = () => {
   // Load commitment from Supabase
   useEffect(() => {
     if (!user) return;
-    
     const loadCommitment = async () => {
       const { data } = await supabase
         .from('goals_data')
@@ -50,18 +39,13 @@ const Dashboard = () => {
         .eq('period_type', 'month')
         .eq('period_key', currentMonthKey)
         .maybeSingle();
-      
-      if (data?.planned_goal) {
-        setCommitment(data.planned_goal);
-      }
+      if (data?.planned_goal) setCommitment(data.planned_goal);
     };
-    
     loadCommitment();
   }, [user, currentMonthKey]);
 
   const saveCommitment = async () => {
     if (!user) return;
-    
     const { data: existing } = await supabase
       .from('goals_data')
       .select('id')
@@ -73,245 +57,81 @@ const Dashboard = () => {
       .maybeSingle();
 
     if (existing) {
-      await supabase
-        .from('goals_data')
-        .update({ planned_goal: editValue, updated_at: new Date().toISOString() })
-        .eq('id', existing.id);
+      await supabase.from('goals_data').update({ planned_goal: editValue, updated_at: new Date().toISOString() }).eq('id', existing.id);
     } else {
-      await supabase
-        .from('goals_data')
-        .insert({
-          user_id: user.id,
-          category: 'monthly_commitment',
-          subcategory: 'non_negotiable',
-          period_type: 'month',
-          period_key: currentMonthKey,
-          planned_goal: editValue
-        });
+      await supabase.from('goals_data').insert({ user_id: user.id, category: 'monthly_commitment', subcategory: 'non_negotiable', period_type: 'month', period_key: currentMonthKey, planned_goal: editValue });
     }
-    
     setCommitment(editValue);
     setIsEditing(false);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background flex">
       <TestDataLoader />
       
-      {/* Header */}
-      <header className="bg-white shadow-lg">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-start mb-4">
-            <div className="text-center flex-1">
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                Goals and Habit Tracking 2025
-              </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Track your journey across all areas of life and build the future you envision
-              </p>
+      {/* Sidebar */}
+      {sidebarOpen && <DashboardSidebar />}
+      
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        {/* Top bar */}
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                <Menu className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
             </div>
-            
-            {/* User controls */}
             <div className="flex items-center gap-2">
-              {/* User info */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <User className="h-4 w-4" />
-                      <span className="hidden sm:inline">{user?.email}</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Logged in as {user?.email}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Sign out */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSignOut}
-                      className="text-gray-600 hover:text-red-600"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Sign out</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Q1 Goals Overview */}
-        <div className="max-w-4xl mx-auto mb-6">
-          <QuarterlyGoalsOverview />
-        </div>
-
-        {/* Non-negotiable Commitment for the Month */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 shadow-lg">
-            <div className="flex items-center gap-3 mb-3">
-              <Shield className="w-6 h-6 text-white" />
-              <h3 className="text-lg font-bold text-white">
-                Non-Negotiable Commitment for {format(new Date(), 'MMMM yyyy')}
+        <main className="px-6 py-6 max-w-4xl mx-auto space-y-6">
+          {/* Non-negotiable Commitment */}
+          <div className="bg-gradient-to-r from-primary/90 to-accent/90 rounded-xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-4 h-4 text-primary-foreground" />
+              <h3 className="text-sm font-semibold text-primary-foreground">
+                Non-Negotiable · {format(new Date(), 'MMMM yyyy')}
               </h3>
             </div>
-            
             {isEditing ? (
               <div className="flex gap-2">
                 <Input
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  placeholder="Enter your one commitment for this month..."
-                  className="bg-white/20 border-white/30 text-white placeholder:text-white/60 flex-1"
+                  placeholder="Your one commitment..."
+                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/60 flex-1 h-9 text-sm"
                   autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveCommitment();
-                    if (e.key === 'Escape') setIsEditing(false);
-                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveCommitment(); if (e.key === 'Escape') setIsEditing(false); }}
                 />
-                <Button
-                  size="sm"
-                  onClick={saveCommitment}
-                  className="bg-white/20 hover:bg-white/30 text-white"
-                >
+                <Button size="sm" onClick={saveCommitment} className="bg-white/20 hover:bg-white/30 text-primary-foreground h-9">
                   <Check className="w-4 h-4" />
                 </Button>
               </div>
             ) : (
-              <div 
-                className="flex items-center justify-between cursor-pointer group"
-                onClick={() => {
-                  setEditValue(commitment);
-                  setIsEditing(true);
-                }}
-              >
-                <p className="text-white/90 text-lg font-medium">
+              <div className="flex items-center justify-between cursor-pointer group" onClick={() => { setEditValue(commitment); setIsEditing(true); }}>
+                <p className="text-primary-foreground/90 text-sm font-medium">
                   {commitment || 'Click to set your commitment...'}
                 </p>
-                <Edit3 className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+                <Edit3 className="w-3.5 h-3.5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors" />
               </div>
             )}
           </div>
-        </div>
 
-        {/* Main Navigation Bubbles - Tier 1: Big bubbles */}
-        <div className="flex justify-center items-center gap-12 mb-8">
-          {/* Healthy Life Bubble */}
-          <Link to="/habits">
-            <div className="group relative">
-              <div className="w-48 h-48 bg-gradient-to-br from-red-500 via-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
-                <div className="text-center">
-                  <Heart className="w-16 h-16 text-white mb-3 mx-auto" />
-                  <h2 className="text-xl font-bold text-white">Healthy Life</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
+          {/* 7-day streak + Goals progress side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <HabitStreakSummary />
+            <GoalsProgressSection />
+          </div>
 
-          {/* Goals Bubble */}
-          <Link to="/goals-overview">
-            <div className="group relative">
-              <div className="w-48 h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-3xl cursor-pointer">
-                <div className="text-center">
-                  <Target className="w-16 h-16 text-white mb-3 mx-auto" />
-                  <h2 className="text-xl font-bold text-white">Goals</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Tier 2 Navigation Bubbles - Smaller */}
-        <div className="flex justify-center items-center gap-6 mb-12">
-          {/* Trips Bubble */}
-          <Link to="/trip-planning">
-            <div className="group relative">
-              <div className="w-28 h-28 bg-gradient-to-br from-teal-500 via-cyan-500 to-teal-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
-                <div className="text-center">
-                  <Plane className="w-8 h-8 text-white mb-1 mx-auto" />
-                  <h2 className="text-xs font-bold text-white px-2">Trips</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
-
-          {/* Life Events Bubble */}
-          <Link to="/life-events">
-            <div className="group relative">
-              <div className="w-28 h-28 bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
-                <div className="text-center">
-                  <Map className="w-8 h-8 text-white mb-1 mx-auto" />
-                  <h2 className="text-xs font-bold text-white px-2 leading-tight">Life Events</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-yellow-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
-
-          {/* Year Analysis Bubble */}
-          <Link to="/year-analysis">
-            <div className="group relative">
-              <div className="w-28 h-28 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
-                <div className="text-center">
-                  <BarChart3 className="w-8 h-8 text-white mb-1 mx-auto" />
-                  <h2 className="text-xs font-bold text-white px-2">Year Analysis</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
-
-          {/* Focus Mode Bubble */}
-          <Link to="/focus">
-            <div className="group relative">
-              <div className="w-28 h-28 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
-                <div className="text-center">
-                  <Timer className="w-8 h-8 text-white mb-1 mx-auto" />
-                  <h2 className="text-xs font-bold text-white px-2">Focus Mode</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
-
-          {/* Social CRM Bubble */}
-          <Link to="/social">
-            <div className="group relative">
-              <div className="w-28 h-28 bg-gradient-to-br from-amber-600 via-yellow-600 to-amber-700 rounded-full flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer">
-                <div className="text-center">
-                  <Users className="w-8 h-8 text-white mb-1 mx-auto" />
-                  <h2 className="text-xs font-bold text-white px-2">Social CRM</h2>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Weekly Summary Dashboard */}
-        <div className="max-w-4xl mx-auto">
+          {/* Weekly Summary */}
           <WeeklySummaryDashboard />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
