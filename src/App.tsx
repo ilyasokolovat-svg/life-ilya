@@ -89,63 +89,24 @@ const AppRoutes = () => {
   return (
     <>
       <CheckinTrigger />
-    <Routes>
-      {/* Public routes */}
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      
-      {/* Protected routes */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/habits" element={
-        <ProtectedRoute>
-          <Index />
-        </ProtectedRoute>
-      } />
-      <Route path="/life-events" element={
-        <ProtectedRoute>
-          <LifeEvents />
-        </ProtectedRoute>
-      } />
-      <Route path="/goals/:category" element={
-        <ProtectedRoute>
-          <Goals />
-        </ProtectedRoute>
-      } />
-      <Route path="/goals-overview" element={
-        <ProtectedRoute>
-          <GoalsOverview />
-        </ProtectedRoute>
-      } />
-      <Route path="/trip-planning" element={
-        <ProtectedRoute>
-          <TripPlanning />
-        </ProtectedRoute>
-      } />
-      <Route path="/year-analysis" element={
-        <ProtectedRoute>
-          <YearAnalysisIndex />
-        </ProtectedRoute>
-      } />
-      <Route path="/year-analysis/:year" element={
-        <ProtectedRoute>
-          <YearAnalysis />
-        </ProtectedRoute>
-      } />
-      <Route path="/focus" element={
-        <ProtectedRoute>
-          <FocusTimer />
-        </ProtectedRoute>
-      } />
-      <Route path="/social" element={
-        <ProtectedRoute>
-          <SocialCRM />
-        </ProtectedRoute>
-      } />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+        
+        {/* Protected routes */}
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/habits" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+        <Route path="/life-events" element={<ProtectedRoute><LifeEvents /></ProtectedRoute>} />
+        <Route path="/goals/:category" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+        <Route path="/goals-overview" element={<ProtectedRoute><GoalsOverview /></ProtectedRoute>} />
+        <Route path="/trip-planning" element={<ProtectedRoute><TripPlanning /></ProtectedRoute>} />
+        <Route path="/year-analysis" element={<ProtectedRoute><YearAnalysisIndex /></ProtectedRoute>} />
+        <Route path="/year-analysis/:year" element={<ProtectedRoute><YearAnalysis /></ProtectedRoute>} />
+        <Route path="/focus" element={<ProtectedRoute><FocusTimer /></ProtectedRoute>} />
+        <Route path="/social" element={<ProtectedRoute><SocialCRM /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 };
 
