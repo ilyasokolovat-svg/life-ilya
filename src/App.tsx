@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { CheckinTrigger } from "@/components/checkin/CheckinTrigger";
 
 // Create a client with default options - increasing staleTime for better caching
 const queryClient = new QueryClient({
