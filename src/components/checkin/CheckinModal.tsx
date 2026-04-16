@@ -760,6 +760,74 @@ export default function CheckinModal({
                   ))}
                 </div>
               )}
+
+              {/* New goals for next quarter */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground uppercase">Add new goals</p>
+                {(answers.q_new_goals || []).map((goal: { name: string; subcategory: string }, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
+                    <div className="flex-1">
+                      <span className="text-sm">{goal.name}</span>
+                      <span className="text-[10px] text-muted-foreground ml-2 capitalize">{goal.subcategory}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const current = [...(answers.q_new_goals || [])];
+                        current.splice(idx, 1);
+                        setAnswer("q_new_goals", current);
+                      }}
+                      className="text-xs text-destructive hover:text-destructive/80"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <div className="bg-muted/20 rounded-lg p-3 space-y-2 border border-dashed border-border">
+                  <Input
+                    placeholder="Goal name — e.g. Read 5 books"
+                    value={answers._new_goal_name || ""}
+                    onChange={(e) => setAnswer("_new_goal_name", e.target.value)}
+                    className="text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={answers._new_goal_sub || "physical"}
+                      onChange={(e) => setAnswer("_new_goal_sub", e.target.value)}
+                      className="flex-1 text-sm rounded-md border border-border bg-background px-3 py-1.5"
+                    >
+                      <option value="physical">Physical</option>
+                      <option value="financial">Financial</option>
+                      <option value="skills">Skills</option>
+                      <option value="personal">Personal</option>
+                    </select>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!answers._new_goal_name?.trim()}
+                      onClick={() => {
+                        const current = answers.q_new_goals || [];
+                        setAnswer("q_new_goals", [
+                          ...current,
+                          {
+                            name: answers._new_goal_name.trim(),
+                            subcategory: answers._new_goal_sub || "physical",
+                          },
+                        ]);
+                        setAnswer("_new_goal_name", "");
+                        setAnswer("_new_goal_sub", "physical");
+                      }}
+                    >
+                      + Add
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {incomplete.length === 0 && completed.length === 0 && (answers.q_new_goals || []).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  No previous goals found. Add your first goals for next quarter above.
+                </p>
+              )}
             </div>
           );
         },
