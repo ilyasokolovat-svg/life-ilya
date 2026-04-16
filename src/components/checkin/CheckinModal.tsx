@@ -536,10 +536,10 @@ export default function CheckinModal({
                       <span className="truncate">{g.planned_goal}</span>
                       <span className={cn(
                         "text-xs px-2 py-0.5 rounded-full",
-                        status === "on_track" && "bg-green-500/20 text-green-600",
-                        status === "behind" && "bg-yellow-500/20 text-yellow-600",
-                        status === "off_track" && "bg-red-500/20 text-red-600",
-                        status === "completed" && "bg-green-500/20 text-green-600",
+                        status === "on_track" && "bg-success/20 text-success",
+                        status === "behind" && "bg-warning/20 text-warning",
+                        status === "off_track" && "bg-destructive/20 text-destructive",
+                        status === "completed" && "bg-success/20 text-success",
                       )}>
                         {pct === -1 ? `${g.actual_result?.self_rating || 0}/10` : `${pct}%`}
                       </span>
