@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkin_reviews: {
+        Row: {
+          answers: Json
+          checkin_type: string
+          completed: boolean
+          created_at: string
+          id: string
+          period_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          checkin_type: string
+          completed?: boolean
+          created_at?: string
+          id?: string
+          period_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          checkin_type?: string
+          completed?: boolean
+          created_at?: string
+          id?: string
+          period_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      checkin_state: {
+        Row: {
+          id: string
+          monthly_last: string | null
+          quarterly_last: string | null
+          updated_at: string
+          user_id: string
+          weekly_last: string | null
+        }
+        Insert: {
+          id?: string
+          monthly_last?: string | null
+          quarterly_last?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_last?: string | null
+        }
+        Update: {
+          id?: string
+          monthly_last?: string | null
+          quarterly_last?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_last?: string | null
+        }
+        Relationships: []
+      }
       focus_blocks: {
         Row: {
           completed: boolean
