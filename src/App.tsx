@@ -87,6 +87,8 @@ const AppRoutes = () => {
   }
 
   return (
+    <>
+      <CheckinTrigger />
     <Routes>
       {/* Public routes */}
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
