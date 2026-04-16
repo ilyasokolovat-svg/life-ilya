@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { CheckinTrigger } from "@/components/checkin/CheckinTrigger";
 
 // Create a client with default options - increasing staleTime for better caching
 const queryClient = new QueryClient({
@@ -86,63 +87,26 @@ const AppRoutes = () => {
   }
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      
-      {/* Protected routes */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/habits" element={
-        <ProtectedRoute>
-          <Index />
-        </ProtectedRoute>
-      } />
-      <Route path="/life-events" element={
-        <ProtectedRoute>
-          <LifeEvents />
-        </ProtectedRoute>
-      } />
-      <Route path="/goals/:category" element={
-        <ProtectedRoute>
-          <Goals />
-        </ProtectedRoute>
-      } />
-      <Route path="/goals-overview" element={
-        <ProtectedRoute>
-          <GoalsOverview />
-        </ProtectedRoute>
-      } />
-      <Route path="/trip-planning" element={
-        <ProtectedRoute>
-          <TripPlanning />
-        </ProtectedRoute>
-      } />
-      <Route path="/year-analysis" element={
-        <ProtectedRoute>
-          <YearAnalysisIndex />
-        </ProtectedRoute>
-      } />
-      <Route path="/year-analysis/:year" element={
-        <ProtectedRoute>
-          <YearAnalysis />
-        </ProtectedRoute>
-      } />
-      <Route path="/focus" element={
-        <ProtectedRoute>
-          <FocusTimer />
-        </ProtectedRoute>
-      } />
-      <Route path="/social" element={
-        <ProtectedRoute>
-          <SocialCRM />
-        </ProtectedRoute>
-      } />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+      <CheckinTrigger />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+        
+        {/* Protected routes */}
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/habits" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+        <Route path="/life-events" element={<ProtectedRoute><LifeEvents /></ProtectedRoute>} />
+        <Route path="/goals/:category" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+        <Route path="/goals-overview" element={<ProtectedRoute><GoalsOverview /></ProtectedRoute>} />
+        <Route path="/trip-planning" element={<ProtectedRoute><TripPlanning /></ProtectedRoute>} />
+        <Route path="/year-analysis" element={<ProtectedRoute><YearAnalysisIndex /></ProtectedRoute>} />
+        <Route path="/year-analysis/:year" element={<ProtectedRoute><YearAnalysis /></ProtectedRoute>} />
+        <Route path="/focus" element={<ProtectedRoute><FocusTimer /></ProtectedRoute>} />
+        <Route path="/social" element={<ProtectedRoute><SocialCRM /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 };
 
