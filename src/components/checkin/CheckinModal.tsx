@@ -1080,6 +1080,38 @@ export default function CheckinModal({
           }
         }
       }
+
+      // Write new goals from the inline form
+      if (answers.q_new_goals?.length) {
+        const [yStr, qStr] = periodKey.split("-Q");
+        const y = parseInt(yStr);
+        const q = parseInt(qStr);
+        const nextQ = q === 4 ? 1 : q + 1;
+        const nextY = q === 4 ? y + 1 : y;
+        const nextPeriodKey = `${nextY}-Q${nextQ}`;
+
+        for (const newGoal of answers.q_new_goals) {
+          await supabase.from("goals_data").insert({
+            user_id: user.id,
+            category: "quarterly_goal",
+            subcategory: newGoal.subcategory,
+            period_type: "quarter",
+            period_key: nextPeriodKey,
+            planned_goal: newGoal.name,
+            actual_result: JSON.stringify({
+              progress_type: "percentage",
+              current_value: 0,
+              target_value: 100,
+              milestones: [],
+              self_rating: 0,
+              prev_rating: 0,
+              quarterly_action: "",
+              annual_goal_id: null,
+              completed: false,
+            }),
+          });
+        }
+      }
     }
   };
 
