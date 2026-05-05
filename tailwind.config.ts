@@ -94,7 +94,22 @@ export default {
 					light: 'hsl(var(--skills-light))',
 					medium: 'hsl(var(--skills-medium))',
 					dark: 'hsl(var(--skills-dark))'
-				}
+				},
+				// Finance dashboard palette (raw hex per spec)
+				'fin-bg': '#FAFAFA',
+				'fin-border': '#E8E8E4',
+				'fin-row': '#F0F0EE',
+				'fin-primary': '#1A1A1A',
+				'fin-secondary': '#6B6B6B',
+				'fin-tertiary': '#A0A0A0',
+				'fin-green': '#2D7D4F',
+				'fin-red': '#C0392B',
+				'fin-blue': '#1A56DB',
+				'fin-amber': '#B45309',
+			},
+			fontFamily: {
+				'sans-fin': ['"DM Sans"', 'system-ui', 'sans-serif'],
+				'mono-fin': ['"DM Mono"', 'ui-monospace', 'monospace'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -137,13 +152,19 @@ export default {
 						opacity: '1',
 						transform: 'translateY(0)'
 					}
+				},
+				'shake': {
+					'0%, 100%': { transform: 'translateX(0)' },
+					'25%': { transform: 'translateX(-6px)' },
+					'75%': { transform: 'translateX(6px)' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'success-pulse': 'success-pulse 0.5s ease-in-out',
-				'fade-in': 'fade-in 0.3s ease-out'
+				'fade-in': 'fade-in 0.3s ease-out',
+				'shake': 'shake 0.4s ease-in-out',
 			}
 		}
 	},
