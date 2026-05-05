@@ -886,37 +886,35 @@ export function BudgetSection({ ctx }: { ctx: Ctx }) {
             </tr>
           </thead>
           <tbody>
-            {groups.map(g => (
-              <React.Fragment key={g.key}>
-                <tr><td colSpan={6} className="pt-4 pb-1 text-[11px] uppercase tracking-wider text-fin-tertiary">{g.label}</td></tr>
-                {ctx.categories.filter(c => c.type === g.key).map(c => {
-                  const typeColor = c.type === "need" ? "#1A56DB" : c.type === "want" ? "#B45309" : c.type === "invest" ? "#2D7D4F" : "#6B6B6B";
-                  return (
-                    <tr key={c.id} className="border-t border-fin-row">
-                      <td className="py-2"><Badge color={typeColor}>{c.type}</Badge></td>
-                      <td><EditableValue editMode={ctx.edit} value={c.name}
-                        onChange={v => ctx.setCategories(ctx.categories.map(x => x.id === c.id ? { ...x, name: v } : x))} /></td>
-                      <td className="text-fin-secondary text-xs"><EditableValue editMode={ctx.edit} value={c.subcategory}
-                        onChange={v => ctx.setCategories(ctx.categories.map(x => x.id === c.id ? { ...x, subcategory: v } : x))} /></td>
-                      <td className="font-mono-fin">{fmtMoney(planned(c))}</td>
-                      <td>
-                        <EditableValue mono editMode={ctx.edit} value={c.targetPct ?? ""} type="number" className="w-14 text-right"
-                          onChange={v => ctx.setCategories(ctx.categories.map(x => x.id === c.id ? { ...x, targetPct: v === "" ? null : Number(v) } : x))} />
-                        <span className="text-fin-tertiary">%</span>
-                      </td>
-                      {ctx.edit && <td><DeleteButton onDelete={() => ctx.setCategories(ctx.categories.filter(x => x.id !== c.id))} /></td>}
-                    </tr>
-                  );
-                })}
-                {ctx.edit && (
-                  <tr><td colSpan={6} className="py-1">
-                    <button className="text-xs text-fin-blue hover:underline"
-                      onClick={() => ctx.setCategories([...ctx.categories, { id: nextId(ctx.categories), name: "New", subcategory: "", type: g.key, targetPct: 0, note: "" }])}
-                    >+ Add to {g.label}</button>
-                  </td></tr>
-                )}
-              </React.Fragment>
-            ))}
+            {groups.flatMap(g => [
+              <tr key={`${g.key}-header`}><td colSpan={6} className="pt-4 pb-1 text-[11px] uppercase tracking-wider text-fin-tertiary">{g.label}</td></tr>,
+              ...ctx.categories.filter(c => c.type === g.key).map(c => {
+                const typeColor = c.type === "need" ? "#1A56DB" : c.type === "want" ? "#B45309" : c.type === "invest" ? "#2D7D4F" : "#6B6B6B";
+                return (
+                  <tr key={c.id} className="border-t border-fin-row">
+                    <td className="py-2"><Badge color={typeColor}>{c.type}</Badge></td>
+                    <td><EditableValue editMode={ctx.edit} value={c.name}
+                      onChange={v => ctx.setCategories(ctx.categories.map(x => x.id === c.id ? { ...x, name: v } : x))} /></td>
+                    <td className="text-fin-secondary text-xs"><EditableValue editMode={ctx.edit} value={c.subcategory}
+                      onChange={v => ctx.setCategories(ctx.categories.map(x => x.id === c.id ? { ...x, subcategory: v } : x))} /></td>
+                    <td className="font-mono-fin">{fmtMoney(planned(c))}</td>
+                    <td>
+                      <EditableValue mono editMode={ctx.edit} value={c.targetPct ?? ""} type="number" className="w-14 text-right"
+                        onChange={v => ctx.setCategories(ctx.categories.map(x => x.id === c.id ? { ...x, targetPct: v === "" ? null : Number(v) } : x))} />
+                      <span className="text-fin-tertiary">%</span>
+                    </td>
+                    {ctx.edit && <td><DeleteButton onDelete={() => ctx.setCategories(ctx.categories.filter(x => x.id !== c.id))} /></td>}
+                  </tr>
+                );
+              }),
+              ctx.edit ? (
+                <tr key={`${g.key}-add`}><td colSpan={6} className="py-1">
+                  <button className="text-xs text-fin-blue hover:underline"
+                    onClick={() => ctx.setCategories([...ctx.categories, { id: nextId(ctx.categories), name: "New", subcategory: "", type: g.key, targetPct: 0, note: "" }])}
+                  >+ Add to {g.label}</button>
+                </td></tr>
+              ) : null,
+            ])}
           </tbody>
         </table>
       </FinCard>
