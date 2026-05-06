@@ -161,9 +161,12 @@ const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () 
             </div>
           ))}
         </div>
-        <div className="mt-5 flex justify-between">
+        <div className="mt-5 flex flex-wrap gap-2 justify-between">
           <button onClick={onSignOut} className={`${btn} flex items-center gap-2 text-w-red border-w-red/40 hover:bg-w-red/10`}><LogOut size={14} /> Sign out</button>
-          <button onClick={save} className={`${btn} text-w-green border-w-green/40 hover:bg-w-green/10`}>Save</button>
+          <div className="flex gap-2">
+            <button onClick={onReset} className={`${btn} text-w-amber border-w-amber/40 hover:bg-w-amber/10`}>Reset all data</button>
+            <button onClick={save} className={`${btn} text-w-green border-w-green/40 hover:bg-w-green/10`}>Save</button>
+          </div>
         </div>
       </div>
     </div>
