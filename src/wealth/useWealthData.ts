@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from './types';
@@ -60,9 +60,18 @@ export function useWealthData() {
     return settings.data;
   }, [user]);
 
+  const seedingRef = useRef(false);
+
   const seed = useCallback(async () => {
     if (!user) return;
+    if (seedingRef.current) return;
+    seedingRef.current = true;
     const uid = user.id;
+
+    // Idempotency guard: if settings exist, abort
+    const { data: existing } = await sb.from('settings').select('id').eq('user_id', uid).maybeSingle();
+    if (existing) { seedingRef.current = false; return; }
+
     setSeeding(true);
 
     await sb.from('settings').insert({ user_id: uid, ...SEED_SETTINGS });
@@ -79,7 +88,6 @@ export function useWealthData() {
     const bMap: Record<string, string> = {};
     (bucks || []).forEach((b: any) => { bMap[b.label] = b.id; });
 
-    // investment snapshots
     const invRows: any[] = [];
     for (const [m, _t, c, s, cash] of SEED_INVESTMENTS) {
       invRows.push({ user_id: uid, month: m, bucket_id: bMap['Global ETFs & Stocks'], value: s, contribution: 0 });
@@ -88,7 +96,6 @@ export function useWealthData() {
     }
     await sb.from('investment_snapshots').insert(invRows);
 
-    // NW snapshots
     const nwRows: any[] = [];
     for (const [m, cash, inv, cry, car, cc] of SEED_NW) {
       nwRows.push({ user_id: uid, month: m, account_id: accMap['Cash & Yield'], value: cash });
@@ -99,22 +106,36 @@ export function useWealthData() {
     }
     await sb.from('nw_snapshots').insert(nwRows);
 
-    // budget categories
     await sb.from('budget_categories').insert(SEED_BUDGET_CATS.map(c => ({ ...c, user_id: uid })));
 
-    // budget months + extras
     for (const bm of SEED_BUDGET_MONTHS) {
       await sb.from('budget_months').insert({ user_id: uid, month: bm.month, salary: bm.salary });
       await sb.from('budget_extras').insert({ user_id: uid, month: bm.month, ...bm.extra });
     }
 
-    // goals
     await sb.from('goals').insert(SEED_GOALS.map(g => ({ ...g, user_id: uid })));
 
     setSeeding(false);
     setFirstTime(true);
+    seedingRef.current = false;
     await fetchAll();
   }, [user, fetchAll]);
+
+  const wipeAndReseed = useCallback(async () => {
+    if (!user) return;
+    const uid = user.id;
+    setSeeding(true);
+    const tables = [
+      'bonus_allocations', 'bonus_pools', 'budget_spending', 'budget_extras', 'budget_months',
+      'budget_categories', 'investment_snapshots', 'investment_buckets',
+      'nw_snapshots', 'goals', 'accounts', 'settings',
+    ];
+    for (const t of tables) {
+      await sb.from(t).delete().eq('user_id', uid);
+    }
+    setSeeding(false);
+    await seed();
+  }, [user, seed]);
 
   useEffect(() => {
     if (!user) return;
@@ -129,5 +150,5 @@ export function useWealthData() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  return { data, loading, seeding, firstTime, setFirstTime, refresh: fetchAll };
+  return { data, loading, seeding, firstTime, setFirstTime, refresh: fetchAll, wipeAndReseed };
 }

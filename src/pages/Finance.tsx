@@ -16,7 +16,7 @@ const sb = supabase as any;
 
 export default function Finance() {
   const { user, signOut } = useAuth();
-  const { data, loading, seeding, firstTime, setFirstTime, refresh } = useWealthData();
+  const { data, loading, seeding, firstTime, setFirstTime, refresh, wipeAndReseed } = useWealthData();
   const [tab, setTab] = useState<Tab>('networth');
   const [toast, setToast] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -110,6 +110,12 @@ export default function Finance() {
           onClose={() => setSettingsOpen(false)}
           onSaved={() => { refresh(); setToast('Settings saved'); setSettingsOpen(false); }}
           onSignOut={async () => { await signOut(); }}
+          onReset={async () => {
+            if (!confirm('Wipe all finance data and re-import seed? This cannot be undone.')) return;
+            setSettingsOpen(false);
+            await wipeAndReseed();
+            setToast('Data reset and reseeded');
+          }}
         />
       )}
 
@@ -118,7 +124,7 @@ export default function Finance() {
   );
 }
 
-const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () => void; onSignOut: () => void }> = ({ settings, onClose, onSaved, onSignOut }) => {
+const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () => void; onSignOut: () => void; onReset: () => void }> = ({ settings, onClose, onSaved, onSignOut, onReset }) => {
   const [displayName, setDisplayName] = useState(settings?.display_name || 'Ilya');
   const [currency, setCurrency] = useState(settings?.currency || '$');
   const [srTarget, setSrTarget] = useState(String(settings?.savings_rate_target ?? 30));
@@ -155,9 +161,12 @@ const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () 
             </div>
           ))}
         </div>
-        <div className="mt-5 flex justify-between">
+        <div className="mt-5 flex flex-wrap gap-2 justify-between">
           <button onClick={onSignOut} className={`${btn} flex items-center gap-2 text-w-red border-w-red/40 hover:bg-w-red/10`}><LogOut size={14} /> Sign out</button>
-          <button onClick={save} className={`${btn} text-w-green border-w-green/40 hover:bg-w-green/10`}>Save</button>
+          <div className="flex gap-2">
+            <button onClick={onReset} className={`${btn} text-w-amber border-w-amber/40 hover:bg-w-amber/10`}>Reset all data</button>
+            <button onClick={save} className={`${btn} text-w-green border-w-green/40 hover:bg-w-green/10`}>Save</button>
+          </div>
         </div>
       </div>
     </div>
