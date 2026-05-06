@@ -14,6 +14,247 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_estimated: boolean | null
+          label: string
+          linked_goal_id: string | null
+          liquid: boolean | null
+          sort_order: number | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_estimated?: boolean | null
+          label: string
+          linked_goal_id?: string | null
+          liquid?: boolean | null
+          sort_order?: number | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_estimated?: boolean | null
+          label?: string
+          linked_goal_id?: string | null
+          liquid?: boolean | null
+          sort_order?: number | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bonus_allocations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          goal_id: string
+          id: string
+          note: string | null
+          pool_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          goal_id: string
+          id?: string
+          note?: string | null
+          pool_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          goal_id?: string
+          id?: string
+          note?: string | null
+          pool_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_allocations_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bonus_allocations_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_pools: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          month: string
+          source_extra_id: string | null
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          month: string
+          source_extra_id?: string | null
+          total_amount: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          month?: string
+          source_extra_id?: string | null
+          total_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_pools_source_extra_id_fkey"
+            columns: ["source_extra_id"]
+            isOneToOne: false
+            referencedRelation: "budget_extras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_categories: {
+        Row: {
+          budget: number
+          color: string | null
+          created_at: string | null
+          id: string
+          label: string
+          sort_order: number | null
+          user_id: string
+        }
+        Insert: {
+          budget?: number
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          label: string
+          sort_order?: number | null
+          user_id: string
+        }
+        Update: {
+          budget?: number
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          label?: string
+          sort_order?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      budget_extras: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string
+          id: string
+          month: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description: string
+          id?: string
+          month: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string
+          id?: string
+          month?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      budget_months: {
+        Row: {
+          created_at: string | null
+          id: string
+          month: string
+          salary: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          month: string
+          salary?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          month?: string
+          salary?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      budget_spending: {
+        Row: {
+          actual: number
+          category_id: string
+          created_at: string | null
+          id: string
+          month: string
+          user_id: string
+        }
+        Insert: {
+          actual?: number
+          category_id: string
+          created_at?: string | null
+          id?: string
+          month: string
+          user_id: string
+        }
+        Update: {
+          actual?: number
+          category_id?: string
+          created_at?: string | null
+          id?: string
+          month?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_spending_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkin_reviews: {
         Row: {
           answers: Json
@@ -106,6 +347,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      goals: {
+        Row: {
+          allocation_pct: number
+          color: string | null
+          created_at: string | null
+          id: string
+          linked_account_id: string | null
+          name: string
+          priority: number
+          target_amount: number
+          target_date: string
+          user_id: string
+        }
+        Insert: {
+          allocation_pct?: number
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          linked_account_id?: string | null
+          name: string
+          priority?: number
+          target_amount: number
+          target_date: string
+          user_id: string
+        }
+        Update: {
+          allocation_pct?: number
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          linked_account_id?: string | null
+          name?: string
+          priority?: number
+          target_amount?: number
+          target_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goals_data: {
         Row: {
@@ -215,6 +503,74 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_buckets: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          label: string
+          sort_order: number | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          label: string
+          sort_order?: number | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          label?: string
+          sort_order?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      investment_snapshots: {
+        Row: {
+          bucket_id: string
+          contribution: number
+          created_at: string | null
+          id: string
+          month: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          bucket_id: string
+          contribution?: number
+          created_at?: string | null
+          id?: string
+          month: string
+          user_id: string
+          value?: number
+        }
+        Update: {
+          bucket_id?: string
+          contribution?: number
+          created_at?: string | null
+          id?: string
+          month?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_snapshots_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "investment_buckets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       milestones: {
         Row: {
           category: string | null
@@ -287,6 +643,41 @@ export type Database = {
         }
         Relationships: []
       }
+      nw_snapshots: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          id: string
+          month: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          id?: string
+          month: string
+          user_id: string
+          value?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          id?: string
+          month?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nw_snapshots_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_tips: {
         Row: {
           content: Json
@@ -316,6 +707,39 @@ export type Database = {
           section?: string
           title?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          annual_growth_rate: number | null
+          currency: string | null
+          display_name: string | null
+          fi_multiplier: number | null
+          id: string
+          savings_rate_target: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          annual_growth_rate?: number | null
+          currency?: string | null
+          display_name?: string | null
+          fi_multiplier?: number | null
+          id?: string
+          savings_rate_target?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          annual_growth_rate?: number | null
+          currency?: string | null
+          display_name?: string | null
+          fi_multiplier?: number | null
+          id?: string
+          savings_rate_target?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
