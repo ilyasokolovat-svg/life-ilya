@@ -351,7 +351,6 @@ const InvLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSaved }
   const lastMonth = months[months.length - 1];
   const buckets = sortedBuckets(d);
   const [month, setMonth] = useState(todayMonth());
-  const [contribution, setContribution] = useState('0');
   const [vals, setVals] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     buckets.forEach(b => {
@@ -360,16 +359,21 @@ const InvLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSaved }
     });
     return init;
   });
+  const [contribs, setContribs] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    buckets.forEach(b => { init[b.id] = '0'; });
+    return init;
+  });
+  const totalContrib = buckets.reduce((a, b) => a + (parseFloat(contribs[b.id] || '0') || 0), 0);
 
   const save = async () => {
     if (!user) return;
-    const totalContrib = parseFloat(contribution || '0');
-    const perBucket = totalContrib / Math.max(1, buckets.length);
     for (const b of buckets) {
       const value = parseFloat(vals[b.id] || '0');
+      const contribution = parseFloat(contribs[b.id] || '0');
       const existing = d.investmentSnapshots.find(s => s.month === month && s.bucket_id === b.id);
-      if (existing) await sb.from('investment_snapshots').update({ value, contribution: perBucket }).eq('id', existing.id);
-      else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: b.id, value, contribution: perBucket });
+      if (existing) await sb.from('investment_snapshots').update({ value, contribution }).eq('id', existing.id);
+      else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: b.id, value, contribution });
     }
     onSaved();
   };
@@ -378,17 +382,23 @@ const InvLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSaved }
     <div className="grid lg:grid-cols-3 gap-4">
       <div className={`${card} lg:col-span-2`}>
         <Label>Log month</Label>
-        <div className="mt-3 grid sm:grid-cols-2 gap-3 max-w-md">
+        <div className="mt-3 max-w-md">
           <input type="month" className={inputCls} value={month} onChange={e => setMonth(e.target.value)} />
-          <input className={inputCls} value={contribution} onChange={e => setContribution(e.target.value)} placeholder="Total monthly contribution" />
         </div>
         <div className="mt-5 space-y-3 max-w-md">
           {buckets.map(b => (
-            <div key={b.id}>
-              <Label>{b.label}</Label>
-              <input className={`${inputCls} mt-1`} value={vals[b.id]} onChange={e => setVals({ ...vals, [b.id]: e.target.value })} />
+            <div key={b.id} className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>{b.label} — value</Label>
+                <input className={`${inputCls} mt-1`} value={vals[b.id]} onChange={e => setVals({ ...vals, [b.id]: e.target.value })} />
+              </div>
+              <div>
+                <Label>Contribution</Label>
+                <input className={`${inputCls} mt-1`} value={contribs[b.id]} onChange={e => setContribs({ ...contribs, [b.id]: e.target.value })} />
+              </div>
             </div>
           ))}
+          <div className="text-xs text-w-muted pt-2">Total contribution: <Mono className="text-w-text">{fmtMoney(totalContrib)}</Mono></div>
         </div>
         <div className="mt-5">
           <button onClick={save} className={btnPrimary}>Save snapshot</button>
