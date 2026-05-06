@@ -16,7 +16,7 @@ const sb = supabase as any;
 
 export default function Finance() {
   const { user, signOut } = useAuth();
-  const { data, loading, seeding, firstTime, setFirstTime, refresh } = useWealthData();
+  const { data, loading, seeding, firstTime, setFirstTime, refresh, wipeAndReseed } = useWealthData();
   const [tab, setTab] = useState<Tab>('networth');
   const [toast, setToast] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
