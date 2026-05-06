@@ -1,0 +1,133 @@
+import { useEffect, useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import type { WealthData } from './types';
+import {
+  SEED_ACCOUNTS, SEED_BUCKETS, SEED_INVESTMENTS, SEED_NW, SEED_BUDGET_CATS,
+  SEED_BUDGET_MONTHS, SEED_GOALS, SEED_SETTINGS,
+} from './seed';
+
+const empty: WealthData = {
+  settings: null, accounts: [], nwSnapshots: [], budgetCategories: [],
+  budgetMonths: [], budgetExtras: [], budgetSpending: [], investmentBuckets: [],
+  investmentSnapshots: [], goals: [], bonusPools: [], bonusAllocations: [],
+};
+
+const sb = supabase as any;
+
+export function useWealthData() {
+  const { user } = useAuth();
+  const [data, setData] = useState<WealthData>(empty);
+  const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+  const [firstTime, setFirstTime] = useState(false);
+
+  const fetchAll = useCallback(async () => {
+    if (!user) return;
+    const uid = user.id;
+    const [
+      settings, accounts, nwSnapshots, budgetCategories, budgetMonths,
+      budgetExtras, budgetSpending, investmentBuckets, investmentSnapshots,
+      goals, bonusPools, bonusAllocations,
+    ] = await Promise.all([
+      sb.from('settings').select('*').eq('user_id', uid).maybeSingle(),
+      sb.from('accounts').select('*').eq('user_id', uid).order('sort_order'),
+      sb.from('nw_snapshots').select('*').eq('user_id', uid),
+      sb.from('budget_categories').select('*').eq('user_id', uid).order('sort_order'),
+      sb.from('budget_months').select('*').eq('user_id', uid),
+      sb.from('budget_extras').select('*').eq('user_id', uid),
+      sb.from('budget_spending').select('*').eq('user_id', uid),
+      sb.from('investment_buckets').select('*').eq('user_id', uid).order('sort_order'),
+      sb.from('investment_snapshots').select('*').eq('user_id', uid),
+      sb.from('goals').select('*').eq('user_id', uid).order('priority'),
+      sb.from('bonus_pools').select('*').eq('user_id', uid),
+      sb.from('bonus_allocations').select('*').eq('user_id', uid),
+    ]);
+    setData({
+      settings: settings.data,
+      accounts: accounts.data || [],
+      nwSnapshots: nwSnapshots.data || [],
+      budgetCategories: budgetCategories.data || [],
+      budgetMonths: budgetMonths.data || [],
+      budgetExtras: budgetExtras.data || [],
+      budgetSpending: budgetSpending.data || [],
+      investmentBuckets: investmentBuckets.data || [],
+      investmentSnapshots: investmentSnapshots.data || [],
+      goals: goals.data || [],
+      bonusPools: bonusPools.data || [],
+      bonusAllocations: bonusAllocations.data || [],
+    });
+    return settings.data;
+  }, [user]);
+
+  const seed = useCallback(async () => {
+    if (!user) return;
+    const uid = user.id;
+    setSeeding(true);
+
+    await sb.from('settings').insert({ user_id: uid, ...SEED_SETTINGS });
+
+    const { data: accs } = await sb.from('accounts').insert(
+      SEED_ACCOUNTS.map(a => ({ ...a, user_id: uid }))
+    ).select();
+    const accMap: Record<string, string> = {};
+    (accs || []).forEach((a: any) => { accMap[a.label] = a.id; });
+
+    const { data: bucks } = await sb.from('investment_buckets').insert(
+      SEED_BUCKETS.map(b => ({ ...b, user_id: uid }))
+    ).select();
+    const bMap: Record<string, string> = {};
+    (bucks || []).forEach((b: any) => { bMap[b.label] = b.id; });
+
+    // investment snapshots
+    const invRows: any[] = [];
+    for (const [m, _t, c, s, cash] of SEED_INVESTMENTS) {
+      invRows.push({ user_id: uid, month: m, bucket_id: bMap['Global ETFs & Stocks'], value: s, contribution: 0 });
+      invRows.push({ user_id: uid, month: m, bucket_id: bMap['Crypto'], value: c, contribution: 0 });
+      invRows.push({ user_id: uid, month: m, bucket_id: bMap['Cash in brokers'], value: cash, contribution: 0 });
+    }
+    await sb.from('investment_snapshots').insert(invRows);
+
+    // NW snapshots
+    const nwRows: any[] = [];
+    for (const [m, cash, inv, cry, car, cc] of SEED_NW) {
+      nwRows.push({ user_id: uid, month: m, account_id: accMap['Cash & Yield'], value: cash });
+      nwRows.push({ user_id: uid, month: m, account_id: accMap['ETFs & Stocks'], value: inv });
+      nwRows.push({ user_id: uid, month: m, account_id: accMap['Crypto'], value: cry });
+      nwRows.push({ user_id: uid, month: m, account_id: accMap['Car Loan'], value: car });
+      nwRows.push({ user_id: uid, month: m, account_id: accMap['Credit Card'], value: cc });
+    }
+    await sb.from('nw_snapshots').insert(nwRows);
+
+    // budget categories
+    await sb.from('budget_categories').insert(SEED_BUDGET_CATS.map(c => ({ ...c, user_id: uid })));
+
+    // budget months + extras
+    for (const bm of SEED_BUDGET_MONTHS) {
+      await sb.from('budget_months').insert({ user_id: uid, month: bm.month, salary: bm.salary });
+      await sb.from('budget_extras').insert({ user_id: uid, month: bm.month, ...bm.extra });
+    }
+
+    // goals
+    await sb.from('goals').insert(SEED_GOALS.map(g => ({ ...g, user_id: uid })));
+
+    setSeeding(false);
+    setFirstTime(true);
+    await fetchAll();
+  }, [user, fetchAll]);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      setLoading(true);
+      const settings = await fetchAll();
+      if (!settings) {
+        await seed();
+      }
+      setLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  return { data, loading, seeding, firstTime, setFirstTime, refresh: fetchAll };
+}
