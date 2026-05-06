@@ -1,0 +1,1 @@
+DELETE FROM bonus_allocations; DELETE FROM bonus_pools; DELETE FROM budget_spending; DELETE FROM budget_extras; DELETE FROM budget_months; DELETE FROM budget_categories; DELETE FROM investment_snapshots; DELETE FROM investment_buckets; DELETE FROM nw_snapshots; DELETE FROM goals; DELETE FROM accounts; DELETE FROM settings;
