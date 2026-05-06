@@ -18,23 +18,28 @@ const sb = supabase as any;
 const sortedAccounts = (d: WealthData) => [...d.accounts].sort((a, b) => a.sort_order - b.sort_order);
 
 // =========================== NET WORTH TAB ===========================
+import { AccountsManager } from '../Managers';
+
 export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
   const [view, setView] = useState<'overview' | 'trend' | 'log'>('overview');
   const [trendMode, setTrendMode] = useState<'total' | 'liquid' | 'stacked'>('total');
+  const [manage, setManage] = useState(false);
   const months = nwMonths(d);
   const latest = months[months.length - 1];
   const prev = months[months.length - 2];
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <Heading className="text-3xl">Net worth</Heading>
         <div className="flex gap-2">
           <TabButton active={view === 'overview'} onClick={() => setView('overview')}>Overview</TabButton>
           <TabButton active={view === 'trend'} onClick={() => setView('trend')}>Trend</TabButton>
           <TabButton active={view === 'log'} onClick={() => setView('log')}>+ Log month</TabButton>
+          <button onClick={() => setManage(true)} className="px-3 py-1.5 text-sm rounded-[8px] text-w-muted hover:text-w-text border border-w-border">Manage accounts</button>
         </div>
       </div>
+      {manage && <AccountsManager d={d} onClose={() => setManage(false)} onChange={onChange} />}
 
       {view === 'overview' && (
         <NetWorthOverview d={d} latest={latest} prev={prev} />
