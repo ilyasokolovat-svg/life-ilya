@@ -351,7 +351,6 @@ const InvLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSaved }
   const lastMonth = months[months.length - 1];
   const buckets = sortedBuckets(d);
   const [month, setMonth] = useState(todayMonth());
-  const [contribution, setContribution] = useState('0');
   const [vals, setVals] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     buckets.forEach(b => {
@@ -360,16 +359,21 @@ const InvLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSaved }
     });
     return init;
   });
+  const [contribs, setContribs] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    buckets.forEach(b => { init[b.id] = '0'; });
+    return init;
+  });
+  const totalContrib = buckets.reduce((a, b) => a + (parseFloat(contribs[b.id] || '0') || 0), 0);
 
   const save = async () => {
     if (!user) return;
-    const totalContrib = parseFloat(contribution || '0');
-    const perBucket = totalContrib / Math.max(1, buckets.length);
     for (const b of buckets) {
       const value = parseFloat(vals[b.id] || '0');
+      const contribution = parseFloat(contribs[b.id] || '0');
       const existing = d.investmentSnapshots.find(s => s.month === month && s.bucket_id === b.id);
-      if (existing) await sb.from('investment_snapshots').update({ value, contribution: perBucket }).eq('id', existing.id);
-      else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: b.id, value, contribution: perBucket });
+      if (existing) await sb.from('investment_snapshots').update({ value, contribution }).eq('id', existing.id);
+      else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: b.id, value, contribution });
     }
     onSaved();
   };
