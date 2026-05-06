@@ -2,16 +2,16 @@ import React, { useMemo, useState } from 'react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { WealthData, Account } from './types';
+import type { WealthData, Account } from '../types';
 import {
   card, card2, kpi, inputCls, btn, btnPrimary, btnAmber,
   Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors,
-} from './ui';
-import { fmtMoney, fmtPct, monthLabel, todayMonth } from './format';
+} from '../ui';
+import { fmtMoney, fmtPct, monthLabel, todayMonth } from '../format';
 import {
   nwMonths, totalNWForMonth, liquidNWForMonth, debtRatio,
   totalPortfolio, cryptoExposurePct,
-} from './calc';
+} from '../calc';
 
 const sb = supabase as any;
 
