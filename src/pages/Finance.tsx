@@ -1,127 +1,165 @@
-import React, { useEffect, useState } from "react";
-import { PasswordGate } from "@/finance/PasswordGate";
-import {
-  useFinanceData, Overview, NetWorthSection, HoldingsSection,
-  AllocationSection, ExpenseSection, DisciplineSection, IncomeSection, BudgetSection,
-} from "@/finance/sections";
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useWealthData } from '@/wealth/useWealthData';
+import { Toast, btn } from '@/wealth/ui';
+import { NetWorthTab } from '@/wealth/tabs/NetWorthTab';
+import { BudgetTab } from '@/wealth/tabs/BudgetTab';
+import { InvestmentsTab } from '@/wealth/tabs/InvestmentsTab';
+import { GoalsTab } from '@/wealth/tabs/GoalsTab';
+import { AnalyticsTab } from '@/wealth/tabs/AnalyticsTab';
+import { Settings as SettingsIcon, LogOut, X } from 'lucide-react';
 
-const NAV = [
-  { id: "overview", label: "Overview" },
-  { id: "networth", label: "Net Worth" },
-  { id: "holdings", label: "Holdings" },
-  { id: "allocation", label: "Allocation" },
-  { id: "expenses", label: "Expense Planner" },
-  { id: "discipline", label: "Discipline" },
-  { id: "income", label: "Income" },
-  { id: "budget", label: "Budget" },
-];
+type Tab = 'networth' | 'budget' | 'investments' | 'goals' | 'analytics';
+
+const sb = supabase as any;
 
 export default function Finance() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem("finance_auth") === "true");
-  const ctx = useFinanceData();
-  const [active, setActive] = useState("overview");
-  const [savedAt, setSavedAt] = useState<string>("");
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const { data, loading, seeding, firstTime, setFirstTime, refresh } = useWealthData();
+  const [tab, setTab] = useState<Tab>('networth');
+  const [toast, setToast] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem('wealth_welcome_dismissed') === '1');
 
   useEffect(() => {
-    const handler = () => setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-    window.addEventListener("finance-saved", handler);
-    return () => window.removeEventListener("finance-saved", handler);
-  }, []);
+    if (firstTime) {
+      localStorage.removeItem('wealth_welcome_dismissed');
+      setWelcomeDismissed(false);
+      setFirstTime(false);
+    }
+  }, [firstTime, setFirstTime]);
 
-  useEffect(() => {
-    if (!authed) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible[0]) setActive(visible[0].target.id);
-      },
-      { rootMargin: "-30% 0px -50% 0px", threshold: [0, 0.25, 0.5] }
-    );
-    NAV.forEach(n => { const el = document.getElementById(n.id); if (el) obs.observe(el); });
-    return () => obs.disconnect();
-  }, [authed]);
-
-  if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
-
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    setMobileNavOpen(false);
+  const dismissWelcome = () => {
+    localStorage.setItem('wealth_welcome_dismissed', '1');
+    setWelcomeDismissed(true);
   };
 
-  return (
-    <div className="min-h-screen bg-fin-bg font-sans-fin text-fin-primary">
-      {/* Mobile top bar */}
-      <div className="md:hidden sticky top-0 z-40 bg-white border-b border-fin-border px-4 py-3 flex items-center justify-between">
-        <div className="text-sm font-medium">Finance</div>
-        <button onClick={() => setMobileNavOpen(o => !o)} className="text-xs text-fin-blue">
-          {mobileNavOpen ? "Close" : "Menu"}
-        </button>
+  if (loading || seeding) {
+    return (
+      <div className="min-h-screen bg-w-bg text-w-text font-sans-w flex items-center justify-center">
+        <div className="text-w-muted text-sm">{seeding ? 'Importing your historical data…' : 'Loading…'}</div>
       </div>
-      {mobileNavOpen && (
-        <div className="md:hidden bg-white border-b border-fin-border px-4 py-2">
-          {NAV.map(n => (
-            <button key={n.id} onClick={() => scrollTo(n.id)} className="block w-full text-left py-1.5 text-sm text-fin-secondary">{n.label}</button>
-          ))}
+    );
+  }
+
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const name = data.settings?.display_name || 'Ilya';
+
+  return (
+    <div className="min-h-screen bg-w-bg text-w-text font-sans-w">
+      {/* Top nav */}
+      <header className="sticky top-0 z-40 bg-w-bg/95 backdrop-blur border-b border-w-border">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-serif-w text-2xl text-w-text">wealth</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-w-green" />
+          </div>
+          <nav className="hidden md:flex gap-1">
+            {([
+              ['networth', 'Net worth'],
+              ['budget', 'Budget'],
+              ['investments', 'Investments'],
+              ['goals', 'Goals'],
+              ['analytics', 'Analytics'],
+            ] as [Tab, string][]).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                className={`px-4 py-1.5 text-sm rounded-[8px] transition-colors ${tab === id ? 'bg-w-surface2 text-w-text border border-w-border' : 'text-w-muted hover:text-w-text border border-transparent'}`}
+              >{label}</button>
+            ))}
+          </nav>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-w-muted font-mono-w hidden sm:inline">{today}</span>
+            <button onClick={() => setSettingsOpen(true)} className="text-w-muted hover:text-w-text"><SettingsIcon size={18} /></button>
+          </div>
         </div>
+        {/* Mobile nav */}
+        <nav className="md:hidden flex gap-1 px-4 pb-3 overflow-x-auto">
+          {([
+            ['networth', 'Net worth'], ['budget', 'Budget'], ['investments', 'Investments'],
+            ['goals', 'Goals'], ['analytics', 'Analytics'],
+          ] as [Tab, string][]).map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)} className={`px-3 py-1.5 text-xs whitespace-nowrap rounded-[8px] ${tab === id ? 'bg-w-surface2 text-w-text border border-w-border' : 'text-w-muted border border-transparent'}`}>{label}</button>
+          ))}
+        </nav>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {!welcomeDismissed && (
+          <div className="mb-6 p-4 border border-w-green/40 bg-w-green/5 rounded-[14px] flex items-center justify-between cursor-pointer" onClick={dismissWelcome}>
+            <div>
+              <div className="text-sm text-w-text">Welcome back, {name}.</div>
+              <div className="text-xs text-w-muted mt-1">Your historical data has been imported — 4+ years of portfolio history from January 2021. Start by logging this month's numbers in each tab.</div>
+            </div>
+            <button className="text-w-muted hover:text-w-text"><X size={16} /></button>
+          </div>
+        )}
+
+        {tab === 'networth' && <NetWorthTab d={data} onChange={refresh} onToast={setToast} />}
+        {tab === 'budget' && <BudgetTab d={data} onChange={refresh} onToast={setToast} />}
+        {tab === 'investments' && <InvestmentsTab d={data} onChange={refresh} onToast={setToast} />}
+        {tab === 'goals' && <GoalsTab d={data} onChange={refresh} onToast={setToast} />}
+        {tab === 'analytics' && <AnalyticsTab d={data} />}
+      </main>
+
+      {settingsOpen && (
+        <SettingsModal
+          settings={data.settings}
+          onClose={() => setSettingsOpen(false)}
+          onSaved={() => { refresh(); setToast('Settings saved'); setSettingsOpen(false); }}
+          onSignOut={async () => { await signOut(); }}
+        />
       )}
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-[200px] bg-white border-r border-fin-border z-30">
-          <div className="px-5 py-5 border-b border-fin-border">
-            <div className="text-[11px] uppercase tracking-[0.12em] text-fin-tertiary">Private</div>
-            <div className="text-base font-medium font-sans-fin mt-1">Finance</div>
-          </div>
-          <nav className="flex-1 py-3">
-            {NAV.map(n => {
-              const isActive = active === n.id;
-              return (
-                <button
-                  key={n.id} onClick={() => scrollTo(n.id)}
-                  className={`block w-full text-left px-5 py-2 text-sm transition-colors border-l-[3px] ${
-                    isActive ? "border-fin-blue text-fin-primary" : "border-transparent text-fin-secondary hover:text-fin-primary"
-                  }`}
-                >{n.label}</button>
-              );
-            })}
-          </nav>
-          <div className="px-5 py-4 border-t border-fin-border space-y-2">
-            <button
-              onClick={() => ctx.setEdit(!ctx.edit)}
-              className={`w-full text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                ctx.edit ? "bg-fin-blue text-white border-fin-blue" : "border-fin-border text-fin-secondary hover:border-fin-blue hover:text-fin-blue"
-              }`}
-            >Edit mode {ctx.edit ? "ON" : "OFF"}</button>
-            <div className="text-[10px] text-fin-tertiary text-center">
-              {savedAt ? `Saved · ${savedAt}` : "Auto-save enabled"}
-            </div>
-            <a href="/" className="block text-[10px] text-fin-tertiary text-center hover:text-fin-blue">← back to dashboard</a>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 md:ml-[200px] px-4 md:px-10 py-6 max-w-5xl">
-          {ctx.edit && (
-            <div className="md:hidden mb-4">
-              <button
-                onClick={() => ctx.setEdit(false)}
-                className="text-xs px-3 py-1.5 rounded-full bg-fin-blue text-white"
-              >Edit mode ON — tap to disable</button>
-            </div>
-          )}
-          <div className={ctx.edit ? "[&_section]:outline [&_section]:outline-1 [&_section]:outline-dashed [&_section]:outline-fin-border [&_section]:outline-offset-4 [&_section]:rounded" : ""}>
-            <Overview ctx={ctx} />
-            <NetWorthSection ctx={ctx} />
-            <HoldingsSection ctx={ctx} />
-            <AllocationSection ctx={ctx} />
-            <ExpenseSection ctx={ctx} />
-            <DisciplineSection ctx={ctx} />
-            <IncomeSection ctx={ctx} />
-            <BudgetSection ctx={ctx} />
-          </div>
-        </main>
-      </div>
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
     </div>
   );
 }
+
+const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () => void; onSignOut: () => void }> = ({ settings, onClose, onSaved, onSignOut }) => {
+  const [displayName, setDisplayName] = useState(settings?.display_name || 'Ilya');
+  const [currency, setCurrency] = useState(settings?.currency || '$');
+  const [srTarget, setSrTarget] = useState(String(settings?.savings_rate_target ?? 30));
+  const [fiMult, setFiMult] = useState(String(settings?.fi_multiplier ?? 25));
+  const [growth, setGrowth] = useState(String(settings?.annual_growth_rate ?? 8));
+
+  const save = async () => {
+    if (!settings) return;
+    await sb.from('settings').update({
+      display_name: displayName, currency,
+      savings_rate_target: parseFloat(srTarget), fi_multiplier: parseFloat(fiMult), annual_growth_rate: parseFloat(growth),
+    }).eq('id', settings.id);
+    onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-w-surface border border-w-border rounded-[14px] p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif-w text-xl text-w-text">Settings</h2>
+          <button onClick={onClose} className="text-w-muted hover:text-w-text"><X size={18} /></button>
+        </div>
+        <div className="space-y-3">
+          {[
+            ['Display name', displayName, setDisplayName],
+            ['Currency', currency, setCurrency],
+            ['Savings rate target %', srTarget, setSrTarget],
+            ['FI multiplier', fiMult, setFiMult],
+            ['Annual growth rate %', growth, setGrowth],
+          ].map(([label, val, setter]: any) => (
+            <div key={label}>
+              <div className="text-[11px] uppercase tracking-[0.12em] text-w-muted mb-1">{label}</div>
+              <input className="bg-w-surface2 border border-w-border rounded-[8px] px-3 py-2 text-w-text font-mono-w text-sm w-full" value={val} onChange={e => setter(e.target.value)} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex justify-between">
+          <button onClick={onSignOut} className={`${btn} flex items-center gap-2 text-w-red border-w-red/40 hover:bg-w-red/10`}><LogOut size={14} /> Sign out</button>
+          <button onClick={save} className={`${btn} text-w-green border-w-green/40 hover:bg-w-green/10`}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+};
