@@ -124,7 +124,7 @@ export default function Finance() {
   );
 }
 
-const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () => void; onSignOut: () => void }> = ({ settings, onClose, onSaved, onSignOut }) => {
+const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () => void; onSignOut: () => void; onReset: () => void }> = ({ settings, onClose, onSaved, onSignOut, onReset }) => {
   const [displayName, setDisplayName] = useState(settings?.display_name || 'Ilya');
   const [currency, setCurrency] = useState(settings?.currency || '$');
   const [srTarget, setSrTarget] = useState(String(settings?.savings_rate_target ?? 30));
