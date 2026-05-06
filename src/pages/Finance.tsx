@@ -110,6 +110,12 @@ export default function Finance() {
           onClose={() => setSettingsOpen(false)}
           onSaved={() => { refresh(); setToast('Settings saved'); setSettingsOpen(false); }}
           onSignOut={async () => { await signOut(); }}
+          onReset={async () => {
+            if (!confirm('Wipe all finance data and re-import seed? This cannot be undone.')) return;
+            setSettingsOpen(false);
+            await wipeAndReseed();
+            setToast('Data reset and reseeded');
+          }}
         />
       )}
 
