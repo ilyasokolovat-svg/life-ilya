@@ -9,22 +9,27 @@ import { budgetMonths, totalIncome, totalSpend, surplus, savingsRate } from '../
 
 const sb = supabase as any;
 
+import { CategoriesManager } from '../Managers';
+
 export const BudgetTab: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
   const [view, setView] = useState<'monthly' | 'yearly' | 'bonus' | 'log'>('monthly');
+  const [manage, setManage] = useState(false);
   const months = budgetMonths(d);
   const [selectedMonth, setSelectedMonth] = useState<string>(months[months.length - 1] || todayMonth());
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <Heading className="text-3xl">Budget</Heading>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <TabButton active={view === 'monthly'} onClick={() => setView('monthly')}>Monthly</TabButton>
           <TabButton active={view === 'yearly'} onClick={() => setView('yearly')}>Yearly</TabButton>
           <TabButton active={view === 'bonus'} onClick={() => setView('bonus')}>Bonus history</TabButton>
           <TabButton active={view === 'log'} onClick={() => setView('log')}>+ Log month</TabButton>
+          <button onClick={() => setManage(true)} className="px-3 py-1.5 text-sm rounded-[8px] text-w-muted hover:text-w-text border border-w-border">Manage categories</button>
         </div>
       </div>
+      {manage && <CategoriesManager d={d} onClose={() => setManage(false)} onChange={onChange} />}
 
       {view === 'monthly' && <BudgetMonthly d={d} months={months} month={selectedMonth} setMonth={setSelectedMonth} />}
       {view === 'yearly' && <BudgetYearly d={d} />}

@@ -12,20 +12,25 @@ import { NW_PROJECTION_TARGETS } from '../seed';
 
 const sb = supabase as any;
 
+import { GoalsManager } from '../Managers';
+
 export const GoalsTab: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
   const [view, setView] = useState<'goals' | 'fi' | 'bridge' | 'boost'>('goals');
+  const [manage, setManage] = useState(false);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <Heading className="text-3xl">Goals</Heading>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <TabButton active={view === 'goals'} onClick={() => setView('goals')}>Goals</TabButton>
           <TabButton active={view === 'fi'} onClick={() => setView('fi')}>FI projection</TabButton>
           <TabButton active={view === 'bridge'} onClick={() => setView('bridge')}>NW bridge</TabButton>
           <TabButton active={view === 'boost'} onClick={() => setView('boost')}>Boost log</TabButton>
+          <button onClick={() => setManage(true)} className="px-3 py-1.5 text-sm rounded-[8px] text-w-muted hover:text-w-text border border-w-border">Manage goals</button>
         </div>
       </div>
+      {manage && <GoalsManager d={d} onClose={() => setManage(false)} onChange={onChange} />}
 
       {view === 'goals' && <GoalsList d={d} onChange={onChange} onToast={onToast} />}
       {view === 'fi' && <FIProjection d={d} />}

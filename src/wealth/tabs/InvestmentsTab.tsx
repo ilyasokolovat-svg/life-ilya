@@ -11,21 +11,26 @@ import { CryptoMeter } from './NetWorthTab';
 const sb = supabase as any;
 const sortedBuckets = (d: WealthData) => [...d.investmentBuckets].sort((a, b) => a.sort_order - b.sort_order);
 
+import { BucketsManager } from '../Managers';
+
 export const InvestmentsTab: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
   const [view, setView] = useState<'overview' | 'growth' | 'projection' | 'archive' | 'log'>('overview');
+  const [manage, setManage] = useState(false);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <Heading className="text-3xl">Investments</Heading>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <TabButton active={view === 'overview'} onClick={() => setView('overview')}>Overview</TabButton>
           <TabButton active={view === 'growth'} onClick={() => setView('growth')}>Growth</TabButton>
           <TabButton active={view === 'projection'} onClick={() => setView('projection')}>Projection</TabButton>
           <TabButton active={view === 'archive'} onClick={() => setView('archive')}>Archive</TabButton>
           <TabButton active={view === 'log'} onClick={() => setView('log')}>+ Log month</TabButton>
+          <button onClick={() => setManage(true)} className="px-3 py-1.5 text-sm rounded-[8px] text-w-muted hover:text-w-text border border-w-border">Manage buckets</button>
         </div>
       </div>
+      {manage && <BucketsManager d={d} onClose={() => setManage(false)} onChange={onChange} />}
 
       {view === 'overview' && <InvOverview d={d} />}
       {view === 'growth' && <InvGrowth d={d} />}
