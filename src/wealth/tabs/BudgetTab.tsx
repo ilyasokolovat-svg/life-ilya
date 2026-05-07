@@ -102,6 +102,17 @@ const BudgetMonthly: React.FC<{ d: WealthData; months: string[]; month: string; 
                 </div>
               );
             })}
+            {(() => {
+              const totalActual = cats.reduce((a, c) => a + Number(d.budgetSpending.find(s => s.month === month && s.category_id === c.id)?.actual ?? 0), 0);
+              const totalBudget = cats.reduce((a, c) => a + Number(c.budget), 0);
+              const overAll = totalActual > totalBudget;
+              return (
+                <div className="pt-3 border-t border-w-border flex justify-between text-sm">
+                  <span className="text-w-text font-semibold">Total</span>
+                  <Mono className={overAll ? 'text-w-red' : 'text-w-text'}>{fmtMoney(totalActual)} / {fmtMoney(totalBudget)}</Mono>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
