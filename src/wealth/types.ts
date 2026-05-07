@@ -4,10 +4,12 @@ export type ExtraType = 'bonus' | 'freelance' | 'dividend' | 'tax-refund' | 'oth
 export interface Settings {
   id: string; user_id: string; currency: string; savings_rate_target: number;
   fi_multiplier: number; annual_growth_rate: number; display_name: string;
+  display_currency?: 'USD' | 'AED';
 }
 export interface Account {
   id: string; label: string; type: AccountType; liquid: boolean; is_estimated: boolean;
   linked_goal_id: string | null; color: string; sort_order: number;
+  target_pct?: number;
 }
 export interface NWSnapshot { id: string; month: string; account_id: string; value: number; }
 export interface BudgetCategory { id: string; label: string; budget: number; color: string; sort_order: number; }
