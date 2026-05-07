@@ -18,9 +18,11 @@ export interface BudgetExtra { id: string; month: string; description: string; a
 export interface BudgetSpending { id: string; month: string; category_id: string; actual: number; }
 export interface InvestmentBucket { id: string; label: string; description: string | null; color: string; sort_order: number; }
 export interface InvestmentSnapshot { id: string; month: string; bucket_id: string; value: number; contribution: number; }
+export type GoalValueSource = 'net_worth' | 'total_portfolio' | 'linked_account' | 'manual';
 export interface Goal {
   id: string; name: string; target_amount: number; target_date: string; color: string;
   priority: number; allocation_pct: number; linked_account_id: string | null;
+  value_source: GoalValueSource; manual_current_value: number;
 }
 export interface BonusPool { id: string; month: string; description: string; source_extra_id: string | null; total_amount: number; }
 export interface BonusAllocation { id: string; pool_id: string; goal_id: string; amount: number; note: string | null; }
