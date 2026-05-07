@@ -156,19 +156,31 @@ const BudgetMonthly: React.FC<{ d: WealthData; months: string[]; month: string; 
   );
 };
 
-const BudgetYearly: React.FC<{ d: WealthData }> = ({ d }) => {
+const BudgetYearly: React.FC<{ d: WealthData; onChange?: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
   const months = budgetMonths(d);
   const years = Array.from(new Set(months.map(m => m.slice(0, 4)))).sort();
   const [year, setYear] = useState(years[years.length - 1] || String(new Date().getFullYear()));
   if (!years.length) return <Empty />;
 
-  const yearMonths = months.filter(m => m.startsWith(year));
+  // Always show all 12 months for a stacked view
+  const yearMonths = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
   const totalInc = yearMonths.reduce((a, m) => a + totalIncome(d, m), 0);
   const irregular = d.budgetExtras.filter(e => e.month.startsWith(year)).reduce((a, e) => a + Number(e.amount), 0);
   const totalSp = yearMonths.reduce((a, m) => a + totalSpend(d, m), 0);
-  const avgSr = yearMonths.length ? yearMonths.reduce((a, m) => a + savingsRate(d, m), 0) / yearMonths.length : 0;
+  const filledMonths = yearMonths.filter(m => d.budgetMonths.find(b => b.month === m) || d.budgetSpending.find(s => s.month === m));
+  const avgSr = filledMonths.length ? filledMonths.reduce((a, m) => a + savingsRate(d, m), 0) / filledMonths.length : 0;
 
   const cats = [...d.budgetCategories].sort((a, b) => a.sort_order - b.sort_order);
+
+  const saveCell = async (catId: string, month: string, raw: string) => {
+    if (!user) return;
+    const actual = Number(raw) || 0;
+    const existing = d.budgetSpending.find(s => s.month === month && s.category_id === catId);
+    if (existing) await sb.from('budget_spending').update({ actual }).eq('id', existing.id);
+    else if (actual > 0) await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual });
+    onChange?.();
+  };
 
   return (
     <>
@@ -183,24 +195,48 @@ const BudgetYearly: React.FC<{ d: WealthData }> = ({ d }) => {
       </div>
 
       <div className={`${card} overflow-x-auto`}>
-        <Label>Categories × month</Label>
+        <Label>Categories × month — click any value to edit</Label>
         <table className="w-full mt-3 text-sm">
           <thead><tr className="text-left text-xs text-w-muted">
             <th className="py-2 pr-2">Category</th>
             {yearMonths.map(m => <th key={m} className="px-2 text-right">{monthLabel(m)}</th>)}
+            <th className="px-2 text-right text-w-text">YTD avg</th>
           </tr></thead>
           <tbody>
-            {cats.map(c => (
-              <tr key={c.id} className="border-t border-w-border">
-                <td className="py-2 pr-2 text-w-text"><span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: c.color }} />{c.label}</td>
-                {yearMonths.map(m => {
-                  const v = Number(d.budgetSpending.find(s => s.month === m && s.category_id === c.id)?.actual ?? 0);
-                  const ratio = c.budget > 0 ? v / Number(c.budget) : 0;
-                  const tone = ratio > 1 ? 'text-w-red' : ratio < 0.7 && v > 0 ? 'text-w-green' : 'text-w-text';
-                  return <td key={m} className={`px-2 text-right font-mono-w ${tone}`}>{v ? fmtMoney(v, { compact: true }) : '—'}</td>;
-                })}
-              </tr>
-            ))}
+            {cats.map(c => {
+              const vals = yearMonths.map(m => Number(d.budgetSpending.find(s => s.month === m && s.category_id === c.id)?.actual ?? 0));
+              const filled = vals.filter(v => v > 0);
+              const avg = filled.length ? filled.reduce((a, v) => a + v, 0) / filled.length : 0;
+              return (
+                <tr key={c.id} className="border-t border-w-border">
+                  <td className="py-2 pr-2 text-w-text"><span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: c.color }} />{c.label}</td>
+                  {yearMonths.map((m, i) => {
+                    const v = vals[i];
+                    const ratio = c.budget > 0 ? v / Number(c.budget) : 0;
+                    const tone = ratio > 1 ? 'text-w-red' : ratio < 0.7 && v > 0 ? 'text-w-green' : 'text-w-text';
+                    return (
+                      <td key={m} className="px-1 text-right">
+                        <input
+                          defaultValue={v || ''}
+                          placeholder="—"
+                          onBlur={e => { if (Number(e.target.value || 0) !== v) saveCell(c.id, m, e.target.value); }}
+                          className={`w-20 bg-transparent text-right font-mono-w text-xs ${tone} hover:bg-w-surface2 focus:bg-w-surface2 rounded px-1 py-0.5 outline-none`}
+                        />
+                      </td>
+                    );
+                  })}
+                  <td className="px-2 text-right font-mono-w text-w-text">{avg ? fmtMoney(avg, { compact: true }) : '—'}</td>
+                </tr>
+              );
+            })}
+            <tr className="border-t-2 border-w-border font-semibold">
+              <td className="py-2 pr-2 text-w-text">Total spend</td>
+              {yearMonths.map(m => {
+                const v = totalSpend(d, m);
+                return <td key={m} className="px-2 text-right font-mono-w text-w-text">{v ? fmtMoney(v, { compact: true }) : '—'}</td>;
+              })}
+              <td className="px-2 text-right font-mono-w text-w-green">{filledMonths.length ? fmtMoney(totalSp / filledMonths.length, { compact: true }) : '—'}</td>
+            </tr>
           </tbody>
         </table>
       </div>
