@@ -35,7 +35,7 @@ export const InvestmentsTab: React.FC<{ d: WealthData; onChange: () => void; onT
       {view === 'overview' && <InvOverview d={d} />}
       {view === 'growth' && <InvGrowth d={d} />}
       {view === 'projection' && <InvProjection d={d} />}
-      {view === 'archive' && <InvArchive d={d} />}
+      {view === 'archive' && <InvArchive d={d} onChange={onChange} />}
       {view === 'log' && <InvLog d={d} onSaved={() => { onChange(); onToast('Snapshot saved'); setView('overview'); }} />}
     </div>
   );
