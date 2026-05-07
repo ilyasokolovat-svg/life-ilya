@@ -7,7 +7,7 @@ import {
   card, card2, kpi, inputCls, btn, btnPrimary, btnAmber,
   Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors,
 } from '../ui';
-import { fmtMoney, fmtPct, monthLabel, todayMonth } from '../format';
+import { fmtMoney, fmtPct, monthLabel, todayMonth, toDisplay, fromDisplay } from '../format';
 import {
   nwMonths, totalNWForMonth, liquidNWForMonth, debtRatio,
   totalPortfolio, cryptoExposurePct,
@@ -21,8 +21,7 @@ const sortedAccounts = (d: WealthData) => [...d.accounts].sort((a, b) => a.sort_
 import { AccountsManager } from '../Managers';
 
 export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
-  const [view, setView] = useState<'overview' | 'trend' | 'log'>('overview');
-  const [trendMode, setTrendMode] = useState<'total' | 'liquid' | 'stacked'>('total');
+  const [view, setView] = useState<'overview' | 'log'>('overview');
   const [manage, setManage] = useState(false);
   const months = nwMonths(d);
   const latest = months[months.length - 1];
@@ -34,7 +33,6 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
         <Heading className="text-3xl">Net worth</Heading>
         <div className="flex gap-2">
           <TabButton active={view === 'overview'} onClick={() => setView('overview')}>Overview</TabButton>
-          <TabButton active={view === 'trend'} onClick={() => setView('trend')}>Trend</TabButton>
           <TabButton active={view === 'log'} onClick={() => setView('log')}>+ Log month</TabButton>
           <button onClick={() => setManage(true)} className="px-3 py-1.5 text-sm rounded-[8px] text-w-muted hover:text-w-text border border-w-border">Manage accounts</button>
         </div>
@@ -42,10 +40,7 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
       {manage && <AccountsManager d={d} onClose={() => setManage(false)} onChange={onChange} />}
 
       {view === 'overview' && (
-        <NetWorthOverview d={d} latest={latest} prev={prev} />
-      )}
-      {view === 'trend' && (
-        <NetWorthTrend d={d} months={months} mode={trendMode} setMode={setTrendMode} />
+        <NetWorthOverview d={d} months={months} latest={latest} prev={prev} />
       )}
       {view === 'log' && (
         <LogMonthForm d={d} onSaved={() => { onChange(); onToast('Snapshot saved'); setView('overview'); }} />
@@ -54,7 +49,7 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
   );
 };
 
-const NetWorthOverview: React.FC<{ d: WealthData; latest?: string; prev?: string }> = ({ d, latest, prev }) => {
+const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: string; prev?: string }> = ({ d, months, latest, prev }) => {
   if (!latest) return <Empty msg="No net worth data yet — log your first month." />;
   const total = totalNWForMonth(d, latest);
   const prevTotal = prev ? totalNWForMonth(d, prev) : 0;
@@ -78,14 +73,48 @@ const NetWorthOverview: React.FC<{ d: WealthData; latest?: string; prev?: string
         <KpiCard label="Debt ratio" value={`${(dr * 100).toFixed(0)}%`} tone={dr > 0.5 ? 'red' : dr > 0.3 ? 'amber' : 'green'} />
       </div>
 
+      {months.length > 1 && (
+        <div className={`${card} mb-5`}>
+          <Label>Net worth trend</Label>
+          <div className="h-72 mt-3">
+            <Line
+              data={{
+                labels: months.map(monthLabel),
+                datasets: [{
+                  label: 'Total NW',
+                  data: months.map(m => totalNWForMonth(d, m)),
+                  borderColor: chartColors.green, backgroundColor: chartColors.green + '22',
+                  fill: true, tension: 0.3, pointRadius: 2,
+                }],
+              }}
+              options={{
+                ...baseChartOpts,
+                scales: {
+                  x: baseChartOpts.scales.x,
+                  y: { ...baseChartOpts.scales.y, ticks: { ...baseChartOpts.scales.y.ticks, callback: (v: any) => fmtMoney(Number(v), { compact: true }) } },
+                },
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-4 mb-5">
         <div className={`${card} lg:col-span-2`}>
-          <Label>Accounts</Label>
+          <Label>Asset classes</Label>
           <div className="mt-3 divide-y divide-w-border">
             {accs.map(a => {
               const v = Number(d.nwSnapshots.find(s => s.month === latest && s.account_id === a.id)?.value ?? 0);
               const pv = prev ? Number(d.nwSnapshots.find(s => s.month === prev && s.account_id === a.id)?.value ?? 0) : 0;
               const delta = v - pv;
+              const positive = total > 0 ? Math.max(0, v) : 0;
+              const totalPositive = accs.reduce((s, x) => {
+                const xv = Number(d.nwSnapshots.find(ss => ss.month === latest && ss.account_id === x.id)?.value ?? 0);
+                return s + Math.max(0, xv);
+              }, 0);
+              const pct = totalPositive > 0 ? (positive / totalPositive) * 100 : 0;
+              const target = Number(a.target_pct ?? 0);
+              const diff = target > 0 ? pct - target : null;
               return (
                 <div key={a.id} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
@@ -101,6 +130,12 @@ const NetWorthOverview: React.FC<{ d: WealthData; latest?: string; prev?: string
                   </div>
                   <div className="text-right">
                     <Mono className={`text-base ${v < 0 ? 'text-w-red' : 'text-w-text'}`}>{fmtMoney(v)}</Mono>
+                    <div className="text-[10px] font-mono-w text-w-muted">
+                      {pct.toFixed(1)}%
+                      {diff !== null && (
+                        <span className={diff >= 0 ? ' text-w-green' : ' text-w-red'}> ({diff >= 0 ? '+' : ''}{diff.toFixed(1)}% vs {target}%)</span>
+                      )}
+                    </div>
                     {prev && <div className={`text-[10px] font-mono-w ${delta >= 0 ? 'text-w-green' : 'text-w-red'}`}>{fmtMoney(delta, { sign: true })}</div>}
                   </div>
                 </div>
@@ -214,7 +249,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
     const init: Record<string, string> = {};
     accs.forEach(a => {
       const last = lastMonth ? d.nwSnapshots.find(s => s.month === lastMonth && s.account_id === a.id) : null;
-      init[a.id] = last ? String(last.value) : '0';
+      init[a.id] = last ? String(Math.round(toDisplay(Number(last.value)))) : '0';
     });
     return init;
   });
@@ -224,7 +259,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
     const next: Record<string, string> = {};
     accs.forEach(a => {
       const v = d.nwSnapshots.find(s => s.month === lastMonth && s.account_id === a.id);
-      next[a.id] = v ? String(v.value) : '0';
+      next[a.id] = v ? String(Math.round(toDisplay(Number(v.value)))) : '0';
     });
     setVals(next);
   };
@@ -232,7 +267,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
   const save = async () => {
     if (!user) return;
     for (const a of accs) {
-      const value = parseFloat(vals[a.id] || '0');
+      const value = fromDisplay(parseFloat(vals[a.id] || '0'));
       const existing = d.nwSnapshots.find(s => s.month === month && s.account_id === a.id);
       if (existing) {
         await sb.from('nw_snapshots').update({ value }).eq('id', existing.id);

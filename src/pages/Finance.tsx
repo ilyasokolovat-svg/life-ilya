@@ -10,6 +10,7 @@ import { GoalsTab } from '@/wealth/tabs/GoalsTab';
 import { AnalyticsTab } from '@/wealth/tabs/AnalyticsTab';
 import { Settings as SettingsIcon, LogOut, X, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { setDisplayCurrency, getDisplayCurrency, onCurrencyChange } from '@/wealth/format';
 
 type Tab = 'networth' | 'budget' | 'investments' | 'goals' | 'analytics';
 
@@ -22,6 +23,18 @@ export default function Finance() {
   const [toast, setToast] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem('wealth_welcome_dismissed') === '1');
+  const [, forceTick] = useState(0);
+
+  useEffect(() => {
+    const off = onCurrencyChange(() => forceTick(t => t + 1));
+    return () => { off; };
+  }, []);
+
+  useEffect(() => {
+    if (data.settings?.display_currency) {
+      setDisplayCurrency((data.settings.display_currency as 'USD' | 'AED') || 'USD');
+    }
+  }, [data.settings?.display_currency]);
 
   useEffect(() => {
     if (firstTime) {
@@ -73,6 +86,7 @@ export default function Finance() {
           </nav>
           <div className="flex items-center gap-3">
             <Link to="/" className="text-xs text-w-muted hover:text-w-text flex items-center gap-1"><ArrowLeft size={14} /> Dashboard</Link>
+            <CurrencyToggle settings={data.settings} onChanged={refresh} />
             <span className="text-xs text-w-muted font-mono-w hidden sm:inline">{today}</span>
             <button onClick={() => setSettingsOpen(true)} className="text-w-muted hover:text-w-text"><SettingsIcon size={18} /></button>
           </div>
@@ -171,6 +185,24 @@ const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () 
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const CurrencyToggle: React.FC<{ settings: any; onChanged: () => void }> = ({ settings, onChanged }) => {
+  const cur = (settings?.display_currency as 'USD' | 'AED') || getDisplayCurrency();
+  const toggle = async (next: 'USD' | 'AED') => {
+    setDisplayCurrency(next);
+    if (settings) {
+      await sb.from('settings').update({ display_currency: next }).eq('id', settings.id);
+      onChanged();
+    }
+  };
+  return (
+    <div className="flex items-center gap-1 border border-w-border rounded-[8px] p-0.5">
+      {(['USD','AED'] as const).map(c => (
+        <button key={c} onClick={() => toggle(c)} className={`px-2 py-0.5 text-[10px] font-mono-w rounded ${cur === c ? 'bg-w-surface2 text-w-text' : 'text-w-muted hover:text-w-text'}`}>{c}</button>
+      ))}
     </div>
   );
 };

@@ -24,6 +24,7 @@ export type Database = {
           linked_goal_id: string | null
           liquid: boolean | null
           sort_order: number | null
+          target_pct: number | null
           type: string
           user_id: string
         }
@@ -36,6 +37,7 @@ export type Database = {
           linked_goal_id?: string | null
           liquid?: boolean | null
           sort_order?: number | null
+          target_pct?: number | null
           type: string
           user_id: string
         }
@@ -48,6 +50,7 @@ export type Database = {
           linked_goal_id?: string | null
           liquid?: boolean | null
           sort_order?: number | null
+          target_pct?: number | null
           type?: string
           user_id?: string
         }
@@ -715,6 +718,7 @@ export type Database = {
         Row: {
           annual_growth_rate: number | null
           currency: string | null
+          display_currency: string | null
           display_name: string | null
           fi_multiplier: number | null
           id: string
@@ -725,6 +729,7 @@ export type Database = {
         Insert: {
           annual_growth_rate?: number | null
           currency?: string | null
+          display_currency?: string | null
           display_name?: string | null
           fi_multiplier?: number | null
           id?: string
@@ -735,6 +740,7 @@ export type Database = {
         Update: {
           annual_growth_rate?: number | null
           currency?: string | null
+          display_currency?: string | null
           display_name?: string | null
           fi_multiplier?: number | null
           id?: string

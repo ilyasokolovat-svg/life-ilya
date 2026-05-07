@@ -49,25 +49,40 @@ export const AccountsManager: React.FC<{ d: WealthData; onClose: () => void; onC
       await sb.from('accounts').update({
         label: i.label, type: i.type, liquid: i.liquid, color: i.color,
         is_estimated: i.is_estimated, sort_order: i.sort_order,
+        target_pct: Number(i.target_pct) || 0,
       }).eq('id', i.id);
     }
     setBusy(false);
     onChange(); onClose();
   };
 
+  const move = (idx: number, dir: -1 | 1) => {
+    const next = [...items];
+    const j = idx + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[idx], next[j]] = [next[j], next[idx]];
+    next.forEach((it, k) => (it.sort_order = k));
+    setItems(next);
+  };
+
   return (
-    <ModalShell title="Manage accounts" onClose={onClose}>
+    <ModalShell title="Manage asset classes" onClose={onClose}>
       <div className="space-y-2 max-h-[55vh] overflow-y-auto">
-        {items.map(a => (
+        {items.map((a, idx) => (
           <div key={a.id} className="grid grid-cols-12 gap-2 items-center p-2 border border-w-border rounded-[8px]">
-            <input className={`${inputCls} col-span-4`} value={a.label} onChange={e => update(a.id, { label: e.target.value })} />
+            <div className="col-span-1 flex flex-col text-w-muted">
+              <button onClick={() => move(idx, -1)} className="text-xs hover:text-w-text">▲</button>
+              <button onClick={() => move(idx, 1)} className="text-xs hover:text-w-text">▼</button>
+            </div>
+            <input className={`${inputCls} col-span-3`} value={a.label} onChange={e => update(a.id, { label: e.target.value })} />
             <select className={`${inputCls} col-span-2`} value={a.type} onChange={e => update(a.id, { type: e.target.value as AccountType })}>
               <option value="cash">cash</option><option value="investments">investments</option>
               <option value="retirement">retirement</option><option value="property">property</option><option value="debt">debt</option>
             </select>
+            <input className={`${inputCls} col-span-2`} placeholder="Target %" value={a.target_pct ?? 0} onChange={e => update(a.id, { target_pct: e.target.value })} />
             <input type="color" className="col-span-1 h-9 bg-w-surface2 rounded" value={a.color} onChange={e => update(a.id, { color: e.target.value })} />
-            <label className="col-span-2 text-xs text-w-muted flex items-center gap-1"><input type="checkbox" checked={!!a.liquid} onChange={e => update(a.id, { liquid: e.target.checked })} />liquid</label>
-            <label className="col-span-2 text-xs text-w-muted flex items-center gap-1"><input type="checkbox" checked={!!a.is_estimated} onChange={e => update(a.id, { is_estimated: e.target.checked })} />est.</label>
+            <label className="col-span-1 text-[10px] text-w-muted flex items-center gap-1"><input type="checkbox" checked={!!a.liquid} onChange={e => update(a.id, { liquid: e.target.checked })} />liq</label>
+            <label className="col-span-1 text-[10px] text-w-muted flex items-center gap-1"><input type="checkbox" checked={!!a.is_estimated} onChange={e => update(a.id, { is_estimated: e.target.checked })} />est</label>
             <button onClick={() => remove(a.id)} className="col-span-1 text-w-red hover:bg-w-red/10 p-2 rounded"><Trash2 size={14} /></button>
           </div>
         ))}
@@ -108,13 +123,26 @@ export const CategoriesManager: React.FC<{ d: WealthData; onClose: () => void; o
     onChange(); onClose();
   };
 
+  const move = (idx: number, dir: -1 | 1) => {
+    const next = [...items];
+    const j = idx + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[idx], next[j]] = [next[j], next[idx]];
+    next.forEach((it, k) => (it.sort_order = k));
+    setItems(next);
+  };
+
   return (
     <ModalShell title="Manage budget categories" onClose={onClose}>
-      <p className="text-xs text-w-muted mb-3">"Actual" spending is entered each month via <span className="text-w-text">Budget → + Log month</span>. The budget here is your monthly target.</p>
+      <p className="text-xs text-w-muted mb-3">"Actual" spending is entered each month via <span className="text-w-text">Budget → + Log month</span>. The budget here is your monthly target. Use ▲▼ to reorder.</p>
       <div className="space-y-2 max-h-[55vh] overflow-y-auto">
-        {items.map(c => (
+        {items.map((c, idx) => (
           <div key={c.id} className="grid grid-cols-12 gap-2 items-center p-2 border border-w-border rounded-[8px]">
-            <input className={`${inputCls} col-span-6`} value={c.label} onChange={e => update(c.id, { label: e.target.value })} />
+            <div className="col-span-1 flex flex-col text-w-muted">
+              <button onClick={() => move(idx, -1)} className="text-xs hover:text-w-text">▲</button>
+              <button onClick={() => move(idx, 1)} className="text-xs hover:text-w-text">▼</button>
+            </div>
+            <input className={`${inputCls} col-span-5`} value={c.label} onChange={e => update(c.id, { label: e.target.value })} />
             <input className={`${inputCls} col-span-3`} value={c.budget} onChange={e => update(c.id, { budget: e.target.value })} placeholder="Monthly budget" />
             <input type="color" className="col-span-2 h-9 bg-w-surface2 rounded" value={c.color} onChange={e => update(c.id, { color: e.target.value })} />
             <button onClick={() => remove(c.id)} className="col-span-1 text-w-red hover:bg-w-red/10 p-2 rounded"><Trash2 size={14} /></button>

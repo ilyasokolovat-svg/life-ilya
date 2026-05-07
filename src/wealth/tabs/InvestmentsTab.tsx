@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '../types';
 import { card, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
-import { fmtMoney, fmtPct, monthLabel, todayMonth } from '../format';
+import { fmtMoney, fmtPct, monthLabel, todayMonth, toDisplay, fromDisplay } from '../format';
 import { investmentMonths, totalPortfolio, totalContributed, cryptoExposurePct } from '../calc';
 import { CryptoMeter } from './NetWorthTab';
 
@@ -35,7 +35,7 @@ export const InvestmentsTab: React.FC<{ d: WealthData; onChange: () => void; onT
       {view === 'overview' && <InvOverview d={d} />}
       {view === 'growth' && <InvGrowth d={d} />}
       {view === 'projection' && <InvProjection d={d} />}
-      {view === 'archive' && <InvArchive d={d} />}
+      {view === 'archive' && <InvArchive d={d} onChange={onChange} />}
       {view === 'log' && <InvLog d={d} onSaved={() => { onChange(); onToast('Snapshot saved'); setView('overview'); }} />}
     </div>
   );
@@ -51,15 +51,18 @@ const InvOverview: React.FC<{ d: WealthData }> = ({ d }) => {
   const gains = total - contrib;
   const cryptoPct = cryptoExposurePct(d, latest);
   const monthlyContrib = d.investmentSnapshots.filter(s => s.month === latest).reduce((a, s) => a + Number(s.contribution), 0);
+  const currentYear = latest.slice(0, 4);
+  const ytdContrib = d.investmentSnapshots.filter(s => s.month.startsWith(currentYear)).reduce((a, s) => a + Number(s.contribution), 0);
   const buckets = sortedBuckets(d);
 
   return (
     <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
         <KpiCard label="Total portfolio" value={fmtMoney(total)} sub={monthLabel(latest)} />
         <KpiCard label="Market gains" value={fmtMoney(gains, { sign: true })} tone={gains >= 0 ? 'green' : 'red'} />
         <KpiCard label="Crypto exposure" value={fmtPct(cryptoPct)} tone={cryptoPct < 30 ? 'green' : cryptoPct < 50 ? 'amber' : 'red'} />
-        <KpiCard label="Monthly contribution" value={fmtMoney(monthlyContrib)} />
+        <KpiCard label="Monthly contribution" value={fmtMoney(monthlyContrib)} sub={monthLabel(latest)} />
+        <KpiCard label={`YTD contributions ${currentYear}`} value={fmtMoney(ytdContrib)} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-5">
@@ -286,20 +289,31 @@ const InvProjection: React.FC<{ d: WealthData }> = ({ d }) => {
   );
 };
 
-const InvArchive: React.FC<{ d: WealthData }> = ({ d }) => {
+const InvArchive: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
   const months = investmentMonths(d);
   if (!months.length) return <Empty />;
   const buckets = sortedBuckets(d);
   const reverse = [...months].reverse();
+
+  const saveContrib = async (month: string, bucketId: string, raw: string) => {
+    if (!user) return;
+    const contribution = fromDisplay(parseFloat(raw || '0')) || 0;
+    const existing = d.investmentSnapshots.find(s => s.month === month && s.bucket_id === bucketId);
+    if (existing) await sb.from('investment_snapshots').update({ contribution }).eq('id', existing.id);
+    else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: bucketId, value: 0, contribution });
+    onChange();
+  };
+
   return (
     <>
       <div className={card + ' overflow-x-auto mb-4'}>
-        <Label>All snapshots</Label>
+        <Label>All snapshots — edit contributions per bucket inline</Label>
         <table className="w-full mt-3 text-sm">
           <thead><tr className="text-left text-xs text-w-muted border-b border-w-border">
             <th className="py-2">Month</th><th className="py-2 text-right">Total</th>
-            {buckets.map(b => <th key={b.id} className="py-2 text-right">{b.label}</th>)}
-            <th className="py-2 text-right">Crypto %</th><th className="py-2 text-right">Contribution</th><th className="py-2 text-right">vs prev</th>
+            {buckets.map(b => <th key={b.id} className="py-2 text-right">{b.label}<div className="text-[9px] text-w-muted normal-case">value / contrib</div></th>)}
+            <th className="py-2 text-right">Crypto %</th><th className="py-2 text-right">Total contrib</th><th className="py-2 text-right">vs prev</th>
           </tr></thead>
           <tbody>
             {reverse.map((m, i) => {
@@ -313,8 +327,23 @@ const InvArchive: React.FC<{ d: WealthData }> = ({ d }) => {
                   <td className="py-2 text-w-text font-mono-w">{monthLabel(m)}</td>
                   <td className="py-2 text-right font-mono-w text-w-text">{fmtMoney(total)}</td>
                   {buckets.map(b => {
-                    const v = Number(d.investmentSnapshots.find(s => s.month === m && s.bucket_id === b.id)?.value ?? 0);
-                    return <td key={b.id} className="py-2 text-right font-mono-w text-w-muted">{fmtMoney(v)}</td>;
+                    const snap = d.investmentSnapshots.find(s => s.month === m && s.bucket_id === b.id);
+                    const v = Number(snap?.value ?? 0);
+                    const cb = Number(snap?.contribution ?? 0);
+                    return (
+                      <td key={b.id} className="py-2 text-right font-mono-w text-w-muted">
+                        <div className="text-w-text">{fmtMoney(v, { compact: true })}</div>
+                        <input
+                          defaultValue={cb ? Math.round(toDisplay(cb)) : ''}
+                          placeholder="0"
+                          onBlur={e => {
+                            const newV = Number(e.target.value || 0);
+                            if (newV !== Math.round(toDisplay(cb))) saveContrib(m, b.id, e.target.value);
+                          }}
+                          className="w-16 bg-transparent text-right text-[11px] text-w-blue hover:bg-w-surface2 focus:bg-w-surface2 rounded px-1 outline-none"
+                        />
+                      </td>
+                    );
                   })}
                   <td className={`py-2 text-right font-mono-w ${cryptoPct > 50 ? 'text-w-red' : cryptoPct > 30 ? 'text-w-amber' : 'text-w-green'}`}>{fmtPct(cryptoPct, 0)}</td>
                   <td className="py-2 text-right font-mono-w text-w-muted">{fmtMoney(c)}</td>
@@ -355,7 +384,7 @@ const InvLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSaved }
     const init: Record<string, string> = {};
     buckets.forEach(b => {
       const v = lastMonth ? d.investmentSnapshots.find(s => s.month === lastMonth && s.bucket_id === b.id) : null;
-      init[b.id] = v ? String(v.value) : '0';
+      init[b.id] = v ? String(Math.round(toDisplay(Number(v.value)))) : '0';
     });
     return init;
   });
@@ -369,8 +398,8 @@ const InvLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSaved }
   const save = async () => {
     if (!user) return;
     for (const b of buckets) {
-      const value = parseFloat(vals[b.id] || '0');
-      const contribution = parseFloat(contribs[b.id] || '0');
+      const value = fromDisplay(parseFloat(vals[b.id] || '0'));
+      const contribution = fromDisplay(parseFloat(contribs[b.id] || '0'));
       const existing = d.investmentSnapshots.find(s => s.month === month && s.bucket_id === b.id);
       if (existing) await sb.from('investment_snapshots').update({ value, contribution }).eq('id', existing.id);
       else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: b.id, value, contribution });
