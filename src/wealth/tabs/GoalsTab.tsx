@@ -161,33 +161,39 @@ const GoalCard: React.FC<{ d: WealthData; goal: any; onChange: () => void; onToa
       </div>
 
       <div className="mt-4 pt-4 border-t border-w-border">
-        <div className="flex items-center justify-between">
-          <Label>Boosts ({boosts.length})</Label>
-          <button onClick={() => setShowBoost(!showBoost)} className="text-xs text-w-blue hover:underline">+ Log boost</button>
-        </div>
-        {showBoost && (
-          <div className="mt-3 space-y-2">
-            <select className={inputCls} value={poolId} onChange={e => setPoolId(e.target.value)}>
-              <option value="">Select bonus pool</option>
-              {availablePools.map(p => {
-                const used = d.bonusAllocations.filter(a => a.pool_id === p.id).reduce((a, x) => a + Number(x.amount), 0);
-                return <option key={p.id} value={p.id}>{p.description} — {fmtMoney(Number(p.total_amount) - used)} avail</option>;
-              })}
-            </select>
-            <input className={inputCls} placeholder="Amount" value={amt} onChange={e => setAmt(e.target.value)} />
-            <input className={inputCls} placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} />
-            <button onClick={saveBoost} className={btnPrimary}>Save boost</button>
-          </div>
-        )}
-        {boosts.length > 0 && (
-          <div className="mt-3 space-y-1 text-xs">
-            {boosts.map(b => (
-              <div key={b.id} className="flex justify-between">
-                <span className="text-w-muted">{b.note || 'Boost'}</span>
-                <Mono className="text-w-green">+{fmtMoney(Number(b.amount))}</Mono>
+        {isAuto ? (
+          <p className="text-xs text-w-muted italic">Updates automatically when you log net worth or investments — no manual input needed.</p>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <Label>Boosts ({boosts.length})</Label>
+              <button onClick={() => setShowBoost(!showBoost)} className="text-xs text-w-blue hover:underline">+ Log boost</button>
+            </div>
+            {showBoost && (
+              <div className="mt-3 space-y-2">
+                <select className={inputCls} value={poolId} onChange={e => setPoolId(e.target.value)}>
+                  <option value="">Select bonus pool</option>
+                  {availablePools.map(p => {
+                    const used = d.bonusAllocations.filter(a => a.pool_id === p.id).reduce((a, x) => a + Number(x.amount), 0);
+                    return <option key={p.id} value={p.id}>{p.description} — {fmtMoney(Number(p.total_amount) - used)} avail</option>;
+                  })}
+                </select>
+                <input className={inputCls} placeholder="Amount" value={amt} onChange={e => setAmt(e.target.value)} />
+                <input className={inputCls} placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} />
+                <button onClick={saveBoost} className={btnPrimary}>Save boost</button>
               </div>
-            ))}
-          </div>
+            )}
+            {boosts.length > 0 && (
+              <div className="mt-3 space-y-1 text-xs">
+                {boosts.map(b => (
+                  <div key={b.id} className="flex justify-between">
+                    <span className="text-w-muted">{b.note || 'Boost'}</span>
+                    <Mono className="text-w-green">+{fmtMoney(Number(b.amount))}</Mono>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
