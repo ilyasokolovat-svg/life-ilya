@@ -51,15 +51,18 @@ const InvOverview: React.FC<{ d: WealthData }> = ({ d }) => {
   const gains = total - contrib;
   const cryptoPct = cryptoExposurePct(d, latest);
   const monthlyContrib = d.investmentSnapshots.filter(s => s.month === latest).reduce((a, s) => a + Number(s.contribution), 0);
+  const currentYear = latest.slice(0, 4);
+  const ytdContrib = d.investmentSnapshots.filter(s => s.month.startsWith(currentYear)).reduce((a, s) => a + Number(s.contribution), 0);
   const buckets = sortedBuckets(d);
 
   return (
     <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
         <KpiCard label="Total portfolio" value={fmtMoney(total)} sub={monthLabel(latest)} />
         <KpiCard label="Market gains" value={fmtMoney(gains, { sign: true })} tone={gains >= 0 ? 'green' : 'red'} />
         <KpiCard label="Crypto exposure" value={fmtPct(cryptoPct)} tone={cryptoPct < 30 ? 'green' : cryptoPct < 50 ? 'amber' : 'red'} />
-        <KpiCard label="Monthly contribution" value={fmtMoney(monthlyContrib)} />
+        <KpiCard label="Monthly contribution" value={fmtMoney(monthlyContrib)} sub={monthLabel(latest)} />
+        <KpiCard label={`YTD contributions ${currentYear}`} value={fmtMoney(ytdContrib)} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-5">
