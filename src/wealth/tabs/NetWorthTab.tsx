@@ -73,14 +73,48 @@ const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: str
         <KpiCard label="Debt ratio" value={`${(dr * 100).toFixed(0)}%`} tone={dr > 0.5 ? 'red' : dr > 0.3 ? 'amber' : 'green'} />
       </div>
 
+      {months.length > 1 && (
+        <div className={`${card} mb-5`}>
+          <Label>Net worth trend</Label>
+          <div className="h-72 mt-3">
+            <Line
+              data={{
+                labels: months.map(monthLabel),
+                datasets: [{
+                  label: 'Total NW',
+                  data: months.map(m => totalNWForMonth(d, m)),
+                  borderColor: chartColors.green, backgroundColor: chartColors.green + '22',
+                  fill: true, tension: 0.3, pointRadius: 2,
+                }],
+              }}
+              options={{
+                ...baseChartOpts,
+                scales: {
+                  x: baseChartOpts.scales.x,
+                  y: { ...baseChartOpts.scales.y, ticks: { ...baseChartOpts.scales.y.ticks, callback: (v: any) => fmtMoney(Number(v), { compact: true }) } },
+                },
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-4 mb-5">
         <div className={`${card} lg:col-span-2`}>
-          <Label>Accounts</Label>
+          <Label>Asset classes</Label>
           <div className="mt-3 divide-y divide-w-border">
             {accs.map(a => {
               const v = Number(d.nwSnapshots.find(s => s.month === latest && s.account_id === a.id)?.value ?? 0);
               const pv = prev ? Number(d.nwSnapshots.find(s => s.month === prev && s.account_id === a.id)?.value ?? 0) : 0;
               const delta = v - pv;
+              const positive = total > 0 ? Math.max(0, v) : 0;
+              const totalPositive = accs.reduce((s, x) => {
+                const xv = Number(d.nwSnapshots.find(ss => ss.month === latest && ss.account_id === x.id)?.value ?? 0);
+                return s + Math.max(0, xv);
+              }, 0);
+              const pct = totalPositive > 0 ? (positive / totalPositive) * 100 : 0;
+              const target = Number(a.target_pct ?? 0);
+              const diff = target > 0 ? pct - target : null;
               return (
                 <div key={a.id} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
@@ -96,6 +130,12 @@ const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: str
                   </div>
                   <div className="text-right">
                     <Mono className={`text-base ${v < 0 ? 'text-w-red' : 'text-w-text'}`}>{fmtMoney(v)}</Mono>
+                    <div className="text-[10px] font-mono-w text-w-muted">
+                      {pct.toFixed(1)}%
+                      {diff !== null && (
+                        <span className={diff >= 0 ? ' text-w-green' : ' text-w-red'}> ({diff >= 0 ? '+' : ''}{diff.toFixed(1)}% vs {target}%)</span>
+                      )}
+                    </div>
                     {prev && <div className={`text-[10px] font-mono-w ${delta >= 0 ? 'text-w-green' : 'text-w-red'}`}>{fmtMoney(delta, { sign: true })}</div>}
                   </div>
                 </div>
