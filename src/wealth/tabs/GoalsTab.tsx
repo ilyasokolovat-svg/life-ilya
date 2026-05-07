@@ -270,7 +270,8 @@ const NWBridge: React.FC<{ d: WealthData }> = ({ d }) => {
 };
 
 const BoostLog: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
-  const allocs = [...d.bonusAllocations].sort((a, b) => b.id.localeCompare(a.id));
+  const eligibleGoalIds = new Set(d.goals.filter(g => g.value_source === 'linked_account' || g.value_source === 'manual').map(g => g.id));
+  const allocs = [...d.bonusAllocations].filter(a => eligibleGoalIds.has(a.goal_id)).sort((a, b) => b.id.localeCompare(a.id));
   const removeBoost = async (id: string) => {
     if (!confirm('Delete this boost entry?')) return;
     await sb.from('bonus_allocations').delete().eq('id', id);
@@ -280,7 +281,7 @@ const BoostLog: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: str
     <div className={card}>
       <div className="flex items-center justify-between">
         <Label>All boosts</Label>
-        <span className="text-xs text-w-muted">Add new boosts from Goals → any goal card → "+ Log boost"</span>
+        <span className="text-xs text-w-muted">Add new boosts from Goals → any cash-backed goal card → "+ Log boost"</span>
       </div>
       <table className="w-full mt-3 text-sm">
         <thead><tr className="text-left text-xs text-w-muted border-b border-w-border">
