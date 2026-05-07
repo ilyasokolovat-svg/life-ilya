@@ -303,9 +303,103 @@ const BoostLog: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: str
               </tr>
             );
           })}
-          {!allocs.length && <tr><td colSpan={5} className="py-6 text-center text-w-muted text-sm">No boosts logged yet.</td></tr>}
+          {!allocs.length && <tr><td colSpan={5} className="py-6 text-center text-w-muted text-sm">
+            No boosts logged yet. Boosts are used for cash-backed goals like your Emergency Fund or Car Loan — when you make a specific payment toward one of these goals, log it here. Your investment-backed goals (FI, 2026 Target) update automatically from your portfolio.
+          </td></tr>}
         </tbody>
       </table>
+    </div>
+  );
+};
+
+const ThisMonthImpact: React.FC<{ d: WealthData }> = ({ d }) => {
+  const nwM = nwMonths(d);
+  const invM = investmentMonths(d);
+  const curNW = nwM.slice(-1)[0];
+  const prevNW = nwM.slice(-2)[0];
+  const curInv = invM.slice(-1)[0];
+  const prevInv = invM.slice(-2)[0];
+
+  if (!curNW && !curInv) return null;
+  if (!prevNW && !prevInv) {
+    return (
+      <div className={card + ' mb-5'}>
+        <Label>This month's impact</Label>
+        <div className="mt-2 text-sm text-w-muted">Log last month's data to see month-over-month impact.</div>
+      </div>
+    );
+  }
+
+  const sumNW = (m?: string) => m ? d.nwSnapshots.filter(s => s.month === m).reduce((a, s) => a + Number(s.value), 0) : 0;
+  const sumInv = (m?: string) => m ? d.investmentSnapshots.filter(s => s.month === m).reduce((a, s) => a + Number(s.value), 0) : 0;
+
+  const curNWVal = sumNW(curNW), prevNWVal = sumNW(prevNW);
+  const curInvVal = sumInv(curInv), prevInvVal = sumInv(prevInv);
+  const portfolioChange = curInvVal - prevInvVal;
+  const portfolioChangePct = prevInvVal > 0 ? (portfolioChange / prevInvVal) * 100 : 0;
+  const nwChange = curNWVal - prevNWVal;
+
+  const incomeBoost = d.budgetExtras.filter(e => e.month === curNW && ['bonus','freelance','dividend','other'].includes(e.type))
+    .reduce((a, e) => a + Number(e.amount), 0);
+  const incomeLabel = d.budgetExtras.filter(e => e.month === curNW && ['bonus','freelance','dividend','other'].includes(e.type))
+    .map(e => e.description).join(', ');
+
+  const goalMovements = d.goals.map(g => {
+    const cv = goalCurrentValueAt(d, g, curNW, curInv);
+    const pv = goalCurrentValueAt(d, g, prevNW, prevInv);
+    const target = Number(g.target_amount) || 1;
+    const cp = Math.min(100, (cv / target) * 100);
+    const pp = Math.min(100, (pv / target) * 100);
+    return { goal: g, cp, pp, delta: cp - pp };
+  });
+
+  const upBorder = portfolioChange >= 0;
+
+  return (
+    <div className={card + ' mb-5'} style={{ borderLeft: `3px solid ${upBorder ? chartColors.green : chartColors.red}` }}>
+      <div className="flex items-center justify-between">
+        <Label>This month's impact</Label>
+        <span className="text-xs text-w-muted">{monthLabel(curNW || curInv)}</span>
+      </div>
+      <div className="mt-3 space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-w-muted">Portfolio change</span>
+          <span>
+            <Mono className={portfolioChange >= 0 ? 'text-w-green' : 'text-w-red'}>{fmtMoney(portfolioChange, { sign: true })}</Mono>
+            <span className="text-w-muted ml-2 text-xs">{portfolioChange >= 0 ? '↑' : '↓'}{Math.abs(portfolioChangePct).toFixed(1)}%</span>
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-w-muted">Net worth change</span>
+          <Mono className={nwChange >= 0 ? 'text-w-green' : 'text-w-red'}>{fmtMoney(nwChange, { sign: true })}</Mono>
+        </div>
+        {incomeBoost > 0 && (
+          <div className="flex justify-between">
+            <span className="text-w-amber">Income boost</span>
+            <span className="text-w-amber"><Mono>+{fmtMoney(incomeBoost)}</Mono> <span className="text-xs">{incomeLabel}</span></span>
+          </div>
+        )}
+      </div>
+      <div className="mt-3 pt-3 border-t border-w-border space-y-1.5 text-sm">
+        {goalMovements.map(({ goal, cp, pp, delta }) => {
+          const unchanged = Math.abs(delta) < 0.05;
+          return (
+            <div key={goal.id} className="flex justify-between items-center">
+              <span className="text-w-text flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full" style={{ background: goal.color }} />{goal.name}
+              </span>
+              {unchanged ? (
+                <span className="text-xs text-w-muted">unchanged</span>
+              ) : (
+                <span className="text-xs">
+                  <span className="text-w-muted">{pp.toFixed(1)}% → {cp.toFixed(1)}%</span>
+                  <span className={`ml-2 ${delta >= 0 ? 'text-w-green' : 'text-w-red'}`}>{delta >= 0 ? '+' : ''}{delta.toFixed(1)}pp {delta >= 0 ? '↑' : '↓'}</span>
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
