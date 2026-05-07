@@ -9,7 +9,7 @@ import {
 } from '../ui';
 import { fmtMoney, fmtPct, monthLabel, todayMonth, toDisplay, fromDisplay } from '../format';
 import {
-  nwMonths, totalNWForMonth, totalAssetsForMonth, debtRatio,
+  nwMonths, totalNWForMonth, liquidNWForMonth, totalAssetsForMonth, debtRatio,
   totalPortfolio, cryptoExposurePct,
 } from '../calc';
 
