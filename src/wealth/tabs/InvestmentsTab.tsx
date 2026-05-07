@@ -289,20 +289,31 @@ const InvProjection: React.FC<{ d: WealthData }> = ({ d }) => {
   );
 };
 
-const InvArchive: React.FC<{ d: WealthData }> = ({ d }) => {
+const InvArchive: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
   const months = investmentMonths(d);
   if (!months.length) return <Empty />;
   const buckets = sortedBuckets(d);
   const reverse = [...months].reverse();
+
+  const saveContrib = async (month: string, bucketId: string, raw: string) => {
+    if (!user) return;
+    const contribution = fromDisplay(parseFloat(raw || '0')) || 0;
+    const existing = d.investmentSnapshots.find(s => s.month === month && s.bucket_id === bucketId);
+    if (existing) await sb.from('investment_snapshots').update({ contribution }).eq('id', existing.id);
+    else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: bucketId, value: 0, contribution });
+    onChange();
+  };
+
   return (
     <>
       <div className={card + ' overflow-x-auto mb-4'}>
-        <Label>All snapshots</Label>
+        <Label>All snapshots — edit contributions per bucket inline</Label>
         <table className="w-full mt-3 text-sm">
           <thead><tr className="text-left text-xs text-w-muted border-b border-w-border">
             <th className="py-2">Month</th><th className="py-2 text-right">Total</th>
-            {buckets.map(b => <th key={b.id} className="py-2 text-right">{b.label}</th>)}
-            <th className="py-2 text-right">Crypto %</th><th className="py-2 text-right">Contribution</th><th className="py-2 text-right">vs prev</th>
+            {buckets.map(b => <th key={b.id} className="py-2 text-right">{b.label}<div className="text-[9px] text-w-muted normal-case">value / contrib</div></th>)}
+            <th className="py-2 text-right">Crypto %</th><th className="py-2 text-right">Total contrib</th><th className="py-2 text-right">vs prev</th>
           </tr></thead>
           <tbody>
             {reverse.map((m, i) => {
@@ -316,8 +327,23 @@ const InvArchive: React.FC<{ d: WealthData }> = ({ d }) => {
                   <td className="py-2 text-w-text font-mono-w">{monthLabel(m)}</td>
                   <td className="py-2 text-right font-mono-w text-w-text">{fmtMoney(total)}</td>
                   {buckets.map(b => {
-                    const v = Number(d.investmentSnapshots.find(s => s.month === m && s.bucket_id === b.id)?.value ?? 0);
-                    return <td key={b.id} className="py-2 text-right font-mono-w text-w-muted">{fmtMoney(v)}</td>;
+                    const snap = d.investmentSnapshots.find(s => s.month === m && s.bucket_id === b.id);
+                    const v = Number(snap?.value ?? 0);
+                    const cb = Number(snap?.contribution ?? 0);
+                    return (
+                      <td key={b.id} className="py-2 text-right font-mono-w text-w-muted">
+                        <div className="text-w-text">{fmtMoney(v, { compact: true })}</div>
+                        <input
+                          defaultValue={cb ? Math.round(toDisplay(cb)) : ''}
+                          placeholder="0"
+                          onBlur={e => {
+                            const newV = Number(e.target.value || 0);
+                            if (newV !== Math.round(toDisplay(cb))) saveContrib(m, b.id, e.target.value);
+                          }}
+                          className="w-16 bg-transparent text-right text-[11px] text-w-blue hover:bg-w-surface2 focus:bg-w-surface2 rounded px-1 outline-none"
+                        />
+                      </td>
+                    );
                   })}
                   <td className={`py-2 text-right font-mono-w ${cryptoPct > 50 ? 'text-w-red' : cryptoPct > 30 ? 'text-w-amber' : 'text-w-green'}`}>{fmtPct(cryptoPct, 0)}</td>
                   <td className="py-2 text-right font-mono-w text-w-muted">{fmtMoney(c)}</td>
