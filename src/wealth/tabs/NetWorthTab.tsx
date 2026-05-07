@@ -21,8 +21,7 @@ const sortedAccounts = (d: WealthData) => [...d.accounts].sort((a, b) => a.sort_
 import { AccountsManager } from '../Managers';
 
 export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
-  const [view, setView] = useState<'overview' | 'trend' | 'log'>('overview');
-  const [trendMode, setTrendMode] = useState<'total' | 'liquid' | 'stacked'>('total');
+  const [view, setView] = useState<'overview' | 'log'>('overview');
   const [manage, setManage] = useState(false);
   const months = nwMonths(d);
   const latest = months[months.length - 1];
@@ -34,7 +33,6 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
         <Heading className="text-3xl">Net worth</Heading>
         <div className="flex gap-2">
           <TabButton active={view === 'overview'} onClick={() => setView('overview')}>Overview</TabButton>
-          <TabButton active={view === 'trend'} onClick={() => setView('trend')}>Trend</TabButton>
           <TabButton active={view === 'log'} onClick={() => setView('log')}>+ Log month</TabButton>
           <button onClick={() => setManage(true)} className="px-3 py-1.5 text-sm rounded-[8px] text-w-muted hover:text-w-text border border-w-border">Manage accounts</button>
         </div>
@@ -42,10 +40,7 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
       {manage && <AccountsManager d={d} onClose={() => setManage(false)} onChange={onChange} />}
 
       {view === 'overview' && (
-        <NetWorthOverview d={d} latest={latest} prev={prev} />
-      )}
-      {view === 'trend' && (
-        <NetWorthTrend d={d} months={months} mode={trendMode} setMode={setTrendMode} />
+        <NetWorthOverview d={d} months={months} latest={latest} prev={prev} />
       )}
       {view === 'log' && (
         <LogMonthForm d={d} onSaved={() => { onChange(); onToast('Snapshot saved'); setView('overview'); }} />
@@ -54,7 +49,7 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
   );
 };
 
-const NetWorthOverview: React.FC<{ d: WealthData; latest?: string; prev?: string }> = ({ d, latest, prev }) => {
+const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: string; prev?: string }> = ({ d, months, latest, prev }) => {
   if (!latest) return <Empty msg="No net worth data yet — log your first month." />;
   const total = totalNWForMonth(d, latest);
   const prevTotal = prev ? totalNWForMonth(d, prev) : 0;
