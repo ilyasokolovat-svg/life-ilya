@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData, ExtraType } from '../types';
 import { card, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
-import { fmtMoney, fmtPct, monthLabel, todayMonth } from '../format';
+import { fmtMoney, fmtPct, monthLabel, todayMonth, toDisplay, fromDisplay } from '../format';
 import { budgetMonths, totalIncome, totalSpend, surplus, savingsRate } from '../calc';
 
 const sb = supabase as any;
