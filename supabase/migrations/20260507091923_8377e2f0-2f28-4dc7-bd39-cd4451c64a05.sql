@@ -1,0 +1,1 @@
+UPDATE public.budget_categories SET budget = ROUND((budget / 3.65)::numeric, 2);
