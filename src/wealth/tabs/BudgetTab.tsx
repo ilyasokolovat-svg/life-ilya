@@ -288,7 +288,7 @@ const BudgetLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSave
   const lastMonth = months[months.length - 1];
   const [month, setMonth] = useState(todayMonth());
   const lastBM = lastMonth ? d.budgetMonths.find(b => b.month === lastMonth) : null;
-  const [salary, setSalary] = useState(lastBM ? String(lastBM.salary) : '0');
+  const [salary, setSalary] = useState(lastBM ? String(Math.round(toDisplay(Number(lastBM.salary)))) : '0');
   const [extras, setExtras] = useState<{ description: string; amount: string; type: ExtraType }[]>([]);
   const cats = [...d.budgetCategories].sort((a, b) => a.sort_order - b.sort_order);
   const [spend, setSpend] = useState<Record<string, string>>(() => {
