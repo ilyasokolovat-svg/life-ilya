@@ -54,6 +54,8 @@ const GoalsList: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: st
 
   return (
     <>
+      <ThisMonthImpact d={d} />
+
       {!!unallocatedPools.length && (
         <div className="mb-4 p-4 border border-w-amber rounded-[14px] bg-w-amber/5 flex items-center justify-between">
           <div>
