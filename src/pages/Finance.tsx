@@ -23,6 +23,18 @@ export default function Finance() {
   const [toast, setToast] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem('wealth_welcome_dismissed') === '1');
+  const [, forceTick] = useState(0);
+
+  useEffect(() => {
+    const off = onCurrencyChange(() => forceTick(t => t + 1));
+    return () => { off; };
+  }, []);
+
+  useEffect(() => {
+    if (data.settings?.display_currency) {
+      setDisplayCurrency((data.settings.display_currency as 'USD' | 'AED') || 'USD');
+    }
+  }, [data.settings?.display_currency]);
 
   useEffect(() => {
     if (firstTime) {
