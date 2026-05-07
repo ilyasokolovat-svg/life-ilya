@@ -257,12 +257,82 @@ const BudgetYearly: React.FC<{ d: WealthData; onChange?: () => void }> = ({ d, o
   );
 };
 
-const BonusHistory: React.FC<{ d: WealthData }> = ({ d }) => {
+const BonusHistory: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
+  const { user } = useAuth();
   const extras = [...d.budgetExtras].sort((a, b) => b.month.localeCompare(a.month));
   const total = extras.reduce((a, e) => a + Number(e.amount), 0);
   const commissions = extras.filter(e => /commission/i.test(e.description)).reduce((a, e) => a + Number(e.amount), 0);
   const bonuses = extras.filter(e => e.type === 'bonus').reduce((a, e) => a + Number(e.amount), 0);
   const best = extras.reduce<{ m: string; v: number }>((acc, e) => Number(e.amount) > acc.v ? { m: e.month, v: Number(e.amount) } : acc, { m: '', v: 0 });
+
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState({ month: todayMonth(), description: '', amount: '0', type: 'bonus' as ExtraType });
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{ month: string; description: string; amount: string; type: ExtraType }>({ month: '', description: '', amount: '0', type: 'bonus' });
+
+  const poolFor = (extraId: string) => d.bonusPools.find(p => p.source_extra_id === extraId);
+  const allocatedFor = (extraId: string) => {
+    const pool = poolFor(extraId);
+    if (!pool) return { used: 0, allocs: [] as { goal: string; amount: number }[] };
+    const allocs = d.bonusAllocations.filter(a => a.pool_id === pool.id).map(a => ({
+      goal: d.goals.find(g => g.id === a.goal_id)?.name || 'Goal',
+      amount: Number(a.amount),
+    }));
+    return { used: allocs.reduce((s, x) => s + x.amount, 0), allocs };
+  };
+
+  const saveNew = async () => {
+    if (!user || !draft.description.trim()) return;
+    const amt = fromDisplay(parseFloat(draft.amount || '0'));
+    const { data: ex } = await sb.from('budget_extras').insert({
+      user_id: user.id, month: draft.month, description: draft.description, amount: amt, type: draft.type,
+    }).select().single();
+    if (ex && (draft.type === 'bonus' || draft.type === 'freelance' || draft.type === 'dividend')) {
+      await sb.from('bonus_pools').insert({
+        user_id: user.id, month: draft.month, description: draft.description, source_extra_id: ex.id, total_amount: amt,
+      });
+    }
+    setAdding(false);
+    setDraft({ month: todayMonth(), description: '', amount: '0', type: 'bonus' });
+    onChange();
+    onToast('Bonus added');
+  };
+
+  const startEdit = (e: typeof extras[number]) => {
+    setEditing(e.id);
+    setEditDraft({ month: e.month, description: e.description, amount: String(Math.round(toDisplay(Number(e.amount)))), type: e.type });
+  };
+
+  const saveEdit = async (id: string) => {
+    const amt = fromDisplay(parseFloat(editDraft.amount || '0'));
+    await sb.from('budget_extras').update({
+      month: editDraft.month, description: editDraft.description, amount: amt, type: editDraft.type,
+    }).eq('id', id);
+    const pool = poolFor(id);
+    if (pool) {
+      await sb.from('bonus_pools').update({
+        month: editDraft.month, description: editDraft.description, total_amount: amt,
+      }).eq('id', pool.id);
+    }
+    setEditing(null);
+    onChange();
+    onToast('Bonus updated');
+  };
+
+  const remove = async (id: string) => {
+    const pool = poolFor(id);
+    if (pool) {
+      const allocs = d.bonusAllocations.filter(a => a.pool_id === pool.id);
+      if (allocs.length && !confirm(`This bonus has ${allocs.length} boost(s) logged against it. Delete anyway? Boosts will also be removed.`)) return;
+      await sb.from('bonus_allocations').delete().eq('pool_id', pool.id);
+      await sb.from('bonus_pools').delete().eq('id', pool.id);
+    } else {
+      if (!confirm('Delete this bonus entry?')) return;
+    }
+    await sb.from('budget_extras').delete().eq('id', id);
+    onChange();
+    onToast('Bonus deleted');
+  };
 
   return (
     <>
@@ -273,21 +343,81 @@ const BonusHistory: React.FC<{ d: WealthData }> = ({ d }) => {
         <KpiCard label="Best month" value={best.m ? fmtMoney(best.v) : '—'} sub={best.m ? monthLabel(best.m) : ''} />
       </div>
       <div className={card}>
-        <Label>All entries</Label>
+        <div className="flex items-center justify-between">
+          <Label>All entries</Label>
+          <button onClick={() => setAdding(v => !v)} className="text-xs text-w-blue hover:underline">{adding ? 'Cancel' : '+ Add bonus'}</button>
+        </div>
+        <p className="mt-1 text-xs text-w-muted">Bonuses, freelance & dividends become a <span className="text-w-amber">boost pool</span> you can allocate to goals on the Goals tab.</p>
+
+        {adding && (
+          <div className="mt-3 grid grid-cols-12 gap-2 p-3 rounded-[8px] border border-w-border bg-w-bg/40">
+            <input type="month" className={`${inputCls} col-span-3`} value={draft.month} onChange={e => setDraft({ ...draft, month: e.target.value })} />
+            <input className={`${inputCls} col-span-4`} placeholder="Description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} />
+            <input className={`${inputCls} col-span-2`} placeholder="Amount" value={draft.amount} onChange={e => setDraft({ ...draft, amount: e.target.value })} />
+            <select className={`${inputCls} col-span-2`} value={draft.type} onChange={e => setDraft({ ...draft, type: e.target.value as ExtraType })}>
+              <option value="bonus">bonus</option><option value="freelance">freelance</option>
+              <option value="dividend">dividend</option><option value="tax-refund">tax-refund</option><option value="other">other</option>
+            </select>
+            <button onClick={saveNew} className={`${btnPrimary} col-span-1 text-xs`}>Save</button>
+          </div>
+        )}
+
         <table className="w-full mt-3 text-sm">
           <thead><tr className="text-left text-xs text-w-muted border-b border-w-border">
-            <th className="py-2">Month</th><th className="py-2">Description</th><th className="py-2">Type</th><th className="py-2 text-right">Amount</th>
+            <th className="py-2">Month</th><th className="py-2">Description</th><th className="py-2">Type</th>
+            <th className="py-2 text-right">Amount</th><th className="py-2 text-right">Boosted to goals</th><th className="py-2"></th>
           </tr></thead>
           <tbody>
-            {extras.map(e => (
-              <tr key={e.id} className="border-b border-w-border/50">
-                <td className="py-2 text-w-text font-mono-w">{monthLabel(e.month)}</td>
-                <td className="py-2 text-w-text">{e.description}</td>
-                <td className="py-2 text-w-muted text-xs uppercase tracking-wider">{e.type}</td>
-                <td className="py-2 text-right"><Mono className="text-w-green">{fmtMoney(Number(e.amount))}</Mono></td>
-              </tr>
-            ))}
-            {!extras.length && <tr><td colSpan={4} className="py-6 text-center text-w-muted text-sm">No bonus history yet.</td></tr>}
+            {extras.map(e => {
+              const { used, allocs } = allocatedFor(e.id);
+              const remaining = Number(e.amount) - used;
+              const isEditing = editing === e.id;
+              if (isEditing) {
+                return (
+                  <tr key={e.id} className="border-b border-w-border/50 bg-w-bg/30">
+                    <td className="py-2 pr-2"><input type="month" className={inputCls} value={editDraft.month} onChange={ev => setEditDraft({ ...editDraft, month: ev.target.value })} /></td>
+                    <td className="py-2 pr-2"><input className={inputCls} value={editDraft.description} onChange={ev => setEditDraft({ ...editDraft, description: ev.target.value })} /></td>
+                    <td className="py-2 pr-2">
+                      <select className={inputCls} value={editDraft.type} onChange={ev => setEditDraft({ ...editDraft, type: ev.target.value as ExtraType })}>
+                        <option value="bonus">bonus</option><option value="freelance">freelance</option>
+                        <option value="dividend">dividend</option><option value="tax-refund">tax-refund</option><option value="other">other</option>
+                      </select>
+                    </td>
+                    <td className="py-2 pr-2"><input className={`${inputCls} text-right`} value={editDraft.amount} onChange={ev => setEditDraft({ ...editDraft, amount: ev.target.value })} /></td>
+                    <td className="py-2 text-right text-xs text-w-muted">—</td>
+                    <td className="py-2 text-right whitespace-nowrap">
+                      <button onClick={() => saveEdit(e.id)} className="text-w-green text-xs mr-2">Save</button>
+                      <button onClick={() => setEditing(null)} className="text-w-muted text-xs">Cancel</button>
+                    </td>
+                  </tr>
+                );
+              }
+              return (
+                <tr key={e.id} className="border-b border-w-border/50">
+                  <td className="py-2 text-w-text font-mono-w">{monthLabel(e.month)}</td>
+                  <td className="py-2 text-w-text">{e.description}</td>
+                  <td className="py-2 text-w-muted text-xs uppercase tracking-wider">{e.type}</td>
+                  <td className="py-2 text-right"><Mono className="text-w-green">{fmtMoney(Number(e.amount))}</Mono></td>
+                  <td className="py-2 text-right">
+                    {poolFor(e.id) ? (
+                      <div className="text-xs">
+                        <div className={used > 0 ? 'text-w-amber' : 'text-w-muted'}>
+                          {fmtMoney(used)} used · {fmtMoney(remaining)} left
+                        </div>
+                        {allocs.length > 0 && (
+                          <div className="text-w-muted mt-0.5">→ {allocs.map(a => `${a.goal} (${fmtMoney(a.amount)})`).join(', ')}</div>
+                        )}
+                      </div>
+                    ) : <span className="text-w-muted text-xs">not boostable</span>}
+                  </td>
+                  <td className="py-2 text-right whitespace-nowrap">
+                    <button onClick={() => startEdit(e)} className="text-w-blue text-xs mr-2 hover:underline">Edit</button>
+                    <button onClick={() => remove(e.id)} className="text-w-red text-xs hover:underline">Delete</button>
+                  </td>
+                </tr>
+              );
+            })}
+            {!extras.length && <tr><td colSpan={6} className="py-6 text-center text-w-muted text-sm">No bonus history yet.</td></tr>}
           </tbody>
         </table>
       </div>
