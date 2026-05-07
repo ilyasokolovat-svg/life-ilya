@@ -210,14 +210,15 @@ const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: str
               const v = Number(d.nwSnapshots.find(s => s.month === latest && s.account_id === a.id)?.value ?? 0);
               const pv = prev ? Number(d.nwSnapshots.find(s => s.month === prev && s.account_id === a.id)?.value ?? 0) : 0;
               const delta = v - pv;
-              const positive = total > 0 ? Math.max(0, v) : 0;
+              const isDebt = a.type === 'debt';
               const totalPositive = accs.reduce((s, x) => {
+                if (x.type === 'debt') return s;
                 const xv = Number(d.nwSnapshots.find(ss => ss.month === latest && ss.account_id === x.id)?.value ?? 0);
                 return s + Math.max(0, xv);
               }, 0);
-              const pct = totalPositive > 0 ? (positive / totalPositive) * 100 : 0;
+              const pct = !isDebt && totalPositive > 0 ? (Math.max(0, v) / totalPositive) * 100 : 0;
               const target = Number(a.target_pct ?? 0);
-              const diff = target > 0 ? pct - target : null;
+              const diff = !isDebt && target > 0 ? pct - target : null;
               return (
                 <div key={a.id} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
