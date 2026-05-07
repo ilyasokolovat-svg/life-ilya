@@ -86,6 +86,7 @@ export default function Finance() {
           </nav>
           <div className="flex items-center gap-3">
             <Link to="/" className="text-xs text-w-muted hover:text-w-text flex items-center gap-1"><ArrowLeft size={14} /> Dashboard</Link>
+            <CurrencyToggle settings={data.settings} onChanged={refresh} />
             <span className="text-xs text-w-muted font-mono-w hidden sm:inline">{today}</span>
             <button onClick={() => setSettingsOpen(true)} className="text-w-muted hover:text-w-text"><SettingsIcon size={18} /></button>
           </div>
