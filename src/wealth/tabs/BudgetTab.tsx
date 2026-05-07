@@ -302,14 +302,14 @@ const BudgetLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSave
 
   const save = async () => {
     if (!user) return;
-    const sal = parseFloat(salary || '0');
+    const sal = fromDisplay(parseFloat(salary || '0'));
     const existingBM = d.budgetMonths.find(b => b.month === month);
     if (existingBM) await sb.from('budget_months').update({ salary: sal }).eq('id', existingBM.id);
     else await sb.from('budget_months').insert({ user_id: user.id, month, salary: sal });
 
     for (const e of extras) {
       if (!e.description.trim()) continue;
-      const amt = parseFloat(e.amount || '0');
+      const amt = fromDisplay(parseFloat(e.amount || '0'));
       const { data: ex } = await sb.from('budget_extras').insert({
         user_id: user.id, month, description: e.description, amount: amt, type: e.type,
       }).select().single();
@@ -320,7 +320,7 @@ const BudgetLog: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onSave
       }
     }
     for (const c of cats) {
-      const actual = parseFloat(spend[c.id] || '0');
+      const actual = fromDisplay(parseFloat(spend[c.id] || '0'));
       if (!actual) continue;
       const existing = d.budgetSpending.find(s => s.month === month && s.category_id === c.id);
       if (existing) await sb.from('budget_spending').update({ actual }).eq('id', existing.id);
