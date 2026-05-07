@@ -175,7 +175,7 @@ const BudgetYearly: React.FC<{ d: WealthData; onChange?: () => void }> = ({ d, o
 
   const saveCell = async (catId: string, month: string, raw: string) => {
     if (!user) return;
-    const actual = Number(raw) || 0;
+    const actual = fromDisplay(Number(raw) || 0);
     const existing = d.budgetSpending.find(s => s.month === month && s.category_id === catId);
     if (existing) await sb.from('budget_spending').update({ actual }).eq('id', existing.id);
     else if (actual > 0) await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual });
