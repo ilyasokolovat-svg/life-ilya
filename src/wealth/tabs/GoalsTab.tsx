@@ -35,7 +35,7 @@ export const GoalsTab: React.FC<{ d: WealthData; onChange: () => void; onToast: 
       {view === 'goals' && <GoalsList d={d} onChange={onChange} onToast={onToast} />}
       {view === 'fi' && <FIProjection d={d} />}
       {view === 'bridge' && <NWBridge d={d} />}
-      {view === 'boost' && <BoostLog d={d} />}
+      {view === 'boost' && <BoostLog d={d} onChange={onChange} onToast={onToast} />}
     </div>
   );
 };
