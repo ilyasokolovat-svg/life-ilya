@@ -35,7 +35,7 @@ export const GoalsTab: React.FC<{ d: WealthData; onChange: () => void; onToast: 
       {view === 'goals' && <GoalsList d={d} onChange={onChange} onToast={onToast} />}
       {view === 'fi' && <FIProjection d={d} />}
       {view === 'bridge' && <NWBridge d={d} />}
-      {view === 'boost' && <BoostLog d={d} />}
+      {view === 'boost' && <BoostLog d={d} onChange={onChange} onToast={onToast} />}
     </div>
   );
 };
@@ -259,14 +259,22 @@ const NWBridge: React.FC<{ d: WealthData }> = ({ d }) => {
   );
 };
 
-const BoostLog: React.FC<{ d: WealthData }> = ({ d }) => {
+const BoostLog: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
   const allocs = [...d.bonusAllocations].sort((a, b) => b.id.localeCompare(a.id));
+  const removeBoost = async (id: string) => {
+    if (!confirm('Delete this boost entry?')) return;
+    await sb.from('bonus_allocations').delete().eq('id', id);
+    onChange(); onToast('Boost removed');
+  };
   return (
     <div className={card}>
-      <Label>All boosts</Label>
+      <div className="flex items-center justify-between">
+        <Label>All boosts</Label>
+        <span className="text-xs text-w-muted">Add new boosts from Goals → any goal card → "+ Log boost"</span>
+      </div>
       <table className="w-full mt-3 text-sm">
         <thead><tr className="text-left text-xs text-w-muted border-b border-w-border">
-          <th className="py-2">Pool</th><th className="py-2">Goal</th><th className="py-2">Note</th><th className="py-2 text-right">Amount</th>
+          <th className="py-2">Pool</th><th className="py-2">Goal</th><th className="py-2">Note</th><th className="py-2 text-right">Amount</th><th className="py-2"></th>
         </tr></thead>
         <tbody>
           {allocs.map(a => {
@@ -278,10 +286,13 @@ const BoostLog: React.FC<{ d: WealthData }> = ({ d }) => {
                 <td className="py-2 text-w-text">{goal?.name || '—'}</td>
                 <td className="py-2 text-w-muted">{a.note || ''}</td>
                 <td className="py-2 text-right"><Mono className="text-w-green">+{fmtMoney(Number(a.amount))}</Mono></td>
+                <td className="py-2 text-right">
+                  <button onClick={() => removeBoost(a.id)} className="text-xs text-w-red hover:underline">Delete</button>
+                </td>
               </tr>
             );
           })}
-          {!allocs.length && <tr><td colSpan={4} className="py-6 text-center text-w-muted text-sm">No boosts logged yet.</td></tr>}
+          {!allocs.length && <tr><td colSpan={5} className="py-6 text-center text-w-muted text-sm">No boosts logged yet.</td></tr>}
         </tbody>
       </table>
     </div>
