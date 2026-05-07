@@ -31,6 +31,9 @@ export const liquidNWForMonth = (d: WealthData, month: string) => {
     .reduce((a, s) => a + Number(s.value), 0);
 };
 
+export const totalAssetsForMonth = (d: WealthData, month: string) =>
+  d.nwSnapshots.filter(s => s.month === month && Number(s.value) > 0).reduce((a, s) => a + Number(s.value), 0);
+
 export const debtRatio = (d: WealthData, month: string) => {
   const snaps = d.nwSnapshots.filter(s => s.month === month);
   const debts = snaps.filter(s => Number(s.value) < 0).reduce((a, s) => a + Math.abs(Number(s.value)), 0);
