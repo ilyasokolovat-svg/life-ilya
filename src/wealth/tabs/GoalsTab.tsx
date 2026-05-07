@@ -106,6 +106,7 @@ const GoalsList: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: st
 
 const GoalCard: React.FC<{ d: WealthData; goal: any; onChange: () => void; onToast: (m: string) => void }> = ({ d, goal, onChange, onToast }) => {
   const { user } = useAuth();
+  const isAuto = (goal.value_source === 'net_worth' || goal.value_source === 'total_portfolio');
   const cur = goalCurrentValue(d, goal.id);
   const target = Number(goal.target_amount);
   const pct = target > 0 ? Math.max(0, Math.min(100, (cur / target) * 100)) : 0;
