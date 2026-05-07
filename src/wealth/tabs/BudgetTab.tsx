@@ -39,7 +39,7 @@ export const BudgetTab: React.FC<{ d: WealthData; onChange: () => void; onToast:
   );
 };
 
-const BudgetMonthly: React.FC<{ d: WealthData; months: string[]; month: string; setMonth: (m: string) => void }> = ({ d, months, month, setMonth }) => {
+const BudgetMonthly: React.FC<{ d: WealthData; months: string[]; month: string; setMonth: (m: string) => void; onChange: () => void; onToast: (m: string) => void }> = ({ d, months, month, setMonth, onChange, onToast }) => {
   if (!months.length) return <Empty msg="No budget data yet — log your first month." />;
   const m = d.budgetMonths.find(b => b.month === month);
   const salary = m ? Number(m.salary) : 0;
@@ -52,12 +52,24 @@ const BudgetMonthly: React.FC<{ d: WealthData; months: string[]; month: string; 
   const srTone: 'green' | 'amber' | 'red' = sr >= target ? 'green' : sr >= target - 10 ? 'amber' : 'red';
   const cats = [...d.budgetCategories].sort((a, b) => a.sort_order - b.sort_order);
 
+  const deleteMonth = async () => {
+    if (!confirm(`Delete all data for ${monthLabel(month)}? This removes salary, extras, and spending entries.`)) return;
+    await sb.from('budget_spending').delete().eq('month', month);
+    await sb.from('budget_extras').delete().eq('month', month);
+    await sb.from('budget_months').delete().eq('month', month);
+    const remaining = months.filter(x => x !== month);
+    setMonth(remaining[remaining.length - 1] || todayMonth());
+    onToast('Month deleted');
+    onChange();
+  };
+
   return (
     <>
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 items-center">
         {months.map(mm => (
           <button key={mm} onClick={() => setMonth(mm)} className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap border ${mm === month ? 'border-w-text bg-w-surface2 text-w-text' : 'border-w-border text-w-muted hover:text-w-text'}`}>{monthLabel(mm)}</button>
         ))}
+        <button onClick={deleteMonth} className="ml-auto text-xs text-w-red border border-w-red/40 hover:bg-w-red/10 px-3 py-1.5 rounded-full whitespace-nowrap">Delete {monthLabel(month)}</button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
