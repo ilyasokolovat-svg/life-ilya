@@ -217,9 +217,10 @@ const BudgetYearly: React.FC<{ d: WealthData; onChange?: () => void }> = ({ d, o
                     return (
                       <td key={m} className="px-1 text-right">
                         <input
-                          defaultValue={v || ''}
+                          key={`${m}-${v}`}
+                          defaultValue={v ? Math.round(toDisplay(v)) : ''}
                           placeholder="—"
-                          onBlur={e => { if (Number(e.target.value || 0) !== v) saveCell(c.id, m, e.target.value); }}
+                          onBlur={e => { const newDisplay = Number(e.target.value || 0); if (Math.round(toDisplay(v)) !== newDisplay) saveCell(c.id, m, String(newDisplay)); }}
                           className={`w-20 bg-transparent text-right font-mono-w text-xs ${tone} hover:bg-w-surface2 focus:bg-w-surface2 rounded px-1 py-0.5 outline-none`}
                         />
                       </td>
