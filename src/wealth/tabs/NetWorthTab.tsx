@@ -234,12 +234,14 @@ const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: str
                   </div>
                   <div className="text-right">
                     <Mono className={`text-base ${v < 0 ? 'text-w-red' : 'text-w-text'}`}>{fmtMoney(v)}</Mono>
-                    <div className="text-[10px] font-mono-w text-w-muted">
-                      {pct.toFixed(1)}%
-                      {diff !== null && (
-                        <span className={diff >= 0 ? ' text-w-green' : ' text-w-red'}> ({diff >= 0 ? '+' : ''}{diff.toFixed(1)}% vs {target}%)</span>
-                      )}
-                    </div>
+                    {!isDebt && (
+                      <div className="text-[10px] font-mono-w text-w-muted">
+                        {pct.toFixed(1)}%
+                        {diff !== null && (
+                          <span className={diff >= 0 ? ' text-w-green' : ' text-w-red'}> ({diff >= 0 ? '+' : ''}{diff.toFixed(1)}% vs {target}%)</span>
+                        )}
+                      </div>
+                    )}
                     {prev && <div className={`text-[10px] font-mono-w ${delta >= 0 ? 'text-w-green' : 'text-w-red'}`}>{fmtMoney(delta, { sign: true })}</div>}
                   </div>
                 </div>
