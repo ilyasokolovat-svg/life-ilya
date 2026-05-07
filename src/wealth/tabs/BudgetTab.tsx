@@ -32,7 +32,7 @@ export const BudgetTab: React.FC<{ d: WealthData; onChange: () => void; onToast:
       {manage && <CategoriesManager d={d} onClose={() => setManage(false)} onChange={onChange} />}
 
       {view === 'monthly' && <BudgetMonthly d={d} months={months} month={selectedMonth} setMonth={setSelectedMonth} />}
-      {view === 'yearly' && <BudgetYearly d={d} />}
+      {view === 'yearly' && <BudgetYearly d={d} onChange={onChange} />}
       {view === 'bonus' && <BonusHistory d={d} />}
       {view === 'log' && <BudgetLog d={d} onSaved={() => { onChange(); onToast('Month saved'); setView('monthly'); }} />}
     </div>
