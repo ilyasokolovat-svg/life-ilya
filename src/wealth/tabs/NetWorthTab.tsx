@@ -214,7 +214,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
     const init: Record<string, string> = {};
     accs.forEach(a => {
       const last = lastMonth ? d.nwSnapshots.find(s => s.month === lastMonth && s.account_id === a.id) : null;
-      init[a.id] = last ? String(last.value) : '0';
+      init[a.id] = last ? String(Math.round(toDisplay(Number(last.value)))) : '0';
     });
     return init;
   });
@@ -224,7 +224,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
     const next: Record<string, string> = {};
     accs.forEach(a => {
       const v = d.nwSnapshots.find(s => s.month === lastMonth && s.account_id === a.id);
-      next[a.id] = v ? String(v.value) : '0';
+      next[a.id] = v ? String(Math.round(toDisplay(Number(v.value)))) : '0';
     });
     setVals(next);
   };
@@ -232,7 +232,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
   const save = async () => {
     if (!user) return;
     for (const a of accs) {
-      const value = parseFloat(vals[a.id] || '0');
+      const value = fromDisplay(parseFloat(vals[a.id] || '0'));
       const existing = d.nwSnapshots.find(s => s.month === month && s.account_id === a.id);
       if (existing) {
         await sb.from('nw_snapshots').update({ value }).eq('id', existing.id);
