@@ -7,7 +7,7 @@ import {
   card, card2, kpi, inputCls, btn, btnPrimary, btnAmber,
   Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors,
 } from '../ui';
-import { fmtMoney, fmtPct, monthLabel, todayMonth } from '../format';
+import { fmtMoney, fmtPct, monthLabel, todayMonth, toDisplay, fromDisplay } from '../format';
 import {
   nwMonths, totalNWForMonth, liquidNWForMonth, debtRatio,
   totalPortfolio, cryptoExposurePct,
