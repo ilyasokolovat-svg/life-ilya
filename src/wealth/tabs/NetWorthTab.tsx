@@ -171,7 +171,7 @@ const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: str
     <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <KpiCard label="Total net worth" value={fmtMoney(total)} sub={prev ? <span className={delta >= 0 ? 'text-w-green' : 'text-w-red'}>{fmtMoney(delta, { sign: true })} vs {monthLabel(prev)}</span> : null} tone={total < 0 ? 'red' : 'default'} />
-        <KpiCard label="Liquid net worth" value={fmtMoney(liquid)} tone={liquid < 0 ? 'red' : 'default'} />
+        <KpiCard label="Total assets" value={fmtMoney(assets)} tone="default" />
         <KpiCard label="YTD change" value={fmtMoney(ytd, { sign: true })} sub={fmtPct(ytdPct)} tone={ytd >= 0 ? 'green' : 'red'} />
         <KpiCard label="Debt ratio" value={`${(dr * 100).toFixed(0)}%`} tone={dr > 0.5 ? 'red' : dr > 0.3 ? 'amber' : 'green'} />
       </div>
