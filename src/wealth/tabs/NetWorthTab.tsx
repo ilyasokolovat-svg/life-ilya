@@ -157,7 +157,7 @@ const NetWorthOverview: React.FC<{ d: WealthData; months: string[]; latest?: str
   const total = totalNWForMonth(d, latest);
   const prevTotal = prev ? totalNWForMonth(d, prev) : 0;
   const delta = total - prevTotal;
-  const liquid = liquidNWForMonth(d, latest);
+  const assets = totalAssetsForMonth(d, latest);
   const yearStart = latest.slice(0, 4) + '-01';
   const yearStartActual = nwMonths(d).find(m => m >= yearStart) || latest;
   const ytdBase = totalNWForMonth(d, yearStartActual);
