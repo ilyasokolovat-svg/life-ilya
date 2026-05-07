@@ -21,7 +21,7 @@ const sortedAccounts = (d: WealthData) => [...d.accounts].sort((a, b) => a.sort_
 import { AccountsManager } from '../Managers';
 
 export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
-  const [view, setView] = useState<'overview' | 'log'>('overview');
+  const [view, setView] = useState<'overview' | 'log' | 'archive'>('overview');
   const [manage, setManage] = useState(false);
   const months = nwMonths(d);
   const latest = months[months.length - 1];
@@ -33,6 +33,7 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
         <Heading className="text-3xl">Net worth</Heading>
         <div className="flex gap-2">
           <TabButton active={view === 'overview'} onClick={() => setView('overview')}>Overview</TabButton>
+          <TabButton active={view === 'archive'} onClick={() => setView('archive')}>Archive</TabButton>
           <TabButton active={view === 'log'} onClick={() => setView('log')}>+ Log month</TabButton>
           <button onClick={() => setManage(true)} className="px-3 py-1.5 text-sm rounded-[8px] text-w-muted hover:text-w-text border border-w-border">Manage accounts</button>
         </div>
@@ -42,9 +43,111 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
       {view === 'overview' && (
         <NetWorthOverview d={d} months={months} latest={latest} prev={prev} />
       )}
+      {view === 'archive' && (
+        <NWArchive d={d} onChange={onChange} onToast={onToast} />
+      )}
       {view === 'log' && (
         <LogMonthForm d={d} onSaved={() => { onChange(); onToast('Snapshot saved'); setView('overview'); }} />
       )}
+    </div>
+  );
+};
+
+const NWArchive: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
+  const { user } = useAuth();
+  const accs = sortedAccounts(d);
+  const months = nwMonths(d).slice().reverse();
+  const [edits, setEdits] = useState<Record<string, string>>({});
+
+  const cellKey = (m: string, aid: string) => `${m}::${aid}`;
+  const getVal = (m: string, aid: string) => {
+    const k = cellKey(m, aid);
+    if (edits[k] !== undefined) return edits[k];
+    const snap = d.nwSnapshots.find(s => s.month === m && s.account_id === aid);
+    return snap ? String(Math.round(toDisplay(Number(snap.value)))) : '';
+  };
+
+  const saveCell = async (m: string, aid: string, raw: string) => {
+    if (!user) return;
+    const k = cellKey(m, aid);
+    const original = (() => {
+      const snap = d.nwSnapshots.find(s => s.month === m && s.account_id === aid);
+      return snap ? String(Math.round(toDisplay(Number(snap.value)))) : '';
+    })();
+    if (raw === original) {
+      const { [k]: _, ...rest } = edits; setEdits(rest); return;
+    }
+    const value = fromDisplay(parseFloat(raw || '0'));
+    const existing = d.nwSnapshots.find(s => s.month === m && s.account_id === aid);
+    if (existing) {
+      await sb.from('nw_snapshots').update({ value }).eq('id', existing.id);
+    } else {
+      await sb.from('nw_snapshots').insert({ user_id: user.id, month: m, account_id: aid, value });
+    }
+    const { [k]: _, ...rest } = edits; setEdits(rest);
+    onChange();
+    onToast('Saved');
+  };
+
+  const deleteMonth = async (m: string) => {
+    if (!confirm(`Delete all snapshots for ${monthLabel(m)}?`)) return;
+    const ids = d.nwSnapshots.filter(s => s.month === m).map(s => s.id);
+    if (ids.length) await sb.from('nw_snapshots').delete().in('id', ids);
+    onChange();
+    onToast('Month deleted');
+  };
+
+  if (!months.length) return <Empty msg="No snapshots yet." />;
+
+  return (
+    <div className={card}>
+      <Label>Snapshot archive — click any cell to edit, blur to save</Label>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-[10px] uppercase tracking-wider text-w-muted border-b border-w-border">
+              <th className="py-2 pr-3 sticky left-0 bg-w-bg">Month</th>
+              {accs.map(a => (
+                <th key={a.id} className="py-2 px-2 text-right whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: a.color }} />
+                    {a.label}
+                  </span>
+                </th>
+              ))}
+              <th className="py-2 px-2 text-right">Total</th>
+              <th className="py-2 pl-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {months.map(m => {
+              const total = totalNWForMonth(d, m);
+              return (
+                <tr key={m} className="border-b border-w-border/50 hover:bg-w-border/10">
+                  <td className="py-1.5 pr-3 sticky left-0 bg-w-bg font-medium text-w-text">{monthLabel(m)}</td>
+                  {accs.map(a => {
+                    const k = cellKey(m, a.id);
+                    return (
+                      <td key={a.id} className="py-1 px-1 text-right">
+                        <input
+                          className={`w-24 text-right bg-transparent border border-transparent hover:border-w-border focus:border-w-text focus:bg-w-bg/50 rounded px-1.5 py-0.5 font-mono text-xs ${edits[k] !== undefined ? 'border-w-amber' : ''}`}
+                          value={getVal(m, a.id)}
+                          onChange={e => setEdits({ ...edits, [k]: e.target.value })}
+                          onBlur={e => saveCell(m, a.id, e.target.value)}
+                        />
+                      </td>
+                    );
+                  })}
+                  <td className="py-1.5 px-2 text-right font-mono text-xs text-w-muted">{fmtMoney(total, { compact: true })}</td>
+                  <td className="py-1.5 pl-2 text-right">
+                    <button onClick={() => deleteMonth(m)} className="text-[10px] text-w-red hover:underline">Delete</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
