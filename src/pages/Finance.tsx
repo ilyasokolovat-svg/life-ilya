@@ -188,3 +188,21 @@ const SettingsModal: React.FC<{ settings: any; onClose: () => void; onSaved: () 
     </div>
   );
 };
+
+const CurrencyToggle: React.FC<{ settings: any; onChanged: () => void }> = ({ settings, onChanged }) => {
+  const cur = (settings?.display_currency as 'USD' | 'AED') || getDisplayCurrency();
+  const toggle = async (next: 'USD' | 'AED') => {
+    setDisplayCurrency(next);
+    if (settings) {
+      await sb.from('settings').update({ display_currency: next }).eq('id', settings.id);
+      onChanged();
+    }
+  };
+  return (
+    <div className="flex items-center gap-1 border border-w-border rounded-[8px] p-0.5">
+      {(['USD','AED'] as const).map(c => (
+        <button key={c} onClick={() => toggle(c)} className={`px-2 py-0.5 text-[10px] font-mono-w rounded ${cur === c ? 'bg-w-surface2 text-w-text' : 'text-w-muted hover:text-w-text'}`}>{c}</button>
+      ))}
+    </div>
+  );
+};
