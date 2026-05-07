@@ -6,7 +6,8 @@ import type { WealthData } from '../types';
 import { card, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
 import { fmtMoney, fmtPct, monthLabel, todayMonth, monthsBetween } from '../format';
 import {
-  rollingSurplus, goalCurrentValue, needPerMonth, goalStatus, monthsUntil, fiTarget, totalNWForMonth, annualSpend,
+  rollingSurplus, goalCurrentValue, goalCurrentValueAt, needPerMonth, goalStatus, monthsUntil, fiTarget, totalNWForMonth, annualSpend,
+  nwMonths, investmentMonths,
 } from '../calc';
 import { NW_PROJECTION_TARGETS } from '../seed';
 
