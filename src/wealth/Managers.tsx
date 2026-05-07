@@ -233,15 +233,26 @@ export const GoalsManager: React.FC<{ d: WealthData; onClose: () => void; onChan
         target_date: i.target_date, color: i.color,
         priority: Number(i.priority) || 1, allocation_pct: Number(i.allocation_pct) || 0,
         linked_account_id: i.linked_account_id || null,
+        value_source: i.value_source || 'net_worth',
+        manual_current_value: Number(i.manual_current_value) || 0,
       }).eq('id', i.id);
     }
     onChange(); onClose();
   };
 
+  const sourceHelp: Record<string, string> = {
+    net_worth: 'Current value is always your latest total net worth.',
+    total_portfolio: 'Current value is always your latest investment portfolio total.',
+    linked_account: 'Current value tracks the selected account automatically.',
+    manual: 'Update this value manually each month.',
+  };
+
   return (
     <ModalShell title="Manage goals" onClose={onClose}>
       <div className="space-y-3 max-h-[55vh] overflow-y-auto">
-        {items.map(g => (
+        {items.map(g => {
+          const src = g.value_source || 'net_worth';
+          return (
           <div key={g.id} className="p-3 border border-w-border rounded-[8px] space-y-2">
             <div className="grid grid-cols-12 gap-2 items-center">
               <input className={`${inputCls} col-span-6`} value={g.name} onChange={e => update(g.id, { name: e.target.value })} />
@@ -254,7 +265,7 @@ export const GoalsManager: React.FC<{ d: WealthData; onClose: () => void; onChan
                 <Label>Target month</Label>
                 <input type="month" className={`${inputCls} mt-1`} value={(g.target_date || '').slice(0, 7)} onChange={e => update(g.id, { target_date: e.target.value })} />
               </div>
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <Label>Priority</Label>
                 <input className={`${inputCls} mt-1`} value={g.priority} onChange={e => update(g.id, { priority: e.target.value })} />
               </div>
@@ -262,16 +273,34 @@ export const GoalsManager: React.FC<{ d: WealthData; onClose: () => void; onChan
                 <Label>Allocation %</Label>
                 <input className={`${inputCls} mt-1`} value={g.allocation_pct} onChange={e => update(g.id, { allocation_pct: e.target.value })} />
               </div>
-              <div className="col-span-2">
-                <Label>Linked acct</Label>
-                <select className={`${inputCls} mt-1`} value={g.linked_account_id || ''} onChange={e => update(g.id, { linked_account_id: e.target.value || null })}>
-                  <option value="">none</option>
-                  {d.accounts.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+              <div className="col-span-3">
+                <Label>Value source</Label>
+                <select className={`${inputCls} mt-1`} value={src} onChange={e => update(g.id, { value_source: e.target.value })}>
+                  <option value="net_worth">Total net worth (auto)</option>
+                  <option value="total_portfolio">Total portfolio (auto)</option>
+                  <option value="linked_account">Specific account</option>
+                  <option value="manual">Manual</option>
                 </select>
               </div>
+              {src === 'linked_account' && (
+                <div className="col-span-6">
+                  <Label>Linked account</Label>
+                  <select className={`${inputCls} mt-1`} value={g.linked_account_id || ''} onChange={e => update(g.id, { linked_account_id: e.target.value || null })}>
+                    <option value="">Select account</option>
+                    {d.accounts.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                  </select>
+                </div>
+              )}
+              {src === 'manual' && (
+                <div className="col-span-6">
+                  <Label>Current value</Label>
+                  <input className={`${inputCls} mt-1`} value={g.manual_current_value ?? 0} onChange={e => update(g.id, { manual_current_value: e.target.value })} placeholder="Current $" />
+                </div>
+              )}
+              <div className="col-span-12 text-[11px] text-w-muted italic">{sourceHelp[src]}</div>
             </div>
           </div>
-        ))}
+        );})}
       </div>
       <div className="mt-4 flex justify-between">
         <button onClick={add} className={btn}><Plus size={14} className="inline mr-1" />Add goal</button>

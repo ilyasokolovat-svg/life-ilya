@@ -358,11 +358,13 @@ export type Database = {
           created_at: string | null
           id: string
           linked_account_id: string | null
+          manual_current_value: number | null
           name: string
           priority: number
           target_amount: number
           target_date: string
           user_id: string
+          value_source: string
         }
         Insert: {
           allocation_pct?: number
@@ -370,11 +372,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           linked_account_id?: string | null
+          manual_current_value?: number | null
           name: string
           priority?: number
           target_amount: number
           target_date: string
           user_id: string
+          value_source?: string
         }
         Update: {
           allocation_pct?: number
@@ -382,11 +386,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           linked_account_id?: string | null
+          manual_current_value?: number | null
           name?: string
           priority?: number
           target_amount?: number
           target_date?: string
           user_id?: string
+          value_source?: string
         }
         Relationships: [
           {

@@ -79,16 +79,46 @@ export const cryptoExposurePct = (d: WealthData, month: string) => {
   return v ? (Number(v.value) / total) * 100 : 0;
 };
 
+// Compute a goal's current value at a specific month (defaults to latest available data).
+export const goalCurrentValueAt = (d: WealthData, goal: any, nwMonth?: string, invMonth?: string): number => {
+  if (!goal) return 0;
+  const source = goal.value_source || (goal.linked_account_id ? 'linked_account' : 'manual');
+
+  if (source === 'net_worth') {
+    const m = nwMonth ?? nwMonths(d).slice(-1)[0];
+    if (!m) return 0;
+    return d.nwSnapshots.filter(s => s.month === m).reduce((a, s) => a + Number(s.value), 0);
+  }
+  if (source === 'total_portfolio') {
+    const m = invMonth ?? investmentMonths(d).slice(-1)[0];
+    if (!m) return 0;
+    return d.investmentSnapshots.filter(s => s.month === m).reduce((a, s) => a + Number(s.value), 0);
+  }
+  if (source === 'linked_account' && goal.linked_account_id) {
+    const accSnaps = d.nwSnapshots.filter(s => s.account_id === goal.linked_account_id && (!nwMonth || s.month === nwMonth));
+    if (!accSnaps.length) {
+      // fallback to latest if filtered by month yields nothing
+      if (nwMonth) {
+        const all = d.nwSnapshots.filter(s => s.account_id === goal.linked_account_id);
+        if (!all.length) return Number(goal.manual_current_value) || 0;
+        const latest = all.sort((a, b) => sortMonths(b.month, a.month))[0];
+        const v = Number(latest.value);
+        if (v < 0) return Math.max(0, Number(goal.target_amount) - Math.abs(v));
+        return v;
+      }
+      return Number(goal.manual_current_value) || 0;
+    }
+    const latest = accSnaps.sort((a, b) => sortMonths(b.month, a.month))[0];
+    const v = Number(latest.value);
+    if (v < 0) return Math.max(0, Number(goal.target_amount) - Math.abs(v));
+    return v;
+  }
+  return Number(goal.manual_current_value) || 0;
+};
+
 export const goalCurrentValue = (d: WealthData, goalId: string): number => {
   const goal = d.goals.find(g => g.id === goalId);
-  if (!goal) return 0;
-  if (goal.linked_account_id) {
-    const accSnaps = d.nwSnapshots.filter(s => s.account_id === goal.linked_account_id);
-    if (!accSnaps.length) return 0;
-    const latest = accSnaps.sort((a, b) => sortMonths(b.month, a.month))[0];
-    return Math.abs(Number(latest.value));
-  }
-  return d.bonusAllocations.filter(a => a.goal_id === goalId).reduce((a, x) => a + Number(x.amount), 0);
+  return goalCurrentValueAt(d, goal);
 };
 
 export const monthsUntil = (target: string) => Math.max(1, monthsBetween(todayMonth(), target));

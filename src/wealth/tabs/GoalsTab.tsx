@@ -6,7 +6,8 @@ import type { WealthData } from '../types';
 import { card, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
 import { fmtMoney, fmtPct, monthLabel, todayMonth, monthsBetween } from '../format';
 import {
-  rollingSurplus, goalCurrentValue, needPerMonth, goalStatus, monthsUntil, fiTarget, totalNWForMonth, annualSpend,
+  rollingSurplus, goalCurrentValue, goalCurrentValueAt, needPerMonth, goalStatus, monthsUntil, fiTarget, totalNWForMonth, annualSpend,
+  nwMonths, investmentMonths,
 } from '../calc';
 import { NW_PROJECTION_TARGETS } from '../seed';
 
@@ -53,6 +54,8 @@ const GoalsList: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: st
 
   return (
     <>
+      <ThisMonthImpact d={d} />
+
       {!!unallocatedPools.length && (
         <div className="mb-4 p-4 border border-w-amber rounded-[14px] bg-w-amber/5 flex items-center justify-between">
           <div>
@@ -103,6 +106,7 @@ const GoalsList: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: st
 
 const GoalCard: React.FC<{ d: WealthData; goal: any; onChange: () => void; onToast: (m: string) => void }> = ({ d, goal, onChange, onToast }) => {
   const { user } = useAuth();
+  const isAuto = (goal.value_source === 'net_worth' || goal.value_source === 'total_portfolio');
   const cur = goalCurrentValue(d, goal.id);
   const target = Number(goal.target_amount);
   const pct = target > 0 ? Math.max(0, Math.min(100, (cur / target) * 100)) : 0;
@@ -158,33 +162,39 @@ const GoalCard: React.FC<{ d: WealthData; goal: any; onChange: () => void; onToa
       </div>
 
       <div className="mt-4 pt-4 border-t border-w-border">
-        <div className="flex items-center justify-between">
-          <Label>Boosts ({boosts.length})</Label>
-          <button onClick={() => setShowBoost(!showBoost)} className="text-xs text-w-blue hover:underline">+ Log boost</button>
-        </div>
-        {showBoost && (
-          <div className="mt-3 space-y-2">
-            <select className={inputCls} value={poolId} onChange={e => setPoolId(e.target.value)}>
-              <option value="">Select bonus pool</option>
-              {availablePools.map(p => {
-                const used = d.bonusAllocations.filter(a => a.pool_id === p.id).reduce((a, x) => a + Number(x.amount), 0);
-                return <option key={p.id} value={p.id}>{p.description} — {fmtMoney(Number(p.total_amount) - used)} avail</option>;
-              })}
-            </select>
-            <input className={inputCls} placeholder="Amount" value={amt} onChange={e => setAmt(e.target.value)} />
-            <input className={inputCls} placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} />
-            <button onClick={saveBoost} className={btnPrimary}>Save boost</button>
-          </div>
-        )}
-        {boosts.length > 0 && (
-          <div className="mt-3 space-y-1 text-xs">
-            {boosts.map(b => (
-              <div key={b.id} className="flex justify-between">
-                <span className="text-w-muted">{b.note || 'Boost'}</span>
-                <Mono className="text-w-green">+{fmtMoney(Number(b.amount))}</Mono>
+        {isAuto ? (
+          <p className="text-xs text-w-muted italic">Updates automatically when you log net worth or investments — no manual input needed.</p>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <Label>Boosts ({boosts.length})</Label>
+              <button onClick={() => setShowBoost(!showBoost)} className="text-xs text-w-blue hover:underline">+ Log boost</button>
+            </div>
+            {showBoost && (
+              <div className="mt-3 space-y-2">
+                <select className={inputCls} value={poolId} onChange={e => setPoolId(e.target.value)}>
+                  <option value="">Select bonus pool</option>
+                  {availablePools.map(p => {
+                    const used = d.bonusAllocations.filter(a => a.pool_id === p.id).reduce((a, x) => a + Number(x.amount), 0);
+                    return <option key={p.id} value={p.id}>{p.description} — {fmtMoney(Number(p.total_amount) - used)} avail</option>;
+                  })}
+                </select>
+                <input className={inputCls} placeholder="Amount" value={amt} onChange={e => setAmt(e.target.value)} />
+                <input className={inputCls} placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} />
+                <button onClick={saveBoost} className={btnPrimary}>Save boost</button>
               </div>
-            ))}
-          </div>
+            )}
+            {boosts.length > 0 && (
+              <div className="mt-3 space-y-1 text-xs">
+                {boosts.map(b => (
+                  <div key={b.id} className="flex justify-between">
+                    <span className="text-w-muted">{b.note || 'Boost'}</span>
+                    <Mono className="text-w-green">+{fmtMoney(Number(b.amount))}</Mono>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -260,7 +270,8 @@ const NWBridge: React.FC<{ d: WealthData }> = ({ d }) => {
 };
 
 const BoostLog: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
-  const allocs = [...d.bonusAllocations].sort((a, b) => b.id.localeCompare(a.id));
+  const eligibleGoalIds = new Set(d.goals.filter(g => g.value_source === 'linked_account' || g.value_source === 'manual').map(g => g.id));
+  const allocs = [...d.bonusAllocations].filter(a => eligibleGoalIds.has(a.goal_id)).sort((a, b) => b.id.localeCompare(a.id));
   const removeBoost = async (id: string) => {
     if (!confirm('Delete this boost entry?')) return;
     await sb.from('bonus_allocations').delete().eq('id', id);
@@ -270,7 +281,7 @@ const BoostLog: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: str
     <div className={card}>
       <div className="flex items-center justify-between">
         <Label>All boosts</Label>
-        <span className="text-xs text-w-muted">Add new boosts from Goals → any goal card → "+ Log boost"</span>
+        <span className="text-xs text-w-muted">Add new boosts from Goals → any cash-backed goal card → "+ Log boost"</span>
       </div>
       <table className="w-full mt-3 text-sm">
         <thead><tr className="text-left text-xs text-w-muted border-b border-w-border">
@@ -292,9 +303,103 @@ const BoostLog: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: str
               </tr>
             );
           })}
-          {!allocs.length && <tr><td colSpan={5} className="py-6 text-center text-w-muted text-sm">No boosts logged yet.</td></tr>}
+          {!allocs.length && <tr><td colSpan={5} className="py-6 text-center text-w-muted text-sm">
+            No boosts logged yet. Boosts are used for cash-backed goals like your Emergency Fund or Car Loan — when you make a specific payment toward one of these goals, log it here. Your investment-backed goals (FI, 2026 Target) update automatically from your portfolio.
+          </td></tr>}
         </tbody>
       </table>
+    </div>
+  );
+};
+
+const ThisMonthImpact: React.FC<{ d: WealthData }> = ({ d }) => {
+  const nwM = nwMonths(d);
+  const invM = investmentMonths(d);
+  const curNW = nwM.slice(-1)[0];
+  const prevNW = nwM.slice(-2)[0];
+  const curInv = invM.slice(-1)[0];
+  const prevInv = invM.slice(-2)[0];
+
+  if (!curNW && !curInv) return null;
+  if (!prevNW && !prevInv) {
+    return (
+      <div className={card + ' mb-5'}>
+        <Label>This month's impact</Label>
+        <div className="mt-2 text-sm text-w-muted">Log last month's data to see month-over-month impact.</div>
+      </div>
+    );
+  }
+
+  const sumNW = (m?: string) => m ? d.nwSnapshots.filter(s => s.month === m).reduce((a, s) => a + Number(s.value), 0) : 0;
+  const sumInv = (m?: string) => m ? d.investmentSnapshots.filter(s => s.month === m).reduce((a, s) => a + Number(s.value), 0) : 0;
+
+  const curNWVal = sumNW(curNW), prevNWVal = sumNW(prevNW);
+  const curInvVal = sumInv(curInv), prevInvVal = sumInv(prevInv);
+  const portfolioChange = curInvVal - prevInvVal;
+  const portfolioChangePct = prevInvVal > 0 ? (portfolioChange / prevInvVal) * 100 : 0;
+  const nwChange = curNWVal - prevNWVal;
+
+  const incomeBoost = d.budgetExtras.filter(e => e.month === curNW && ['bonus','freelance','dividend','other'].includes(e.type))
+    .reduce((a, e) => a + Number(e.amount), 0);
+  const incomeLabel = d.budgetExtras.filter(e => e.month === curNW && ['bonus','freelance','dividend','other'].includes(e.type))
+    .map(e => e.description).join(', ');
+
+  const goalMovements = d.goals.map(g => {
+    const cv = goalCurrentValueAt(d, g, curNW, curInv);
+    const pv = goalCurrentValueAt(d, g, prevNW, prevInv);
+    const target = Number(g.target_amount) || 1;
+    const cp = Math.min(100, (cv / target) * 100);
+    const pp = Math.min(100, (pv / target) * 100);
+    return { goal: g, cp, pp, delta: cp - pp };
+  });
+
+  const upBorder = portfolioChange >= 0;
+
+  return (
+    <div className={card + ' mb-5'} style={{ borderLeft: `3px solid ${upBorder ? chartColors.green : chartColors.red}` }}>
+      <div className="flex items-center justify-between">
+        <Label>This month's impact</Label>
+        <span className="text-xs text-w-muted">{monthLabel(curNW || curInv)}</span>
+      </div>
+      <div className="mt-3 space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-w-muted">Portfolio change</span>
+          <span>
+            <Mono className={portfolioChange >= 0 ? 'text-w-green' : 'text-w-red'}>{fmtMoney(portfolioChange, { sign: true })}</Mono>
+            <span className="text-w-muted ml-2 text-xs">{portfolioChange >= 0 ? '↑' : '↓'}{Math.abs(portfolioChangePct).toFixed(1)}%</span>
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-w-muted">Net worth change</span>
+          <Mono className={nwChange >= 0 ? 'text-w-green' : 'text-w-red'}>{fmtMoney(nwChange, { sign: true })}</Mono>
+        </div>
+        {incomeBoost > 0 && (
+          <div className="flex justify-between">
+            <span className="text-w-amber">Income boost</span>
+            <span className="text-w-amber"><Mono>+{fmtMoney(incomeBoost)}</Mono> <span className="text-xs">{incomeLabel}</span></span>
+          </div>
+        )}
+      </div>
+      <div className="mt-3 pt-3 border-t border-w-border space-y-1.5 text-sm">
+        {goalMovements.map(({ goal, cp, pp, delta }) => {
+          const unchanged = Math.abs(delta) < 0.05;
+          return (
+            <div key={goal.id} className="flex justify-between items-center">
+              <span className="text-w-text flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full" style={{ background: goal.color }} />{goal.name}
+              </span>
+              {unchanged ? (
+                <span className="text-xs text-w-muted">unchanged</span>
+              ) : (
+                <span className="text-xs">
+                  <span className="text-w-muted">{pp.toFixed(1)}% → {cp.toFixed(1)}%</span>
+                  <span className={`ml-2 ${delta >= 0 ? 'text-w-green' : 'text-w-red'}`}>{delta >= 0 ? '+' : ''}{delta.toFixed(1)}pp {delta >= 0 ? '↑' : '↓'}</span>
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
