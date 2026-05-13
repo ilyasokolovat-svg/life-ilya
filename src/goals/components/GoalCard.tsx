@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Link2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Goal, Category, ColorKey, colorHsl } from "../types";
-import { autoStatus, currentWeekOfQuarter, quarterlyProgress } from "../utils";
+import { autoStatus, currentWeekOfQuarter, quarterlyProgress, quarterInfo, uid } from "../utils";
+import { useGoalsStore } from "../storage";
 import { ProgressBar } from "./ProgressBar";
 import { StatusBadge } from "./StatusBadge";
 import { MetricEditor } from "./MetricEditor";
