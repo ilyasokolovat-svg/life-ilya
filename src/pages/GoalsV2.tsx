@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGoalsStore } from "@/goals/storage";
 import { Goal, Layer } from "@/goals/types";
-import { currentQuarterKey, listQuarters, listYears } from "@/goals/utils";
+import { currentQuarterKey, currentMonthKey, monthLabel, listQuarters, listYears } from "@/goals/utils";
 import { GoalCard } from "@/goals/components/GoalCard";
 import { YearlyGoalCard } from "@/goals/components/YearlyGoalCard";
 import { LongtermGoalCard } from "@/goals/components/LongtermGoalCard";
@@ -97,6 +97,21 @@ const GoalsV2 = () => {
                 </SelectContent>
               </Select>
             </div>
+            {(() => {
+              const mk = currentMonthKey();
+              const pending = goals.filter(
+                (g) => g.layer === "yearly" && g.year === year && !(g.monthlyReviews || []).some((r) => r.month === mk)
+              );
+              if (pending.length === 0) return null;
+              return (
+                <div className="rounded-xl border border-border bg-secondary/40 p-3 text-sm flex items-center justify-between gap-2">
+                  <span>
+                    <span className="font-medium">{monthLabel(mk)} review:</span>{" "}
+                    <span className="text-muted-foreground">{pending.length} yearly goal{pending.length > 1 ? "s" : ""} to check in.</span>
+                  </span>
+                </div>
+              );
+            })()}
             {renderGrouped("yearly")}
           </TabsContent>
 
@@ -153,6 +168,7 @@ const GoalsV2 = () => {
                       goal={g}
                       category={cat}
                       allGoals={goals}
+                      onUpdate={(ng) => upsertGoal(ng)}
                       onEdit={() => openEdit(g)}
                       onDelete={() => { if (confirm(`Delete "${g.title}"?`)) deleteGoal(g.id); }}
                     />

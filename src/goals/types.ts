@@ -37,6 +37,17 @@ export interface WeeklyTaskBlock {
   tasks: WeeklyTask[];
 }
 
+export type MonthlyReviewStatus = "on-track" | "at-risk" | "behind" | "complete";
+
+export interface MonthlyReview {
+  month: string; // "YYYY-MM"
+  status: MonthlyReviewStatus;
+  note?: string;
+  reviewedAt: number;
+}
+
+export type ProgressMode = "auto" | "manual" | "blend";
+
 export interface Goal {
   id: string;
   title: string;
@@ -50,6 +61,8 @@ export interface Goal {
   linkedLongtermGoalId?: string;
   metrics: Metric[];
   weeklyTasks: WeeklyTaskBlock[];
+  monthlyReviews?: MonthlyReview[];
+  progressMode?: ProgressMode; // yearly only; default "blend"
   status?: Status; // optional manual override
   createdAt: number;
 }

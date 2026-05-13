@@ -104,6 +104,16 @@ export function WeeklyTasksPanel({ goal, currentWeek, onChange, expanded, onTogg
               </div>
             );
           })}
+          <button
+            type="button"
+            className="w-full text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1 py-1.5 border border-dashed border-border rounded-lg"
+            onClick={() => {
+              const next = blocks.length ? Math.max(...blocks.map((b) => b.weekNumber)) + 1 : 1;
+              onChange([...blocks, { weekNumber: next, tasks: [] }]);
+            }}
+          >
+            <Plus className="w-3 h-3" /> Add week
+          </button>
         </div>
       )}
     </div>

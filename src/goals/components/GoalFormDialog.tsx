@@ -273,7 +273,20 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
 
           {layer === "quarterly" && (
             <div>
-              <Label className="text-xs">Weekly tasks</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs">Weekly tasks</Label>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    const next = weeklyTasks.length ? Math.max(...weeklyTasks.map((b) => b.weekNumber)) + 1 : 1;
+                    setWeeklyTasks([...weeklyTasks, { weekNumber: next, tasks: [] }]);
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-1" /> Add week
+                </Button>
+              </div>
               <div className="space-y-2 mt-1 max-h-72 overflow-y-auto">
                 {weeklyTasks.map((b) => (
                   <div key={b.weekNumber} className="bg-secondary/30 rounded-lg p-2">
@@ -285,9 +298,12 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
                         className="h-6 text-xs"
                         onClick={() => setWeeklyTasks(weeklyTasks.map((x) => x.weekNumber === b.weekNumber ? { ...x, tasks: [...x.tasks, { id: uid(), text: "", done: false }] } : x))}
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3 h-3 mr-1" /> Add task
                       </Button>
                     </div>
+                    {b.tasks.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground/70 italic px-1">No tasks yet</p>
+                    )}
                     {b.tasks.map((t) => (
                       <div key={t.id} className="flex gap-1 items-center">
                         <Input
@@ -303,6 +319,9 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
                     ))}
                   </div>
                 ))}
+                {weeklyTasks.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground italic">No week blocks yet — click "Add week" to start.</p>
+                )}
               </div>
             </div>
           )}
