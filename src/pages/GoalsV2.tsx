@@ -97,6 +97,21 @@ const GoalsV2 = () => {
                 </SelectContent>
               </Select>
             </div>
+            {(() => {
+              const mk = currentMonthKey();
+              const pending = goals.filter(
+                (g) => g.layer === "yearly" && g.year === year && !(g.monthlyReviews || []).some((r) => r.month === mk)
+              );
+              if (pending.length === 0) return null;
+              return (
+                <div className="rounded-xl border border-border bg-secondary/40 p-3 text-sm flex items-center justify-between gap-2">
+                  <span>
+                    <span className="font-medium">{monthLabel(mk)} review:</span>{" "}
+                    <span className="text-muted-foreground">{pending.length} yearly goal{pending.length > 1 ? "s" : ""} to check in.</span>
+                  </span>
+                </div>
+              );
+            })()}
             {renderGrouped("yearly")}
           </TabsContent>
 
