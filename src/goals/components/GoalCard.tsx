@@ -18,11 +18,21 @@ interface Props {
 }
 
 export function GoalCard({ goal, category, onUpdate, onEdit, onDelete }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [menu, setMenu] = useState(false);
+  const { goals } = useGoalsStore();
   const week = currentWeekOfQuarter(goal.quarter || "");
   const pct = quarterlyProgress(goal);
   const status = autoStatus(goal);
+  const linkedYearly = goal.linkedYearlyGoalId
+    ? goals.find((g) => g.id === goal.linkedYearlyGoalId)
+    : undefined;
+
+  const generateWeekBlocks = () => {
+    const tw = quarterInfo(goal.quarter || "").totalWeeks;
+    const blocks = Array.from({ length: tw }, (_, i) => ({ weekNumber: i + 1, tasks: [] }));
+    onUpdate({ ...goal, weeklyTasks: blocks });
+  };
 
   return (
     <div
@@ -43,8 +53,21 @@ export function GoalCard({ goal, category, onUpdate, onEdit, onDelete }: Props) 
             )}
             <StatusBadge status={status} />
           </div>
+          {linkedYearly ? (
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+              <Link2 className="w-3 h-3" />
+              <span>Yearly: <span className="text-foreground font-medium">{linkedYearly.title}</span></span>
+            </div>
+          ) : (
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground mt-0.5"
+            >
+              <Link2 className="w-3 h-3" /> Link to yearly goal…
+            </button>
+          )}
           {goal.description && (
-            <p className="text-xs text-muted-foreground">{goal.description}</p>
+            <p className="text-xs text-muted-foreground mt-1">{goal.description}</p>
           )}
         </div>
         <div className="relative">
@@ -82,13 +105,22 @@ export function GoalCard({ goal, category, onUpdate, onEdit, onDelete }: Props) 
         </div>
       )}
 
-      <WeeklyTasksPanel
-        goal={goal}
-        currentWeek={week}
-        expanded={expanded}
-        onToggle={() => setExpanded((e) => !e)}
-        onChange={(wt) => onUpdate({ ...goal, weeklyTasks: wt })}
-      />
+      {goal.weeklyTasks.length === 0 ? (
+        <div className="border-t border-border pt-3 mt-2 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">No weekly tasks yet</span>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={generateWeekBlocks}>
+            <Plus className="w-3 h-3 mr-1" /> Generate week blocks
+          </Button>
+        </div>
+      ) : (
+        <WeeklyTasksPanel
+          goal={goal}
+          currentWeek={week}
+          expanded={expanded}
+          onToggle={() => setExpanded((e) => !e)}
+          onChange={(wt) => onUpdate({ ...goal, weeklyTasks: wt })}
+        />
+      )}
     </div>
   );
 }
