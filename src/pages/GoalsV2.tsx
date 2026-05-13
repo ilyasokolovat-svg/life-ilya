@@ -153,6 +153,7 @@ const GoalsV2 = () => {
                       goal={g}
                       category={cat}
                       allGoals={goals}
+                      onUpdate={(ng) => upsertGoal(ng)}
                       onEdit={() => openEdit(g)}
                       onDelete={() => { if (confirm(`Delete "${g.title}"?`)) deleteGoal(g.id); }}
                     />
