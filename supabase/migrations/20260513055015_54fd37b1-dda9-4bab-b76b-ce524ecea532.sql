@@ -1,0 +1,1 @@
+ALTER TABLE public.goals_data DROP CONSTRAINT IF EXISTS goals_data_user_id_category_subcategory_period_key_key;
