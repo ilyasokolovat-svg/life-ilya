@@ -96,6 +96,35 @@ export function yearlyRollupProgress(yearlyGoal: Goal, allGoals: Goal[]): number
   return Math.round(linked.reduce((a, g) => a + quarterlyProgress(g), 0) / linked.length);
 }
 
+export function yearlyProgress(yearlyGoal: Goal, allGoals: Goal[]): number {
+  const mode: "auto" | "manual" | "blend" = yearlyGoal.progressMode || "blend";
+  const hasMetrics = yearlyGoal.metrics.length > 0;
+  const linked = allGoals.filter((g) => g.layer === "quarterly" && g.linkedYearlyGoalId === yearlyGoal.id);
+  const hasLinked = linked.length > 0;
+  const rollup = hasLinked ? yearlyRollupProgress(yearlyGoal, allGoals) : 0;
+  const metric = hasMetrics ? metricProgressPct(yearlyGoal) : 0;
+
+  if (mode === "manual") return hasMetrics ? metric : rollup;
+  if (mode === "auto") return hasLinked ? rollup : metric;
+  // blend
+  if (hasMetrics && hasLinked) return Math.round(metric * 0.6 + rollup * 0.4);
+  return hasMetrics ? metric : rollup;
+}
+
+export function currentMonthKey(): string {
+  const d = getDubaiDate();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function monthsForYear(year: number): string[] {
+  return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+}
+
+export function monthLabel(key: string): string {
+  const [y, m] = key.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleString(undefined, { month: "short", year: "numeric" });
+}
+
 export function autoStatus(g: Goal, qKey?: string): Status {
   if (g.status) return g.status;
   const pct = quarterlyProgress(g);
