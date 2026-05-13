@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import {
+  ResponsiveContainer, ComposedChart, Line as RLine, Area, XAxis, YAxis,
+  CartesianGrid, Tooltip as RTooltip, ReferenceDot,
+} from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '../types';
-import { card, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
+import { card, card2, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
 import { fmtMoney, fmtPct, monthLabel, todayMonth, toDisplay, fromDisplay } from '../format';
 import { investmentMonths, totalPortfolio, totalContributed, cryptoExposurePct } from '../calc';
 import { CryptoMeter } from './NetWorthTab';
@@ -188,106 +192,154 @@ const InvGrowth: React.FC<{ d: WealthData }> = ({ d }) => {
 const InvProjection: React.FC<{ d: WealthData }> = ({ d }) => {
   const months = investmentMonths(d);
   const latest = months[months.length - 1];
-  const value = latest ? totalPortfolio(d, latest) : 0;
-  const [eqRet, setEqRet] = useState(8);
-  const [crRet, setCrRet] = useState(15);
-  const [contrib, setContrib] = useState(3450);
+  const liveValue = latest ? totalPortfolio(d, latest) : 0;
 
-  const project = (years: number, blend = 0.5) => {
-    const monthlyR = (eqRet * (1 - blend) + crRet * blend) / 100 / 12;
-    let v = value;
-    const series: number[] = [v];
-    for (let i = 1; i <= years * 12; i++) {
-      v = v * (1 + monthlyR) + contrib;
-      series.push(v);
+  const LS = 'wealth_proj_v2';
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(LS) || '{}'); } catch { return {}; } })();
+
+  const [balance, setBalance] = useState<number>(saved.balance ?? Math.round(liveValue) ?? 35000);
+  const [contrib, setContrib] = useState<number>(saved.contrib ?? 500);
+  const [annualReturn, setAnnualReturn] = useState<number>(saved.annualReturn ?? 10);
+  const [contribGrowth, setContribGrowth] = useState<number>(saved.contribGrowth ?? 3);
+  const [fiTargetVal, setFiTargetVal] = useState<number>(saved.fiTarget ?? 1250000);
+
+  React.useEffect(() => {
+    localStorage.setItem(LS, JSON.stringify({
+      balance, contrib, annualReturn, contribGrowth, fiTarget: fiTargetVal,
+    }));
+  }, [balance, contrib, annualReturn, contribGrowth, fiTargetVal]);
+
+  const BIRTH_YEAR = 1994;
+  const START_YEAR = new Date().getFullYear();
+  const END_YEAR = 2045;
+
+  const project = (monthlyContrib: number, ret: number) => {
+    const yearly: { year: number; value: number }[] = [{ year: START_YEAR, value: balance }];
+    let bal = balance;
+    let mc = monthlyContrib;
+    for (let y = START_YEAR + 1; y <= END_YEAR; y++) {
+      for (let m = 0; m < 12; m++) bal = bal * (1 + ret / 100 / 12) + mc;
+      yearly.push({ year: y, value: bal });
+      mc = mc * (1 + contribGrowth / 100);
     }
-    return series;
+    return yearly;
   };
 
-  const milestones = [
-    { v: 50000, label: '$50k' }, { v: 100000, label: '$100k' },
-    { v: 250000, label: '$250k' }, { v: 500000, label: '$500k' }, { v: 1000000, label: '$1M' },
-  ];
-  const monthsTo = (target: number) => {
-    if (value >= target) return 0;
-    const r = (eqRet + crRet) / 2 / 100 / 12;
-    let v = value, m = 0;
-    while (v < target && m < 600) { v = v * (1 + r) + contrib; m++; }
-    return m;
-  };
+  const baseSeries = project(contrib, annualReturn);
+  const consSeries = project(contrib * 0.7, 7);
+  const accelSeries = project(contrib * 1.5, 12);
 
-  const baseline = project(10, 0.4);
-  const optimistic = project(10, 0.6);
-  const conservative = (() => {
-    const monthlyR = (eqRet * 0.7 + crRet * 0.3) * 0.5 / 100 / 12;
-    let v = value; const s: number[] = [v];
-    for (let i = 1; i <= 120; i++) { v = v * (1 + monthlyR) + contrib * 0.8; s.push(v); }
-    return s;
-  })();
+  const chartData = baseSeries.map((p, i) => ({
+    year: p.year,
+    base: Math.round(p.value),
+    conservative: Math.round(consSeries[i].value),
+    accelerated: Math.round(accelSeries[i].value),
+    fi: fiTargetVal,
+  }));
 
-  const labels = Array.from({ length: 121 }, (_, i) => `${(i / 12).toFixed(1)}y`);
+  const fiHit = baseSeries.find(p => p.value >= fiTargetVal);
+  const fiYear = fiHit?.year;
+  const fiAge = fiYear ? fiYear - BIRTH_YEAR : null;
+
+  const valueAt = (yr: number) => baseSeries.find(p => p.year === yr)?.value ?? 0;
+
+  const fmtAxis = (v: number) => v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `$${Math.round(v / 1000)}K` : `$${v}`;
+  const fmtUSD = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 
   return (
-    <>
-      <div className={card + ' mb-4'}>
-        <Label>Projection assumptions</Label>
-        <div className="mt-4 grid lg:grid-cols-3 gap-5">
-          <div>
-            <div className="text-xs text-w-muted">Equities return: <Mono className="text-w-text">{eqRet}%</Mono></div>
-            <input type="range" min="0" max="20" step="0.5" value={eqRet} onChange={e => setEqRet(parseFloat(e.target.value))} className="w-full mt-2 accent-w-green" />
-          </div>
-          <div>
-            <div className="text-xs text-w-muted">Crypto return: <Mono className="text-w-text">{crRet}%</Mono></div>
-            <input type="range" min="-20" max="50" step="1" value={crRet} onChange={e => setCrRet(parseFloat(e.target.value))} className="w-full mt-2 accent-w-amber" />
-          </div>
-          <div>
-            <div className="text-xs text-w-muted">Monthly contribution: <Mono className="text-w-text">{fmtMoney(contrib)}</Mono></div>
-            <input type="range" min="0" max="10000" step="100" value={contrib} onChange={e => setContrib(parseFloat(e.target.value))} className="w-full mt-2 accent-w-blue" />
-          </div>
-        </div>
+    <div className={card}>
+      <Label>Portfolio Growth Projection</Label>
+
+      <div className="mt-4 mb-2">
+        {fiYear && fiYear <= END_YEAR ? (
+          <>
+            <div className="font-serif-w text-3xl md:text-4xl text-w-text">
+              You reach {fmtUSD(fiTargetVal)} in <span className="text-w-green">{fiYear}</span>
+            </div>
+            <div className="text-sm text-w-muted mt-1">
+              At your current rate, you reach financial independence in {fiYear} — age {fiAge}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="font-serif-w text-3xl md:text-4xl text-w-text">FI target not reached by {END_YEAR}</div>
+            <div className="text-sm text-w-amber mt-1">Increase your monthly contribution to reach FI by 45</div>
+          </>
+        )}
       </div>
 
-      <div className={card + ' mb-4'}>
-        <Label>10-year scenarios</Label>
-        <div className="h-80 mt-3">
-          <Line
-            data={{
-              labels,
-              datasets: [
-                { label: 'Optimistic', data: optimistic, borderColor: chartColors.green, fill: false, pointRadius: 0 },
-                { label: 'Baseline', data: baseline, borderColor: chartColors.blue, fill: false, pointRadius: 0 },
-                { label: 'Conservative', data: conservative, borderColor: chartColors.amber, fill: false, pointRadius: 0 },
-              ],
-            }}
-            options={{ ...baseChartOpts, scales: { x: baseChartOpts.scales.x, y: { ...baseChartOpts.scales.y, ticks: { ...baseChartOpts.scales.y.ticks, callback: (v: any) => fmtMoney(Number(v), { compact: true }) } } } }}
-          />
-        </div>
+      <div className="h-[340px] mt-6">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="baseFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={chartColors.green} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={chartColors.green} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke={chartColors.border} vertical={false} />
+            <XAxis dataKey="year" stroke={chartColors.muted} tick={{ fontSize: 10 }} />
+            <YAxis stroke={chartColors.muted} tick={{ fontSize: 10 }} tickFormatter={fmtAxis} width={60} />
+            <RTooltip
+              contentStyle={{ background: '#1c1c1f', border: `1px solid ${chartColors.border2}`, borderRadius: 8, fontSize: 12 }}
+              labelStyle={{ color: chartColors.text }}
+              formatter={(v: any, name: string) => [fmtUSD(Number(v)), name]}
+            />
+            <Area type="monotone" dataKey="base" stroke="none" fill="url(#baseFill)" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="conservative" stroke={chartColors.amber} strokeWidth={1.25} dot={false} name="Conservative" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="accelerated" stroke={chartColors.purple} strokeWidth={1.25} dot={false} name="Accelerated" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="base" stroke={chartColors.green} strokeWidth={2.25} dot={false} name="Base" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="fi" stroke={chartColors.muted} strokeWidth={1} strokeDasharray="4 4" dot={false} name="FI Target" isAnimationActive={false} />
+            {fiYear && (
+              <ReferenceDot x={fiYear} y={fiTargetVal} r={5} fill={chartColors.green} stroke={chartColors.bg} strokeWidth={2} label={{ value: String(fiYear), position: 'top', fill: chartColors.green, fontSize: 11 }} />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
 
-      <div className={card}>
-        <Label>Milestones</Label>
-        <table className="w-full mt-3 text-sm">
-          <thead><tr className="text-left text-xs text-w-muted border-b border-w-border">
-            <th className="py-2">Milestone</th><th className="py-2 text-right">Months to reach</th><th className="py-2 text-right">Years</th>
-          </tr></thead>
-          <tbody>
-            {milestones.map(m => {
-              const mo = monthsTo(m.v);
-              const reached = value >= m.v;
-              return (
-                <tr key={m.v} className="border-b border-w-border/50">
-                  <td className="py-2 text-w-text">{m.label}</td>
-                  <td className={`py-2 text-right font-mono-w ${reached ? 'text-w-green' : 'text-w-text'}`}>{reached ? 'reached' : mo}</td>
-                  <td className="py-2 text-right font-mono-w text-w-muted">{reached ? '—' : (mo / 12).toFixed(1)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6">
+        {[[2029, 35], [2034, 40], [2039, 45]].map(([yr, age]) => (
+          <div key={yr} className={card2}>
+            <Label>Value at age {age} ({yr})</Label>
+            <Mono className="text-2xl text-w-text mt-1 block">{fmtUSD(valueAt(yr))}</Mono>
+          </div>
+        ))}
       </div>
-    </>
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <ProjInput label="Current portfolio balance ($)">
+          <input type="number" value={balance} onChange={e => setBalance(Number(e.target.value) || 0)} className={inputCls} />
+        </ProjInput>
+
+        <ProjInput label={`FI target — ${fmtUSD(fiTargetVal)}`}>
+          <input type="number" value={fiTargetVal} onChange={e => setFiTargetVal(Number(e.target.value) || 0)} className={inputCls} />
+        </ProjInput>
+
+        <ProjInput label={`Monthly contribution — ${fmtUSD(contrib)}`}>
+          <div className="flex items-center gap-3">
+            <input type="range" min={0} max={5000} step={50} value={contrib} onChange={e => setContrib(Number(e.target.value))} className="w-full accent-w-green" />
+            <input type="number" value={contrib} onChange={e => setContrib(Number(e.target.value) || 0)} className={inputCls + ' w-28'} />
+          </div>
+        </ProjInput>
+
+        <ProjInput label={`Annual return — ${annualReturn}%`}>
+          <input type="range" min={4} max={18} step={0.5} value={annualReturn} onChange={e => setAnnualReturn(Number(e.target.value))} className="w-full accent-w-green" />
+        </ProjInput>
+
+        <ProjInput label={`Contribution growth — ${contribGrowth}%/yr`}>
+          <input type="range" min={0} max={10} step={0.5} value={contribGrowth} onChange={e => setContribGrowth(Number(e.target.value))} className="w-full accent-w-green" />
+        </ProjInput>
+      </div>
+    </div>
   );
 };
+
+const ProjInput: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div>
+    <Label className="mb-2 block">{label}</Label>
+    {children}
+  </div>
+);
 
 const InvArchive: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
   const { user } = useAuth();
