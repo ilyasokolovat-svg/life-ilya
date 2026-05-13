@@ -286,10 +286,10 @@ const InvProjection: React.FC<{ d: WealthData }> = ({ d }) => {
               formatter={(v: any, name: string) => [fmtUSD(Number(v)), name]}
             />
             <Area type="monotone" dataKey="base" stroke="none" fill="url(#baseFill)" isAnimationActive={false} />
-            <Line type="monotone" dataKey="conservative" stroke={chartColors.amber} strokeWidth={1.25} dot={false} name="Conservative" isAnimationActive={false} />
-            <Line type="monotone" dataKey="accelerated" stroke={chartColors.purple} strokeWidth={1.25} dot={false} name="Accelerated" isAnimationActive={false} />
-            <Line type="monotone" dataKey="base" stroke={chartColors.green} strokeWidth={2.25} dot={false} name="Base" isAnimationActive={false} />
-            <Line type="monotone" dataKey="fi" stroke={chartColors.muted} strokeWidth={1} strokeDasharray="4 4" dot={false} name="FI Target" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="conservative" stroke={chartColors.amber} strokeWidth={1.25} dot={false} name="Conservative" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="accelerated" stroke={chartColors.purple} strokeWidth={1.25} dot={false} name="Accelerated" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="base" stroke={chartColors.green} strokeWidth={2.25} dot={false} name="Base" isAnimationActive={false} />
+            <RLine type="monotone" dataKey="fi" stroke={chartColors.muted} strokeWidth={1} strokeDasharray="4 4" dot={false} name="FI Target" isAnimationActive={false} />
             {fiYear && (
               <ReferenceDot x={fiYear} y={fiTargetVal} r={5} fill={chartColors.green} stroke={chartColors.bg} strokeWidth={2} label={{ value: String(fiYear), position: 'top', fill: chartColors.green, fontSize: 11 }} />
             )}
