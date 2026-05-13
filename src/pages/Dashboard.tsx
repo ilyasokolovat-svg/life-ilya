@@ -13,7 +13,7 @@ import WeeklySummaryDashboard from "@/components/WeeklySummaryDashboard";
 import TestDataLoader from "@/components/TestDataLoader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { HabitStreakSummary } from "@/components/dashboard/HabitStreakSummary";
-import { GoalsProgressSection } from "@/components/dashboard/GoalsProgressSection";
+import { QuarterlyDashboardStrip } from "@/goals/components/QuarterlyDashboardStrip";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -122,11 +122,11 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* 7-day streak + Goals progress side by side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <HabitStreakSummary />
-            <GoalsProgressSection />
-          </div>
+          {/* 7-day streak */}
+          <HabitStreakSummary />
+
+          {/* Quarterly goals weekly snapshot */}
+          <QuarterlyDashboardStrip />
 
           {/* Weekly Summary */}
           <WeeklySummaryDashboard />

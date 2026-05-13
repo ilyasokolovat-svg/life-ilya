@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import GoalsOverview from "./pages/GoalsOverview";
+import GoalsV2 from "./pages/GoalsV2";
 import LifeEvents from "./pages/LifeEvents";
 import TripPlanning from "./pages/TripPlanning";
 import YearAnalysis from "./pages/YearAnalysis";
@@ -99,7 +100,8 @@ const AppRoutes = () => {
         <Route path="/habits" element={<ProtectedRoute><Index /></ProtectedRoute>} />
         <Route path="/life-events" element={<ProtectedRoute><LifeEvents /></ProtectedRoute>} />
         <Route path="/goals/:category" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
-        <Route path="/goals-overview" element={<ProtectedRoute><GoalsOverview /></ProtectedRoute>} />
+        <Route path="/goals-overview" element={<ProtectedRoute><GoalsV2 /></ProtectedRoute>} />
+        <Route path="/goals" element={<ProtectedRoute><GoalsV2 /></ProtectedRoute>} />
         <Route path="/trip-planning" element={<ProtectedRoute><TripPlanning /></ProtectedRoute>} />
         <Route path="/year-analysis" element={<ProtectedRoute><YearAnalysisIndex /></ProtectedRoute>} />
         <Route path="/year-analysis/:year" element={<ProtectedRoute><YearAnalysis /></ProtectedRoute>} />

@@ -70,6 +70,14 @@
     --success-light: 142 70% 60%;
     --warning: 48 96% 53%;
     --info: 217 91% 60%;
+
+    /* Goal palette */
+    --goal-coral: 6 85% 67%;
+    --goal-purple: 263 70% 65%;
+    --goal-teal: 175 65% 48%;
+    --goal-green: 145 60% 48%;
+    --goal-amber: 38 92% 58%;
+    --goal-pink: 330 78% 65%;
   }
 }
 
