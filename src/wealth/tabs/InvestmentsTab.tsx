@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import {
+  ResponsiveContainer, ComposedChart, Line as RLine, Area, XAxis, YAxis,
+  CartesianGrid, Tooltip as RTooltip, ReferenceDot,
+} from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '../types';
-import { card, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
+import { card, card2, kpi, inputCls, btn, btnPrimary, Heading, Label, Mono, KpiCard, Empty, TabButton, baseChartOpts, chartColors } from '../ui';
 import { fmtMoney, fmtPct, monthLabel, todayMonth, toDisplay, fromDisplay } from '../format';
 import { investmentMonths, totalPortfolio, totalContributed, cryptoExposurePct } from '../calc';
 import { CryptoMeter } from './NetWorthTab';
