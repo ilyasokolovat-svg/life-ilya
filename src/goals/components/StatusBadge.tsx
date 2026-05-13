@@ -1,5 +1,6 @@
 import React from "react";
-import { Status, STATUS_COLOR, STATUS_LABEL } from "../utils";
+import { Status } from "../types";
+import { STATUS_COLOR, STATUS_LABEL } from "../utils";
 
 export function StatusBadge({ status }: { status: Status }) {
   const color = STATUS_COLOR[status];
