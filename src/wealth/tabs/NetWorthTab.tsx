@@ -15,7 +15,10 @@ import {
 
 const sb = supabase as any;
 
+import { VIRTUAL_INVESTMENT_ACCOUNT_ID } from '../useWealthData';
+
 const sortedAccounts = (d: WealthData) => [...d.accounts].sort((a, b) => a.sort_order - b.sort_order);
+const editableAccounts = (d: WealthData) => sortedAccounts(d).filter(a => a.id !== VIRTUAL_INVESTMENT_ACCOUNT_ID);
 
 // =========================== NET WORTH TAB ===========================
 import { AccountsManager } from '../Managers';
@@ -55,7 +58,7 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
 
 const NWArchive: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
   const { user } = useAuth();
-  const accs = sortedAccounts(d);
+  const accs = editableAccounts(d);
   const months = nwMonths(d).slice().reverse();
   const [edits, setEdits] = useState<Record<string, string>>({});
 
@@ -102,6 +105,7 @@ const NWArchive: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: st
   return (
     <div className={card}>
       <Label>Snapshot archive — click any cell to edit, blur to save</Label>
+      <p className="text-[11px] text-w-muted mt-1">Investments are auto-derived from the Investments tab and not shown here.</p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -350,7 +354,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
   const months = nwMonths(d);
   const lastMonth = months[months.length - 1];
   const [month, setMonth] = useState(todayMonth());
-  const accs = sortedAccounts(d);
+  const accs = editableAccounts(d);
   const [vals, setVals] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     accs.forEach(a => {

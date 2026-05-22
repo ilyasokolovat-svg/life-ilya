@@ -1,8 +1,7 @@
-// Historical seed data for Ilya
+// Net worth accounts now exclude investment-mirror entries (ETFs & Stocks, Crypto)
+// — those are derived automatically from investment_snapshots.
 export const SEED_ACCOUNTS = [
   { label: 'Cash & Yield', type: 'cash' as const, liquid: true, is_estimated: false, color: '#60a5fa', sort_order: 0 },
-  { label: 'ETFs & Stocks', type: 'investments' as const, liquid: true, is_estimated: false, color: '#4ade80', sort_order: 1 },
-  { label: 'Crypto', type: 'investments' as const, liquid: true, is_estimated: true, color: '#fbbf24', sort_order: 2 },
   { label: 'Car Loan', type: 'debt' as const, liquid: false, is_estimated: false, color: '#f87171', sort_order: 3 },
   { label: 'Credit Card', type: 'debt' as const, liquid: true, is_estimated: false, color: '#fb923c', sort_order: 4 },
 ];

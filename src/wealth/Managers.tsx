@@ -22,7 +22,7 @@ const ModalShell: React.FC<{ title: string; onClose: () => void; children: React
 // ===== Accounts =====
 export const AccountsManager: React.FC<{ d: WealthData; onClose: () => void; onChange: () => void }> = ({ d, onClose, onChange }) => {
   const { user } = useAuth();
-  const [items, setItems] = useState(() => [...d.accounts].sort((a, b) => a.sort_order - b.sort_order));
+  const [items, setItems] = useState(() => [...d.accounts].filter(a => a.id !== '__investments__').sort((a, b) => a.sort_order - b.sort_order));
   const [busy, setBusy] = useState(false);
 
   const update = (id: string, patch: any) => setItems(items.map(i => i.id === id ? { ...i, ...patch } : i));
@@ -287,7 +287,7 @@ export const GoalsManager: React.FC<{ d: WealthData; onClose: () => void; onChan
                   <Label>Linked account</Label>
                   <select className={`${inputCls} mt-1`} value={g.linked_account_id || ''} onChange={e => update(g.id, { linked_account_id: e.target.value || null })}>
                     <option value="">Select account</option>
-                    {d.accounts.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                    {d.accounts.filter(a => a.id !== '__investments__').map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
                   </select>
                 </div>
               )}

@@ -13,6 +13,39 @@ const empty: WealthData = {
   investmentSnapshots: [], goals: [], bonusPools: [], bonusAllocations: [],
 };
 
+export const VIRTUAL_INVESTMENT_ACCOUNT_ID = '__investments__';
+
+// Inject a synthetic "Investments" account whose monthly value is the sum of
+// investment_snapshots for that month. Investments tab is single source of truth.
+function withDerivedInvestments(data: WealthData): WealthData {
+  if (!data.investmentSnapshots.length && !data.investmentBuckets.length) return data;
+  const syntheticAccount = {
+    id: VIRTUAL_INVESTMENT_ACCOUNT_ID,
+    label: 'Investments',
+    type: 'investments' as const,
+    liquid: true,
+    is_estimated: false,
+    linked_goal_id: null,
+    color: '#4ade80',
+    sort_order: 1,
+    target_pct: 0,
+  };
+  const accounts = data.accounts.some(a => a.id === VIRTUAL_INVESTMENT_ACCOUNT_ID)
+    ? data.accounts
+    : [...data.accounts, syntheticAccount as any];
+  const perMonth = new Map<string, number>();
+  for (const s of data.investmentSnapshots) {
+    perMonth.set(s.month, (perMonth.get(s.month) || 0) + Number(s.value));
+  }
+  const synthSnaps = Array.from(perMonth.entries()).map(([month, value]) => ({
+    id: `__inv__${month}`,
+    month,
+    account_id: VIRTUAL_INVESTMENT_ACCOUNT_ID,
+    value,
+  }));
+  return { ...data, accounts, nwSnapshots: [...data.nwSnapshots, ...synthSnaps] };
+}
+
 const sb = supabase as any;
 
 export function useWealthData() {
@@ -43,7 +76,7 @@ export function useWealthData() {
       sb.from('bonus_pools').select('*').eq('user_id', uid),
       sb.from('bonus_allocations').select('*').eq('user_id', uid),
     ]);
-    setData({
+    setData(withDerivedInvestments({
       settings: settings.data,
       accounts: accounts.data || [],
       nwSnapshots: nwSnapshots.data || [],
@@ -56,7 +89,7 @@ export function useWealthData() {
       goals: goals.data || [],
       bonusPools: bonusPools.data || [],
       bonusAllocations: bonusAllocations.data || [],
-    });
+    }));
     return settings.data;
   }, [user]);
 
@@ -97,10 +130,8 @@ export function useWealthData() {
     await sb.from('investment_snapshots').insert(invRows);
 
     const nwRows: any[] = [];
-    for (const [m, cash, inv, cry, car, cc] of SEED_NW) {
+    for (const [m, cash, _inv, _cry, car, cc] of SEED_NW) {
       nwRows.push({ user_id: uid, month: m, account_id: accMap['Cash & Yield'], value: cash });
-      nwRows.push({ user_id: uid, month: m, account_id: accMap['ETFs & Stocks'], value: inv });
-      nwRows.push({ user_id: uid, month: m, account_id: accMap['Crypto'], value: cry });
       nwRows.push({ user_id: uid, month: m, account_id: accMap['Car Loan'], value: car });
       nwRows.push({ user_id: uid, month: m, account_id: accMap['Credit Card'], value: cc });
     }
