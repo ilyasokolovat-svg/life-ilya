@@ -354,7 +354,7 @@ const LogMonthForm: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, onS
   const months = nwMonths(d);
   const lastMonth = months[months.length - 1];
   const [month, setMonth] = useState(todayMonth());
-  const accs = sortedAccounts(d);
+  const accs = editableAccounts(d);
   const [vals, setVals] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     accs.forEach(a => {
