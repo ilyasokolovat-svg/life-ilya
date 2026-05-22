@@ -287,7 +287,7 @@ export const GoalsManager: React.FC<{ d: WealthData; onClose: () => void; onChan
                   <Label>Linked account</Label>
                   <select className={`${inputCls} mt-1`} value={g.linked_account_id || ''} onChange={e => update(g.id, { linked_account_id: e.target.value || null })}>
                     <option value="">Select account</option>
-                    {d.accounts.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                    {d.accounts.filter(a => a.id !== '__investments__').map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
                   </select>
                 </div>
               )}
