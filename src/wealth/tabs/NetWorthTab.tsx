@@ -58,7 +58,7 @@ export const NetWorthTab: React.FC<{ d: WealthData; onChange: () => void; onToas
 
 const NWArchive: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: string) => void }> = ({ d, onChange, onToast }) => {
   const { user } = useAuth();
-  const accs = sortedAccounts(d);
+  const accs = editableAccounts(d);
   const months = nwMonths(d).slice().reverse();
   const [edits, setEdits] = useState<Record<string, string>>({});
 
