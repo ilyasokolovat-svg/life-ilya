@@ -130,10 +130,8 @@ export function useWealthData() {
     await sb.from('investment_snapshots').insert(invRows);
 
     const nwRows: any[] = [];
-    for (const [m, cash, inv, cry, car, cc] of SEED_NW) {
+    for (const [m, cash, _inv, _cry, car, cc] of SEED_NW) {
       nwRows.push({ user_id: uid, month: m, account_id: accMap['Cash & Yield'], value: cash });
-      nwRows.push({ user_id: uid, month: m, account_id: accMap['ETFs & Stocks'], value: inv });
-      nwRows.push({ user_id: uid, month: m, account_id: accMap['Crypto'], value: cry });
       nwRows.push({ user_id: uid, month: m, account_id: accMap['Car Loan'], value: car });
       nwRows.push({ user_id: uid, month: m, account_id: accMap['Credit Card'], value: cc });
     }
