@@ -15,7 +15,10 @@ import {
 
 const sb = supabase as any;
 
+import { VIRTUAL_INVESTMENT_ACCOUNT_ID } from '../useWealthData';
+
 const sortedAccounts = (d: WealthData) => [...d.accounts].sort((a, b) => a.sort_order - b.sort_order);
+const editableAccounts = (d: WealthData) => sortedAccounts(d).filter(a => a.id !== VIRTUAL_INVESTMENT_ACCOUNT_ID);
 
 // =========================== NET WORTH TAB ===========================
 import { AccountsManager } from '../Managers';
