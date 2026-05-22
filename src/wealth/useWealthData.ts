@@ -76,7 +76,7 @@ export function useWealthData() {
       sb.from('bonus_pools').select('*').eq('user_id', uid),
       sb.from('bonus_allocations').select('*').eq('user_id', uid),
     ]);
-    setData({
+    setData(withDerivedInvestments({
       settings: settings.data,
       accounts: accounts.data || [],
       nwSnapshots: nwSnapshots.data || [],
@@ -89,7 +89,7 @@ export function useWealthData() {
       goals: goals.data || [],
       bonusPools: bonusPools.data || [],
       bonusAllocations: bonusAllocations.data || [],
-    });
+    }));
     return settings.data;
   }, [user]);
 
