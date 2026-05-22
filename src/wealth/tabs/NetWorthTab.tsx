@@ -105,6 +105,7 @@ const NWArchive: React.FC<{ d: WealthData; onChange: () => void; onToast: (m: st
   return (
     <div className={card}>
       <Label>Snapshot archive — click any cell to edit, blur to save</Label>
+      <p className="text-[11px] text-w-muted mt-1">Investments are auto-derived from the Investments tab and not shown here.</p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
