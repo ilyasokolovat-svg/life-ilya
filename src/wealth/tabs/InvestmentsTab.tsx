@@ -348,12 +348,12 @@ const InvArchive: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
   const buckets = sortedBuckets(d);
   const reverse = [...months].reverse();
 
-  const saveContrib = async (month: string, bucketId: string, raw: string) => {
+  const saveField = async (month: string, bucketId: string, field: 'value' | 'contribution', raw: string) => {
     if (!user) return;
-    const contribution = fromDisplay(parseFloat(raw || '0')) || 0;
+    const num = fromDisplay(parseFloat(raw || '0')) || 0;
     const existing = d.investmentSnapshots.find(s => s.month === month && s.bucket_id === bucketId);
-    if (existing) await sb.from('investment_snapshots').update({ contribution }).eq('id', existing.id);
-    else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: bucketId, value: 0, contribution });
+    if (existing) await sb.from('investment_snapshots').update({ [field]: num }).eq('id', existing.id);
+    else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: bucketId, value: field === 'value' ? num : 0, contribution: field === 'contribution' ? num : 0 });
     onChange();
   };
 
