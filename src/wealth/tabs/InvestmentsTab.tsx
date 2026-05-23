@@ -348,12 +348,12 @@ const InvArchive: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
   const buckets = sortedBuckets(d);
   const reverse = [...months].reverse();
 
-  const saveContrib = async (month: string, bucketId: string, raw: string) => {
+  const saveField = async (month: string, bucketId: string, field: 'value' | 'contribution', raw: string) => {
     if (!user) return;
-    const contribution = fromDisplay(parseFloat(raw || '0')) || 0;
+    const num = fromDisplay(parseFloat(raw || '0')) || 0;
     const existing = d.investmentSnapshots.find(s => s.month === month && s.bucket_id === bucketId);
-    if (existing) await sb.from('investment_snapshots').update({ contribution }).eq('id', existing.id);
-    else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: bucketId, value: 0, contribution });
+    if (existing) await sb.from('investment_snapshots').update({ [field]: num }).eq('id', existing.id);
+    else await sb.from('investment_snapshots').insert({ user_id: user.id, month, bucket_id: bucketId, value: field === 'value' ? num : 0, contribution: field === 'contribution' ? num : 0 });
     onChange();
   };
 
@@ -384,15 +384,23 @@ const InvArchive: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
                     const cb = Number(snap?.contribution ?? 0);
                     return (
                       <td key={b.id} className="py-2 text-right font-mono-w text-w-muted">
-                        <div className="text-w-text">{fmtMoney(v, { compact: true })}</div>
                         <input
-                          defaultValue={cb ? Math.round(toDisplay(cb)) : ''}
+                          defaultValue={v ? Math.round(toDisplay(v)) : ''}
                           placeholder="0"
                           onBlur={e => {
                             const newV = Number(e.target.value || 0);
-                            if (newV !== Math.round(toDisplay(cb))) saveContrib(m, b.id, e.target.value);
+                            if (newV !== Math.round(toDisplay(v))) saveField(m, b.id, 'value', e.target.value);
                           }}
-                          className="w-16 bg-transparent text-right text-[11px] text-w-blue hover:bg-w-surface2 focus:bg-w-surface2 rounded px-1 outline-none"
+                          className="w-20 bg-transparent text-right text-[12px] text-w-text hover:bg-w-surface2 focus:bg-w-surface2 rounded px-1 outline-none"
+                        />
+                        <input
+                          defaultValue={cb ? Math.round(toDisplay(cb)) : ''}
+                          placeholder="+ contrib"
+                          onBlur={e => {
+                            const newV = Number(e.target.value || 0);
+                            if (newV !== Math.round(toDisplay(cb))) saveField(m, b.id, 'contribution', e.target.value);
+                          }}
+                          className="w-20 bg-transparent text-right text-[11px] text-w-blue hover:bg-w-surface2 focus:bg-w-surface2 rounded px-1 outline-none mt-0.5"
                         />
                       </td>
                     );
