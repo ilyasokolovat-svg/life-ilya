@@ -62,6 +62,7 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
       value_source: source === 'linked_bucket' ? 'linked_bucket' : source,
       linked_account_id: source === 'linked_bucket' ? bucketId || null : null,
       manual_current_value: source === 'manual' ? (Number(manualValue) || 0) : 0,
+      planned_monthly_contribution: plannedMonthly.trim() === '' ? null : (Number(plannedMonthly) || null),
     };
     if (isEdit) {
       await sb.from('goals').update(payload).eq('id', goal.id);
