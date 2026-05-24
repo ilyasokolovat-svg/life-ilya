@@ -120,6 +120,19 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
             </Select>
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="planned-monthly">Planned monthly contribution ($)</Label>
+            <Input
+              id="planned-monthly"
+              type="number"
+              value={plannedMonthly}
+              onChange={e => setPlannedMonthly(e.target.value)}
+              placeholder="e.g. 1,300"
+            />
+            <p className="text-xs text-muted-foreground">Used to calculate whether you're on track each month</p>
+          </div>
+
+
           {source === 'linked_bucket' && (
             <div className="space-y-1.5">
               <Label>Bucket</Label>
