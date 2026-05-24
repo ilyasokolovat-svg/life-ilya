@@ -243,11 +243,12 @@ export const goalProgressDetails = (d: WealthData, g: any): GoalProgressDetails 
 };
 
 export const goalStatus = (d: WealthData, g: any): GoalStatus => {
-  const target = Number(g.target_amount) || 0;
+  const storedTarget = Number(g.target_amount) || 0;
   const current = goalCurrent(d, g);
   const planned = Number(g.planned_monthly_contribution) || 0;
   const start = goalStartingValue(d, g);
-  const isPaydown = start > target; // debt payoff: starting balance higher than target (usually 0)
+  const isPaydown = isPaydownGoal(d, g, start, storedTarget);
+  const target = isPaydown ? effectiveGoalTarget(d, g, storedTarget) : storedTarget;
 
   if (isPaydown ? current <= target : current >= target) return 'complete';
 
@@ -294,10 +295,11 @@ export const goalStatus = (d: WealthData, g: any): GoalStatus => {
 };
 
 export const goalProjectedDate = (d: WealthData, g: any): Date | null => {
-  const target = Number(g.target_amount) || 0;
+  const storedTarget = Number(g.target_amount) || 0;
   const current = goalCurrent(d, g);
   const start = goalStartingValue(d, g);
-  const isPaydown = start > target;
+  const isPaydown = isPaydownGoal(d, g, start, storedTarget);
+  const target = isPaydown ? effectiveGoalTarget(d, g, storedTarget) : storedTarget;
   const remaining = isPaydown ? Math.max(0, current - target) : Math.max(0, target - current);
 
   const planned = Number(g.planned_monthly_contribution) || 0;
