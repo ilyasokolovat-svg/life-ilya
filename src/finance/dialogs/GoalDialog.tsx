@@ -136,14 +136,39 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
           {source === 'linked_bucket' && (
             <div className="space-y-1.5">
               <Label>Bucket</Label>
-              <Select value={bucketId} onValueChange={setBucketId}>
+              <Select
+                value={bucketId}
+                onValueChange={async (v) => {
+                  if (v === '__new__') {
+                    const label = window.prompt('New bucket name (e.g. Savings, Emergency Fund)')?.trim();
+                    if (!label || !user) return;
+                    const { data } = await sb.from('investment_buckets').insert({
+                      user_id: user.id,
+                      label,
+                      description: '',
+                      color: color,
+                      sort_order: (d.investmentBuckets.length || 0),
+                    }).select().single();
+                    if (data) {
+                      d.investmentBuckets.push(data);
+                      setBucketId(data.id);
+                    }
+                  } else {
+                    setBucketId(v);
+                  }
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder="Select bucket" /></SelectTrigger>
                 <SelectContent>
                   {d.investmentBuckets.map(b => (
                     <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
                   ))}
+                  <SelectItem value="__new__">+ Create new bucket…</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Add a bucket like "Savings" or "Emergency Fund" to track separately from investments.
+              </p>
             </div>
           )}
 
