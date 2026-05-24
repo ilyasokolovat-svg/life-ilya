@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Plus, Pencil, Settings2 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip, XAxis, YAxis } from 'recharts';
 import type { WealthData } from '@/wealth/types';
-import { latestNetWorth, netWorthSeries, latestBucketValues, ccAccount, carLoanAccount, goalCurrent, goalStatus, goalProjectedDate, GoalStatus } from '../calc';
+import { latestNetWorth, netWorthSeries, latestBucketValues, ccAccount, carLoanAccount, goalStatus, goalProjectedDate, goalProgressDetails, GoalStatus } from '../calc';
 import { fmtUSD, fmtPct, fmtDate, parseEntryDate } from '../utils';
 import { COLORS } from '../constants';
 import { BucketsDialog, GoalsManageDialog } from '../dialogs/BucketsDialog';
@@ -159,9 +159,10 @@ export const OverviewTab: React.FC<{ d: WealthData; onChange: () => void; carMar
         <CardContent className="space-y-3">
           {d.goals.length === 0 && <div className="text-sm text-muted-foreground py-4">No goals yet.</div>}
           {d.goals.map(g => {
-            const cur = goalCurrent(d, g);
-            const target = Number(g.target_amount) || 1;
-            const pct = Math.min(100, Math.max(0, (cur / target) * 100));
+            const progress = goalProgressDetails(d, g);
+            const cur = progress.current;
+            const target = progress.effectiveTarget || progress.target || 1;
+            const pct = progress.pct;
             const status = goalStatus(d, g);
             const proj = goalProjectedDate(d, g);
             return (
