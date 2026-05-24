@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area, LineChart, Line, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area, LineChart, Line, Legend } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '@/wealth/types';
@@ -58,8 +58,8 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} />
                 <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
                 <Tooltip formatter={(v: any) => fmtUSD(Number(v))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                <Bar dataKey="commission">
-                  {data.map((r, i) => <rect key={i} fill={r.commission > 0 ? COLORS.etfs : '#e2e8f0'} />)}
+                <Bar dataKey="commission" radius={[4, 4, 0, 0]}>
+                  {data.map((r, i) => <Cell key={i} fill={r.commission > 0 ? COLORS.etfs : '#e2e8f0'} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
