@@ -1,5 +1,5 @@
-import type { WealthData, InvestmentSnapshot, NWSnapshot } from '@/wealth/types';
-import { parseEntryDate, sortByDateAsc, sortByDateDesc, monthOf } from './utils';
+import type { WealthData, NWSnapshot } from '@/wealth/types';
+import { parseEntryDate, sortByDateAsc, sortByDateDesc } from './utils';
 import { VIRTUAL_INVESTMENT_ACCOUNT_ID } from '@/wealth/useWealthData';
 
 // All unique entry dates (months) where investments were logged, ascending.
