@@ -161,10 +161,13 @@ export const OverviewTab: React.FC<{ d: WealthData; onChange: () => void; carMar
           {d.goals.map(g => {
             const progress = goalProgressDetails(d, g);
             const cur = progress.current;
-            const target = progress.effectiveTarget || progress.target || 1;
+            const target = progress.isPaydown ? progress.baseline : (progress.target || 1);
             const pct = progress.pct;
             const status = goalStatus(d, g);
             const proj = goalProjectedDate(d, g);
+            const progressLabel = progress.isPaydown
+              ? `${fmtUSD(progress.progressValue, { compact: true })} paid down of ${fmtUSD(target, { compact: true })}`
+              : `${fmtUSD(cur, { compact: true })} / ${fmtUSD(target, { compact: true })}`;
             return (
               <button
                 key={g.id}
@@ -180,7 +183,7 @@ export const OverviewTab: React.FC<{ d: WealthData; onChange: () => void; carMar
                 </div>
                 <Progress value={pct} className="h-1.5" />
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1.5">
-                  <span><span className="tabular-nums">{fmtUSD(cur, { compact: true })}</span> / {fmtUSD(target, { compact: true })} · {pct.toFixed(1)}%</span>
+                  <span><span className="tabular-nums">{progressLabel}</span> · {pct.toFixed(1)}%</span>
                   <span>
                     {proj
                       ? `Est. ${proj.toLocaleString('en-US', { month: 'short', year: 'numeric' })}`
