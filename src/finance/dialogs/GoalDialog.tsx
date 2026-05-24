@@ -39,8 +39,9 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
       setName(goal?.name ?? '');
       setTarget(String(goal?.target_amount ?? 1000000));
       setDeadline((goal?.target_date ?? '2029-09').slice(0, 7));
-      const src = (goal?.value_source as Source) || 'net_worth';
-      setSource(src === 'linked_account' ? 'linked_bucket' : src);
+      const rawSrc = (goal?.value_source as string) || 'net_worth';
+      const src: Source = rawSrc === 'linked_account' || rawSrc === 'linked_bucket' ? 'linked_bucket' : (rawSrc as Source);
+      setSource(src);
       setBucketId(goal?.linked_account_id ?? '');
       setManualValue(String(goal?.manual_current_value ?? 0));
       setColor(goal?.color ?? GOAL_COLOR_PRESETS[0]);
