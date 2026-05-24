@@ -45,6 +45,7 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
       setSource(src);
       setBucketId(goal?.linked_account_id ?? '');
       setManualValue(String(goal?.manual_current_value ?? 0));
+      setPlannedMonthly(goal?.planned_monthly_contribution != null ? String(goal.planned_monthly_contribution) : '');
       setColor(goal?.color ?? GOAL_COLOR_PRESETS[0]);
     }
   }, [open, goal]);
