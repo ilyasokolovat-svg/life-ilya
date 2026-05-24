@@ -171,12 +171,24 @@ const monthsSince = (iso: string | null | undefined): number => {
 export const goalStatus = (d: WealthData, g: any): GoalStatus => {
   const target = Number(g.target_amount) || 0;
   const current = goalCurrent(d, g);
-  if (target > 0 && current >= target) return 'complete';
-
   const planned = Number(g.planned_monthly_contribution) || 0;
+  const start = goalStartingValue(d, g);
+  const isPaydown = start > target; // debt payoff: starting balance higher than target (usually 0)
+
+  if (isPaydown ? current <= target : current >= target) return 'complete';
+
   if (planned > 0) {
-    const start = goalStartingValue(d, g);
     const months = monthsSince(g.created_at);
+    if (isPaydown) {
+      const expected = Math.max(target, start - planned * months);
+      const plannedProgress = start - expected;
+      const actualProgress = start - current;
+      if (plannedProgress <= 0) return 'on-track';
+      const ratio = actualProgress / plannedProgress;
+      if (ratio >= 0.9) return 'on-track';
+      if (ratio >= 0.7) return 'at-risk';
+      return 'behind';
+    }
     const expected = start + planned * months;
     if (expected <= 0) return 'on-track';
     const ratio = current / expected;
@@ -188,7 +200,7 @@ export const goalStatus = (d: WealthData, g: any): GoalStatus => {
   const deadline = parseEntryDate(g.target_date);
   const now = new Date();
   const monthsLeft = Math.max(0, (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30));
-  if (monthsLeft <= 0) return current >= target ? 'complete' : 'behind';
+  if (monthsLeft <= 0) return (isPaydown ? current <= target : current >= target) ? 'complete' : 'behind';
 
   const series = netWorthSeries(d);
   let monthlyPace = 0;
@@ -210,7 +222,9 @@ export const goalStatus = (d: WealthData, g: any): GoalStatus => {
 export const goalProjectedDate = (d: WealthData, g: any): Date | null => {
   const target = Number(g.target_amount) || 0;
   const current = goalCurrent(d, g);
-  const remaining = Math.max(0, target - current);
+  const start = goalStartingValue(d, g);
+  const isPaydown = start > target;
+  const remaining = isPaydown ? Math.max(0, current - target) : Math.max(0, target - current);
 
   const planned = Number(g.planned_monthly_contribution) || 0;
   if (planned > 0) {
@@ -219,6 +233,8 @@ export const goalProjectedDate = (d: WealthData, g: any): Date | null => {
     d2.setMonth(d2.getMonth() + Math.ceil(monthsNeeded));
     return d2;
   }
+
+  if (isPaydown) return null;
 
   const series = netWorthSeries(d);
   if (series.length < 2) return null;
