@@ -36,6 +36,15 @@ export const ccAccount = (d: WealthData) => findAccount(d, l => l.includes('cred
 export const carLoanAccount = (d: WealthData) => findAccount(d, l => l.includes('car') && l.includes('loan'));
 export const cashAccount = (d: WealthData) => findAccount(d, l => l.includes('cash'));
 
+const linkedAccountForGoal = (d: WealthData, g: any) =>
+  g.linked_account_id ? d.accounts.find(a => a.id === g.linked_account_id) : undefined;
+
+const isDebtAccount = (account: ReturnType<typeof linkedAccountForGoal>): boolean => {
+  if (!account) return false;
+  const label = account.label.toLowerCase();
+  return account.type === 'debt' || label.includes('loan') || label.includes('debt') || label.includes('credit');
+};
+
 // Latest balance for a given account (returns raw stored value — debts are negative).
 export const latestAccountValue = (d: WealthData, accountId: string | undefined): { value: number; date: string | null } => {
   if (!accountId) return { value: 0, date: null };
@@ -150,13 +159,25 @@ const goalStartingValue = (d: WealthData, g: any): number => {
     return v;
   }
   if (source === 'linked_bucket' || source === 'linked_account') {
-    const snaps = sortByDateAsc(d.investmentSnapshots.filter(s => s.bucket_id === g.linked_account_id));
-    let v = 0;
-    for (const s of snaps) {
-      if (parseEntryDate(s.month).getTime() <= ts) v = Number(s.value);
-      else break;
+    const bucketSnaps = sortByDateAsc(d.investmentSnapshots.filter(s => s.bucket_id === g.linked_account_id));
+    if (bucketSnaps.length) {
+      let v = Number(bucketSnaps[0].value);
+      for (const s of bucketSnaps) {
+        if (parseEntryDate(s.month).getTime() <= ts) v = Number(s.value);
+        else break;
+      }
+      return v;
     }
-    return v;
+
+    const accountSnaps = sortByDateAsc(d.nwSnapshots.filter(s => s.account_id === g.linked_account_id));
+    if (accountSnaps.length) {
+      let v = Math.abs(Number(accountSnaps[0].value));
+      for (const s of accountSnaps) {
+        if (parseEntryDate(s.month).getTime() <= ts) v = Math.abs(Number(s.value));
+        else break;
+      }
+      return v;
+    }
   }
   return goalCurrent(d, g);
 };
@@ -166,6 +187,59 @@ const monthsSince = (iso: string | null | undefined): number => {
   const start = new Date(iso);
   const now = new Date();
   return Math.max(0, (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
+};
+
+const isPaydownGoal = (d: WealthData, g: any, start: number, target: number): boolean =>
+  isDebtAccount(linkedAccountForGoal(d, g)) || start > target;
+
+const effectiveGoalTarget = (d: WealthData, g: any, target: number): number =>
+  isDebtAccount(linkedAccountForGoal(d, g)) ? 0 : target;
+
+export type GoalProgressDetails = {
+  current: number;
+  target: number;
+  effectiveTarget: number;
+  baseline: number;
+  progressValue: number;
+  remaining: number;
+  pct: number;
+  isPaydown: boolean;
+};
+
+export const goalProgressDetails = (d: WealthData, g: any): GoalProgressDetails => {
+  const target = Number(g.target_amount) || 0;
+  const current = goalCurrent(d, g);
+  const start = goalStartingValue(d, g);
+  const isPaydown = isPaydownGoal(d, g, start, target);
+  const effectiveTarget = isPaydown ? effectiveGoalTarget(d, g, target) : target;
+
+  if (isPaydown) {
+    const baseline = Math.max(start, current, target, 1);
+    const totalPaydown = Math.max(1, baseline - effectiveTarget);
+    const progressValue = Math.min(totalPaydown, Math.max(0, baseline - current));
+    return {
+      current,
+      target,
+      effectiveTarget,
+      baseline,
+      progressValue,
+      remaining: Math.max(0, current - effectiveTarget),
+      pct: Math.min(100, Math.max(0, (progressValue / totalPaydown) * 100)),
+      isPaydown,
+    };
+  }
+
+  const safeTarget = Math.max(1, target);
+  return {
+    current,
+    target,
+    effectiveTarget,
+    baseline: 0,
+    progressValue: current,
+    remaining: Math.max(0, target - current),
+    pct: Math.min(100, Math.max(0, (current / safeTarget) * 100)),
+    isPaydown,
+  };
 };
 
 export const goalStatus = (d: WealthData, g: any): GoalStatus => {
