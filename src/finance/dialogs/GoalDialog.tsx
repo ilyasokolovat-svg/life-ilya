@@ -31,6 +31,7 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
   const [source, setSource] = useState<Source>('net_worth');
   const [bucketId, setBucketId] = useState<string>('');
   const [manualValue, setManualValue] = useState('0');
+  const [plannedMonthly, setPlannedMonthly] = useState<string>('');
   const [color, setColor] = useState<string>(GOAL_COLOR_PRESETS[0]);
   const [saving, setSaving] = useState(false);
 
@@ -44,6 +45,7 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
       setSource(src);
       setBucketId(goal?.linked_account_id ?? '');
       setManualValue(String(goal?.manual_current_value ?? 0));
+      setPlannedMonthly(goal?.planned_monthly_contribution != null ? String(goal.planned_monthly_contribution) : '');
       setColor(goal?.color ?? GOAL_COLOR_PRESETS[0]);
     }
   }, [open, goal]);
@@ -60,6 +62,7 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
       value_source: source === 'linked_bucket' ? 'linked_bucket' : source,
       linked_account_id: source === 'linked_bucket' ? bucketId || null : null,
       manual_current_value: source === 'manual' ? (Number(manualValue) || 0) : 0,
+      planned_monthly_contribution: plannedMonthly.trim() === '' ? null : (Number(plannedMonthly) || null),
     };
     if (isEdit) {
       await sb.from('goals').update(payload).eq('id', goal.id);
@@ -116,6 +119,19 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="planned-monthly">Planned monthly contribution ($)</Label>
+            <Input
+              id="planned-monthly"
+              type="number"
+              value={plannedMonthly}
+              onChange={e => setPlannedMonthly(e.target.value)}
+              placeholder="e.g. 1,300"
+            />
+            <p className="text-xs text-muted-foreground">Used to calculate whether you're on track each month</p>
+          </div>
+
 
           {source === 'linked_bucket' && (
             <div className="space-y-1.5">

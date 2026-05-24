@@ -125,17 +125,71 @@ export const goalCurrent = (d: WealthData, g: any): number => {
 // We approximate "projected completion" using linear pace from project start (= goal creation or 6 months ago).
 export type GoalStatus = 'complete' | 'on-track' | 'at-risk' | 'behind';
 
+// Starting value of the metric a goal tracks, at (or closest before) the goal's creation date.
+const goalStartingValue = (d: WealthData, g: any): number => {
+  const source = g.value_source || 'net_worth';
+  const createdAt = g.created_at ? new Date(g.created_at) : null;
+  const ts = createdAt ? createdAt.getTime() : Date.now();
+
+  if (source === 'net_worth') {
+    const series = netWorthSeries(d);
+    let v = series.length ? series[0].value : 0;
+    for (const s of series) {
+      if (parseEntryDate(s.date).getTime() <= ts) v = s.value;
+      else break;
+    }
+    return v;
+  }
+  if (source === 'total_portfolio') {
+    const dates = investmentDates(d);
+    let v = dates.length ? totalInvestmentsAt(d, dates[0]) : 0;
+    for (const dt of dates) {
+      if (parseEntryDate(dt).getTime() <= ts) v = totalInvestmentsAt(d, dt);
+      else break;
+    }
+    return v;
+  }
+  if (source === 'linked_bucket' || source === 'linked_account') {
+    const snaps = sortByDateAsc(d.investmentSnapshots.filter(s => s.bucket_id === g.linked_account_id));
+    let v = 0;
+    for (const s of snaps) {
+      if (parseEntryDate(s.month).getTime() <= ts) v = Number(s.value);
+      else break;
+    }
+    return v;
+  }
+  return goalCurrent(d, g);
+};
+
+const monthsSince = (iso: string | null | undefined): number => {
+  if (!iso) return 0;
+  const start = new Date(iso);
+  const now = new Date();
+  return Math.max(0, (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
+};
+
 export const goalStatus = (d: WealthData, g: any): GoalStatus => {
   const target = Number(g.target_amount) || 0;
   const current = goalCurrent(d, g);
   if (target > 0 && current >= target) return 'complete';
+
+  const planned = Number(g.planned_monthly_contribution) || 0;
+  if (planned > 0) {
+    const start = goalStartingValue(d, g);
+    const months = monthsSince(g.created_at);
+    const expected = start + planned * months;
+    if (expected <= 0) return 'on-track';
+    const ratio = current / expected;
+    if (ratio >= 0.9) return 'on-track';
+    if (ratio >= 0.7) return 'at-risk';
+    return 'behind';
+  }
 
   const deadline = parseEntryDate(g.target_date);
   const now = new Date();
   const monthsLeft = Math.max(0, (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30));
   if (monthsLeft <= 0) return current >= target ? 'complete' : 'behind';
 
-  // Assume 36-month default planning window if no anchor. Use NW series to get pace.
   const series = netWorthSeries(d);
   let monthlyPace = 0;
   if (series.length >= 2) {
@@ -157,6 +211,15 @@ export const goalProjectedDate = (d: WealthData, g: any): Date | null => {
   const target = Number(g.target_amount) || 0;
   const current = goalCurrent(d, g);
   const remaining = Math.max(0, target - current);
+
+  const planned = Number(g.planned_monthly_contribution) || 0;
+  if (planned > 0) {
+    const monthsNeeded = remaining / planned;
+    const d2 = new Date();
+    d2.setMonth(d2.getMonth() + Math.ceil(monthsNeeded));
+    return d2;
+  }
+
   const series = netWorthSeries(d);
   if (series.length < 2) return null;
   const first = series[0];
@@ -169,6 +232,7 @@ export const goalProjectedDate = (d: WealthData, g: any): Date | null => {
   d2.setMonth(d2.getMonth() + Math.ceil(monthsNeeded));
   return d2;
 };
+
 
 // Compounding projection per spec.
 export type ProjectionResult = { year: number; value: number }[];
