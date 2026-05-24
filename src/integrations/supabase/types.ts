@@ -397,15 +397,7 @@ export type Database = {
           user_id?: string
           value_source?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "goals_linked_account_id_fkey"
-            columns: ["linked_account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       goals_data: {
         Row: {
