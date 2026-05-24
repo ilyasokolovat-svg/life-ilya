@@ -31,6 +31,7 @@ export const GoalDialog: React.FC<GoalDialogProps> = ({ d, open, onClose, onSave
   const [source, setSource] = useState<Source>('net_worth');
   const [bucketId, setBucketId] = useState<string>('');
   const [manualValue, setManualValue] = useState('0');
+  const [plannedMonthly, setPlannedMonthly] = useState<string>('');
   const [color, setColor] = useState<string>(GOAL_COLOR_PRESETS[0]);
   const [saving, setSaving] = useState(false);
 
