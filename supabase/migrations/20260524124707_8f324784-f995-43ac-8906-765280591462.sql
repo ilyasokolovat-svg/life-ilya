@@ -1,0 +1,1 @@
+ALTER TABLE public.goals ADD COLUMN planned_monthly_contribution numeric;

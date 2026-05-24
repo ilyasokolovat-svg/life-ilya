@@ -360,6 +360,7 @@ export type Database = {
           linked_account_id: string | null
           manual_current_value: number | null
           name: string
+          planned_monthly_contribution: number | null
           priority: number
           target_amount: number
           target_date: string
@@ -374,6 +375,7 @@ export type Database = {
           linked_account_id?: string | null
           manual_current_value?: number | null
           name: string
+          planned_monthly_contribution?: number | null
           priority?: number
           target_amount: number
           target_date: string
@@ -388,6 +390,7 @@ export type Database = {
           linked_account_id?: string | null
           manual_current_value?: number | null
           name?: string
+          planned_monthly_contribution?: number | null
           priority?: number
           target_amount?: number
           target_date?: string
