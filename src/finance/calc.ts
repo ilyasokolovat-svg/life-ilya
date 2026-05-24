@@ -39,7 +39,6 @@ export const cashAccount = (d: WealthData) => findAccount(d, l => l.includes('ca
 // Latest balance for a given account (returns raw stored value — debts are negative).
 export const latestAccountValue = (d: WealthData, accountId: string | undefined): { value: number; date: string | null } => {
   if (!accountId) return { value: 0, date: null };
-  const snaps = sortByDateDesc(realNwSnapshots().concat([] as any) ? [] : []);
   const filtered = sortByDateDesc(d.nwSnapshots.filter(s => s.account_id === accountId));
   if (!filtered.length) return { value: 0, date: null };
   return { value: Number(filtered[0].value), date: filtered[0].month };
