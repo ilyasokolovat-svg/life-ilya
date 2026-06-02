@@ -127,6 +127,9 @@ const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
       </Card>
 
       <Card><CardContent className="p-0">
+        <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
+          Edit per-bucket contributions inline below. Use <span className="text-emerald-600 font-medium">positive</span> numbers for money added and <span className="text-destructive font-medium">negative</span> for withdrawals. Changes flow into the chart above.
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
@@ -145,7 +148,17 @@ const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
                   <td className="px-4 py-2 text-right tabular-nums text-emerald-600">{r.bonus > 0 ? fmtUSD(r.bonus) : '—'}</td>
                   {d.investmentBuckets.map(b => {
                     const v = r.perBucket[b.id] || 0;
-                    return <td key={b.id} className={`px-4 py-2 text-right tabular-nums ${v > 0 ? 'text-emerald-600' : v < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{v === 0 ? '—' : fmtUSD(v, { sign: true })}</td>;
+                    return (
+                      <td key={b.id} className="px-4 py-2 text-right">
+                        <input
+                          type="number"
+                          defaultValue={v || ''}
+                          placeholder="0"
+                          onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveContribution(r.month, b.id, e.target.value); }}
+                          className={`w-24 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${v > 0 ? 'text-emerald-600' : v < 0 ? 'text-destructive' : 'text-muted-foreground'}`}
+                        />
+                      </td>
+                    );
                   })}
                   <td className={`px-4 py-2 text-right tabular-nums font-medium ${net > 0 ? 'text-emerald-600' : net < 0 ? 'text-destructive' : ''}`}>{net === 0 ? '—' : fmtUSD(net, { sign: true })}</td>
                 </tr>
