@@ -30,6 +30,7 @@ export const LogTab: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, on
     return o;
   }, [d.investmentBuckets, latestBuckets]);
   const [bucketVals, setBucketVals] = useState<Record<string, string>>(initialBucketVals);
+  const [bucketContribs, setBucketContribs] = useState<Record<string, string>>({});
   React.useEffect(() => { setBucketVals(initialBucketVals); }, [initialBucketVals]);
   const [otherCash, setOtherCash] = useState('');
 
