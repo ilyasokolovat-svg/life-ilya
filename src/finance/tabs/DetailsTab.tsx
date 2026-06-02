@@ -204,7 +204,18 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
   );
 };
 
-const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
+const IncomeView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
+  const saveSalary = async (month: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    const monthKey = month.length === 7 ? `${month}-01` : month;
+    const { data: existing } = await sb.from('budget_months').select('id').eq('user_id', user.id).like('month', `${month.slice(0, 7)}%`).maybeSingle();
+    if (existing) await sb.from('budget_months').update({ salary: v }).eq('id', existing.id);
+    else await sb.from('budget_months').insert({ user_id: user.id, month: monthKey, salary: v });
+    onChange();
+  };
+
   const data = useMemo(() => {
     const months = Array.from(new Set([...d.budgetMonths.map(b => b.month), ...d.budgetExtras.map(b => b.month)])).sort();
     return months.map(m => {
