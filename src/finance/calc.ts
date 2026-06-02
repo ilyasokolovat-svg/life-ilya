@@ -326,6 +326,68 @@ export const goalProjectedDate = (d: WealthData, g: any): Date | null => {
 };
 
 
+// === Investment flows (contributions / withdrawals) ===
+
+// Per-month sum of contributions across all buckets (negative = withdrawal).
+export const monthlyContributions = (d: WealthData): { month: string; contribution: number }[] => {
+  const map = new Map<string, number>();
+  for (const s of d.investmentSnapshots) {
+    const m = s.month;
+    map.set(m, (map.get(m) ?? 0) + Number(s.contribution || 0));
+  }
+  return Array.from(map.entries())
+    .map(([month, contribution]) => ({ month, contribution }))
+    .sort((a, b) => parseEntryDate(a.month).getTime() - parseEntryDate(b.month).getTime());
+};
+
+// Cumulative contributions over time (running sum). One point per investment date.
+export const cumulativeContributions = (d: WealthData): { date: string; cumulative: number; portfolio: number }[] => {
+  const dates = investmentDates(d);
+  let running = 0;
+  return dates.map(dt => {
+    const c = d.investmentSnapshots
+      .filter(s => s.month === dt)
+      .reduce((a, s) => a + Number(s.contribution || 0), 0);
+    running += c;
+    return { date: dt, cumulative: running, portfolio: totalInvestmentsAt(d, dt) };
+  });
+};
+
+// Combined series: bonus received, contribution (positive), withdrawal (negative bar).
+export const bonusVsInvestedSeries = (d: WealthData): {
+  month: string;
+  bonus: number;
+  contribution: number;
+  withdrawal: number;
+  perBucket: Record<string, number>;
+}[] => {
+  const months = new Set<string>();
+  d.budgetExtras.filter(e => e.type === 'bonus').forEach(e => months.add(e.month.slice(0, 7)));
+  d.investmentSnapshots.forEach(s => { if (Number(s.contribution || 0) !== 0) months.add(s.month.slice(0, 7)); });
+
+  const rows = Array.from(months).sort();
+  return rows.map(m => {
+    const bonus = d.budgetExtras
+      .filter(e => e.type === 'bonus' && e.month.slice(0, 7) === m)
+      .reduce((a, e) => a + Number(e.amount), 0);
+    const snaps = d.investmentSnapshots.filter(s => s.month.slice(0, 7) === m);
+    const net = snaps.reduce((a, s) => a + Number(s.contribution || 0), 0);
+    const perBucket: Record<string, number> = {};
+    for (const b of d.investmentBuckets) {
+      perBucket[b.id] = snaps
+        .filter(s => s.bucket_id === b.id)
+        .reduce((a, s) => a + Number(s.contribution || 0), 0);
+    }
+    return {
+      month: m,
+      bonus,
+      contribution: Math.max(0, net),
+      withdrawal: Math.min(0, net),
+      perBucket,
+    };
+  });
+};
+
 // Compounding projection per spec.
 export type ProjectionResult = { year: number; value: number }[];
 
