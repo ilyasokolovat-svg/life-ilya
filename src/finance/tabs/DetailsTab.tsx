@@ -208,9 +208,10 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
   const data = useMemo(() => {
     const months = Array.from(new Set([...d.budgetMonths.map(b => b.month), ...d.budgetExtras.map(b => b.month)])).sort();
     return months.map(m => {
-      const salary = Number(d.budgetMonths.find(b => b.month === m)?.salary ?? 0);
+      const salaryAED = Number(d.budgetMonths.find(b => b.month === m)?.salary ?? 0);
+      const salaryUSD = salaryAED / 3.65;
       const commission = d.budgetExtras.filter(e => e.month === m).reduce((a, e) => a + Number(e.amount), 0);
-      return { month: m, salary, commission, total: salary + commission };
+      return { month: m, salaryAED, salaryUSD, commission, total: salaryUSD + commission };
     });
   }, [d]);
 
@@ -218,18 +219,20 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
   const ytdCommission = data.filter(r => r.month.startsWith(thisYear)).reduce((a, r) => a + r.commission, 0);
   const bestMonth = data.reduce((a, r) => r.total > a.total ? r : a, { total: 0, month: '' } as any);
 
+  const fmtAED = (v: number) => `AED ${Math.round(v).toLocaleString('en-US')}`;
+
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Commission / bonus per month</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Commission / bonus per month ($)</CardTitle></CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid stroke={COLORS.grid} vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
                 <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
-                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
                 <Bar dataKey="commission" radius={[4, 4, 0, 0]}>
                   {data.map((r, i) => <Cell key={i} fill={r.commission > 0 ? COLORS.etfs : '#e2e8f0'} />)}
                 </Bar>
@@ -240,20 +243,21 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total earned {thisYear}</div><div className="text-xl font-semibold tabular-nums mt-1">{fmtUSD(ytdCommission)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total commission {thisYear}</div><div className="text-xl font-semibold tabular-nums mt-1">{fmtUSD(ytdCommission)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Best single month</div><div className="text-xl font-semibold tabular-nums mt-1">{fmtUSD(bestMonth.total)}</div><div className="text-xs text-muted-foreground">{bestMonth.month ? fmtMonth(bestMonth.month) : '—'}</div></CardContent></Card>
       </div>
 
       <Card><CardContent className="p-0">
+        <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border">Salary stored & shown in AED · Commission in USD · Total in USD (rate 1 USD = 3.65 AED)</div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
-              <th className="px-4 py-2.5">Month</th><th className="px-4 py-2.5 text-right">Salary</th><th className="px-4 py-2.5 text-right">Commission</th><th className="px-4 py-2.5 text-right">Total</th>
+              <th className="px-4 py-2.5">Month</th><th className="px-4 py-2.5 text-right">Salary (AED)</th><th className="px-4 py-2.5 text-right">Commission ($)</th><th className="px-4 py-2.5 text-right">Total ($)</th>
             </tr></thead>
             <tbody>{[...data].reverse().map(r => (
               <tr key={r.month} className="border-b border-border/50">
                 <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(r.salary)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{fmtAED(r.salaryAED)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(r.commission)}</td>
                 <td className="px-4 py-2 text-right tabular-nums font-medium">{fmtUSD(r.total)}</td>
               </tr>
