@@ -38,9 +38,9 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
   const { user } = useAuth();
   const bars = useMemo(() => bonusVsInvestedSeries(d), [d]);
   const cum = useMemo(() => cumulativeContributions(d), [d]);
-  const totalContrib = bars.reduce((a, r) => a + r.contribution + r.withdrawal, 0);
+  const totalNet = bars.reduce((a, r) => a + r.net, 0);
   const totalBonus = bars.reduce((a, r) => a + r.bonus, 0);
-  const totalWithdrawn = bars.reduce((a, r) => a + Math.abs(r.withdrawal), 0);
+  const totalWithdrawn = bars.reduce((a, r) => a + Math.min(0, r.net), 0);
 
   const saveContribution = async (month: string, bucketId: string, raw: string) => {
     if (!user) return;
