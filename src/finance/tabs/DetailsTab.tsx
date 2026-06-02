@@ -24,7 +24,7 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
         <TabsTrigger value="archive">Archive</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="income" className="mt-4"><IncomeView d={d} /></TabsContent>
+      <TabsContent value="income" className="mt-4"><IncomeView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="assets" className="mt-4"><AssetsView d={d} /></TabsContent>
       <TabsContent value="flows" className="mt-4"><FlowsView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="debt" className="mt-4"><DebtView d={d} /></TabsContent>
@@ -204,7 +204,18 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
   );
 };
 
-const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
+const IncomeView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
+  const saveSalary = async (month: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    const monthKey = month.length === 7 ? `${month}-01` : month;
+    const { data: existing } = await sb.from('budget_months').select('id').eq('user_id', user.id).like('month', `${month.slice(0, 7)}%`).maybeSingle();
+    if (existing) await sb.from('budget_months').update({ salary: v }).eq('id', existing.id);
+    else await sb.from('budget_months').insert({ user_id: user.id, month: monthKey, salary: v });
+    onChange();
+  };
+
   const data = useMemo(() => {
     const months = Array.from(new Set([...d.budgetMonths.map(b => b.month), ...d.budgetExtras.map(b => b.month)])).sort();
     return months.map(m => {
@@ -257,7 +268,15 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
             <tbody>{[...data].reverse().map(r => (
               <tr key={r.month} className="border-b border-border/50">
                 <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{fmtAED(r.salaryAED)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  <input
+                    type="number"
+                    defaultValue={r.salaryAED || ''}
+                    placeholder="0"
+                    onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== r.salaryAED) saveSalary(r.month, e.target.value); }}
+                    className="w-28 bg-transparent text-right text-sm tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none"
+                  />
+                </td>
                 <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(r.commission)}</td>
                 <td className="px-4 py-2 text-right tabular-nums font-medium">{fmtUSD(r.total)}</td>
               </tr>
