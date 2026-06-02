@@ -47,9 +47,11 @@ export const B2BrokerPipeline: React.FC = () => {
 
   useEffect(() => { load(); }, [user]); // eslint-disable-line
 
-  const active = deals.filter(d => d.status !== 'closed_lost' && d.status !== 'closed_won');
+  // Include closed-won so their bonuses stay visible & motivating; only exclude lost deals.
+  const active = deals.filter(d => d.status !== 'closed_lost');
   const totalARR = active.reduce((a, d) => a + Number(d.arr_usd), 0);
   const totalBonus = active.reduce((a, d) => a + Number(d.expected_bonus_usd), 0);
+  const wonCount = deals.filter(d => d.status === 'closed_won').length;
 
   const addDeal = async () => {
     if (!user) return;
