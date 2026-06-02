@@ -38,9 +38,9 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
   const { user } = useAuth();
   const bars = useMemo(() => bonusVsInvestedSeries(d), [d]);
   const cum = useMemo(() => cumulativeContributions(d), [d]);
-  const totalContrib = bars.reduce((a, r) => a + r.contribution + r.withdrawal, 0);
+  const totalNet = bars.reduce((a, r) => a + r.net, 0);
   const totalBonus = bars.reduce((a, r) => a + r.bonus, 0);
-  const totalWithdrawn = bars.reduce((a, r) => a + Math.abs(r.withdrawal), 0);
+  const totalWithdrawn = bars.reduce((a, r) => a + Math.min(0, r.net), 0);
 
   const saveContribution = async (month: string, bucketId: string, raw: string) => {
     if (!user) return;
@@ -81,24 +81,28 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total bonuses</div><div className="text-lg font-semibold tabular-nums mt-1 text-emerald-600">{fmtUSD(totalBonus, { compact: true })}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Net invested</div><div className="text-lg font-semibold tabular-nums mt-1">{fmtUSD(totalContrib, { sign: true, compact: true })}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Net invested</div><div className={`text-lg font-semibold tabular-nums mt-1 ${totalNet >= 0 ? '' : 'text-destructive'}`}>{fmtUSD(totalNet, { sign: true, compact: true })}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total withdrawn</div><div className="text-lg font-semibold tabular-nums mt-1 text-destructive">{fmtUSD(totalWithdrawn, { compact: true })}</div></CardContent></Card>
       </div>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Bonus vs invested — by month</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Bonus pool vs net invested — by month</CardTitle>
+          <p className="text-[11px] text-muted-foreground mt-1">Grey bar = bonus received that month. Green/red overlay = how much of it (or how much net) you actually moved into investments. Negative bars = net withdrawal.</p>
+        </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bars}>
+              <BarChart data={bars} barGap={-9999}>
                 <CartesianGrid stroke={COLORS.grid} vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
                 <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
-                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Tooltip formatter={(v: any, n: any) => [fmtUSD(Number(v)), n]} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="bonus" fill="#10b981" name="Bonus" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="contribution" fill="#3b82f6" name="Invested" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="withdrawal" fill="#ef4444" name="Withdrawn" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="bonus" fill="hsl(var(--muted))" name="Bonus pool" radius={[4, 4, 0, 0]} barSize={32} />
+                <Bar dataKey="net" name="Net invested" radius={[4, 4, 4, 4]} barSize={18}>
+                  {bars.map((r, i) => <Cell key={i} fill={r.net >= 0 ? '#10b981' : '#ef4444'} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -140,7 +144,7 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
               <th className="px-4 py-2.5 text-right">Net flow</th>
             </tr></thead>
             <tbody>{[...bars].reverse().map(r => {
-              const net = r.contribution + r.withdrawal;
+              const net = r.net;
               return (
                 <tr key={r.month} className="border-b border-border/50">
                   <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>

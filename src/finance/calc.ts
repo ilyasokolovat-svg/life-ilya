@@ -353,25 +353,36 @@ export const cumulativeContributions = (d: WealthData): { date: string; cumulati
   });
 };
 
-// Combined series: bonus received, contribution (positive), withdrawal (negative bar).
+// Combined series: bonus pool received vs net invested (positive=in, negative=out).
+// Gap-fills every calendar month from earliest entry → latest, so months with no
+// activity still appear (and can be backfilled inline).
 export const bonusVsInvestedSeries = (d: WealthData): {
   month: string;
   bonus: number;
-  contribution: number;
-  withdrawal: number;
+  net: number;
   perBucket: Record<string, number>;
 }[] => {
   const months = new Set<string>();
   d.budgetExtras.filter(e => e.type === 'bonus').forEach(e => months.add(e.month.slice(0, 7)));
-  // Include every month that has an investment snapshot so past months can be backfilled.
   d.investmentSnapshots.forEach(s => months.add(s.month.slice(0, 7)));
+  if (!months.size) return [];
 
-  const rows = Array.from(months).sort();
-  return rows.map(m => {
+  const sorted = Array.from(months).sort();
+  const [minY, minM] = sorted[0].split('-').map(Number);
+  const [maxY, maxM] = sorted[sorted.length - 1].split('-').map(Number);
+  const all: string[] = [];
+  let y = minY, m = minM;
+  while (y < maxY || (y === maxY && m <= maxM)) {
+    all.push(`${y}-${String(m).padStart(2, '0')}`);
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+
+  return all.map(mo => {
     const bonus = d.budgetExtras
-      .filter(e => e.type === 'bonus' && e.month.slice(0, 7) === m)
+      .filter(e => e.type === 'bonus' && e.month.slice(0, 7) === mo)
       .reduce((a, e) => a + Number(e.amount), 0);
-    const snaps = d.investmentSnapshots.filter(s => s.month.slice(0, 7) === m);
+    const snaps = d.investmentSnapshots.filter(s => s.month.slice(0, 7) === mo);
     const net = snaps.reduce((a, s) => a + Number(s.contribution || 0), 0);
     const perBucket: Record<string, number> = {};
     for (const b of d.investmentBuckets) {
@@ -379,13 +390,7 @@ export const bonusVsInvestedSeries = (d: WealthData): {
         .filter(s => s.bucket_id === b.id)
         .reduce((a, s) => a + Number(s.contribution || 0), 0);
     }
-    return {
-      month: m,
-      bonus,
-      contribution: Math.max(0, net),
-      withdrawal: Math.min(0, net),
-      perBucket,
-    };
+    return { month: mo, bonus, net, perBucket };
   });
 };
 
