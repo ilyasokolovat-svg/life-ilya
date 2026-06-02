@@ -56,6 +56,48 @@ export type Database = {
         }
         Relationships: []
       }
+      b2broker_deals: {
+        Row: {
+          arr_usd: number
+          company_name: string
+          created_at: string
+          expected_bonus_usd: number
+          id: string
+          notes: string | null
+          product: string | null
+          sort_order: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          arr_usd?: number
+          company_name: string
+          created_at?: string
+          expected_bonus_usd?: number
+          id?: string
+          notes?: string | null
+          product?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          arr_usd?: number
+          company_name?: string
+          created_at?: string
+          expected_bonus_usd?: number
+          id?: string
+          notes?: string | null
+          product?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bonus_allocations: {
         Row: {
           amount: number
