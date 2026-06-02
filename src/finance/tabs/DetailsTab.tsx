@@ -26,7 +26,7 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
 
       <TabsContent value="income" className="mt-4"><IncomeView d={d} /></TabsContent>
       <TabsContent value="assets" className="mt-4"><AssetsView d={d} /></TabsContent>
-      <TabsContent value="flows" className="mt-4"><FlowsView d={d} /></TabsContent>
+      <TabsContent value="flows" className="mt-4"><FlowsView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="debt" className="mt-4"><DebtView d={d} /></TabsContent>
       <TabsContent value="spending" className="mt-4"><SpendingView d={d} /></TabsContent>
       <TabsContent value="archive" className="mt-4"><ArchiveView d={d} onChange={onChange} /></TabsContent>
@@ -34,17 +34,45 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
   );
 };
 
-const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
+const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
   const bars = useMemo(() => bonusVsInvestedSeries(d), [d]);
   const cum = useMemo(() => cumulativeContributions(d), [d]);
   const totalContrib = bars.reduce((a, r) => a + r.contribution + r.withdrawal, 0);
   const totalBonus = bars.reduce((a, r) => a + r.bonus, 0);
   const totalWithdrawn = bars.reduce((a, r) => a + Math.abs(r.withdrawal), 0);
 
+  const saveContribution = async (month: string, bucketId: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    // Find any snapshot for this month+bucket (month column may be YYYY-MM or YYYY-MM-DD).
+    const { data: existing } = await sb
+      .from('investment_snapshots')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('bucket_id', bucketId)
+      .like('month', `${month}%`)
+      .order('month', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      await sb.from('investment_snapshots').update({ contribution: v }).eq('id', existing.id);
+    } else {
+      await sb.from('investment_snapshots').insert({
+        user_id: user.id,
+        month: `${month}-01`,
+        bucket_id: bucketId,
+        value: 0,
+        contribution: v,
+      });
+    }
+    onChange();
+  };
+
   if (!bars.length) {
     return (
       <Card><CardContent className="p-10 text-center">
-        <div className="text-sm text-muted-foreground">Log a monthly snapshot with a contribution amount to start tracking flows.</div>
+        <div className="text-sm text-muted-foreground">Log a monthly snapshot to start tracking flows. You can backfill past contributions and withdrawals directly in the table below once snapshots exist.</div>
       </CardContent></Card>
     );
   }
@@ -98,6 +126,9 @@ const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
       </Card>
 
       <Card><CardContent className="p-0">
+        <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
+          Edit per-bucket contributions inline below. Use <span className="text-emerald-600 font-medium">positive</span> numbers for money added and <span className="text-destructive font-medium">negative</span> for withdrawals. Changes flow into the chart above.
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
@@ -116,7 +147,17 @@ const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
                   <td className="px-4 py-2 text-right tabular-nums text-emerald-600">{r.bonus > 0 ? fmtUSD(r.bonus) : '—'}</td>
                   {d.investmentBuckets.map(b => {
                     const v = r.perBucket[b.id] || 0;
-                    return <td key={b.id} className={`px-4 py-2 text-right tabular-nums ${v > 0 ? 'text-emerald-600' : v < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{v === 0 ? '—' : fmtUSD(v, { sign: true })}</td>;
+                    return (
+                      <td key={b.id} className="px-4 py-2 text-right">
+                        <input
+                          type="number"
+                          defaultValue={v || ''}
+                          placeholder="0"
+                          onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveContribution(r.month, b.id, e.target.value); }}
+                          className={`w-24 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${v > 0 ? 'text-emerald-600' : v < 0 ? 'text-destructive' : 'text-muted-foreground'}`}
+                        />
+                      </td>
+                    );
                   })}
                   <td className={`px-4 py-2 text-right tabular-nums font-medium ${net > 0 ? 'text-emerald-600' : net < 0 ? 'text-destructive' : ''}`}>{net === 0 ? '—' : fmtUSD(net, { sign: true })}</td>
                 </tr>
