@@ -217,14 +217,31 @@ const IncomeView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
   };
 
   const data = useMemo(() => {
-    const months = Array.from(new Set([...d.budgetMonths.map(b => b.month), ...d.budgetExtras.map(b => b.month)])).sort();
-    return months.map(m => {
-      const salaryAED = Number(d.budgetMonths.find(b => b.month === m)?.salary ?? 0);
+    const raw = Array.from(new Set([
+      ...d.budgetMonths.map(b => b.month.slice(0, 7)),
+      ...d.budgetExtras.map(b => b.month.slice(0, 7)),
+      ...d.investmentSnapshots.map(s => s.month.slice(0, 7)),
+    ])).sort();
+    if (!raw.length) return [];
+    // Gap-fill every month from earliest to latest (or current)
+    const [sy, sm] = raw[0].split('-').map(Number);
+    const nowKey = new Date().toISOString().slice(0, 7);
+    const endKey = raw[raw.length - 1] > nowKey ? raw[raw.length - 1] : nowKey;
+    const [ey, em] = endKey.split('-').map(Number);
+    const months: string[] = [];
+    let y = sy, m = sm;
+    while (y < ey || (y === ey && m <= em)) {
+      months.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return months.map(mm => {
+      const salaryAED = Number(d.budgetMonths.find(b => b.month.slice(0, 7) === mm)?.salary ?? 0);
       const salaryUSD = salaryAED / 3.65;
-      const commission = d.budgetExtras.filter(e => e.month === m).reduce((a, e) => a + Number(e.amount), 0);
-      return { month: m, salaryAED, salaryUSD, commission, total: salaryUSD + commission };
+      const commission = d.budgetExtras.filter(e => e.month.slice(0, 7) === mm).reduce((a, e) => a + Number(e.amount), 0);
+      return { month: mm, salaryAED, salaryUSD, commission, total: salaryUSD + commission };
     });
   }, [d]);
+
 
   const thisYear = String(new Date().getFullYear());
   const ytdCommission = data.filter(r => r.month.startsWith(thisYear)).reduce((a, r) => a + r.commission, 0);
