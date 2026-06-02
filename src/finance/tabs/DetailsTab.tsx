@@ -66,7 +66,6 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
         contribution: v,
       });
     }
-    // Trigger a refresh via window event since FlowsView has no onChange prop.
     onChange();
   };
 
