@@ -12,6 +12,7 @@ import { COLORS } from '../constants';
 import { BucketsDialog, GoalsManageDialog } from '../dialogs/BucketsDialog';
 import { GoalDialog } from '../dialogs/GoalDialog';
 import { DebtUpdateDialog } from '../dialogs/DebtUpdateDialog';
+import { B2BrokerPipeline } from '../dialogs/B2BrokerPipeline';
 
 const STATUS_LABEL: Record<GoalStatus, string> = {
   'complete': 'Complete',
