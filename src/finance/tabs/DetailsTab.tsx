@@ -35,16 +35,45 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
 };
 
 const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
+  const { user } = useAuth();
   const bars = useMemo(() => bonusVsInvestedSeries(d), [d]);
   const cum = useMemo(() => cumulativeContributions(d), [d]);
   const totalContrib = bars.reduce((a, r) => a + r.contribution + r.withdrawal, 0);
   const totalBonus = bars.reduce((a, r) => a + r.bonus, 0);
   const totalWithdrawn = bars.reduce((a, r) => a + Math.abs(r.withdrawal), 0);
 
+  const saveContribution = async (month: string, bucketId: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    // Find any snapshot for this month+bucket (month column may be YYYY-MM or YYYY-MM-DD).
+    const { data: existing } = await sb
+      .from('investment_snapshots')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('bucket_id', bucketId)
+      .like('month', `${month}%`)
+      .order('month', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      await sb.from('investment_snapshots').update({ contribution: v }).eq('id', existing.id);
+    } else {
+      await sb.from('investment_snapshots').insert({
+        user_id: user.id,
+        month: `${month}-01`,
+        bucket_id: bucketId,
+        value: 0,
+        contribution: v,
+      });
+    }
+    // Trigger a refresh via window event since FlowsView has no onChange prop.
+    window.dispatchEvent(new CustomEvent('finance:refresh'));
+  };
+
   if (!bars.length) {
     return (
       <Card><CardContent className="p-10 text-center">
-        <div className="text-sm text-muted-foreground">Log a monthly snapshot with a contribution amount to start tracking flows.</div>
+        <div className="text-sm text-muted-foreground">Log a monthly snapshot to start tracking flows. You can backfill past contributions and withdrawals directly in the table below once snapshots exist.</div>
       </CardContent></Card>
     );
   }
