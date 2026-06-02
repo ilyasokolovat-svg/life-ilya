@@ -42,7 +42,9 @@ export const LogTab: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, on
   const [carValue, setCarValue] = useState('');
 
   const totalInv = d.investmentBuckets.reduce((a, b) => a + (Number(bucketVals[b.id]) || 0), 0) + (Number(otherCash) || 0);
+  const netContrib = d.investmentBuckets.reduce((a, b) => a + (Number(bucketContribs[b.id]) || 0), 0);
   const incomeUSD = (Number(salary) || 0) * AED_TO_USD + (Number(bonus) || 0);
+  const keptAsCash = (Number(bonus) || 0) - Math.max(0, netContrib);
   const netWorthPreview = totalInv - (Number(ccBal) || 0);
 
   const next = () => setStep(s => Math.min(3, s + 1));
