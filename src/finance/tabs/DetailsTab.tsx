@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtDate, fmtMonth, parseEntryDate, sortByDateAsc, sortByDateDesc } from '../utils';
 import { COLORS } from '../constants';
-import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt } from '../calc';
+import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt, bonusVsInvestedSeries, cumulativeContributions } from '../calc';
 
 const sb = supabase as any;
 
