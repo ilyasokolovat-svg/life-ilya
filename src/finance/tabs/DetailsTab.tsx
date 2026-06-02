@@ -81,7 +81,7 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total bonuses</div><div className="text-lg font-semibold tabular-nums mt-1 text-emerald-600">{fmtUSD(totalBonus, { compact: true })}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Net invested</div><div className="text-lg font-semibold tabular-nums mt-1">{fmtUSD(totalContrib, { sign: true, compact: true })}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Net invested</div><div className={`text-lg font-semibold tabular-nums mt-1 ${totalNet >= 0 ? '' : 'text-destructive'}`}>{fmtUSD(totalNet, { sign: true, compact: true })}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total withdrawn</div><div className="text-lg font-semibold tabular-nums mt-1 text-destructive">{fmtUSD(totalWithdrawn, { compact: true })}</div></CardContent></Card>
       </div>
 
