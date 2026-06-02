@@ -86,19 +86,23 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
       </div>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Bonus vs invested — by month</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Bonus pool vs net invested — by month</CardTitle>
+          <p className="text-[11px] text-muted-foreground mt-1">Grey bar = bonus received that month. Green/red overlay = how much of it (or how much net) you actually moved into investments. Negative bars = net withdrawal.</p>
+        </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bars}>
+              <BarChart data={bars} barGap={-9999}>
                 <CartesianGrid stroke={COLORS.grid} vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
                 <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
-                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Tooltip formatter={(v: any, n: any) => [fmtUSD(Number(v)), n]} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="bonus" fill="#10b981" name="Bonus" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="contribution" fill="#3b82f6" name="Invested" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="withdrawal" fill="#ef4444" name="Withdrawn" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="bonus" fill="hsl(var(--muted))" name="Bonus pool" radius={[4, 4, 0, 0]} barSize={32} />
+                <Bar dataKey="net" name="Net invested" radius={[4, 4, 4, 4]} barSize={18}>
+                  {bars.map((r, i) => <Cell key={i} fill={r.net >= 0 ? '#10b981' : '#ef4444'} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
