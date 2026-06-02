@@ -101,16 +101,24 @@ export const B2BrokerPipeline: React.FC = () => {
           onClick={() => setOpen(o => !o)}
           className="w-full flex items-center justify-between gap-3 text-left"
         >
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-muted-foreground" />
-            <div>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <Briefcase className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="min-w-0">
               <div className="text-sm font-semibold">B2Broker pipeline</div>
               <div className="text-[11px] text-muted-foreground">
-                {active.length} active · ARR {fmtUSD(totalARR, { compact: true })} · expected bonus <span className="text-emerald-600 font-medium">{fmtUSD(totalBonus, { compact: true })}</span>
+                {active.length} deal{active.length === 1 ? '' : 's'} in play{wonCount > 0 ? ` · ${wonCount} closed-won` : ''} · ARR {fmtUSD(totalARR)}
               </div>
             </div>
           </div>
-          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="text-right">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Expected bonus</div>
+              <div className="text-xl font-bold tabular-nums text-emerald-600 leading-tight">{fmtUSD(totalBonus)}</div>
+            </div>
+            {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </div>
         </button>
 
         {open && (
