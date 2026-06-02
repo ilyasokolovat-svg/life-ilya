@@ -363,7 +363,8 @@ export const bonusVsInvestedSeries = (d: WealthData): {
 }[] => {
   const months = new Set<string>();
   d.budgetExtras.filter(e => e.type === 'bonus').forEach(e => months.add(e.month.slice(0, 7)));
-  d.investmentSnapshots.forEach(s => { if (Number(s.contribution || 0) !== 0) months.add(s.month.slice(0, 7)); });
+  // Include every month that has an investment snapshot so past months can be backfilled.
+  d.investmentSnapshots.forEach(s => months.add(s.month.slice(0, 7)));
 
   const rows = Array.from(months).sort();
   return rows.map(m => {
