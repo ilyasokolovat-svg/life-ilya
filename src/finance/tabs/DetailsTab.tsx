@@ -26,7 +26,7 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
 
       <TabsContent value="income" className="mt-4"><IncomeView d={d} /></TabsContent>
       <TabsContent value="assets" className="mt-4"><AssetsView d={d} /></TabsContent>
-      <TabsContent value="flows" className="mt-4"><FlowsView d={d} /></TabsContent>
+      <TabsContent value="flows" className="mt-4"><FlowsView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="debt" className="mt-4"><DebtView d={d} /></TabsContent>
       <TabsContent value="spending" className="mt-4"><SpendingView d={d} /></TabsContent>
       <TabsContent value="archive" className="mt-4"><ArchiveView d={d} onChange={onChange} /></TabsContent>
@@ -34,7 +34,7 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
   );
 };
 
-const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
+const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
   const { user } = useAuth();
   const bars = useMemo(() => bonusVsInvestedSeries(d), [d]);
   const cum = useMemo(() => cumulativeContributions(d), [d]);
