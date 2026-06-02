@@ -24,7 +24,7 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
         <TabsTrigger value="archive">Archive</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="income" className="mt-4"><IncomeView d={d} /></TabsContent>
+      <TabsContent value="income" className="mt-4"><IncomeView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="assets" className="mt-4"><AssetsView d={d} /></TabsContent>
       <TabsContent value="flows" className="mt-4"><FlowsView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="debt" className="mt-4"><DebtView d={d} /></TabsContent>
