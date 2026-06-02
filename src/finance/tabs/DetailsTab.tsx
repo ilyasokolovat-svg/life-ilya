@@ -268,7 +268,15 @@ const IncomeView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
             <tbody>{[...data].reverse().map(r => (
               <tr key={r.month} className="border-b border-border/50">
                 <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{fmtAED(r.salaryAED)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  <input
+                    type="number"
+                    defaultValue={r.salaryAED || ''}
+                    placeholder="0"
+                    onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== r.salaryAED) saveSalary(r.month, e.target.value); }}
+                    className="w-28 bg-transparent text-right text-sm tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none"
+                  />
+                </td>
                 <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(r.commission)}</td>
                 <td className="px-4 py-2 text-right tabular-nums font-medium">{fmtUSD(r.total)}</td>
               </tr>
