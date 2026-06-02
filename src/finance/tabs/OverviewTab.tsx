@@ -12,6 +12,7 @@ import { COLORS } from '../constants';
 import { BucketsDialog, GoalsManageDialog } from '../dialogs/BucketsDialog';
 import { GoalDialog } from '../dialogs/GoalDialog';
 import { DebtUpdateDialog } from '../dialogs/DebtUpdateDialog';
+import { B2BrokerPipeline } from '../dialogs/B2BrokerPipeline';
 
 const STATUS_LABEL: Record<GoalStatus, string> = {
   'complete': 'Complete',
@@ -272,6 +273,10 @@ export const OverviewTab: React.FC<{ d: WealthData; onChange: () => void; carMar
           </div>
         </CardContent>
       </Card>
+
+      <div className="lg:col-span-2">
+        <B2BrokerPipeline />
+      </div>
 
       <BucketsDialog d={d} open={bucketsOpen} onClose={() => setBucketsOpen(false)} onSaved={onChange} />
       <GoalsManageDialog d={d} open={goalManageOpen} onClose={() => setGoalManageOpen(false)} onSelectGoal={(g) => openGoal(g)} />

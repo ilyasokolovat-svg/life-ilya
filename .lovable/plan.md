@@ -1,72 +1,77 @@
-## Multi-Layer Goals System Rewrite
 
-A complete rewrite of the goals section into a 3-layer system (Long-term → Yearly → Quarterly) with weekly task tracking, persisted in localStorage.
+# Finance: investment flows + B2Broker deals pipeline
 
-### New files
+Two independent additions. Both land in the Finance section.
 
-**Types & storage**
-- `src/goals/types.ts` — `Goal`, `Metric`, `WeeklyTaskBlock`, `Layer`, `Status`, `Category` types and color preset list
-- `src/goals/storage.ts` — `useGoalsStore` hook (localStorage-backed, key `goals_v2_data`), with CRUD for goals + categories, plus a one-time seeder that inserts the 5 specified Q2 2026 goals on first load
-- `src/goals/utils.ts` — quarter helpers (current quarter, week-of-quarter for May 13–Jun 27 = 6-week Q2 2026, list of selectable quarters), progress calculator (avg of metric ratios with checkbox = 0/100), rollup for yearly goals (avg of linked quarterly progress), status auto-derivation when not manually overridden
+---
 
-**Components**
-- `src/goals/components/ProgressBar.tsx` — 5px rounded, takes color + pct
-- `src/goals/components/StatusBadge.tsx` — green/amber/red/purple pill
-- `src/goals/components/MetricEditor.tsx` — slider for number metrics, checkbox for boolean
-- `src/goals/components/WeeklyTasksPanel.tsx` — expandable per-week task list, current week highlighted, checkbox per task
-- `src/goals/components/GoalCard.tsx` — card for quarterly goal (full editing controls)
-- `src/goals/components/YearlyGoalCard.tsx` — read-only rollup card with linked-quarterly chips
-- `src/goals/components/LongtermGoalCard.tsx` — vision card with linked-yearly chips
-- `src/goals/components/GoalFormDialog.tsx` — create/edit modal handling all 3 layers, color picker, category dropdown w/ "create new", metric builder, weekly task builder, link selectors
-- `src/goals/components/CategoryManager.tsx` — inline add/rename/delete categories
-- `src/goals/components/QuarterlyDashboardStrip.tsx` — horizontal strip for the dashboard with week-of-quarter header, per-goal mini cards (title, color bar, pct, status, this week's task checklist), overall ring/bar, "Review week" button
+## Part A — Investment flows (contributions & withdrawals)
 
-**Pages**
-- `src/pages/GoalsV2.tsx` — new page with 3 tabs (This Quarter / This Year / Long-term), quarter & year selectors, grouped-by-category lists, empty states, "Add goal" / "Add category" buttons
+### A1. Capture flows in Log (`LogTab.tsx`, step 2)
+- Next to each bucket balance, add a small **Contribution this month** number input (defaults to `0`, accepts negatives = withdrawal).
+- Help text: *"+ added, − withdrawn. Leave 0 if only market movement."*
+- On save: write to `investment_snapshots.contribution` (column already exists — no migration).
+- Summary row at the bottom of step 2:
+  *"Bonus received: $5,000 · Net invested: $3,000 · Kept as cash: $2,000"*
 
-### Wiring
+### A2. New "Flows" sub-tab in Details (`DetailsTab.tsx`)
+- **Bars by month** — green: bonus (`budget_extras` where `type='bonus'`); blue: net contributions; red (downward): withdrawals.
+- **Line chart** — cumulative contributions vs total portfolio value; gap = market gains/losses.
+- **Table** — month · bonus · per-bucket contribution · total flow · withdrawals.
 
-- `src/App.tsx` — replace existing `/goals-overview` route (or add `/goals` alias) to point at `GoalsV2`. Keep old `Goals.tsx` and `GoalsOverview.tsx` files in place but unused (no deletion to avoid breaking other imports).
-- `src/pages/Dashboard.tsx` — replace the existing `GoalsProgressSection` import/usage with `QuarterlyDashboardStrip`.
+### A3. Overlay flows on Net Worth chart (Overview)
+- Small dots on months with non-zero contribution, sized by amount, green (in) / red (out).
+- Tooltip: *"Net worth $X · contributed +$Y this month"*.
 
-### Data model
+### A4. Backfill column in Archive
+- Inline editable **Contribution** column on the Archive table so past months can be retro-filled without re-entering balances.
 
-```ts
-type Layer = "longterm" | "yearly" | "quarterly";
-type Status = "on-track" | "at-risk" | "behind" | "complete";
-type MetricKind = "number" | "checkbox";
-type ColorKey = "coral" | "purple" | "teal" | "green" | "amber" | "pink";
+### Technical notes (Part A)
+- No schema changes. `investment_snapshots.contribution` already exists.
+- New helpers in `src/finance/calc.ts`: `monthlyContributions(d)`, `cumulativeContributions(d)`, `bonusVsInvestedSeries(d)`.
+- Withdrawals = negative `contribution`.
 
-interface Metric { id; label; kind: MetricKind; current: number; target: number; unit?: string }
-interface WeeklyTaskBlock { weekNumber: number; tasks: { id; text; done }[] }
+---
 
-interface Goal {
-  id; title; description?; categoryId; layer; color: ColorKey;
-  quarter?: string;            // "Q2 2026"
-  year?: number;               // 2026
-  linkedYearlyGoalId?; linkedLongtermGoalId?;
-  metrics: Metric[];           // empty for longterm
-  weeklyTasks: WeeklyTaskBlock[]; // only quarterly
-  status?: Status;             // optional manual override; else auto from progress
-}
+## Part B — B2Broker deals pipeline
 
-interface Category { id; name; }
+Small, lightweight section. Not a major UI block.
+
+### Where it lives
+- New compact card on the **Overview tab** titled **"B2Broker pipeline"** — collapsed by default, shows total expected bonus and deal count. Expanding reveals a small table with add/edit/remove.
+
+### Fields per deal
+- `company_name` (text)
+- `product` (text)
+- `arr_usd` (number)
+- `expected_bonus_usd` (number)
+- `status` (text, optional — e.g. "lead / in progress / closed-won / closed-lost", default `in_progress`)
+- `notes` (text, optional)
+
+### UI
+- Inline add row + edit-in-place + delete button per row.
+- Footer totals: total ARR · total expected bonus · count of active deals.
+- When a deal is marked **closed-won**, a "Convert to bonus" button creates a `budget_extras` entry (`type: 'bonus'`) for the current month — this ties it back into the income/flows tracking from Part A.
+
+### Schema (new table)
 ```
+b2broker_deals
+  id, user_id, company_name, product, arr_usd, expected_bonus_usd,
+  status, notes, created_at, updated_at
+```
+With RLS (own_select / own_insert / own_update / own_delete) + GRANTs to `authenticated` and `service_role`. Migration submitted via `supabase--migration`.
 
-### Color tokens
+### Files
+- `supabase/migrations/<ts>_b2broker_deals.sql` — new table + RLS + GRANTs
+- `src/finance/dialogs/B2BrokerPipeline.tsx` — new component (compact card + inline table)
+- `src/finance/tabs/OverviewTab.tsx` — mount the card
+- `src/finance/calc.ts` — small helper `totalExpectedBonus(deals)`
 
-Add 6 HSL color tokens to `src/index.css` (`--goal-coral`, `--goal-purple`, `--goal-teal`, `--goal-green`, `--goal-amber`, `--goal-pink`) and reference them via inline style `hsl(var(--goal-coral))` so progress bars/badges match the existing design system without hardcoded hex.
+---
 
-### Quarter math
+## Suggested build order
+1. Part A1 + A2 (capture + Flows view) — highest value, no schema work.
+2. Part B (deals pipeline) — independent, additive.
+3. Part A3 (NW overlay) and A4 (Archive backfill) — polish after the data is flowing.
 
-Q2 2026 explicitly defined as 6 weeks starting Mon May 13 2026 → Sat Jun 27 2026. Other quarters default to standard calendar quarters with `Math.ceil(daysElapsed/7)` weeks (cap 13). Current week derived from Dubai date util already in project.
-
-### Seeding
-
-On first mount, if `goals_v2_data` is absent in localStorage, insert the 5 quarterly goals exactly as specified (titles, categories, colors, metrics, weekly tasks for weeks 1–6). Categories seeded: Physical, Financial, Skills, Personal growth, Career.
-
-### Out of scope
-
-- No Supabase migration — pure localStorage as requested ("All data persists in localStorage").
-- No deletion of legacy goals files; they simply stop being routed/imported from the dashboard.
-- No tests.
+Want me to proceed with all of it, or trim/reorder?

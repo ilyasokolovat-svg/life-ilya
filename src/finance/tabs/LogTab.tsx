@@ -30,6 +30,7 @@ export const LogTab: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, on
     return o;
   }, [d.investmentBuckets, latestBuckets]);
   const [bucketVals, setBucketVals] = useState<Record<string, string>>(initialBucketVals);
+  const [bucketContribs, setBucketContribs] = useState<Record<string, string>>({});
   React.useEffect(() => { setBucketVals(initialBucketVals); }, [initialBucketVals]);
   const [otherCash, setOtherCash] = useState('');
 
@@ -41,7 +42,9 @@ export const LogTab: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, on
   const [carValue, setCarValue] = useState('');
 
   const totalInv = d.investmentBuckets.reduce((a, b) => a + (Number(bucketVals[b.id]) || 0), 0) + (Number(otherCash) || 0);
+  const netContrib = d.investmentBuckets.reduce((a, b) => a + (Number(bucketContribs[b.id]) || 0), 0);
   const incomeUSD = (Number(salary) || 0) * AED_TO_USD + (Number(bonus) || 0);
+  const keptAsCash = (Number(bonus) || 0) - Math.max(0, netContrib);
   const netWorthPreview = totalInv - (Number(ccBal) || 0);
 
   const next = () => setStep(s => Math.min(3, s + 1));
@@ -63,7 +66,8 @@ export const LogTab: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, on
 
     for (const b of d.investmentBuckets) {
       const v = Number(bucketVals[b.id]) || 0;
-      await sb.from('investment_snapshots').insert({ user_id: user.id, month: today, bucket_id: b.id, value: v, contribution: 0 });
+      const c = Number(bucketContribs[b.id]) || 0;
+      await sb.from('investment_snapshots').insert({ user_id: user.id, month: today, bucket_id: b.id, value: v, contribution: c });
     }
 
     if (Number(otherCash) > 0 && cash) {
@@ -131,19 +135,39 @@ export const LogTab: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, on
         {step === 1 && (
           <div className="space-y-3">
             {d.investmentBuckets.map(b => (
-              <div key={b.id}>
-                <Label className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: b.color }} />{b.label} ($)
-                </Label>
-                <Input type="number" value={bucketVals[b.id] ?? '0'} onChange={e => setBucketVals({ ...bucketVals, [b.id]: e.target.value })} className="mt-1.5 tabular-nums" />
+              <div key={b.id} className="grid grid-cols-[1fr_140px] gap-2 items-end">
+                <div>
+                  <Label className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: b.color }} />{b.label} ($)
+                  </Label>
+                  <Input type="number" value={bucketVals[b.id] ?? '0'} onChange={e => setBucketVals({ ...bucketVals, [b.id]: e.target.value })} className="mt-1.5 tabular-nums" />
+                </div>
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Contribution this mo.</Label>
+                  <Input
+                    type="number"
+                    value={bucketContribs[b.id] ?? ''}
+                    onChange={e => setBucketContribs({ ...bucketContribs, [b.id]: e.target.value })}
+                    placeholder="0"
+                    className="mt-1.5 tabular-nums text-sm"
+                  />
+                </div>
               </div>
             ))}
+            <p className="text-[11px] text-muted-foreground italic">+ added, − withdrawn. Leave 0 if only market movement.</p>
             <div>
               <Label>Other savings / cash ($)</Label>
               <Input type="number" value={otherCash} onChange={e => setOtherCash(e.target.value)} placeholder="0" className="mt-1.5 tabular-nums" />
             </div>
-            <div className="text-sm text-muted-foreground bg-muted rounded-md p-3">
-              Total investments: <span className="font-semibold tabular-nums text-foreground">{fmtUSD(totalInv)}</span>
+            <div className="text-sm text-muted-foreground bg-muted rounded-md p-3 space-y-1">
+              <div>Total investments: <span className="font-semibold tabular-nums text-foreground">{fmtUSD(totalInv)}</span></div>
+              {(Number(bonus) > 0 || netContrib !== 0) && (
+                <div className="text-xs">
+                  Bonus received: <span className="tabular-nums text-foreground">{fmtUSD(Number(bonus) || 0)}</span>
+                  {' · '}Net invested: <span className="tabular-nums text-foreground">{fmtUSD(netContrib)}</span>
+                  {Number(bonus) > 0 && (<>{' · '}Kept as cash: <span className="tabular-nums text-foreground">{fmtUSD(keptAsCash)}</span></>)}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtDate, fmtMonth, parseEntryDate, sortByDateAsc, sortByDateDesc } from '../utils';
 import { COLORS } from '../constants';
-import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt } from '../calc';
+import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt, bonusVsInvestedSeries, cumulativeContributions } from '../calc';
 
 const sb = supabase as any;
 
@@ -18,6 +18,7 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
       <TabsList className="w-full justify-start overflow-x-auto">
         <TabsTrigger value="income">Income</TabsTrigger>
         <TabsTrigger value="assets">Assets</TabsTrigger>
+        <TabsTrigger value="flows">Flows</TabsTrigger>
         <TabsTrigger value="debt">Debt</TabsTrigger>
         <TabsTrigger value="spending">Spending</TabsTrigger>
         <TabsTrigger value="archive">Archive</TabsTrigger>
@@ -25,10 +26,106 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
 
       <TabsContent value="income" className="mt-4"><IncomeView d={d} /></TabsContent>
       <TabsContent value="assets" className="mt-4"><AssetsView d={d} /></TabsContent>
+      <TabsContent value="flows" className="mt-4"><FlowsView d={d} /></TabsContent>
       <TabsContent value="debt" className="mt-4"><DebtView d={d} /></TabsContent>
       <TabsContent value="spending" className="mt-4"><SpendingView d={d} /></TabsContent>
       <TabsContent value="archive" className="mt-4"><ArchiveView d={d} onChange={onChange} /></TabsContent>
     </Tabs>
+  );
+};
+
+const FlowsView: React.FC<{ d: WealthData }> = ({ d }) => {
+  const bars = useMemo(() => bonusVsInvestedSeries(d), [d]);
+  const cum = useMemo(() => cumulativeContributions(d), [d]);
+  const totalContrib = bars.reduce((a, r) => a + r.contribution + r.withdrawal, 0);
+  const totalBonus = bars.reduce((a, r) => a + r.bonus, 0);
+  const totalWithdrawn = bars.reduce((a, r) => a + Math.abs(r.withdrawal), 0);
+
+  if (!bars.length) {
+    return (
+      <Card><CardContent className="p-10 text-center">
+        <div className="text-sm text-muted-foreground">Log a monthly snapshot with a contribution amount to start tracking flows.</div>
+      </CardContent></Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total bonuses</div><div className="text-lg font-semibold tabular-nums mt-1 text-emerald-600">{fmtUSD(totalBonus, { compact: true })}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Net invested</div><div className="text-lg font-semibold tabular-nums mt-1">{fmtUSD(totalContrib, { sign: true, compact: true })}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total withdrawn</div><div className="text-lg font-semibold tabular-nums mt-1 text-destructive">{fmtUSD(totalWithdrawn, { compact: true })}</div></CardContent></Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Bonus vs invested — by month</CardTitle></CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={bars}>
+                <CartesianGrid stroke={COLORS.grid} vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
+                <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
+                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="bonus" fill="#10b981" name="Bonus" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="contribution" fill="#3b82f6" name="Invested" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="withdrawal" fill="#ef4444" name="Withdrawn" radius={[0, 0, 4, 4]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Cumulative invested vs portfolio value</CardTitle></CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={cum}>
+                <CartesianGrid stroke={COLORS.grid} vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => parseEntryDate(v).toLocaleDateString('en', { month: 'short', year: '2-digit' })} />
+                <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
+                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtDate(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line type="monotone" dataKey="cumulative" stroke="#3b82f6" strokeWidth={2} dot={false} name="Cash deployed" isAnimationActive={false} />
+                <Line type="monotone" dataKey="portfolio" stroke="#10b981" strokeWidth={2} dot={false} name="Portfolio value" isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">Gap between the lines ≈ market gains/losses to date.</p>
+        </CardContent>
+      </Card>
+
+      <Card><CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
+              <th className="px-4 py-2.5">Month</th>
+              <th className="px-4 py-2.5 text-right">Bonus</th>
+              {d.investmentBuckets.map(b => (
+                <th key={b.id} className="px-4 py-2.5 text-right"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: b.color }} />{b.label}</span></th>
+              ))}
+              <th className="px-4 py-2.5 text-right">Net flow</th>
+            </tr></thead>
+            <tbody>{[...bars].reverse().map(r => {
+              const net = r.contribution + r.withdrawal;
+              return (
+                <tr key={r.month} className="border-b border-border/50">
+                  <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-emerald-600">{r.bonus > 0 ? fmtUSD(r.bonus) : '—'}</td>
+                  {d.investmentBuckets.map(b => {
+                    const v = r.perBucket[b.id] || 0;
+                    return <td key={b.id} className={`px-4 py-2 text-right tabular-nums ${v > 0 ? 'text-emerald-600' : v < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{v === 0 ? '—' : fmtUSD(v, { sign: true })}</td>;
+                  })}
+                  <td className={`px-4 py-2 text-right tabular-nums font-medium ${net > 0 ? 'text-emerald-600' : net < 0 ? 'text-destructive' : ''}`}>{net === 0 ? '—' : fmtUSD(net, { sign: true })}</td>
+                </tr>
+              );
+            })}</tbody>
+          </table>
+        </div>
+      </CardContent></Card>
+    </div>
   );
 };
 
