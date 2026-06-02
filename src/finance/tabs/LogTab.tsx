@@ -66,7 +66,8 @@ export const LogTab: React.FC<{ d: WealthData; onSaved: () => void }> = ({ d, on
 
     for (const b of d.investmentBuckets) {
       const v = Number(bucketVals[b.id]) || 0;
-      await sb.from('investment_snapshots').insert({ user_id: user.id, month: today, bucket_id: b.id, value: v, contribution: 0 });
+      const c = Number(bucketContribs[b.id]) || 0;
+      await sb.from('investment_snapshots').insert({ user_id: user.id, month: today, bucket_id: b.id, value: v, contribution: c });
     }
 
     if (Number(otherCash) > 0 && cash) {
