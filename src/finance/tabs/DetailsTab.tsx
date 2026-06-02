@@ -144,7 +144,7 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
               <th className="px-4 py-2.5 text-right">Net flow</th>
             </tr></thead>
             <tbody>{[...bars].reverse().map(r => {
-              const net = r.contribution + r.withdrawal;
+              const net = r.net;
               return (
                 <tr key={r.month} className="border-b border-border/50">
                   <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>
