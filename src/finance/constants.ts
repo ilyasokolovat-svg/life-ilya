@@ -17,7 +17,8 @@ export const BUCKET_COLOR_BY_NAME = (label: string): string => {
   return COLORS.muted;
 };
 
-export const AED_TO_USD = 0.272;
+export const AED_PER_USD = 3.65;
+export const AED_TO_USD = 1 / AED_PER_USD; // ≈ 0.27397
 
 export const GOAL_COLOR_PRESETS = [
   '#534AB7', // purple

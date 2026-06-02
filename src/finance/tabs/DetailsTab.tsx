@@ -45,7 +45,6 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
   const saveContribution = async (month: string, bucketId: string, raw: string) => {
     if (!user) return;
     const v = Number(raw) || 0;
-    // Find any snapshot for this month+bucket (month column may be YYYY-MM or YYYY-MM-DD).
     const { data: existing } = await sb
       .from('investment_snapshots')
       .select('id')
@@ -69,10 +68,35 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
     onChange();
   };
 
+  // Replace all bonus entries for that month with a single entry (or delete if zero).
+  const saveBonus = async (month: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    const { data: existing } = await sb
+      .from('budget_extras')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', 'bonus')
+      .like('month', `${month}%`);
+    if (existing?.length) {
+      await sb.from('budget_extras').delete().in('id', existing.map((e: any) => e.id));
+    }
+    if (v !== 0) {
+      await sb.from('budget_extras').insert({
+        user_id: user.id,
+        month: `${month}-01`,
+        type: 'bonus',
+        amount: v,
+        description: 'Commission / bonus',
+      });
+    }
+    onChange();
+  };
+
   if (!bars.length) {
     return (
       <Card><CardContent className="p-10 text-center">
-        <div className="text-sm text-muted-foreground">Log a monthly snapshot to start tracking flows. You can backfill past contributions and withdrawals directly in the table below once snapshots exist.</div>
+        <div className="text-sm text-muted-foreground">Log a monthly snapshot to start tracking flows. You can backfill past contributions, withdrawals, and bonuses directly in the table below once snapshots exist.</div>
       </CardContent></Card>
     );
   }
@@ -80,27 +104,25 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total bonuses</div><div className="text-lg font-semibold tabular-nums mt-1 text-emerald-600">{fmtUSD(totalBonus, { compact: true })}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Net invested</div><div className={`text-lg font-semibold tabular-nums mt-1 ${totalNet >= 0 ? '' : 'text-destructive'}`}>{fmtUSD(totalNet, { sign: true, compact: true })}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total bonuses received</div><div className="text-lg font-semibold tabular-nums mt-1 text-emerald-600">{fmtUSD(totalBonus, { compact: true })}</div><div className="text-[10px] text-muted-foreground mt-0.5">Reference only — not added to net flow</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Net invested</div><div className={`text-lg font-semibold tabular-nums mt-1 ${totalNet >= 0 ? '' : 'text-destructive'}`}>{fmtUSD(totalNet, { sign: true, compact: true })}</div><div className="text-[10px] text-muted-foreground mt-0.5">Contributions − withdrawals</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total withdrawn</div><div className="text-lg font-semibold tabular-nums mt-1 text-destructive">{fmtUSD(totalWithdrawn, { compact: true })}</div></CardContent></Card>
       </div>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Bonus pool vs net invested — by month</CardTitle>
-          <p className="text-[11px] text-muted-foreground mt-1">Grey bar = bonus received that month. Green/red overlay = how much of it (or how much net) you actually moved into investments. Negative bars = net withdrawal.</p>
+          <CardTitle className="text-base">Net invested per month</CardTitle>
+          <p className="text-[11px] text-muted-foreground mt-1">Green = net contribution. Red = net withdrawal (bar drops below zero). Bonuses are tracked separately in the table.</p>
         </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bars} barGap={-9999}>
+              <BarChart data={bars}>
                 <CartesianGrid stroke={COLORS.grid} vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
                 <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
-                <Tooltip formatter={(v: any, n: any) => [fmtUSD(Number(v)), n]} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="bonus" fill="hsl(var(--muted))" name="Bonus pool" radius={[4, 4, 0, 0]} barSize={32} />
-                <Bar dataKey="net" name="Net invested" radius={[4, 4, 4, 4]} barSize={18}>
+                <Tooltip formatter={(v: any) => [fmtUSD(Number(v)), 'Net invested']} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Bar dataKey="net" name="Net invested" radius={[4, 4, 4, 4]} barSize={28}>
                   {bars.map((r, i) => <Cell key={i} fill={r.net >= 0 ? '#10b981' : '#ef4444'} />)}
                 </Bar>
               </BarChart>
@@ -131,13 +153,13 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
 
       <Card><CardContent className="p-0">
         <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
-          Edit per-bucket contributions inline below. Use <span className="text-emerald-600 font-medium">positive</span> numbers for money added and <span className="text-destructive font-medium">negative</span> for withdrawals. Changes flow into the chart above.
+          <strong className="text-foreground">Central source of truth.</strong> Every cell is editable — backfill bonuses and per-bucket contributions for any past month. Use <span className="text-emerald-600 font-medium">positive</span> for money added and <span className="text-destructive font-medium">negative</span> for withdrawals. Bonus is reference only and does <em>not</em> add to net flow.
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
               <th className="px-4 py-2.5">Month</th>
-              <th className="px-4 py-2.5 text-right">Bonus</th>
+              <th className="px-4 py-2.5 text-right">Bonus received</th>
               {d.investmentBuckets.map(b => (
                 <th key={b.id} className="px-4 py-2.5 text-right"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: b.color }} />{b.label}</span></th>
               ))}
@@ -148,7 +170,15 @@ const FlowsView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCha
               return (
                 <tr key={r.month} className="border-b border-border/50">
                   <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-emerald-600">{r.bonus > 0 ? fmtUSD(r.bonus) : '—'}</td>
+                  <td className="px-4 py-2 text-right">
+                    <input
+                      type="number"
+                      defaultValue={r.bonus || ''}
+                      placeholder="0"
+                      onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== r.bonus) saveBonus(r.month, e.target.value); }}
+                      className="w-24 bg-transparent text-right text-xs tabular-nums text-emerald-600 hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none"
+                    />
+                  </td>
                   {d.investmentBuckets.map(b => {
                     const v = r.perBucket[b.id] || 0;
                     return (
@@ -178,9 +208,10 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
   const data = useMemo(() => {
     const months = Array.from(new Set([...d.budgetMonths.map(b => b.month), ...d.budgetExtras.map(b => b.month)])).sort();
     return months.map(m => {
-      const salary = Number(d.budgetMonths.find(b => b.month === m)?.salary ?? 0);
+      const salaryAED = Number(d.budgetMonths.find(b => b.month === m)?.salary ?? 0);
+      const salaryUSD = salaryAED / 3.65;
       const commission = d.budgetExtras.filter(e => e.month === m).reduce((a, e) => a + Number(e.amount), 0);
-      return { month: m, salary, commission, total: salary + commission };
+      return { month: m, salaryAED, salaryUSD, commission, total: salaryUSD + commission };
     });
   }, [d]);
 
@@ -188,18 +219,20 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
   const ytdCommission = data.filter(r => r.month.startsWith(thisYear)).reduce((a, r) => a + r.commission, 0);
   const bestMonth = data.reduce((a, r) => r.total > a.total ? r : a, { total: 0, month: '' } as any);
 
+  const fmtAED = (v: number) => `AED ${Math.round(v).toLocaleString('en-US')}`;
+
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Commission / bonus per month</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Commission / bonus per month ($)</CardTitle></CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid stroke={COLORS.grid} vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
                 <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={50} />
-                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
                 <Bar dataKey="commission" radius={[4, 4, 0, 0]}>
                   {data.map((r, i) => <Cell key={i} fill={r.commission > 0 ? COLORS.etfs : '#e2e8f0'} />)}
                 </Bar>
@@ -210,20 +243,21 @@ const IncomeView: React.FC<{ d: WealthData }> = ({ d }) => {
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total earned {thisYear}</div><div className="text-xl font-semibold tabular-nums mt-1">{fmtUSD(ytdCommission)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Total commission {thisYear}</div><div className="text-xl font-semibold tabular-nums mt-1">{fmtUSD(ytdCommission)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-[11px] text-muted-foreground uppercase">Best single month</div><div className="text-xl font-semibold tabular-nums mt-1">{fmtUSD(bestMonth.total)}</div><div className="text-xs text-muted-foreground">{bestMonth.month ? fmtMonth(bestMonth.month) : '—'}</div></CardContent></Card>
       </div>
 
       <Card><CardContent className="p-0">
+        <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border">Salary stored & shown in AED · Commission in USD · Total in USD (rate 1 USD = 3.65 AED)</div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
-              <th className="px-4 py-2.5">Month</th><th className="px-4 py-2.5 text-right">Salary</th><th className="px-4 py-2.5 text-right">Commission</th><th className="px-4 py-2.5 text-right">Total</th>
+              <th className="px-4 py-2.5">Month</th><th className="px-4 py-2.5 text-right">Salary (AED)</th><th className="px-4 py-2.5 text-right">Commission ($)</th><th className="px-4 py-2.5 text-right">Total ($)</th>
             </tr></thead>
             <tbody>{[...data].reverse().map(r => (
               <tr key={r.month} className="border-b border-border/50">
                 <td className="px-4 py-2 font-mono text-xs">{fmtMonth(r.month)}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(r.salary)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{fmtAED(r.salaryAED)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(r.commission)}</td>
                 <td className="px-4 py-2 text-right tabular-nums font-medium">{fmtUSD(r.total)}</td>
               </tr>
