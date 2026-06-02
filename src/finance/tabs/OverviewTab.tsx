@@ -274,6 +274,10 @@ export const OverviewTab: React.FC<{ d: WealthData; onChange: () => void; carMar
         </CardContent>
       </Card>
 
+      <div className="lg:col-span-2">
+        <B2BrokerPipeline />
+      </div>
+
       <BucketsDialog d={d} open={bucketsOpen} onClose={() => setBucketsOpen(false)} onSaved={onChange} />
       <GoalsManageDialog d={d} open={goalManageOpen} onClose={() => setGoalManageOpen(false)} onSelectGoal={(g) => openGoal(g)} />
       <GoalDialog d={d} open={goalEditOpen} onClose={() => setGoalEditOpen(false)} onSaved={onChange} goal={editingGoal} />
