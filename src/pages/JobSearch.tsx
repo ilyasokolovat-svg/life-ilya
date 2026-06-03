@@ -15,8 +15,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Briefcase, Trash2, Calendar, AlertCircle, Check } from "lucide-react";
+import { Plus, Briefcase, Trash2, Calendar, AlertCircle, Check, Users, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { format, differenceInWeeks, startOfWeek, parseISO, isBefore } from "date-fns";
 
