@@ -617,6 +617,111 @@ export type Database = {
           },
         ]
       }
+      job_opportunities: {
+        Row: {
+          base_salary_monthly_usd: number | null
+          company_name: string
+          company_stage: string | null
+          contact_linkedin: string | null
+          contact_name: string | null
+          contact_role: string | null
+          created_at: string
+          direction: string
+          entity_type: string | null
+          equity_offered: string | null
+          id: string
+          next_action: string | null
+          next_action_date: string | null
+          notes: string | null
+          role_title: string | null
+          sort_order: number | null
+          source: string | null
+          stage: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_salary_monthly_usd?: number | null
+          company_name: string
+          company_stage?: string | null
+          contact_linkedin?: string | null
+          contact_name?: string | null
+          contact_role?: string | null
+          created_at?: string
+          direction?: string
+          entity_type?: string | null
+          equity_offered?: string | null
+          id?: string
+          next_action?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          role_title?: string | null
+          sort_order?: number | null
+          source?: string | null
+          stage?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_salary_monthly_usd?: number | null
+          company_name?: string
+          company_stage?: string | null
+          contact_linkedin?: string | null
+          contact_name?: string | null
+          contact_role?: string | null
+          created_at?: string
+          direction?: string
+          entity_type?: string | null
+          equity_offered?: string | null
+          id?: string
+          next_action?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          role_title?: string | null
+          sort_order?: number | null
+          source?: string | null
+          stage?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_search_settings: {
+        Row: {
+          checkpoint_date: string
+          created_at: string
+          id: string
+          target_offer_date: string
+          updated_at: string
+          user_id: string
+          weekly_target_applications: number
+          weekly_target_outreach: number
+          weekly_target_posts: number
+        }
+        Insert: {
+          checkpoint_date?: string
+          created_at?: string
+          id?: string
+          target_offer_date?: string
+          updated_at?: string
+          user_id: string
+          weekly_target_applications?: number
+          weekly_target_outreach?: number
+          weekly_target_posts?: number
+        }
+        Update: {
+          checkpoint_date?: string
+          created_at?: string
+          id?: string
+          target_offer_date?: string
+          updated_at?: string
+          user_id?: string
+          weekly_target_applications?: number
+          weekly_target_outreach?: number
+          weekly_target_posts?: number
+        }
+        Relationships: []
+      }
       milestones: {
         Row: {
           category: string | null
@@ -1173,6 +1278,42 @@ export type Database = {
           lived_in_periods?: Json | null
           lived_in_start_year?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_activity: {
+        Row: {
+          applications_sent: number
+          created_at: string
+          id: string
+          linkedin_posts: number
+          outreach_sent: number
+          recruiter_contacts: number
+          updated_at: string
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          applications_sent?: number
+          created_at?: string
+          id?: string
+          linkedin_posts?: number
+          outreach_sent?: number
+          recruiter_contacts?: number
+          updated_at?: string
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          applications_sent?: number
+          created_at?: string
+          id?: string
+          linkedin_posts?: number
+          outreach_sent?: number
+          recruiter_contacts?: number
+          updated_at?: string
+          user_id?: string
+          week_start_date?: string
         }
         Relationships: []
       }
