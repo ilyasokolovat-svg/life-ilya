@@ -974,13 +974,25 @@ function Field({ label, children, full }: { label: string; children: React.React
   );
 }
 
-function Criterion({ ok, label }: { ok: boolean; label: string }) {
+function Criterion({ ok, label, tooltip }: { ok: boolean; label: string; tooltip?: string }) {
   return (
     <div className="flex items-center gap-2 text-sm">
       <span className={`w-4 h-4 rounded-full flex items-center justify-center ${ok ? "bg-green-500" : "bg-slate-300"}`}>
         {ok && <Check className="w-3 h-3 text-white" />}
       </span>
       <span className={ok ? "text-slate-800" : "text-slate-500"}>{label}</span>
+      {tooltip && (
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-slate-400 hover:text-slate-600">
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-xs leading-relaxed">{tooltip}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </div>
   );
 }
