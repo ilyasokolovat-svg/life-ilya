@@ -746,6 +746,42 @@ export type Database = {
         }
         Relationships: []
       }
+      job_resumes: {
+        Row: {
+          content: string | null
+          created_at: string
+          file_path: string | null
+          id: string
+          kind: string
+          label: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          kind?: string
+          label: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_search_settings: {
         Row: {
           checkpoint_date: string
