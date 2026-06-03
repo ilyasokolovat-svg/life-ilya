@@ -241,6 +241,51 @@ export default function JobSearch() {
     reload();
   };
 
+  const bulkDeleteOpps = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} opportunit${ids.length === 1 ? "y" : "ies"}?`)) return;
+    await sb.from("job_opportunities").delete().in("id", ids);
+    toast.success(`Deleted ${ids.length}`);
+    reload();
+  };
+
+  const saveRecruiter = async (r: Partial<Recruiter> & { id?: string }) => {
+    if (!user) return;
+    if (r.id) {
+      const { id, ...patch } = r;
+      const { error } = await sb.from("job_recruiters").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await sb.from("job_recruiters").insert({
+        user_id: user.id,
+        name: r.name || "Untitled",
+        agency: r.agency || null,
+        specialization: r.specialization || null,
+        region_focus: r.region_focus || null,
+        email: r.email || null,
+        phone: r.phone || null,
+        linkedin: r.linkedin || null,
+        relationship_status: r.relationship_status || "New",
+        last_contacted: r.last_contacted || null,
+        next_followup: r.next_followup || null,
+        roles_pitched: r.roles_pitched || null,
+        notes: r.notes || null,
+      });
+      if (error) return toast.error(error.message);
+    }
+    toast.success("Saved");
+    setEditingRecruiter(null);
+    setShowNewRecruiter(false);
+    reload();
+  };
+
+  const deleteRecruiter = async (id: string) => {
+    if (!confirm("Delete this recruiter?")) return;
+    await sb.from("job_recruiters").delete().eq("id", id);
+    setEditingRecruiter(null);
+    reload();
+  };
+
   const moveStage = async (id: string, stage: Stage) => {
     setOpps((prev) => prev.map((o) => (o.id === id ? { ...o, stage } : o)));
     await sb.from("job_opportunities").update({ stage, updated_at: new Date().toISOString() }).eq("id", id);
