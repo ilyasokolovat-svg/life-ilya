@@ -493,6 +493,11 @@ export default function JobSearch() {
                 onNewRecruiter={() => setShowNewRecruiter(true)}
               />
             </TabsContent>
+
+            {/* RESUMES */}
+            <TabsContent value="resumes" className="mt-4">
+              <ResumesSection />
+            </TabsContent>
           </Tabs>
         </div>
       </main>
