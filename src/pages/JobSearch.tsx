@@ -483,7 +483,14 @@ export default function JobSearch() {
 
             {/* OUTREACH */}
             <TabsContent value="outreach" className="mt-4">
-              <OutreachLists opps={opps} onOpen={setEditing} />
+              <OutreachSection
+                opps={opps}
+                recruiters={recruiters}
+                onOpenOpp={setEditing}
+                onBulkDeleteOpps={bulkDeleteOpps}
+                onOpenRecruiter={setEditingRecruiter}
+                onNewRecruiter={() => setShowNewRecruiter(true)}
+              />
             </TabsContent>
           </Tabs>
         </div>
@@ -495,6 +502,15 @@ export default function JobSearch() {
           onClose={() => { setEditing(null); setShowNew(false); }}
           onSave={saveOpp}
           onDelete={editing ? () => deleteOpp(editing.id) : undefined}
+        />
+      )}
+
+      {(editingRecruiter || showNewRecruiter) && (
+        <RecruiterDialog
+          recruiter={editingRecruiter}
+          onClose={() => { setEditingRecruiter(null); setShowNewRecruiter(false); }}
+          onSave={saveRecruiter}
+          onDelete={editingRecruiter ? () => deleteRecruiter(editingRecruiter.id) : undefined}
         />
       )}
     </div>
