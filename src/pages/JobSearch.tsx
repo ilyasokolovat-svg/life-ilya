@@ -141,11 +141,14 @@ function FitBadge({ score }: { score: number }) {
 export default function JobSearch() {
   const { user } = useAuth();
   const [opps, setOpps] = useState<Opp[]>([]);
+  const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [activity, setActivity] = useState<Activity | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Opp | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [editingRecruiter, setEditingRecruiter] = useState<Recruiter | null>(null);
+  const [showNewRecruiter, setShowNewRecruiter] = useState(false);
 
   const weekStart = useMemo(() => format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"), []);
 
