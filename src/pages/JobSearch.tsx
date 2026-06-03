@@ -889,7 +889,11 @@ function OpportunityDialog({
           </div>
           <Criterion ok={(form.base_salary_monthly_usd ?? 0) >= 15000} label="Base salary ≥ $15,000/month" />
           <Criterion ok={form.equity_offered === "Yes - real equity"} label="Real equity (not phantom)" />
-          <Criterion ok={form.entity_type === "DIFC/ADGM" || form.entity_type === "Foreign entity (real shares)"} label="Proper entity for equity" />
+          <Criterion
+            ok={form.entity_type === "DIFC/ADGM" || form.entity_type === "Foreign entity (real shares)"}
+            label="Proper entity for equity"
+            tooltip="Equity is only enforceable if the company is structured to issue real shares. ✅ DIFC/ADGM (common-law free zones with real share registries) or a foreign holding entity (Cayman, Delaware, Singapore). ❌ Mainland UAE LLCs can't cleanly issue equity to employees, and 'phantom equity' is just a deferred cash bonus."
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
