@@ -361,6 +361,7 @@ export default function JobSearch() {
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
               <TabsTrigger value="outreach">Outreach lists</TabsTrigger>
+              <TabsTrigger value="resumes">Resumes</TabsTrigger>
             </TabsList>
 
             {/* DASHBOARD */}
@@ -491,6 +492,11 @@ export default function JobSearch() {
                 onOpenRecruiter={setEditingRecruiter}
                 onNewRecruiter={() => setShowNewRecruiter(true)}
               />
+            </TabsContent>
+
+            {/* RESUMES */}
+            <TabsContent value="resumes" className="mt-4">
+              <ResumesSection />
             </TabsContent>
           </Tabs>
         </div>
@@ -994,5 +1000,280 @@ function Criterion({ ok, label, tooltip }: { ok: boolean; label: string; tooltip
         </TooltipProvider>
       )}
     </div>
+  );
+}
+
+// ---------- Resumes ----------
+type Resume = {
+  id: string;
+  user_id: string;
+  label: string;
+  kind: "pdf" | "ats";
+  file_path: string | null;
+  content: string | null;
+  notes: string | null;
+  updated_at: string;
+};
+
+function ResumesSection() {
+  const { user } = useAuth();
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Resume | null>(null);
+  const [showNewAts, setShowNewAts] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [bucketMissing, setBucketMissing] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const load = async () => {
+    if (!user) return;
+    const { data } = await sb.from("job_resumes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false });
+    setResumes(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [user?.id]);
+
+  const uploadPdf = async (file: File) => {
+    if (!user) return;
+    if (file.type !== "application/pdf") return toast.error("Only PDF files");
+    if (file.size > 10 * 1024 * 1024) return toast.error("Max 10MB");
+    setUploading(true);
+    const path = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error: upErr } = await supabase.storage.from("resumes").upload(path, file, { contentType: "application/pdf" });
+    if (upErr) {
+      setUploading(false);
+      if (upErr.message?.toLowerCase().includes("bucket")) {
+        setBucketMissing(true);
+        return toast.error("Storage bucket missing — see banner above");
+      }
+      return toast.error(upErr.message);
+    }
+    const label = file.name.replace(/\.pdf$/i, "");
+    const { error } = await sb.from("job_resumes").insert({
+      user_id: user.id, label, kind: "pdf", file_path: path,
+    });
+    setUploading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Uploaded");
+    load();
+  };
+
+  const downloadPdf = async (r: Resume) => {
+    if (!r.file_path) return;
+    const { data, error } = await supabase.storage.from("resumes").createSignedUrl(r.file_path, 60);
+    if (error || !data?.signedUrl) return toast.error("Could not download");
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const deleteResume = async (r: Resume) => {
+    if (!confirm(`Delete "${r.label}"?`)) return;
+    if (r.file_path) {
+      await supabase.storage.from("resumes").remove([r.file_path]);
+    }
+    await sb.from("job_resumes").delete().eq("id", r.id);
+    setEditing(null);
+    load();
+  };
+
+  const saveResume = async (r: Partial<Resume> & { id?: string }) => {
+    if (!user) return;
+    if (r.id) {
+      const { id, ...patch } = r;
+      const { error } = await sb.from("job_resumes").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await sb.from("job_resumes").insert({
+        user_id: user.id,
+        label: r.label || "Untitled",
+        kind: r.kind || "ats",
+        content: r.content || "",
+        notes: r.notes || null,
+      });
+      if (error) return toast.error(error.message);
+    }
+    toast.success("Saved");
+    setEditing(null);
+    setShowNewAts(false);
+    load();
+  };
+
+  const pdfs = resumes.filter((r) => r.kind === "pdf");
+  const atsVersions = resumes.filter((r) => r.kind === "ats");
+
+  if (loading) return <div className="text-sm text-slate-500">Loading…</div>;
+
+  return (
+    <div className="space-y-6">
+      {bucketMissing && (
+        <Card className="p-4 bg-amber-50 border-amber-200 text-sm text-amber-800">
+          <strong>Storage bucket missing.</strong> Create a private bucket named <code className="bg-amber-100 px-1 rounded">resumes</code> in your Supabase dashboard → Storage, then retry the upload. RLS policies are already set up.
+        </Card>
+      )}
+
+      {/* PDF resumes */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h3 className="font-semibold text-slate-900">PDF resumes</h3>
+            <p className="text-xs text-slate-500">Upload polished versions for different directions or roles.</p>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPdf(f); e.target.value = ""; }}
+          />
+          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2" size="sm">
+            <Plus className="w-4 h-4" /> {uploading ? "Uploading…" : "Upload PDF"}
+          </Button>
+        </div>
+
+        {pdfs.length === 0 ? (
+          <p className="text-sm text-slate-500">No PDFs uploaded yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {pdfs.map((r) => (
+              <div key={r.id} className="p-3 rounded-lg border bg-white flex items-center gap-3">
+                <div className="p-2 rounded bg-red-50 text-red-600 shrink-0">
+                  <Briefcase className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-slate-900 truncate">{r.label}</div>
+                  <div className="text-xs text-slate-500">PDF · {format(parseISO(r.updated_at), "d MMM yyyy")}</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => downloadPdf(r)}>Download</Button>
+                <Button size="sm" variant="outline" onClick={() => setEditing(r)}>Edit</Button>
+                <Button size="sm" variant="ghost" className="text-red-600" onClick={() => deleteResume(r)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* ATS text versions */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h3 className="font-semibold text-slate-900">ATS-friendly text versions</h3>
+            <p className="text-xs text-slate-500">Plain-text resumes for application forms and ATS parsers. No tables, no columns, no graphics.</p>
+          </div>
+          <Button onClick={() => setShowNewAts(true)} className="gap-2" size="sm">
+            <Plus className="w-4 h-4" /> New ATS version
+          </Button>
+        </div>
+
+        {atsVersions.length === 0 ? (
+          <p className="text-sm text-slate-500">No ATS versions yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {atsVersions.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => setEditing(r)}
+                className="text-left p-3 rounded-lg border bg-white hover:shadow-sm transition"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-medium text-slate-900 truncate">{r.label}</div>
+                  <Badge variant="secondary" className="shrink-0">ATS</Badge>
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {(r.content?.length || 0).toLocaleString()} chars · Updated {format(parseISO(r.updated_at), "d MMM yyyy")}
+                </div>
+                {r.content && (
+                  <div className="text-xs text-slate-600 mt-2 line-clamp-2 whitespace-pre-wrap font-mono">
+                    {r.content.slice(0, 140)}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {(editing || showNewAts) && (
+        <ResumeDialog
+          resume={editing}
+          onClose={() => { setEditing(null); setShowNewAts(false); }}
+          onSave={saveResume}
+          onDelete={editing ? () => deleteResume(editing) : undefined}
+          onDownload={editing?.kind === "pdf" ? () => downloadPdf(editing) : undefined}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResumeDialog({
+  resume, onClose, onSave, onDelete, onDownload,
+}: {
+  resume: Resume | null;
+  onClose: () => void;
+  onSave: (r: Partial<Resume> & { id?: string }) => void;
+  onDelete?: () => void;
+  onDownload?: () => void;
+}) {
+  const [form, setForm] = useState<Partial<Resume>>(
+    resume || { kind: "ats", label: "", content: "" }
+  );
+  const set = (k: keyof Resume, v: any) => setForm((p) => ({ ...p, [k]: v }));
+  const isPdf = form.kind === "pdf";
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {resume ? `Edit ${isPdf ? "PDF" : "ATS"} resume` : "New ATS resume"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <Field label="Label *">
+            <Input value={form.label || ""} onChange={(e) => set("label", e.target.value)} placeholder="e.g. Dubai Fintech Sales – v3" />
+          </Field>
+
+          {!isPdf && (
+            <Field label="ATS-friendly text content">
+              <Textarea
+                rows={20}
+                className="font-mono text-xs"
+                value={form.content || ""}
+                onChange={(e) => set("content", e.target.value)}
+                placeholder={`NAME\nemail · phone · LinkedIn · city\n\nSUMMARY\n...\n\nEXPERIENCE\nCompany — Title (Mon YYYY – Present)\n• Achievement with metric\n• Achievement with metric\n\nEDUCATION\n...\n\nSKILLS\n...`}
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Plain text only. Use • for bullets. No tables, columns, headers/footers, or icons.
+              </p>
+            </Field>
+          )}
+
+          <Field label="Notes">
+            <Textarea
+              rows={2}
+              value={form.notes || ""}
+              onChange={(e) => set("notes", e.target.value)}
+              placeholder="When to use this version, tweaks to make..."
+            />
+          </Field>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          {onDelete && (
+            <Button variant="outline" className="text-red-600 mr-auto gap-1" onClick={onDelete}>
+              <Trash2 className="w-4 h-4" /> Delete
+            </Button>
+          )}
+          {onDownload && (
+            <Button variant="outline" onClick={onDownload}>Download PDF</Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => onSave({ ...form, id: resume?.id })}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
