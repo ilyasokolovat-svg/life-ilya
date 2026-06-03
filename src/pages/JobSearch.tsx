@@ -361,6 +361,7 @@ export default function JobSearch() {
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
               <TabsTrigger value="outreach">Outreach lists</TabsTrigger>
+              <TabsTrigger value="resumes">Resumes</TabsTrigger>
             </TabsList>
 
             {/* DASHBOARD */}
