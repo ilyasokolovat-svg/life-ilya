@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Heart, Target, Plane, Map, BarChart3, Timer, Users, Wallet, LogOut } from "lucide-react";
+import { Heart, Target, Plane, Map, BarChart3, Timer, Users, Wallet, Briefcase, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ const navItems = [
   { title: "Focus Mode", path: "/focus", icon: Timer, color: "hsl(250, 70%, 60%)" },
   { title: "Social CRM", path: "/social", icon: Users, color: "hsl(35, 75%, 50%)" },
   { title: "Finance", path: "/finance", icon: Wallet, color: "hsl(217, 80%, 48%)" },
+  { title: "Job Search", path: "/job-search", icon: Briefcase, color: "hsl(210, 75%, 50%)" },
 ];
 
 export function DashboardSidebar() {

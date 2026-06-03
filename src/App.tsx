@@ -17,6 +17,7 @@ import YearAnalysisIndex from "./pages/YearAnalysisIndex";
 import FocusTimer from "./pages/FocusTimer";
 import SocialCRM from "./pages/SocialCRM";
 import Finance from "./pages/Finance";
+import JobSearch from "./pages/JobSearch";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
@@ -108,6 +109,7 @@ const AppRoutes = () => {
         <Route path="/focus" element={<ProtectedRoute><FocusTimer /></ProtectedRoute>} />
         <Route path="/social" element={<ProtectedRoute><SocialCRM /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+        <Route path="/job-search" element={<ProtectedRoute><JobSearch /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
