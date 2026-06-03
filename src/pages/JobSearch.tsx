@@ -624,45 +624,239 @@ function PipelineKanban({
   );
 }
 
-function OutreachLists({ opps, onOpen }: { opps: Opp[]; onOpen: (o: Opp) => void }) {
+function OutreachSection({
+  opps, recruiters, onOpenOpp, onBulkDeleteOpps, onOpenRecruiter, onNewRecruiter,
+}: {
+  opps: Opp[];
+  recruiters: Recruiter[];
+  onOpenOpp: (o: Opp) => void;
+  onBulkDeleteOpps: (ids: string[]) => void;
+  onOpenRecruiter: (r: Recruiter) => void;
+  onNewRecruiter: () => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllForDirection = (ids: string[]) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const allOn = ids.every((id) => next.has(id));
+      if (allOn) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {DIRECTIONS.map((d) => {
-        const list = opps.filter((o) => o.direction === d).sort((a, b) => a.company_name.localeCompare(b.company_name));
-        const st = DIRECTION_STYLES[d];
-        return (
-          <Card key={d} className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`w-2.5 h-2.5 rounded-full ${st.dot}`} />
-              <h3 className={`font-semibold ${st.text}`}>{d}</h3>
-              <Badge variant="secondary" className="ml-auto">{list.length}</Badge>
-            </div>
-            {list.length === 0 ? (
-              <p className="text-sm text-slate-500">No companies yet.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {list.map((o) => (
-                  <button
-                    key={o.id}
-                    onClick={() => onOpen(o)}
-                    className="w-full flex items-center justify-between text-left p-2 rounded hover:bg-slate-50 transition"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-slate-900 truncate">{o.company_name}</div>
-                      <div className="text-xs text-slate-500 truncate">
-                        {o.company_stage} · {o.stage}
-                        {o.contact_name ? ` · ${o.contact_name}` : ""}
+    <Tabs defaultValue="companies">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <TabsList className="bg-white border">
+          <TabsTrigger value="companies">Companies ({opps.length})</TabsTrigger>
+          <TabsTrigger value="recruiters" className="gap-1.5">
+            <Users className="w-3.5 h-3.5" />
+            Recruiters ({recruiters.length})
+          </TabsTrigger>
+        </TabsList>
+        {selected.size > 0 && (
+          <Button
+            variant="outline"
+            className="text-red-600 border-red-200 gap-1.5"
+            onClick={() => {
+              onBulkDeleteOpps(Array.from(selected));
+              setSelected(new Set());
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete {selected.size} selected
+          </Button>
+        )}
+      </div>
+
+      <TabsContent value="companies">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {DIRECTIONS.map((d) => {
+            const list = opps.filter((o) => o.direction === d).sort((a, b) => a.company_name.localeCompare(b.company_name));
+            const st = DIRECTION_STYLES[d];
+            const ids = list.map((o) => o.id);
+            const allSelected = ids.length > 0 && ids.every((id) => selected.has(id));
+            return (
+              <Card key={d} className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  {list.length > 0 && (
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={() => toggleAllForDirection(ids)}
+                      aria-label={`Select all in ${d}`}
+                    />
+                  )}
+                  <span className={`w-2.5 h-2.5 rounded-full ${st.dot}`} />
+                  <h3 className={`font-semibold ${st.text}`}>{d}</h3>
+                  <Badge variant="secondary" className="ml-auto">{list.length}</Badge>
+                </div>
+                {list.length === 0 ? (
+                  <p className="text-sm text-slate-500">No companies yet.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {list.map((o) => (
+                      <div
+                        key={o.id}
+                        className={`w-full flex items-center gap-2 p-2 rounded hover:bg-slate-50 transition ${selected.has(o.id) ? "bg-blue-50" : ""}`}
+                      >
+                        <Checkbox
+                          checked={selected.has(o.id)}
+                          onCheckedChange={() => toggle(o.id)}
+                          aria-label={`Select ${o.company_name}`}
+                        />
+                        <button
+                          onClick={() => onOpenOpp(o)}
+                          className="flex-1 flex items-center justify-between text-left min-w-0"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-slate-900 truncate">{o.company_name}</div>
+                            <div className="text-xs text-slate-500 truncate">
+                              {o.company_stage} · {o.stage}
+                              {o.contact_name ? ` · ${o.contact_name}` : ""}
+                            </div>
+                          </div>
+                          <FitBadge score={fitScore(o)} />
+                        </button>
                       </div>
-                    </div>
-                    <FitBadge score={fitScore(o)} />
-                  </button>
-                ))}
-              </div>
-            )}
+                    ))}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="recruiters">
+        <div className="flex justify-end mb-3">
+          <Button onClick={onNewRecruiter} className="gap-2" size="sm">
+            <Plus className="w-4 h-4" /> Add recruiter
+          </Button>
+        </div>
+        {recruiters.length === 0 ? (
+          <Card className="p-8 text-center text-sm text-slate-500">
+            No recruiters yet. Add agency recruiters, in-house TA contacts, or executive search reps you're working with.
           </Card>
-        );
-      })}
-    </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {recruiters
+              .slice()
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((r) => {
+                const statusColor =
+                  r.relationship_status === "Active" ? "bg-green-100 text-green-700" :
+                  r.relationship_status === "Warm" ? "bg-amber-100 text-amber-700" :
+                  r.relationship_status === "Cold" ? "bg-slate-100 text-slate-600" :
+                  r.relationship_status === "Placed me before" ? "bg-purple-100 text-purple-700" :
+                  r.relationship_status === "Dormant" ? "bg-slate-100 text-slate-500" :
+                  "bg-blue-100 text-blue-700";
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => onOpenRecruiter(r)}
+                    className="text-left p-4 rounded-lg border bg-white hover:shadow-sm transition"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="min-w-0">
+                        <div className="font-medium text-slate-900 truncate">{r.name}</div>
+                        {r.agency && <div className="text-xs text-slate-500 truncate">{r.agency}</div>}
+                      </div>
+                      <Badge className={`${statusColor} hover:${statusColor} shrink-0`}>{r.relationship_status}</Badge>
+                    </div>
+                    <div className="text-xs text-slate-600 mt-2 space-y-0.5">
+                      {r.specialization && <div>🎯 {r.specialization}</div>}
+                      {r.region_focus && <div>🌍 {r.region_focus}</div>}
+                      {r.last_contacted && <div>Last contact: {format(parseISO(r.last_contacted), "d MMM yyyy")}</div>}
+                      {r.next_followup && (
+                        <div className={isBefore(parseISO(r.next_followup), new Date()) ? "text-red-600 font-medium" : ""}>
+                          Follow up: {format(parseISO(r.next_followup), "d MMM yyyy")}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+        )}
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function RecruiterDialog({
+  recruiter, onClose, onSave, onDelete,
+}: {
+  recruiter: Recruiter | null;
+  onClose: () => void;
+  onSave: (r: Partial<Recruiter> & { id?: string }) => void;
+  onDelete?: () => void;
+}) {
+  const [form, setForm] = useState<Partial<Recruiter>>(
+    recruiter || { relationship_status: "New" }
+  );
+  const set = (k: keyof Recruiter, v: any) => setForm((p) => ({ ...p, [k]: v }));
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{recruiter ? "Edit recruiter" : "New recruiter"}</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Name *"><Input value={form.name || ""} onChange={(e) => set("name", e.target.value)} /></Field>
+          <Field label="Agency / Firm"><Input value={form.agency || ""} onChange={(e) => set("agency", e.target.value)} placeholder="e.g. Cooper Fitch, in-house" /></Field>
+          <Field label="Specialization"><Input value={form.specialization || ""} onChange={(e) => set("specialization", e.target.value)} placeholder="e.g. Fintech sales, C-suite" /></Field>
+          <Field label="Region focus">
+            <Select value={form.region_focus || ""} onValueChange={(v) => set("region_focus", v)}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>{RECRUITER_REGIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Relationship">
+            <Select value={form.relationship_status || "New"} onValueChange={(v) => set("relationship_status", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{RECRUITER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Email"><Input value={form.email || ""} onChange={(e) => set("email", e.target.value)} /></Field>
+          <Field label="Phone"><Input value={form.phone || ""} onChange={(e) => set("phone", e.target.value)} /></Field>
+          <Field label="LinkedIn URL" full><Input value={form.linkedin || ""} onChange={(e) => set("linkedin", e.target.value)} /></Field>
+          <Field label="Last contacted">
+            <Input type="date" value={form.last_contacted || ""} onChange={(e) => set("last_contacted", e.target.value || null)} />
+          </Field>
+          <Field label="Next follow-up">
+            <Input type="date" value={form.next_followup || ""} onChange={(e) => set("next_followup", e.target.value || null)} />
+          </Field>
+          <Field label="Roles they've pitched" full>
+            <Textarea rows={2} value={form.roles_pitched || ""} onChange={(e) => set("roles_pitched", e.target.value)} placeholder="What roles/companies have they brought you?" />
+          </Field>
+          <Field label="Notes" full>
+            <Textarea rows={4} value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} placeholder="How you met, what they're good at, what to avoid..." />
+          </Field>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          {onDelete && (
+            <Button variant="outline" className="text-red-600 mr-auto gap-1" onClick={onDelete}>
+              <Trash2 className="w-4 h-4" /> Delete
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => onSave({ ...form, id: recruiter?.id })}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
