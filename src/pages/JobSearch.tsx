@@ -155,10 +155,11 @@ export default function JobSearch() {
   // ---------- load ----------
   const reload = async () => {
     if (!user) return;
-    const [oR, sR, aR] = await Promise.all([
+    const [oR, sR, aR, rR] = await Promise.all([
       sb.from("job_opportunities").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       sb.from("job_search_settings").select("*").eq("user_id", user.id).maybeSingle(),
       sb.from("weekly_activity").select("*").eq("user_id", user.id).eq("week_start_date", weekStart).maybeSingle(),
+      sb.from("job_recruiters").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
     ]);
     let s: Settings | null = sR.data;
     if (!s) {
