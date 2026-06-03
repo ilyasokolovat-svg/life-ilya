@@ -192,6 +192,7 @@ export default function JobSearch() {
     }
 
     setOpps(list);
+    setRecruiters(rR.data || []);
     setSettings(s);
     setActivity(a);
     setLoading(false);
