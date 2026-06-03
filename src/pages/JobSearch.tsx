@@ -101,6 +101,27 @@ type Activity = {
 
 const sb = supabase as any;
 
+type Recruiter = {
+  id: string;
+  user_id: string;
+  name: string;
+  agency: string | null;
+  specialization: string | null;
+  region_focus: string | null;
+  email: string | null;
+  phone: string | null;
+  linkedin: string | null;
+  relationship_status: string;
+  last_contacted: string | null;
+  next_followup: string | null;
+  roles_pitched: string | null;
+  notes: string | null;
+  sort_order: number | null;
+};
+
+const RECRUITER_STATUSES = ["New", "Active", "Warm", "Cold", "Placed me before", "Dormant"];
+const RECRUITER_REGIONS = ["Dubai/GCC", "Singapore/APAC", "Remote/Global", "Saudi", "Multi-region"];
+
 // ---------- helpers ----------
 function fitScore(o: Opp): number {
   let s = 0;
