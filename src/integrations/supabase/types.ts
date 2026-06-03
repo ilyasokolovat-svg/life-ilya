@@ -686,6 +686,66 @@ export type Database = {
         }
         Relationships: []
       }
+      job_recruiters: {
+        Row: {
+          agency: string | null
+          created_at: string
+          email: string | null
+          id: string
+          last_contacted: string | null
+          linkedin: string | null
+          name: string
+          next_followup: string | null
+          notes: string | null
+          phone: string | null
+          region_focus: string | null
+          relationship_status: string
+          roles_pitched: string | null
+          sort_order: number | null
+          specialization: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agency?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_contacted?: string | null
+          linkedin?: string | null
+          name: string
+          next_followup?: string | null
+          notes?: string | null
+          phone?: string | null
+          region_focus?: string | null
+          relationship_status?: string
+          roles_pitched?: string | null
+          sort_order?: number | null
+          specialization?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agency?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_contacted?: string | null
+          linkedin?: string | null
+          name?: string
+          next_followup?: string | null
+          notes?: string | null
+          phone?: string | null
+          region_focus?: string | null
+          relationship_status?: string
+          roles_pitched?: string | null
+          sort_order?: number | null
+          specialization?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_search_settings: {
         Row: {
           checkpoint_date: string
