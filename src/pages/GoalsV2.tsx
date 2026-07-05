@@ -147,6 +147,8 @@ const GoalsV2 = () => {
         defaultQuarter={quarter}
         defaultYear={year}
       />
+
+      <WeeklyCheckinDialog open={checkinOpen} onOpenChange={setCheckinOpen} />
     </div>
   );
 
