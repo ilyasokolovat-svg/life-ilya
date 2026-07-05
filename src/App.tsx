@@ -92,7 +92,7 @@ const AppRoutes = () => {
 
   return (
     <>
-      <CheckinTrigger />
+      <WeeklyReflectionTrigger />
       <Routes>
         {/* Public routes */}
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
@@ -111,6 +111,7 @@ const AppRoutes = () => {
         <Route path="/social" element={<ProtectedRoute><SocialCRM /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
         <Route path="/job-search" element={<ProtectedRoute><JobSearch /></ProtectedRoute>} />
+        <Route path="/reflections" element={<ProtectedRoute><Reflections /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
