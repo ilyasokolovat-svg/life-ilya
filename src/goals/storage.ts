@@ -1,217 +1,254 @@
 import { useCallback, useEffect, useState } from "react";
-import { Category, Goal, GoalsState, WeeklyTaskBlock } from "./types";
-import { uid } from "./utils";
+import { Category, Goal, GoalsState } from "./types";
+import { currentIsoWeekKey, quarterInfo, syncRecurringWeeks, uid } from "./utils";
 
 const STORAGE_KEY = "goals_v2_data";
 
-function emptyWeeks(n: number): WeeklyTaskBlock[] {
-  return Array.from({ length: n }, (_, i) => ({ weekNumber: i + 1, tasks: [] }));
-}
+const CAT_PHYSICAL = "cat-physical";
+const CAT_FINANCIAL = "cat-financial";
+const CAT_SKILLS = "cat-skills";
+const CAT_PERSONAL = "cat-personal";
+const CAT_CAREER = "cat-career";
 
-function tasksFromText(lines: string[]): WeeklyTaskBlock["tasks"] {
-  return lines.map((t) => ({ id: uid(), text: t, done: false }));
-}
-
-function buildWeeks(perWeek: Record<number, string[]>, totalWeeks: number): WeeklyTaskBlock[] {
-  return Array.from({ length: totalWeeks }, (_, i) => {
-    const w = i + 1;
-    return { weekNumber: w, tasks: tasksFromText(perWeek[w] || []) };
-  });
-}
-
-function seed(): GoalsState {
-  const cats: Category[] = [
-    { id: "cat-physical", name: "Physical" },
-    { id: "cat-financial", name: "Financial" },
-    { id: "cat-skills", name: "Skills" },
-    { id: "cat-personal", name: "Personal growth" },
-    { id: "cat-career", name: "Career" },
+function seedCategories(): Category[] {
+  return [
+    { id: CAT_PHYSICAL, name: "Physical" },
+    { id: CAT_FINANCIAL, name: "Financial" },
+    { id: CAT_SKILLS, name: "Skills" },
+    { id: CAT_PERSONAL, name: "Personal growth" },
+    { id: CAT_CAREER, name: "Career" },
   ];
+}
 
-  const Q = "Q2 2026";
-  const goals: Goal[] = [
-    {
-      id: uid(),
-      title: "B2Broker sales sprint",
-      categoryId: "cat-financial",
+function buildGoal(g: Omit<Goal, "id" | "createdAt" | "weeklyTasks"> & { weeklyTasks?: Goal["weeklyTasks"] }): Goal {
+  const goal: Goal = {
+    id: uid(),
+    createdAt: Date.now(),
+    weeklyTasks: g.weeklyTasks || [],
+    ...g,
+  };
+  if (goal.layer === "quarterly" && goal.quarter) {
+    const tw = quarterInfo(goal.quarter).totalWeeks;
+    goal.weeklyTasks = syncRecurringWeeks(goal, tw);
+  }
+  return goal;
+}
+
+function seedGoals(): Goal[] {
+  const Q3 = "Q3 2026";
+  const Q4 = "Q4 2026";
+
+  const q3 = [
+    buildGoal({
+      title: "B2Broker commission engine",
+      categoryId: CAT_CAREER,
       layer: "quarterly",
       color: "coral",
-      quarter: Q,
+      quarter: Q3,
+      progressWeighting: "blend",
       metrics: [
-        { id: uid(), label: "Outreaches sent", kind: "number", current: 0, target: 600 },
-        { id: uid(), label: "Calls booked", kind: "number", current: 0, target: 20 },
-        { id: uid(), label: "Demos run", kind: "number", current: 0, target: 8 },
-        { id: uid(), label: "Pipeline added", kind: "number", current: 0, target: 400, unit: "$K" },
+        { id: uid(), label: "Commissions", kind: "number", current: 0, target: 40, unit: "$K" },
+        { id: uid(), label: "Pipeline added", kind: "number", current: 0, target: 150, unit: "$K" },
       ],
-      weeklyTasks: buildWeeks(
-        {
-          1: [
-            "Build prospect list of 150 targets on LinkedIn Sales Navigator",
-            "Write 3 outreach templates (FX broker, crypto exchange, new broker)",
-            "Send first 100 outreaches",
-          ],
-          2: [
-            "Send 100+ outreaches",
-            "Follow up on week 1 non-responses",
-            "Target 5 discovery calls booked",
-          ],
-          3: [
-            "Run discovery calls",
-            "Push every warm lead to a demo booking",
-            "10 calls booked total",
-          ],
-          4: [
-            "Run demos",
-            "Qualify hard; move deals to proposal stage",
-            "Follow up on all open threads",
-          ],
-          5: [
-            "Push proposals to close",
-            "Negotiate",
-            "Re-engage stalled deals with a new angle",
-          ],
-          6: [
-            "Close focus only — deals that can't close this quarter get handed off",
-            "Document wins",
-          ],
-        },
-        6
-      ),
-      createdAt: Date.now(),
-    },
-    {
-      id: uid(),
-      title: "Train 3x per week",
-      categoryId: "cat-physical",
-      layer: "quarterly",
-      color: "green",
-      quarter: Q,
-      metrics: [
-        { id: uid(), label: "Sessions completed", kind: "number", current: 0, target: 18 },
-        { id: uid(), label: "Full-streak weeks", kind: "number", current: 0, target: 6 },
+      recurringWeeklyTasks: [
+        "Mon: review pipeline, pick 3 movable deals, book calls",
+        "50+ outreaches this week",
+        "3+ discovery calls or demos held",
+        "Fri: log week (commissions, pipeline, activity)",
       ],
-      weeklyTasks: buildWeeks(
-        {
-          1: [
-            "Block 3 fixed training slots in calendar",
-            "Choose format (gym / run / swim)",
-            "Complete first 3 sessions",
-          ],
-          2: ["Complete 3 sessions", "Log each one", "Protect the streak"],
-          3: ["Complete 3 sessions", "Log each one", "Protect the streak"],
-          4: ["Complete 3 sessions", "Log each one", "Protect the streak"],
-          5: ["Complete 3 sessions", "Log each one", "Protect the streak"],
-          6: ["Complete 3 sessions", "Log each one", "Protect the streak"],
-        },
-        6
-      ),
-      createdAt: Date.now(),
-    },
-    {
-      id: uid(),
-      title: "Alcohol reduction",
-      categoryId: "cat-physical",
-      layer: "quarterly",
-      color: "teal",
-      quarter: Q,
-      metrics: [
-        { id: uid(), label: "Compliant weeks", kind: "number", current: 0, target: 6 },
-        { id: uid(), label: "Weeks logged", kind: "number", current: 0, target: 6 },
-      ],
-      weeklyTasks: buildWeeks(
-        Object.fromEntries(
-          Array.from({ length: 6 }, (_, i) => [
-            i + 1,
-            [
-              "Log every drink consumed",
-              "Stay at or under 2 drinks",
-              "Decide your number before social events, not during",
-            ],
-          ])
-        ),
-        6
-      ),
-      createdAt: Date.now(),
-    },
-    {
-      id: uid(),
-      title: "Financial independence plan",
-      categoryId: "cat-financial",
+    }),
+    buildGoal({
+      title: "$1M plan execution",
+      categoryId: CAT_FINANCIAL,
       layer: "quarterly",
       color: "purple",
-      quarter: Q,
+      quarter: Q3,
+      progressWeighting: "metric-only",
       metrics: [
-        { id: uid(), label: "Monthly spend calculated", kind: "checkbox", current: 0, target: 1 },
-        { id: uid(), label: "FI number set using 25x rule", kind: "checkbox", current: 0, target: 1 },
-        { id: uid(), label: "Monthly savings rate calculated", kind: "checkbox", current: 0, target: 1 },
+        { id: uid(), label: "Portfolio value", kind: "number", current: 0, target: 75, unit: "$K" },
+        { id: uid(), label: "Commission % invested", kind: "number", current: 0, target: 60, unit: "%" },
       ],
-      weeklyTasks: buildWeeks(
-        {
-          1: ["List all fixed and variable monthly expenses honestly including dating costs"],
-          2: ["Apply the 25x rule — annual expenses × 25 = FI target number"],
-          3: [
-            "Calculate the monthly savings and investment rate needed to hit the target by age 35",
-            "Write up the one-page plan document",
-          ],
-        },
-        6
-      ),
-      createdAt: Date.now(),
-    },
-    {
-      id: uid(),
-      title: "Singapore / HK job search",
-      categoryId: "cat-career",
+      recurringWeeklyTasks: [],
+    }),
+    buildGoal({
+      title: "Location & career optionality",
+      categoryId: CAT_CAREER,
       layer: "quarterly",
-      color: "pink",
-      quarter: Q,
+      color: "teal",
+      quarter: Q3,
+      progressWeighting: "blend",
       metrics: [
-        { id: uid(), label: "Applications sent", kind: "number", current: 0, target: 20 },
-        { id: uid(), label: "Recruiter conversations", kind: "number", current: 0, target: 5 },
-        { id: uid(), label: "First-round interviews", kind: "number", current: 0, target: 2 },
+        { id: uid(), label: "Live conversations", kind: "number", current: 0, target: 2 },
+        { id: uid(), label: "Cyprus/HK/Dubai comparison doc", kind: "checkbox", current: 0, target: 1 },
       ],
-      weeklyTasks: buildWeeks(
-        {
-          1: [
-            "Update CV with fintech framing",
-            "Email 5 specialist recruiters (Michael Page, Robert Walters, Selby Jennings, Links International, +1)",
-            "Connect with 10 fintech sales people in SG/HK on LinkedIn",
-          ],
-          2: [
-            "Send 5 tailored applications",
-            "Follow up with recruiters",
-            "Connect with 10 more on LinkedIn",
-          ],
-          3: ["Send 3–5 applications", "Run any recruiter or hiring manager calls", "Prep for interviews"],
-          4: ["Send 3–5 applications", "Run any recruiter or hiring manager calls", "Prep for interviews"],
-          5: ["Send 3–5 applications", "Run any recruiter or hiring manager calls", "Prep for interviews"],
-          6: ["Send 3–5 applications", "Run any recruiter or hiring manager calls", "Prep for interviews"],
-        },
-        6
-      ),
-      createdAt: Date.now(),
-    },
+      recurringWeeklyTasks: [],
+    }),
+    buildGoal({
+      title: "Alcohol protocol + training",
+      categoryId: CAT_PHYSICAL,
+      layer: "quarterly",
+      color: "green",
+      quarter: Q3,
+      progressWeighting: "task-only",
+      metrics: [
+        { id: uid(), label: "Compliant weeks", kind: "number", current: 0, target: 9, unit: "weeks" },
+        { id: uid(), label: "Training sessions", kind: "number", current: 0, target: 36, unit: "sessions" },
+      ],
+      recurringWeeklyTasks: [
+        "No alcohol Sun–Thu",
+        "Max 2 drinks Friday",
+        "Max 2 drinks Saturday",
+        "3 training sessions",
+      ],
+    }),
   ];
 
-  return { goals, categories: cats, currentWeekIndex: {} };
+  const q4 = [
+    buildGoal({
+      title: "B2Broker commission engine",
+      categoryId: CAT_CAREER,
+      layer: "quarterly",
+      color: "coral",
+      quarter: Q4,
+      progressWeighting: "blend",
+      metrics: [
+        { id: uid(), label: "Commissions", kind: "number", current: 0, target: 50, unit: "$K" },
+        { id: uid(), label: "Pipeline added", kind: "number", current: 0, target: 180, unit: "$K" },
+      ],
+      recurringWeeklyTasks: [
+        "Mon: review pipeline, pick 3 movable deals, book calls",
+        "50+ outreaches this week",
+        "3+ discovery calls or demos held",
+        "Fri: log week (commissions, pipeline, activity)",
+      ],
+    }),
+    buildGoal({
+      title: "$1M plan execution",
+      categoryId: CAT_FINANCIAL,
+      layer: "quarterly",
+      color: "purple",
+      quarter: Q4,
+      progressWeighting: "metric-only",
+      metrics: [
+        { id: uid(), label: "Portfolio value", kind: "number", current: 0, target: 95, unit: "$K" },
+        { id: uid(), label: "Commission % invested", kind: "number", current: 0, target: 60, unit: "%" },
+      ],
+      recurringWeeklyTasks: [],
+    }),
+    buildGoal({
+      title: "Location & career optionality",
+      categoryId: CAT_CAREER,
+      layer: "quarterly",
+      color: "teal",
+      quarter: Q4,
+      progressWeighting: "blend",
+      metrics: [
+        { id: uid(), label: "Written location decision", kind: "checkbox", current: 0, target: 1 },
+        { id: uid(), label: "Relocation/remote plan", kind: "checkbox", current: 0, target: 1 },
+      ],
+      recurringWeeklyTasks: [],
+    }),
+    buildGoal({
+      title: "Alcohol protocol + training",
+      categoryId: CAT_PHYSICAL,
+      layer: "quarterly",
+      color: "green",
+      quarter: Q4,
+      progressWeighting: "task-only",
+      metrics: [
+        { id: uid(), label: "Compliant weeks", kind: "number", current: 0, target: 13, unit: "weeks" },
+        { id: uid(), label: "Training sessions", kind: "number", current: 0, target: 36, unit: "sessions" },
+      ],
+      recurringWeeklyTasks: [
+        "No alcohol Sun–Thu",
+        "Max 2 drinks Friday",
+        "Max 2 drinks Saturday",
+        "3 training sessions",
+      ],
+    }),
+  ];
+
+  const longterm: Goal = {
+    id: uid(),
+    title: "$1M net worth by Sep 2029",
+    description:
+      "Financial independence anchor. Fed by B2Broker commissions now, a higher-base/equity role or Cyprus tax efficiency from 2027.",
+    categoryId: CAT_FINANCIAL,
+    layer: "longterm",
+    color: "purple",
+    metrics: [],
+    weeklyTasks: [],
+    createdAt: Date.now(),
+  };
+
+  return [...q3, ...q4, longterm];
+}
+
+function initialState(): GoalsState {
+  return {
+    goals: seedGoals(),
+    categories: seedCategories(),
+    currentWeekIndex: {},
+    checkinLog: [],
+  };
+}
+
+function migrate(parsed: any): GoalsState {
+  const state: GoalsState = {
+    goals: Array.isArray(parsed?.goals) ? parsed.goals : [],
+    categories: Array.isArray(parsed?.categories) ? parsed.categories : seedCategories(),
+    currentWeekIndex: parsed?.currentWeekIndex || {},
+    checkinLog: Array.isArray(parsed?.checkinLog) ? parsed.checkinLog : [],
+  };
+
+  // Ensure defaults + sync recurring weeks for quarterly goals
+  state.goals = state.goals.map((g) => {
+    const gg: Goal = {
+      ...g,
+      progressWeighting: g.progressWeighting || "blend",
+      recurringWeeklyTasks: g.recurringWeeklyTasks || [],
+      weeklyTasks: g.weeklyTasks || [],
+      metrics: g.metrics || [],
+    };
+    if (gg.layer === "quarterly" && gg.quarter && (gg.recurringWeeklyTasks?.length || gg.weeklyTasks.length)) {
+      const tw = quarterInfo(gg.quarter).totalWeeks;
+      if (gg.recurringWeeklyTasks && gg.recurringWeeklyTasks.length) {
+        gg.weeklyTasks = syncRecurringWeeks(gg, tw);
+      }
+    }
+    return gg;
+  });
+
+  // Append new Q3/Q4 2026 seed + longterm if not already present.
+  const hasQ3 = state.goals.some((g) => g.quarter === "Q3 2026");
+  const hasQ4 = state.goals.some((g) => g.quarter === "Q4 2026");
+  const hasLongterm1M = state.goals.some(
+    (g) => g.layer === "longterm" && /\$1M net worth/i.test(g.title)
+  );
+  if (!hasQ3 || !hasQ4 || !hasLongterm1M) {
+    const fresh = seedGoals();
+    if (!hasQ3) state.goals.push(...fresh.filter((g) => g.quarter === "Q3 2026"));
+    if (!hasQ4) state.goals.push(...fresh.filter((g) => g.quarter === "Q4 2026"));
+    if (!hasLongterm1M) state.goals.push(...fresh.filter((g) => g.layer === "longterm"));
+  }
+
+  return state;
 }
 
 function load(): GoalsState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const s = seed();
+      const s = initialState();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
       return s;
     }
     const parsed = JSON.parse(raw);
-    return {
-      goals: parsed.goals || [],
-      categories: parsed.categories || [],
-      currentWeekIndex: parsed.currentWeekIndex || {},
-    };
+    const migrated = migrate(parsed);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    return migrated;
   } catch {
-    return seed();
+    return initialState();
   }
 }
 
@@ -229,6 +266,22 @@ function setState(updater: (s: GoalsState) => GoalsState) {
   listeners.forEach((l) => l());
 }
 
+function normalizeGoal(g: Goal): Goal {
+  const gg: Goal = {
+    ...g,
+    progressWeighting: g.progressWeighting || "blend",
+    recurringWeeklyTasks: g.recurringWeeklyTasks || [],
+    weeklyTasks: g.weeklyTasks || [],
+  };
+  if (gg.layer === "quarterly" && gg.quarter) {
+    const tw = quarterInfo(gg.quarter).totalWeeks;
+    if (gg.recurringWeeklyTasks && gg.recurringWeeklyTasks.length) {
+      gg.weeklyTasks = syncRecurringWeeks(gg, tw);
+    }
+  }
+  return gg;
+}
+
 export function useGoalsStore() {
   const [, force] = useState(0);
   useEffect(() => {
@@ -239,9 +292,10 @@ export function useGoalsStore() {
   const state = getState();
 
   const upsertGoal = useCallback((g: Goal) => {
+    const norm = normalizeGoal(g);
     setState((s) => {
-      const exists = s.goals.some((x) => x.id === g.id);
-      return { ...s, goals: exists ? s.goals.map((x) => (x.id === g.id ? g : x)) : [...s.goals, g] };
+      const exists = s.goals.some((x) => x.id === norm.id);
+      return { ...s, goals: exists ? s.goals.map((x) => (x.id === norm.id ? norm : x)) : [...s.goals, norm] };
     });
   }, []);
 
@@ -276,8 +330,6 @@ export function useGoalsStore() {
 
   const advanceWeek = useCallback((qKey: string) => {
     setState((s) => {
-      // Mark all tasks in current week (computed externally) — caller passes via updateGoal.
-      // Here we just bump the override index.
       const cur = s.currentWeekIndex[qKey] || 0;
       return { ...s, currentWeekIndex: { ...s.currentWeekIndex, [qKey]: cur + 1 } };
     });
@@ -298,9 +350,23 @@ export function useGoalsStore() {
     }));
   }, []);
 
+  // Save a batch of goal updates AND record a check-in for the current ISO week.
+  const saveCheckin = useCallback((updatedGoals: Goal[]) => {
+    setState((s) => {
+      const key = currentIsoWeekKey();
+      const goals = s.goals.map((g) => {
+        const upd = updatedGoals.find((u) => u.id === g.id);
+        return upd ? normalizeGoal({ ...g, ...upd }) : g;
+      });
+      const checkinLog = s.checkinLog.includes(key) ? s.checkinLog : [...s.checkinLog, key];
+      return { ...s, goals, checkinLog };
+    });
+  }, []);
+
   return {
     goals: state.goals,
     categories: state.categories,
+    checkinLog: state.checkinLog,
     upsertGoal,
     deleteGoal,
     updateGoal,
@@ -309,5 +375,6 @@ export function useGoalsStore() {
     deleteCategory,
     advanceWeek,
     completeCurrentWeek,
+    saveCheckin,
   };
 }
