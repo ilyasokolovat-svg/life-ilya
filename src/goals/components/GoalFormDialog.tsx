@@ -51,6 +51,8 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
     setLinkedLongtermGoalId(g?.linkedLongtermGoalId);
     setMetrics(g?.metrics || []);
     setWeeklyTasks(g?.weeklyTasks || []);
+    setRecurringTasks(g?.recurringWeeklyTasks || []);
+    setProgressWeighting(g?.progressWeighting || "blend");
   }, [open, initial, defaultLayer, defaultQuarter, defaultYear, categories]);
 
   // Sync week count to quarter
