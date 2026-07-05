@@ -6,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Goal, Layer, ColorKey, COLOR_KEYS, colorHsl, Metric, Category } from "../types";
-import { uid, listQuarters, listYears, quarterInfo, currentQuarterKey } from "../utils";
+import { Goal, Layer, ColorKey, COLOR_KEYS, colorHsl, Metric, Category, ProgressWeighting } from "../types";
+import { uid, listQuarters, listYears, quarterInfo, currentQuarterKey, syncRecurringWeeks } from "../utils";
 import { useGoalsStore } from "../storage";
 
 interface Props {
