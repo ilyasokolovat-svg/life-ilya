@@ -15,13 +15,15 @@ import { CategoryManager } from "@/goals/components/CategoryManager";
 import { WeeklyCheckinDialog } from "@/goals/components/WeeklyCheckinDialog";
 
 const GoalsV2 = () => {
-  const { goals, categories, upsertGoal, deleteGoal } = useGoalsStore();
+  const { goals, categories, checkinLog, upsertGoal, deleteGoal } = useGoalsStore();
   const [tab, setTab] = useState<Layer>("quarterly");
   const [quarter, setQuarter] = useState(currentQuarterKey());
   const [year, setYear] = useState<number>(new Date().getFullYear());
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Goal | undefined>();
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const streak = checkinStreak(checkinLog);
 
   const openNew = () => {
     setEditing(undefined);
