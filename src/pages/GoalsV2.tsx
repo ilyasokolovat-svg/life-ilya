@@ -60,12 +60,27 @@ const GoalsV2 = () => {
               <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             </Link>
             <h1 className="text-lg font-semibold">Goals</h1>
+            {streak > 0 && (
+              <span
+                className="text-xs font-medium inline-flex items-center gap-1"
+                style={{ color: "hsl(var(--goal-amber))" }}
+                title="Consecutive weeks with a saved weekly check-in"
+              >
+                <Flame className="w-3.5 h-3.5" /> {streak}-week streak
+              </span>
+            )}
           </div>
-          <Button size="sm" onClick={openNew}>
-            <Plus className="w-4 h-4 mr-1" /> Add goal
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => setCheckinOpen(true)}>
+              <CheckSquare className="w-4 h-4 mr-1" /> Weekly check-in
+            </Button>
+            <Button size="sm" onClick={openNew}>
+              <Plus className="w-4 h-4 mr-1" /> Add goal
+            </Button>
+          </div>
         </div>
       </header>
+
 
       <main className="px-4 sm:px-6 py-6 max-w-5xl mx-auto space-y-4">
         <CategoryManager />
