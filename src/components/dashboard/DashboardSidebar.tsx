@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Heart, Target, Plane, Map, BarChart3, Timer, Users, Wallet, Briefcase, LogOut } from "lucide-react";
+import { Heart, Target, Plane, Map, BarChart3, Timer, Users, Wallet, Briefcase, Sparkles, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { title: "Healthy Life", path: "/habits", icon: Heart, color: "hsl(350, 80%, 55%)" },
   { title: "Goals", path: "/goals-overview", icon: Target, color: "hsl(263, 85%, 65%)" },
+  { title: "Reflections", path: "/reflections", icon: Sparkles, color: "hsl(var(--goal-amber))" },
   { title: "Trips", path: "/trip-planning", icon: Plane, color: "hsl(175, 70%, 45%)" },
   { title: "Life Events", path: "/life-events", icon: Map, color: "hsl(40, 90%, 55%)" },
   { title: "Year Analysis", path: "/year-analysis", icon: BarChart3, color: "hsl(25, 80%, 55%)" },

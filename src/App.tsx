@@ -18,11 +18,12 @@ import FocusTimer from "./pages/FocusTimer";
 import SocialCRM from "./pages/SocialCRM";
 import Finance from "./pages/Finance";
 import JobSearch from "./pages/JobSearch";
+import Reflections from "./pages/Reflections";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckinTrigger } from "@/components/checkin/CheckinTrigger";
+import { WeeklyReflectionTrigger } from "@/reflection/WeeklyReflectionTrigger";
 
 // Create a client with default options - increasing staleTime for better caching
 const queryClient = new QueryClient({
@@ -91,7 +92,7 @@ const AppRoutes = () => {
 
   return (
     <>
-      <CheckinTrigger />
+      <WeeklyReflectionTrigger />
       <Routes>
         {/* Public routes */}
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
@@ -110,6 +111,7 @@ const AppRoutes = () => {
         <Route path="/social" element={<ProtectedRoute><SocialCRM /></ProtectedRoute>} />
         <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
         <Route path="/job-search" element={<ProtectedRoute><JobSearch /></ProtectedRoute>} />
+        <Route path="/reflections" element={<ProtectedRoute><Reflections /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
