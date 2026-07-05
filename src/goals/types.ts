@@ -2,6 +2,7 @@ export type Layer = "longterm" | "yearly" | "quarterly";
 export type Status = "on-track" | "at-risk" | "behind" | "complete";
 export type MetricKind = "number" | "checkbox";
 export type ColorKey = "coral" | "purple" | "teal" | "green" | "amber" | "pink";
+export type ProgressWeighting = "metric-only" | "task-only" | "blend";
 
 export const COLOR_KEYS: ColorKey[] = ["coral", "purple", "teal", "green", "amber", "pink"];
 
@@ -21,8 +22,8 @@ export interface Metric {
   id: string;
   label: string;
   kind: MetricKind;
-  current: number; // for checkbox: 0 or 1
-  target: number; // for checkbox: 1
+  current: number;
+  target: number;
   unit?: string;
 }
 
@@ -40,7 +41,7 @@ export interface WeeklyTaskBlock {
 export type MonthlyReviewStatus = "on-track" | "at-risk" | "behind" | "complete";
 
 export interface MonthlyReview {
-  month: string; // "YYYY-MM"
+  month: string;
   status: MonthlyReviewStatus;
   note?: string;
   reviewedAt: number;
@@ -55,15 +56,17 @@ export interface Goal {
   categoryId: string;
   layer: Layer;
   color: ColorKey;
-  quarter?: string; // "Q2 2026"
+  quarter?: string;
   year?: number;
   linkedYearlyGoalId?: string;
   linkedLongtermGoalId?: string;
   metrics: Metric[];
   weeklyTasks: WeeklyTaskBlock[];
+  recurringWeeklyTasks?: string[];
+  progressWeighting?: ProgressWeighting;
   monthlyReviews?: MonthlyReview[];
-  progressMode?: ProgressMode; // yearly only; default "blend"
-  status?: Status; // optional manual override
+  progressMode?: ProgressMode;
+  status?: Status;
   createdAt: number;
 }
 
@@ -75,5 +78,6 @@ export interface Category {
 export interface GoalsState {
   goals: Goal[];
   categories: Category[];
-  currentWeekIndex: Record<string, number>; // quarter key -> current week (1-based override)
+  currentWeekIndex: Record<string, number>;
+  checkinLog: string[]; // ISO week keys like "2026-W28"
 }

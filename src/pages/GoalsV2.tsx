@@ -1,26 +1,29 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, CheckSquare, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGoalsStore } from "@/goals/storage";
 import { Goal, Layer } from "@/goals/types";
-import { currentQuarterKey, currentMonthKey, monthLabel, listQuarters, listYears } from "@/goals/utils";
+import { checkinStreak, currentQuarterKey, currentMonthKey, monthLabel, listQuarters, listYears } from "@/goals/utils";
 import { GoalCard } from "@/goals/components/GoalCard";
 import { YearlyGoalCard } from "@/goals/components/YearlyGoalCard";
 import { LongtermGoalCard } from "@/goals/components/LongtermGoalCard";
 import { GoalFormDialog } from "@/goals/components/GoalFormDialog";
 import { CategoryManager } from "@/goals/components/CategoryManager";
+import { WeeklyCheckinDialog } from "@/goals/components/WeeklyCheckinDialog";
 
 const GoalsV2 = () => {
-  const { goals, categories, upsertGoal, deleteGoal } = useGoalsStore();
+  const { goals, categories, checkinLog, upsertGoal, deleteGoal } = useGoalsStore();
   const [tab, setTab] = useState<Layer>("quarterly");
   const [quarter, setQuarter] = useState(currentQuarterKey());
   const [year, setYear] = useState<number>(new Date().getFullYear());
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Goal | undefined>();
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const streak = checkinStreak(checkinLog);
 
   const openNew = () => {
     setEditing(undefined);
@@ -57,12 +60,27 @@ const GoalsV2 = () => {
               <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             </Link>
             <h1 className="text-lg font-semibold">Goals</h1>
+            {streak > 0 && (
+              <span
+                className="text-xs font-medium inline-flex items-center gap-1"
+                style={{ color: "hsl(var(--goal-amber))" }}
+                title="Consecutive weeks with a saved weekly check-in"
+              >
+                <Flame className="w-3.5 h-3.5" /> {streak}-week streak
+              </span>
+            )}
           </div>
-          <Button size="sm" onClick={openNew}>
-            <Plus className="w-4 h-4 mr-1" /> Add goal
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => setCheckinOpen(true)}>
+              <CheckSquare className="w-4 h-4 mr-1" /> Weekly check-in
+            </Button>
+            <Button size="sm" onClick={openNew}>
+              <Plus className="w-4 h-4 mr-1" /> Add goal
+            </Button>
+          </div>
         </div>
       </header>
+
 
       <main className="px-4 sm:px-6 py-6 max-w-5xl mx-auto space-y-4">
         <CategoryManager />
@@ -129,6 +147,8 @@ const GoalsV2 = () => {
         defaultQuarter={quarter}
         defaultYear={year}
       />
+
+      <WeeklyCheckinDialog open={checkinOpen} onOpenChange={setCheckinOpen} />
     </div>
   );
 
