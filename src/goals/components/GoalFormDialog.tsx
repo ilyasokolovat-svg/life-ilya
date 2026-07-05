@@ -205,8 +205,60 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
                   </Select>
                 </div>
               </div>
+
+              <div>
+                <Label className="text-xs">Progress weighting</Label>
+                <Select value={progressWeighting} onValueChange={(v) => setProgressWeighting(v as ProgressWeighting)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="blend">Blend (70% metrics · 30% tasks)</SelectItem>
+                    <SelectItem value="metric-only">Metric only</SelectItem>
+                    <SelectItem value="task-only">Task only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs">Recurring weekly tasks</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => setRecurringTasks([...recurringTasks, ""])}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Add
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  Auto-copied into every week of the quarter. Editing text updates all weeks; done state per week is preserved.
+                </p>
+                <div className="space-y-1.5">
+                  {recurringTasks.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground italic">No recurring tasks — use per-week tasks below for one-offs.</p>
+                  )}
+                  {recurringTasks.map((t, i) => (
+                    <div key={i} className="flex gap-1 items-center">
+                      <Input
+                        value={t}
+                        onChange={(e) => setRecurringTasks(recurringTasks.map((x, xi) => xi === i ? e.target.value : x))}
+                        placeholder="Recurring task text..."
+                        className="h-7 text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setRecurringTasks(recurringTasks.filter((_, xi) => xi !== i))}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </>
           )}
+
 
           {layer === "yearly" && (
             <div className="grid grid-cols-2 gap-3">
