@@ -33,6 +33,8 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
   const [linkedLongtermGoalId, setLinkedLongtermGoalId] = useState<string | undefined>();
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [weeklyTasks, setWeeklyTasks] = useState<Goal["weeklyTasks"]>([]);
+  const [recurringTasks, setRecurringTasks] = useState<string[]>([]);
+  const [progressWeighting, setProgressWeighting] = useState<ProgressWeighting>("blend");
   const [newCategoryName, setNewCategoryName] = useState("");
 
   useEffect(() => {
