@@ -1,17 +1,18 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, CheckSquare, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGoalsStore } from "@/goals/storage";
 import { Goal, Layer } from "@/goals/types";
-import { currentQuarterKey, currentMonthKey, monthLabel, listQuarters, listYears } from "@/goals/utils";
+import { checkinStreak, currentQuarterKey, currentMonthKey, monthLabel, listQuarters, listYears } from "@/goals/utils";
 import { GoalCard } from "@/goals/components/GoalCard";
 import { YearlyGoalCard } from "@/goals/components/YearlyGoalCard";
 import { LongtermGoalCard } from "@/goals/components/LongtermGoalCard";
 import { GoalFormDialog } from "@/goals/components/GoalFormDialog";
 import { CategoryManager } from "@/goals/components/CategoryManager";
+import { WeeklyCheckinDialog } from "@/goals/components/WeeklyCheckinDialog";
 
 const GoalsV2 = () => {
   const { goals, categories, upsertGoal, deleteGoal } = useGoalsStore();
