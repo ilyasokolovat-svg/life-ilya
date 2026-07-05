@@ -67,6 +67,15 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
 
   const save = () => {
     if (!title.trim() || !categoryId) return;
+    const cleanRecurring = recurringTasks.map((t) => t.trim()).filter(Boolean);
+    let finalWeeklyTasks = layer === "quarterly" ? weeklyTasks : [];
+    if (layer === "quarterly" && cleanRecurring.length) {
+      const tw = quarterInfo(quarter).totalWeeks;
+      finalWeeklyTasks = syncRecurringWeeks(
+        { weeklyTasks, recurringWeeklyTasks: cleanRecurring } as Goal,
+        tw
+      );
+    }
     const g: Goal = {
       id: initial?.id || uid(),
       title: title.trim(),
@@ -79,12 +88,15 @@ export function GoalFormDialog({ open, onOpenChange, initial, defaultLayer, defa
       linkedYearlyGoalId: layer === "quarterly" ? linkedYearlyGoalId : undefined,
       linkedLongtermGoalId: layer === "yearly" ? linkedLongtermGoalId : undefined,
       metrics: layer === "longterm" ? [] : metrics,
-      weeklyTasks: layer === "quarterly" ? weeklyTasks : [],
+      weeklyTasks: finalWeeklyTasks,
+      recurringWeeklyTasks: layer === "quarterly" ? cleanRecurring : undefined,
+      progressWeighting: layer === "quarterly" ? progressWeighting : undefined,
       createdAt: initial?.createdAt || Date.now(),
     };
     upsertGoal(g);
     onOpenChange(false);
   };
+
 
   const yearlyGoals = goals.filter((g) => g.layer === "yearly");
   const longtermGoals = goals.filter((g) => g.layer === "longterm");
