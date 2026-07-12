@@ -109,34 +109,25 @@ export default function useHabits() {
     }
   }, []);
 
-  // Update a habit for a specific day
+  // Update a habit for a specific day — race-safe via functional setState
   const updateDay = async (date: Date, type: HabitType, data: HabitData) => {
     try {
       const dateISO = formatDateISO(date);
-      
-      // Get or create the day data
-      let dayData: DayData = habitsState.days[dateISO] 
-        ? { ...habitsState.days[dateISO] } 
-        : createEmptyDayData(date);
-      
-      // Update the specific habit data
-      dayData = {
-        ...dayData,
-        [type]: data
-      };
-      
-      // Update local state first for immediate feedback
-      const updatedDays = {
-        ...habitsState.days,
-        [dateISO]: dayData
-      };
-      
-      setHabitsState({
-        ...habitsState,
-        days: updatedDays
+      let mergedDay: DayData = createEmptyDayData(date);
+
+      setHabitsState(prev => {
+        const existing = prev.days[dateISO]
+          ? { ...prev.days[dateISO] }
+          : createEmptyDayData(date);
+        mergedDay = { ...existing, [type]: data };
+        return {
+          ...prev,
+          days: { ...prev.days, [dateISO]: mergedDay },
+        };
       });
 
-      // Then sync to Supabase if enabled and user is authenticated
+      // Sync to Supabase if enabled — uses the merged snapshot so
+      // parallel updateDay calls don't clobber each other's fields.
       if (user && syncEnabled) {
         try {
           const { error } = await supabase
@@ -144,11 +135,11 @@ export default function useHabits() {
             .upsert({
               user_id: user.id,
               date: dateISO,
-              habit_data: dayData as any
+              habit_data: mergedDay as any
             }, {
               onConflict: 'user_id,date'
             });
-            
+
           if (error) {
             console.error('Error syncing to Supabase:', error);
             toast.error('Failed to sync to cloud', { duration: 1500, id: 'sync-error' });
@@ -157,7 +148,7 @@ export default function useHabits() {
           console.error('Error in Supabase sync:', syncError);
         }
       }
-      
+
       toast.success('Progress saved!', { duration: 1500 });
     } catch (error) {
       console.error('Error updating day:', error);
