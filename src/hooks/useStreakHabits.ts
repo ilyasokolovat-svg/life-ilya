@@ -38,29 +38,40 @@ const updateMissedDays = (habit: StreakHabit): StreakHabit => {
   return { ...habit, completedDays: updatedDays };
 };
 
-export const useStreakHabits = () => {
-  const [streakHabits, setStreakHabits] = useState<StreakHabit[]>(() => {
-    const stored = localStorage.getItem('streakHabits');
-    const parsed = stored ? JSON.parse(stored) : [];
-    
-    // Migrate old format and update missed days
-    return parsed.map((habit: any) => {
-      // Migrate old boolean[] format to new DayStatus[] format
-      if (habit.completedDays.length > 0 && typeof habit.completedDays[0] === 'boolean') {
-        habit.completedDays = habit.completedDays.map((completed: boolean) => 
-          completed ? 'completed' : 'pending'
-        );
-      }
-      if (!habit.lastUpdateDate) {
-        habit.lastUpdateDate = habit.createdAt;
-      }
-      return updateMissedDays(habit);
-    });
+// Same-tab pub/sub so all hook instances stay in sync
+const streakListeners = new Set<(habits: StreakHabit[]) => void>();
+
+const loadStreakHabits = (): StreakHabit[] => {
+  const stored = localStorage.getItem('streakHabits');
+  const parsed = stored ? JSON.parse(stored) : [];
+  return parsed.map((habit: any) => {
+    if (habit.completedDays.length > 0 && typeof habit.completedDays[0] === 'boolean') {
+      habit.completedDays = habit.completedDays.map((completed: boolean) =>
+        completed ? 'completed' : 'pending'
+      );
+    }
+    if (!habit.lastUpdateDate) habit.lastUpdateDate = habit.createdAt;
+    return updateMissedDays(habit);
   });
+};
+
+export const useStreakHabits = () => {
+  const [streakHabits, setStreakHabitsState] = useState<StreakHabit[]>(loadStreakHabits);
+
+  const setStreakHabits = (next: StreakHabit[] | ((prev: StreakHabit[]) => StreakHabit[])) => {
+    setStreakHabitsState((prev) => {
+      const value = typeof next === 'function' ? (next as any)(prev) : next;
+      localStorage.setItem('streakHabits', JSON.stringify(value));
+      streakListeners.forEach((fn) => fn(value));
+      return value;
+    });
+  };
 
   useEffect(() => {
-    localStorage.setItem('streakHabits', JSON.stringify(streakHabits));
-  }, [streakHabits]);
+    const fn = (v: StreakHabit[]) => setStreakHabitsState(v);
+    streakListeners.add(fn);
+    return () => { streakListeners.delete(fn); };
+  }, []);
 
   useEffect(() => {
     // Update missed days every minute
