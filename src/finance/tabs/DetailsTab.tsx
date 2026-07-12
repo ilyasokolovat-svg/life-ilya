@@ -423,41 +423,181 @@ const DebtView: React.FC<{ d: WealthData }> = ({ d }) => {
   );
 };
 
-const SpendingView: React.FC<{ d: WealthData }> = ({ d }) => {
-  if (!d.budgetSpending.length) {
-    return (
-      <Card><CardContent className="p-10 text-center">
-        <div className="text-sm text-muted-foreground">Log your monthly spending to track categories over time.</div>
-      </CardContent></Card>
-    );
+const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
+  const cats = d.budgetCategories;
+
+  // Build the last 12 months (ending current month), gap-filled.
+  const months = useMemo(() => {
+    const now = new Date();
+    const arr: string[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      arr.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-01`);
+    }
+    // Also include any historical months already logged that fall outside the window
+    const extra = Array.from(new Set(d.budgetSpending.map(s => s.month.slice(0, 7) + '-01')))
+      .filter(m => !arr.includes(m));
+    return [...extra, ...arr].sort();
+  }, [d.budgetSpending]);
+
+  const spendAt = (month: string, catId: string) =>
+    Number(d.budgetSpending.find(s => s.month.slice(0, 7) === month.slice(0, 7) && s.category_id === catId)?.actual ?? 0);
+
+  const saveCell = async (month: string, catId: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    const { data: existing } = await sb
+      .from('budget_spending')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('category_id', catId)
+      .like('month', `${month.slice(0, 7)}%`)
+      .maybeSingle();
+    if (existing) {
+      if (v === 0) await sb.from('budget_spending').delete().eq('id', existing.id);
+      else await sb.from('budget_spending').update({ actual: v }).eq('id', existing.id);
+    } else if (v > 0) {
+      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v });
+    }
+    onChange();
+  };
+
+  // Chart series: per-month totals + per-category outlier detection (>1.5σ from that category's mean).
+  const chartData = useMemo(() => {
+    const rows = months.map(m => {
+      const row: any = { month: m, total: 0 };
+      for (const c of cats) {
+        const v = spendAt(m, c.id);
+        row[c.id] = v;
+        row.total += v;
+      }
+      return row;
+    });
+    // Compute outliers per category
+    const outliers: Record<string, Set<string>> = {};
+    for (const c of cats) {
+      const vals = rows.map(r => r[c.id]).filter(v => v > 0);
+      if (vals.length < 3) { outliers[c.id] = new Set(); continue; }
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
+      outliers[c.id] = new Set(rows.filter(r => sd > 0 && Math.abs(r[c.id] - mean) > 1.5 * sd && r[c.id] > 0).map(r => r.month));
+    }
+    // Total outliers
+    const totals = rows.map(r => r.total).filter(v => v > 0);
+    let totalOutliers = new Set<string>();
+    if (totals.length >= 3) {
+      const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
+      const sd = Math.sqrt(totals.reduce((a, b) => a + (b - mean) ** 2, 0) / totals.length);
+      totalOutliers = new Set(rows.filter(r => sd > 0 && Math.abs(r.total - mean) > 1.5 * sd && r.total > 0).map(r => r.month));
+    }
+    return { rows, outliers, totalOutliers };
+  }, [months, cats, d.budgetSpending]);
+
+  const [focusCat, setFocusCat] = useState<string>('__total__');
+
+  const focusOutliers = focusCat === '__total__' ? chartData.totalOutliers : chartData.outliers[focusCat];
+  const focusColor = focusCat === '__total__' ? '#3b82f6' : (cats.find(c => c.id === focusCat)?.color ?? '#3b82f6');
+  const focusKey = focusCat === '__total__' ? 'total' : focusCat;
+  const focusLabel = focusCat === '__total__' ? 'Total' : (cats.find(c => c.id === focusCat)?.label ?? '');
+
+  if (!cats.length) {
+    return <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Add spending categories in the Plan tab first.</CardContent></Card>;
   }
-  // Compact actual vs budget bars for the latest month with data.
-  const months = Array.from(new Set(d.budgetSpending.map(s => s.month))).sort();
-  const last = months[months.length - 1];
-  const rows = d.budgetCategories.map(c => {
-    const actual = d.budgetSpending.filter(s => s.month === last && s.category_id === c.id).reduce((a, s) => a + Number(s.actual), 0);
-    return { label: c.label, color: c.color, actual, budget: Number(c.budget) };
-  });
+
   return (
-    <Card>
-      <CardHeader className="pb-2"><CardTitle className="text-base">Spending — {fmtMonth(last)}</CardTitle></CardHeader>
-      <CardContent className="space-y-3">
-        {rows.map(r => {
-          const pct = r.budget > 0 ? Math.min(100, (r.actual / r.budget) * 100) : 0;
-          return (
-            <div key={r.label}>
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: r.color }} />{r.label}</span>
-                <span className="tabular-nums">{fmtUSD(r.actual)} / {fmtUSD(r.budget)}</span>
-              </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full" style={{ width: `${pct}%`, background: r.color }} />
-              </div>
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2 flex-row items-center justify-between flex-wrap gap-2">
+          <div>
+            <CardTitle className="text-base">Spending — {focusLabel}</CardTitle>
+            <p className="text-[11px] text-muted-foreground mt-1">Larger dots = outlier months (&gt;1.5σ from the average).</p>
+          </div>
+          <select
+            value={focusCat}
+            onChange={e => setFocusCat(e.target.value)}
+            className="text-xs bg-transparent border border-border rounded px-2 py-1 outline-none"
+          >
+            <option value="__total__">Total spending</option>
+            {cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+        </CardHeader>
+        <CardContent>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData.rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke={COLORS.grid} vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
+                <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={44} />
+                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Line
+                  type="monotone"
+                  dataKey={focusKey}
+                  stroke={focusColor}
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                  dot={(props: any) => {
+                    const isOut = focusOutliers?.has(props.payload.month);
+                    return (
+                      <circle
+                        key={props.index}
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={isOut ? 5 : 2.5}
+                        fill={isOut ? focusColor : 'hsl(var(--background))'}
+                        stroke={focusColor}
+                        strokeWidth={isOut ? 0 : 1.5}
+                      />
+                    );
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card><CardContent className="p-0">
+        <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
+          <strong className="text-foreground">Backfill past spending.</strong> Every cell is editable — enter actual spend per category per month. Leave blank / 0 to remove.
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
+              <th className="px-3 py-2.5 sticky left-0 bg-card">Month</th>
+              {cats.map(c => (
+                <th key={c.id} className="px-3 py-2.5 text-right whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: c.color }} />{c.label}</span>
+                </th>
+              ))}
+              <th className="px-3 py-2.5 text-right">Total</th>
+            </tr></thead>
+            <tbody>{[...chartData.rows].reverse().map(r => (
+              <tr key={r.month} className="border-b border-border/50">
+                <td className="px-3 py-2 text-xs font-mono sticky left-0 bg-card">{fmtMonth(r.month)}</td>
+                {cats.map(c => {
+                  const v = r[c.id] as number;
+                  const isOut = chartData.outliers[c.id]?.has(r.month);
+                  return (
+                    <td key={c.id} className="px-3 py-2 text-right">
+                      <input
+                        type="number"
+                        defaultValue={v || ''}
+                        placeholder="0"
+                        onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveCell(r.month, c.id, e.target.value); }}
+                        className={`w-20 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${isOut ? 'font-semibold' : ''}`}
+                        style={isOut ? { color: c.color } : {}}
+                      />
+                    </td>
+                  );
+                })}
+                <td className={`px-3 py-2 text-right tabular-nums font-medium ${chartData.totalOutliers.has(r.month) ? 'text-primary' : ''}`}>{r.total ? fmtUSD(r.total) : '—'}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </CardContent></Card>
+    </div>
   );
 };
 
