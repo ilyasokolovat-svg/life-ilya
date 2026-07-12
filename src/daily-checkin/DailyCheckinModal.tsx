@@ -29,7 +29,7 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
   const [wellRested, setWellRested] = useState(false);
   const [gymDone, setGymDone] = useState(false);
   const [sober, setSober] = useState(true);
-  const [mindful, setMindful] = useState(false);
+  
 
   useEffect(() => {
     if (!open) return;
