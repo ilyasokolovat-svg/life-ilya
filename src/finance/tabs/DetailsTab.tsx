@@ -462,21 +462,31 @@ const SpendingView: React.FC<{ d: WealthData }> = ({ d }) => {
 };
 
 const ArchiveView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
+  const { user } = useAuth();
   const series = netWorthSeries(d);
   const buckets = d.investmentBuckets;
   const ccA = ccAccount(d);
 
   const saveCell = async (date: string, bucketId: string, raw: string) => {
+    if (!user) return;
     const v = Number(raw) || 0;
-    const { data: existing } = await sb.from('investment_snapshots').select('id').eq('month', date).eq('bucket_id', bucketId).maybeSingle();
-    if (existing) await sb.from('investment_snapshots').update({ value: v }).eq('id', existing.id);
+    const { data: existing } = await sb.from('investment_snapshots').select('id').eq('user_id', user.id).eq('month', date).eq('bucket_id', bucketId).maybeSingle();
+    if (existing) {
+      await sb.from('investment_snapshots').update({ value: v }).eq('id', existing.id);
+    } else {
+      await sb.from('investment_snapshots').insert({ user_id: user.id, month: date, bucket_id: bucketId, value: v, contribution: 0 });
+    }
     onChange();
   };
   const saveCC = async (date: string, raw: string) => {
-    if (!ccA) return;
+    if (!ccA || !user) return;
     const v = -Math.abs(Number(raw) || 0);
-    const { data: existing } = await sb.from('nw_snapshots').select('id').eq('month', date).eq('account_id', ccA.id).maybeSingle();
-    if (existing) await sb.from('nw_snapshots').update({ value: v }).eq('id', existing.id);
+    const { data: existing } = await sb.from('nw_snapshots').select('id').eq('user_id', user.id).eq('month', date).eq('account_id', ccA.id).maybeSingle();
+    if (existing) {
+      await sb.from('nw_snapshots').update({ value: v }).eq('id', existing.id);
+    } else {
+      await sb.from('nw_snapshots').insert({ user_id: user.id, month: date, account_id: ccA.id, value: v });
+    }
     onChange();
   };
 
