@@ -87,11 +87,14 @@ const Dashboard = () => {
               </button>
               <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
             </div>
+            <HeaderStreakStrip />
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
             </div>
           </div>
         </header>
+
+        <DailyCheckinModal open={checkinOpen} onOpenChange={setCheckinOpen} />
 
         <main className="px-6 py-6 max-w-4xl mx-auto space-y-6">
           {/* Non-negotiable Commitment */}
@@ -126,8 +129,8 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* 7-day streak */}
-          <HabitStreakSummary />
+          {/* Today's streaks + habits */}
+          <TodayStreaksCard onOpenCheckin={() => setCheckinOpen(true)} />
 
           {/* Quarterly goals weekly snapshot */}
           <QuarterlyDashboardStrip />
