@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import WeeklySummaryDashboard from "@/components/WeeklySummaryDashboard";
+
 import TestDataLoader from "@/components/TestDataLoader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { HabitStreakSummary } from "@/components/dashboard/HabitStreakSummary";
@@ -134,9 +134,6 @@ const Dashboard = () => {
 
           {/* Quarterly goals weekly snapshot */}
           <QuarterlyDashboardStrip />
-
-          {/* Weekly Summary */}
-          <WeeklySummaryDashboard />
         </main>
       </div>
     </div>
