@@ -39,11 +39,6 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
     setGymDone(!!dayData?.gym?.completed || (Array.isArray(gi) ? gi.length > 0 : !!gi));
     // "sober" = alcohol NOT consumed. Default true unless explicitly completed=true.
     setSober(dayData?.alcohol?.completed !== true);
-    setMindful(
-      dayData?.meditation?.completed === true ||
-      dayData?.meditation?.meditationDone === true ||
-      dayData?.meditation?.journaling === true
-    );
   }, [open, todayISO, dayData]);
 
   const streak = useMemo(() => checkinStreak(log as any, todayISO), [log, todayISO]);
