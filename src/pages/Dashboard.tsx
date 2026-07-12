@@ -134,9 +134,6 @@ const Dashboard = () => {
 
           {/* Quarterly goals weekly snapshot */}
           <QuarterlyDashboardStrip />
-
-          {/* Weekly Summary */}
-          <WeeklySummaryDashboard />
         </main>
       </div>
     </div>
