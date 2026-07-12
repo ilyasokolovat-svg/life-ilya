@@ -25,6 +25,7 @@ import TodayHabits from "@/components/TodayHabits";
 import StreakHabits from "@/components/StreakHabits";
 import DrinkingBudget from "@/components/DrinkingBudget";
 import WeightChart from "@/components/WeightChart";
+import { HeaderStreakStrip } from "@/components/dashboard/HeaderStreakStrip";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -192,7 +193,9 @@ const Index = () => {
             
             <h1 className="text-2xl md:text-3xl font-bold text-blue-dark">Habit Tracker</h1>
           </div>
-          
+
+          <HeaderStreakStrip />
+
           <div className="flex items-center gap-2">
             {/* Save Changes Button */}
             <TooltipProvider>
@@ -296,6 +299,11 @@ const Index = () => {
       
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
+        {/* Priority Streak Habits - top of page */}
+        <div className="mb-6">
+          <StreakHabits />
+        </div>
+
         {/* Today's Habits Section - Mobile Friendly */}
         <TodayHabits 
           todayData={todayData}
@@ -368,10 +376,7 @@ const Index = () => {
           />
         </div>
         
-        {/* Priority Streak Habits Section */}
-        <div className="mt-8 mb-8">
-          <StreakHabits />
-        </div>
+        {/* Priority Streaks moved to top of page */}
         
         {/* Stats section - All 4 categories in one horizontal line */}
         <div className="mt-8 mb-8">
