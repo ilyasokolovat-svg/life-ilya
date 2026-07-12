@@ -22,6 +22,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [checkinOpen, setCheckinOpen] = useState(false);
   
   // Monthly commitment state
   const currentMonthKey = format(new Date(), 'yyyy-MM');
