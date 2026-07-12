@@ -78,11 +78,6 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
       ...(dayData?.alcohol ?? { planned: false, completed: false }),
       completed: !sober,
     });
-    updateDay(today, "meditation", {
-      ...(dayData?.meditation ?? { planned: false, completed: false }),
-      completed: mindful,
-      meditationDone: mindful,
-    });
 
     // Streak habits — apply toggles that differ
     streakHabits.forEach((h) => {
