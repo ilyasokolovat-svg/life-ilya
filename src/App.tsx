@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import React, { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { WeeklyReflectionTrigger } from "@/reflection/WeeklyReflectionTrigger";
+import { DailyCheckinTrigger } from "@/daily-checkin/DailyCheckinTrigger";
 
 // Create a client with default options - increasing staleTime for better caching
 const queryClient = new QueryClient({
@@ -93,6 +94,7 @@ const AppRoutes = () => {
   return (
     <>
       <WeeklyReflectionTrigger />
+      <DailyCheckinTrigger />
       <Routes>
         {/* Public routes */}
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />

@@ -13,12 +13,16 @@ import WeeklySummaryDashboard from "@/components/WeeklySummaryDashboard";
 import TestDataLoader from "@/components/TestDataLoader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { HabitStreakSummary } from "@/components/dashboard/HabitStreakSummary";
+import { TodayStreaksCard } from "@/components/dashboard/TodayStreaksCard";
+import { HeaderStreakStrip } from "@/components/dashboard/HeaderStreakStrip";
+import { DailyCheckinModal } from "@/daily-checkin/DailyCheckinModal";
 import { QuarterlyDashboardStrip } from "@/goals/components/QuarterlyDashboardStrip";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [checkinOpen, setCheckinOpen] = useState(false);
   
   // Monthly commitment state
   const currentMonthKey = format(new Date(), 'yyyy-MM');
@@ -83,11 +87,14 @@ const Dashboard = () => {
               </button>
               <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
             </div>
+            <HeaderStreakStrip />
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
             </div>
           </div>
         </header>
+
+        <DailyCheckinModal open={checkinOpen} onOpenChange={setCheckinOpen} />
 
         <main className="px-6 py-6 max-w-4xl mx-auto space-y-6">
           {/* Non-negotiable Commitment */}
@@ -122,8 +129,8 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* 7-day streak */}
-          <HabitStreakSummary />
+          {/* Today's streaks + habits */}
+          <TodayStreaksCard onOpenCheckin={() => setCheckinOpen(true)} />
 
           {/* Quarterly goals weekly snapshot */}
           <QuarterlyDashboardStrip />
