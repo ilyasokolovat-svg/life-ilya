@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Moon, Dumbbell, Wine, Brain, Flame, Check } from "lucide-react";
+import { Moon, Dumbbell, Wine, Flame, Check } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useStreakHabits } from "@/hooks/useStreakHabits";
 import { useDailyCheckinLog } from "@/daily-checkin/storage";
@@ -63,16 +63,6 @@ export function TodayStreaksCard({ onOpenCheckin }: Props) {
         completed: !(dayData?.alcohol?.completed === true),
       }),
     },
-    {
-      key: "mind", label: "Mind", Icon: Brain,
-      done: dayData?.meditation?.completed === true || dayData?.meditation?.meditationDone === true,
-      sub: (dayData?.meditation?.completed || dayData?.meditation?.meditationDone) ? "Done" : "Tap",
-      onToggle: () => updateDay(today, "meditation", {
-        ...(dayData?.meditation ?? { planned: false, completed: false }),
-        completed: !(dayData?.meditation?.completed === true),
-        meditationDone: !(dayData?.meditation?.meditationDone === true),
-      }),
-    },
   ];
 
   return (
@@ -96,7 +86,7 @@ export function TodayStreaksCard({ onOpenCheckin }: Props) {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-3 gap-2 mb-4">
         {coreTiles.map(({ key, label, Icon, done, sub, onToggle }) => (
           <button
             key={key}

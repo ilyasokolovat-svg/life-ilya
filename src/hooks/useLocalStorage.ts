@@ -1,13 +1,24 @@
+import { useEffect, useState } from "react";
 
-import { useState, useEffect } from "react";
+// Same-tab pub/sub so multiple hook instances stay in sync
+const listeners = new Map<string, Set<(value: unknown) => void>>();
+
+function subscribe(key: string, fn: (value: unknown) => void) {
+  if (!listeners.has(key)) listeners.set(key, new Set());
+  listeners.get(key)!.add(fn);
+  return () => {
+    listeners.get(key)?.delete(fn);
+  };
+}
+
+function broadcast(key: string, value: unknown) {
+  listeners.get(key)?.forEach((fn) => fn(value));
+}
 
 function useLocalStorage<T>(key: string, initialValue: T) {
-  // Get from local storage then
-  // parse stored json or return initialValue
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
-      // Parse stored json or if none return initialValue
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       console.log("Error reading from localStorage", error);
@@ -15,26 +26,20 @@ function useLocalStorage<T>(key: string, initialValue: T) {
     }
   });
 
-  // Return a wrapped version of useState's setter function that
-  // persists the new value to localStorage.
   const setValue = (value: T | ((val: T) => T)) => {
     try {
-      // Allow value to be a function so we have same API as useState
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
-      
-      // Save state
       setStoredValue(valueToStore);
-      
-      // Save to local storage
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      broadcast(key, valueToStore);
     } catch (error) {
       console.log("Error writing to localStorage", error);
     }
   };
 
   useEffect(() => {
-    // Update state if localStorage changes in another tab
+    // Cross-tab
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === key && event.newValue) {
         try {
@@ -44,13 +49,14 @@ function useLocalStorage<T>(key: string, initialValue: T) {
         }
       }
     };
-
-    // Listen for changes
     window.addEventListener("storage", handleStorageChange);
-    
-    // Clean up
+
+    // Same-tab
+    const unsub = subscribe(key, (v) => setStoredValue(v as T));
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      unsub();
     };
   }, [key]);
 

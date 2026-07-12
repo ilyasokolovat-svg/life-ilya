@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Moon, Dumbbell, Wine, Brain, Flame, X, Check } from "lucide-react";
+import { Moon, Dumbbell, Wine, Flame, Check } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useStreakHabits } from "@/hooks/useStreakHabits";
 import { getDubaiDate, getTodayISO } from "@/utils/dateUtils";
@@ -29,7 +29,7 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
   const [wellRested, setWellRested] = useState(false);
   const [gymDone, setGymDone] = useState(false);
   const [sober, setSober] = useState(true);
-  const [mindful, setMindful] = useState(false);
+  
 
   useEffect(() => {
     if (!open) return;
@@ -39,11 +39,6 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
     setGymDone(!!dayData?.gym?.completed || (Array.isArray(gi) ? gi.length > 0 : !!gi));
     // "sober" = alcohol NOT consumed. Default true unless explicitly completed=true.
     setSober(dayData?.alcohol?.completed !== true);
-    setMindful(
-      dayData?.meditation?.completed === true ||
-      dayData?.meditation?.meditationDone === true ||
-      dayData?.meditation?.journaling === true
-    );
   }, [open, todayISO, dayData]);
 
   const streak = useMemo(() => checkinStreak(log as any, todayISO), [log, todayISO]);
@@ -82,11 +77,6 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
     updateDay(today, "alcohol", {
       ...(dayData?.alcohol ?? { planned: false, completed: false }),
       completed: !sober,
-    });
-    updateDay(today, "meditation", {
-      ...(dayData?.meditation ?? { planned: false, completed: false }),
-      completed: mindful,
-      meditationDone: mindful,
     });
 
     // Streak habits — apply toggles that differ
@@ -157,15 +147,6 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
             </label>
           </div>
 
-          {/* Mindfulness */}
-          <div className="flex items-center gap-3">
-            <Brain className="w-4 h-4 text-yellow-500 shrink-0" />
-            <span className="text-sm w-20">Mindfulness</span>
-            <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-              <Checkbox checked={mindful} onCheckedChange={(c) => setMindful(!!c)} />
-              <span>Meditated / journaled</span>
-            </label>
-          </div>
 
           {streakHabits.length > 0 && (
             <>
