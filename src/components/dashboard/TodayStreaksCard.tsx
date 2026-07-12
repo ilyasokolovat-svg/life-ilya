@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Moon, Dumbbell, Wine, Brain, Flame, Check } from "lucide-react";
+import { Moon, Dumbbell, Wine, Flame, Check } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useStreakHabits } from "@/hooks/useStreakHabits";
 import { useDailyCheckinLog } from "@/daily-checkin/storage";
