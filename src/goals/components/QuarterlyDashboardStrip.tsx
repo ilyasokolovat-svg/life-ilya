@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Flame, CheckSquare } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useGoalsStore } from "../storage";
 import {
@@ -19,7 +18,7 @@ import { colorHsl } from "../types";
 import { WeeklyCheckinDialog } from "./WeeklyCheckinDialog";
 
 export function QuarterlyDashboardStrip() {
-  const { goals, categories, updateGoal, checkinLog } = useGoalsStore();
+  const { goals, categories, checkinLog } = useGoalsStore();
   const qKey = currentQuarterKey();
   const info = quarterInfo(qKey);
   const week = currentWeekOfQuarter(qKey);
@@ -92,7 +91,6 @@ export function QuarterlyDashboardStrip() {
             const pct = quarterlyProgress(g);
             const status = autoStatus(g, qKey);
             const cat = categories.find((c) => c.id === g.categoryId);
-            const wb = g.weeklyTasks.find((w) => w.weekNumber === week);
             return (
               <div
                 key={g.id}
@@ -110,28 +108,6 @@ export function QuarterlyDashboardStrip() {
                   <ProgressBar pct={pct} color={g.color} />
                   <span className="text-[11px] font-semibold w-9 text-right">{pct}%</span>
                 </div>
-                <div className="text-[11px] font-medium text-muted-foreground mb-1">This week</div>
-                {wb?.tasks.length ? (
-                  <div className="space-y-1">
-                    {wb.tasks.slice(0, 4).map((t) => (
-                      <label key={t.id} className="flex items-start gap-1.5 cursor-pointer">
-                        <Checkbox
-                          checked={t.done}
-                          onCheckedChange={(v) => updateGoal(g.id, {
-                            weeklyTasks: g.weeklyTasks.map((wbb) => wbb.weekNumber === week ? { ...wbb, tasks: wbb.tasks.map((x) => x.id === t.id ? { ...x, done: !!v } : x) } : wbb),
-                          })}
-                          className="mt-0.5"
-                        />
-                        <span className={`text-[11px] ${t.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.text}</span>
-                      </label>
-                    ))}
-                    {wb.tasks.length > 4 && (
-                      <div className="text-[10px] text-muted-foreground">+{wb.tasks.length - 4} more</div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic">No tasks set for this week</p>
-                )}
               </div>
             );
           })}
