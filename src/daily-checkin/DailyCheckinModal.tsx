@@ -157,15 +157,6 @@ export function DailyCheckinModal({ open, onOpenChange }: Props) {
             </label>
           </div>
 
-          {/* Mindfulness */}
-          <div className="flex items-center gap-3">
-            <Brain className="w-4 h-4 text-yellow-500 shrink-0" />
-            <span className="text-sm w-20">Mindfulness</span>
-            <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-              <Checkbox checked={mindful} onCheckedChange={(c) => setMindful(!!c)} />
-              <span>Meditated / journaled</span>
-            </label>
-          </div>
 
           {streakHabits.length > 0 && (
             <>
