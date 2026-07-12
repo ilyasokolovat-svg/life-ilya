@@ -19,7 +19,7 @@ import { colorHsl } from "../types";
 import { WeeklyCheckinDialog } from "./WeeklyCheckinDialog";
 
 export function QuarterlyDashboardStrip() {
-  const { goals, categories, checkinLog } = useGoalsStore();
+  const { goals, categories, checkinLog, updateGoal } = useGoalsStore();
   const qKey = currentQuarterKey();
   const info = quarterInfo(qKey);
   const week = currentWeekOfQuarter(qKey);
