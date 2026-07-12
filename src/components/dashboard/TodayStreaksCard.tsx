@@ -63,16 +63,6 @@ export function TodayStreaksCard({ onOpenCheckin }: Props) {
         completed: !(dayData?.alcohol?.completed === true),
       }),
     },
-    {
-      key: "mind", label: "Mind", Icon: Brain,
-      done: dayData?.meditation?.completed === true || dayData?.meditation?.meditationDone === true,
-      sub: (dayData?.meditation?.completed || dayData?.meditation?.meditationDone) ? "Done" : "Tap",
-      onToggle: () => updateDay(today, "meditation", {
-        ...(dayData?.meditation ?? { planned: false, completed: false }),
-        completed: !(dayData?.meditation?.completed === true),
-        meditationDone: !(dayData?.meditation?.meditationDone === true),
-      }),
-    },
   ];
 
   return (
