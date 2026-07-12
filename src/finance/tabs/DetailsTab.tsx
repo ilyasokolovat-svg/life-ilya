@@ -28,7 +28,7 @@ export const DetailsTab: React.FC<{ d: WealthData; onChange: () => void }> = ({ 
       <TabsContent value="assets" className="mt-4"><AssetsView d={d} /></TabsContent>
       <TabsContent value="flows" className="mt-4"><FlowsView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="debt" className="mt-4"><DebtView d={d} /></TabsContent>
-      <TabsContent value="spending" className="mt-4"><SpendingView d={d} /></TabsContent>
+      <TabsContent value="spending" className="mt-4"><SpendingView d={d} onChange={onChange} /></TabsContent>
       <TabsContent value="archive" className="mt-4"><ArchiveView d={d} onChange={onChange} /></TabsContent>
     </Tabs>
   );
