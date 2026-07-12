@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Moon, Dumbbell, Wine, Brain, Flame, X, Check } from "lucide-react";
+import { Moon, Dumbbell, Wine, Flame, Check } from "lucide-react";
 import useHabits from "@/hooks/useHabits";
 import { useStreakHabits } from "@/hooks/useStreakHabits";
 import { getDubaiDate, getTodayISO } from "@/utils/dateUtils";
