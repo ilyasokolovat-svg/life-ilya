@@ -110,6 +110,19 @@ export const ImportDialog: React.FC<{
     return { byMonthCat, monthTotals };
   }, [parsed, mapping, fx]);
 
+  // Aggregate income rows by month + kind (in file currency)
+  const incomeAggregation = useMemo(() => {
+    if (!parsed) return null;
+    const byMonth = new Map<string, { salary: number; bonus: number; salaryCount: number; bonusCount: number }>();
+    for (const r of parsed.incomeRows) {
+      const cur = byMonth.get(r.month) || { salary: 0, bonus: 0, salaryCount: 0, bonusCount: 0 };
+      if (r.kind === 'salary') { cur.salary += r.amount; cur.salaryCount++; }
+      else { cur.bonus += r.amount; cur.bonusCount++; }
+      byMonth.set(r.month, cur);
+    }
+    return byMonth;
+  }, [parsed]);
+
   const runImport = async () => {
     if (!user || !parsed || !aggregation) return;
     setBusy(true);
