@@ -43,7 +43,18 @@ export const ImportDialog: React.FC<{
     setFile(f);
     setBusy(true);
     try {
-      const p = await parseExpenseFile(f, { treatSign: sign });
+      // First pass: no filter, so we can discover the type column values
+      const p0 = await parseExpenseFile(f, { treatSign: sign });
+      // Auto-preselect "Exp."-style values if the type column was detected
+      let initialFilter: string[] = [];
+      if (p0.detected.type && p0.typeValues.length) {
+        const expLike = p0.typeValues.filter(v => /^exp/i.test(v));
+        initialFilter = expLike.length ? expLike : [];
+      }
+      setTypeFilter(initialFilter);
+      const p = initialFilter.length
+        ? await parseExpenseFile(f, { treatSign: sign, typeFilter: initialFilter })
+        : p0;
       setParsed(p);
       // Preload remembered mappings
       const { data: prev } = await sb.from('expense_category_mappings').select('source_label,target_category_id').eq('user_id', user!.id);
@@ -64,7 +75,17 @@ export const ImportDialog: React.FC<{
     if (!file) return;
     setBusy(true);
     try {
-      const p = await parseExpenseFile(file, { treatSign: newSign });
+      const p = await parseExpenseFile(file, { treatSign: newSign, typeFilter });
+      setParsed(p);
+    } finally { setBusy(false); }
+  };
+
+  const reparseWithTypeFilter = async (nextFilter: string[]) => {
+    setTypeFilter(nextFilter);
+    if (!file) return;
+    setBusy(true);
+    try {
+      const p = await parseExpenseFile(file, { treatSign: sign, typeFilter: nextFilter });
       setParsed(p);
     } finally { setBusy(false); }
   };
