@@ -1,97 +1,70 @@
-# Make Priority Streaks Impossible to Forget
+# Expense Import Engine (Finance → Spending)
 
-Streaks currently live at the bottom of Healthy Life. We'll surface them in three complementary places and add a short evening check-in that covers streaks plus the 4 core daily habits — so one 20-second tap session updates everything.
+Adds an `.xlsx` upload flow that ingests your iPhone expense tracker exports, maps rows to the Finance module's budget categories, and pushes them into `budget_spending`. Includes an AI coach for variance analysis.
 
----
+## User flow
 
-## 1. Persistent header strip (every page)
+1. **Finance → Details → Spending** gets a new **"Import from file"** button.
+2. Drop/select an `.xlsx`. Client parses it with `xlsx` (SheetJS, already common) and shows a preview table (Date, Merchant, Amount, Source Category).
+3. **Mapping screen** (asked every import, per your choice): each unique source category → dropdown of your existing Finance categories, plus "Create new" and "Ignore". Previous mappings pre-filled as suggestions (stored) but always confirmable.
+4. **Month grouping**: rows grouped by `YYYY-MM` (Dubai time). Preview shows per-month, per-category totals about to be written.
+5. **Import**: replaces `budget_spending.actual` for each (month, category) — **unless** that cell is locked. Locked cells are skipped and shown in the summary.
+6. **Coach panel** appears with variance + AI narrative.
 
-A slim strip inside the existing top bar (right side of `Dashboard.tsx` header — and reused on every page that renders `DashboardSidebar`, so we'll lift it into a shared `AppShell` layout wrapper).
+## Data model changes
 
-Layout: one small pill per priority streak habit + one pill per core habit (sleep, gym, sober, mindfulness).
+New table `expense_imports` (audit log, allows re-run/undo):
+- `id`, `user_id`, `filename`, `imported_at`, `row_count`, `months_touched (text[])`
 
-```text
-[💪 Gym ●●●○●●●] [🚫 Alcohol ●●●●●●○] [😴 7.5h] [🧘 ✓]    [ Daily check-in ]
-```
+New table `expense_category_mappings` (learned suggestions):
+- `id`, `user_id`, `source_label`, `target_category_id`, `updated_at`, unique(user_id, source_label)
 
-- Each pill = last 7 days as dots (filled = done). Today's dot pulses if not yet marked.
-- Click a pill = toggle today's status inline (optimistic update to Supabase `habit_days` / localStorage `streakHabits`).
-- "Daily check-in" button opens the modal (see §3).
-- Collapses to just the check-in button + a count "3/6 today" below 768px.
+Add column to `budget_spending`:
+- `locked boolean default false` — the manual-override protection. UI shows a 🔒 toggle per cell in the existing Spending grid.
+- `source text default 'manual'` — `'manual' | 'import'` (informational, so import knows what it's overwriting).
 
-## 2. Dashboard card (top of `/`)
+Raw transactions are **not** stored (keeps scope small; your iPhone app is source of truth). Only aggregated monthly totals land in `budget_spending`.
 
-Move `HabitStreakSummary` and streak habits above the Non-Negotiable card. New unified `TodayStreaksCard`:
+## Import logic
 
-- Big header: "Today — {weekday, date}" + streak count "🔥 12-day streak"
-- Row of large tappable tiles, one per habit (streaks + 4 core), showing:
-  - Icon + name
-  - Current streak length
-  - Today's status: ✓ done / ○ pending / ✗ missed
-  - Tap = toggle today
-- Below: existing 7-day mini-grid from `HabitStreakSummary` for context.
+For each (month, target_category):
+- Sum row amounts.
+- If `budget_spending` row exists AND `locked = true` → skip, log to summary.
+- Else upsert `{actual: sum, source: 'import'}`.
 
-## 3. Evening daily check-in modal (after 6pm Dubai time)
+## AI coach ("Full AI coach")
 
-New module `src/daily-checkin/` mirroring `src/reflection/` architecture.
+Edge function `finance-coach`:
+- Input: current month's plan vs actual per category, last 3 months trend, and (optionally) the raw transactions from the just-imported file for the current month.
+- Model: `google/gemini-3-flash-preview` via Lovable AI Gateway.
+- Prompt asks for: (a) projected month-end overspend, (b) top 3 categories driving the variance, (c) recurring/subscription patterns detected in transactions, (d) 3 concrete cut suggestions with $ impact.
+- Output: structured JSON (categories flagged, suggestions with amount + rationale) rendered in a "Coach" card below the Spending grid.
 
-**Trigger** (`DailyCheckinTrigger.tsx`, mounted in `App.tsx` next to `WeeklyReflectionTrigger`):
-- Fires when: current Dubai time ≥ 18:00 AND no check-in stored for today's ISO date AND not dismissed this session.
-- Re-prompts next visit until submitted.
-- Also openable manually from the header "Daily check-in" button any time of day.
+Raw transactions are sent to the model in-memory during the import session only — not persisted.
 
-**Modal** (`DailyCheckinModal.tsx`) — one screen, ~20 seconds:
+## Files to add/change
 
-```text
-┌──────────────────────────────────────┐
-│ Daily check-in · Sun, Jul 12         │
-│                                      │
-│ SLEEP        [ 7.5 h ] [😊 rested]   │
-│ GYM          [ ✓ full ] [hiit][walk] │
-│ ALCOHOL      [🚫 sober] [🍷 anchor]  │
-│ MINDFULNESS  [ ✓ ]                   │
-│ ──────────────────────────────────── │
-│ PRIORITY STREAKS                     │
-│  • No sugar    [ ✓ ] [ ✗ ]           │
-│  • Reading     [ ✓ ] [ ✗ ]           │
-│                                      │
-│ 🔥 12-day streak — don't break it    │
-│                                      │
-│         [ Later ]   [ Save ]         │
-└──────────────────────────────────────┘
-```
+- Migration: `expense_imports`, `expense_category_mappings`, `budget_spending.locked`, `budget_spending.source` (+ GRANTs + RLS).
+- `src/finance/import/parseXlsx.ts` — SheetJS parsing + column auto-detect (Date/Amount/Category/Merchant/Notes).
+- `src/finance/import/ImportDialog.tsx` — upload → preview → mapping → confirm → summary.
+- `src/finance/import/CoachCard.tsx` — renders AI insights.
+- `supabase/functions/finance-coach/index.ts` — edge function calling Lovable AI.
+- `src/finance/tabs/DetailsTab.tsx` — add Import button, add 🔒 lock toggle to spending cells, respect `locked` on inline edits (locking a cell just sets the flag; editing still works manually).
 
-- All fields pre-filled with today's current values (edits, doesn't overwrite prior taps).
-- Save writes to `habit_days` (core habits) + `streakHabits` localStorage (priority streaks) + `daily_checkin` localStorage log (so we can compute streak-of-checkins itself).
-- Reward on save: brief inline "🔥 12 days — nice" pulse, then close.
+## Column auto-detect
 
-## 4. Storage & data
+Header matching (case-insensitive): Date (`date|when`), Amount (`amount|value|cost|price`), Category (`category|type|group`), Merchant (`merchant|payee|name|description|note`). If detection fails, user picks columns in the preview step.
 
-- Core habits: existing `habit_days` table + `useSupabaseHabits` hook.
-- Priority streaks: existing `useStreakHabits` (localStorage). No schema changes.
-- Check-in log: new `localStorage['daily_checkin']` = `{ [isoDate]: { savedAt } }` to power the "did I check in today" flag and a check-in streak count.
+## Out of scope (for now)
 
-## 5. Files
+- PDF/CSV parsing (xlsx only).
+- Multi-currency conversion (assumes file is in your display currency; can add AED↔USD later).
+- Storing raw transactions (add later if you want a searchable ledger).
 
-New:
-- `src/daily-checkin/types.ts`
-- `src/daily-checkin/storage.ts`
-- `src/daily-checkin/utils.ts` (Dubai-time "after 6pm" + "today submitted" checks)
-- `src/daily-checkin/DailyCheckinModal.tsx`
-- `src/daily-checkin/DailyCheckinTrigger.tsx`
-- `src/components/dashboard/HeaderStreakStrip.tsx` (the persistent strip)
-- `src/components/dashboard/TodayStreaksCard.tsx` (the dashboard card)
+## Open question
 
-Modified:
-- `src/App.tsx` — mount `<DailyCheckinTrigger />`.
-- `src/pages/Dashboard.tsx` — replace `HabitStreakSummary` with `TodayStreaksCard` at the top; keep sidebar/layout otherwise unchanged.
-- Top-bar header in `Dashboard.tsx` (and, to appear on every page, lift the header into a small shared `AppTopBar` used by pages that currently render their own header — for now just Dashboard + Healthy Life to keep scope tight) — render `<HeaderStreakStrip />`.
-- `src/components/StreakHabits.tsx` — unchanged for management (add/remove); still available in Healthy Life tab.
+Your iPhone app likely exports amounts as positive numbers for expenses; some also include income rows. Should the importer:
+- (a) treat everything as expense (ignore sign), or
+- (b) filter out positive/negative rows as income and skip them?
 
-Design tokens only (no hardcoded hex). Light theme, matches existing dashboard aesthetic.
-
-## 6. Out of scope
-
-- No changes to weekly reflection module.
-- No changes to Supabase tables.
-- Header strip rolls out to Dashboard + Healthy Life first; we can extend to other pages later if you want it truly everywhere.
+I'll default to **(b)** with a toggle in the preview.

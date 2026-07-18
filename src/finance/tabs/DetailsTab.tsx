@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Upload, Lock, Unlock } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area, LineChart, Line, Legend } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +11,8 @@ import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtDate, fmtMonth, parseEntryDate, sortByDateAsc, sortByDateDesc } from '../utils';
 import { COLORS } from '../constants';
 import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt, bonusVsInvestedSeries, cumulativeContributions } from '../calc';
+import { ImportDialog, type ImportSummary } from '../import/ImportDialog';
+import { CoachCard } from '../import/CoachCard';
 
 const sb = supabase as any;
 
@@ -426,6 +430,8 @@ const DebtView: React.FC<{ d: WealthData }> = ({ d }) => {
 const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
   const { user } = useAuth();
   const cats = d.budgetCategories;
+  const [importOpen, setImportOpen] = useState(false);
+  const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
 
   // Build the last 12 months (ending current month), gap-filled.
   const months = useMemo(() => {
@@ -441,24 +447,33 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
     return [...extra, ...arr].sort();
   }, [d.budgetSpending]);
 
-  const spendAt = (month: string, catId: string) =>
-    Number(d.budgetSpending.find(s => s.month.slice(0, 7) === month.slice(0, 7) && s.category_id === catId)?.actual ?? 0);
+  const cellAt = (month: string, catId: string) =>
+    d.budgetSpending.find(s => s.month.slice(0, 7) === month.slice(0, 7) && s.category_id === catId);
+  const spendAt = (month: string, catId: string) => Number(cellAt(month, catId)?.actual ?? 0);
+  const lockedAt = (month: string, catId: string) => !!cellAt(month, catId)?.locked;
 
   const saveCell = async (month: string, catId: string, raw: string) => {
     if (!user) return;
     const v = Number(raw) || 0;
-    const { data: existing } = await sb
-      .from('budget_spending')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('category_id', catId)
-      .like('month', `${month.slice(0, 7)}%`)
-      .maybeSingle();
+    const existing = cellAt(month, catId);
+    if (existing?.locked) return; // don't overwrite locked
     if (existing) {
       if (v === 0) await sb.from('budget_spending').delete().eq('id', existing.id);
-      else await sb.from('budget_spending').update({ actual: v }).eq('id', existing.id);
+      else await sb.from('budget_spending').update({ actual: v, source: 'manual' }).eq('id', existing.id);
     } else if (v > 0) {
-      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v });
+      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v, source: 'manual' });
+    }
+    onChange();
+  };
+
+  const toggleLock = async (month: string, catId: string) => {
+    if (!user) return;
+    const existing = cellAt(month, catId);
+    if (existing) {
+      await sb.from('budget_spending').update({ locked: !existing.locked }).eq('id', existing.id);
+    } else {
+      // Create a locked zero row so future imports skip it
+      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: 0, locked: true, source: 'manual' });
     }
     onChange();
   };
@@ -507,6 +522,17 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-xs text-muted-foreground">
+          Upload your iPhone expense app export to auto-fill actuals. Lock 🔒 any cell you want the importer to leave alone.
+        </div>
+        <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+          <Upload className="w-3.5 h-3.5 mr-1.5" /> Import from file
+        </Button>
+      </div>
+
+      <CoachCard d={d} summary={lastImport} />
+
       <Card>
         <CardHeader className="pb-2 flex-row items-center justify-between flex-wrap gap-2">
           <div>
@@ -559,7 +585,7 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
 
       <Card><CardContent className="p-0">
         <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
-          <strong className="text-foreground">Backfill past spending.</strong> Every cell is editable — enter actual spend per category per month. Leave blank / 0 to remove.
+          <strong className="text-foreground">Backfill past spending.</strong> Every cell is editable — click 🔒 to lock a cell so future imports skip it. Leave blank / 0 to remove.
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -578,16 +604,28 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
                 {cats.map(c => {
                   const v = r[c.id] as number;
                   const isOut = chartData.outliers[c.id]?.has(r.month);
+                  const locked = lockedAt(r.month, c.id);
                   return (
                     <td key={c.id} className="px-3 py-2 text-right">
-                      <input
-                        type="number"
-                        defaultValue={v || ''}
-                        placeholder="0"
-                        onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveCell(r.month, c.id, e.target.value); }}
-                        className={`w-20 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${isOut ? 'font-semibold' : ''}`}
-                        style={isOut ? { color: c.color } : {}}
-                      />
+                      <div className="inline-flex items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleLock(r.month, c.id)}
+                          title={locked ? 'Locked — imports skip this cell' : 'Lock this cell'}
+                          className={`p-0.5 rounded hover:bg-accent ${locked ? 'text-primary' : 'text-muted-foreground/30'}`}
+                        >
+                          {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                        </button>
+                        <input
+                          type="number"
+                          defaultValue={v || ''}
+                          placeholder="0"
+                          disabled={locked}
+                          onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveCell(r.month, c.id, e.target.value); }}
+                          className={`w-16 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${isOut ? 'font-semibold' : ''} ${locked ? 'opacity-70 cursor-not-allowed' : ''}`}
+                          style={isOut ? { color: c.color } : {}}
+                        />
+                      </div>
                     </td>
                   );
                 })}
@@ -597,6 +635,13 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
           </table>
         </div>
       </CardContent></Card>
+
+      <ImportDialog
+        d={d}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={(s) => { setLastImport(s); onChange(); }}
+      />
     </div>
   );
 };
