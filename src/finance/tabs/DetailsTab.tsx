@@ -222,6 +222,31 @@ const IncomeView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
     onChange();
   };
 
+  // Replace all extras rows for that month with a single bonus entry (or delete when zero).
+  const saveCommission = async (month: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    const monthPrefix = month.slice(0, 7);
+    const { data: existing } = await sb
+      .from('budget_extras')
+      .select('id')
+      .eq('user_id', user.id)
+      .like('month', `${monthPrefix}%`);
+    if (existing?.length) {
+      await sb.from('budget_extras').delete().in('id', existing.map((e: any) => e.id));
+    }
+    if (v !== 0) {
+      await sb.from('budget_extras').insert({
+        user_id: user.id,
+        month: `${monthPrefix}-01`,
+        type: 'bonus',
+        amount: v,
+        description: 'Commission / bonus',
+      });
+    }
+    onChange();
+  };
+
   const data = useMemo(() => {
     const raw = Array.from(new Set([
       ...d.budgetMonths.map(b => b.month.slice(0, 7)),
@@ -300,7 +325,15 @@ const IncomeView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
                     className="w-28 bg-transparent text-right text-sm tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none"
                   />
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(r.commission)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  <input
+                    type="number"
+                    defaultValue={r.commission || ''}
+                    placeholder="0"
+                    onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== r.commission) saveCommission(r.month, e.target.value); }}
+                    className="w-24 bg-transparent text-right text-sm tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none"
+                  />
+                </td>
                 <td className="px-4 py-2 text-right tabular-nums font-medium">{fmtUSD(r.total)}</td>
               </tr>
             ))}</tbody>
@@ -543,11 +576,33 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   }, [months, cats, d.budgetSpending]);
 
   const [focusCat, setFocusCat] = useState<string>('__total__');
+  const [chartView, setChartView] = useState<'history' | 'current'>('history');
 
   const focusOutliers = focusCat === '__total__' ? chartData.totalOutliers : chartData.outliers[focusCat];
   const focusColor = focusCat === '__total__' ? '#3b82f6' : (cats.find(c => c.id === focusCat)?.color ?? '#3b82f6');
   const focusKey = focusCat === '__total__' ? 'total' : focusCat;
   const focusLabel = focusCat === '__total__' ? 'Total' : (cats.find(c => c.id === focusCat)?.label ?? '');
+
+  // History chart: exclude future months
+  const historyRows = useMemo(
+    () => chartData.rows.filter(r => !isFuture(r.month)),
+    [chartData.rows, currentMonthKey]
+  );
+
+  // Current-month view: per-category actual vs budget vs expected-by-today
+  const currentRow = chartData.rows.find(r => isCurrent(r.month));
+  const currentBars = useMemo(() => {
+    if (!currentRow) return [];
+    return cats
+      .map(c => {
+        const actual = Number(currentRow[c.id] || 0);
+        const budget = Number(c.budget || 0);
+        const expected = budget * monthProgress;
+        return { label: c.label, color: c.color, actual, budget, expected };
+      })
+      .filter(r => r.actual > 0 || r.budget > 0)
+      .sort((a, b) => (b.actual / (b.budget || 1)) - (a.actual / (a.budget || 1)));
+  }, [currentRow, cats, monthProgress]);
 
   if (!cats.length) {
     return <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Add spending categories in the Plan tab first.</CardContent></Card>;
@@ -576,50 +631,101 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
       <Card>
         <CardHeader className="pb-2 flex-row items-center justify-between flex-wrap gap-2">
           <div>
-            <CardTitle className="text-base">Spending — {focusLabel}</CardTitle>
-            <p className="text-[11px] text-muted-foreground mt-1">Larger dots = outlier months (&gt;1.5σ from the average).</p>
+            <CardTitle className="text-base">
+              {chartView === 'history' ? `Spending — ${focusLabel}` : `This month — pace by category`}
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {chartView === 'history'
+                ? 'Larger dots = outlier months (>1.5σ from the average).'
+                : `Day ${dayOfMonth}/${daysInMonth} · Dashed line = expected spend by today. Bars past it = overspending pace.`}
+            </p>
           </div>
-          <select
-            value={focusCat}
-            onChange={e => setFocusCat(e.target.value)}
-            className="text-xs bg-transparent border border-border rounded px-2 py-1 outline-none"
-          >
-            <option value="__total__">Total spending</option>
-            {cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-          </select>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
+              <button
+                onClick={() => setChartView('history')}
+                className={`px-2.5 py-1 ${chartView === 'history' ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+              >History</button>
+              <button
+                onClick={() => setChartView('current')}
+                className={`px-2.5 py-1 border-l border-border ${chartView === 'current' ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+              >This month</button>
+            </div>
+            {chartView === 'history' && (
+              <select
+                value={focusCat}
+                onChange={e => setFocusCat(e.target.value)}
+                className="text-xs bg-transparent border border-border rounded px-2 py-1 outline-none"
+              >
+                <option value="__total__">Total spending</option>
+                {cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData.rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke={COLORS.grid} vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
-                <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={44} />
-                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                <Line
-                  type="monotone"
-                  dataKey={focusKey}
-                  stroke={focusColor}
-                  strokeWidth={2}
-                  isAnimationActive={false}
-                  dot={(props: any) => {
-                    const isOut = focusOutliers?.has(props.payload.month);
-                    return (
-                      <circle
-                        key={props.index}
-                        cx={props.cx}
-                        cy={props.cy}
-                        r={isOut ? 5 : 2.5}
-                        fill={isOut ? focusColor : 'hsl(var(--background))'}
-                        stroke={focusColor}
-                        strokeWidth={isOut ? 0 : 1.5}
-                      />
-                    );
-                  }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {chartView === 'history' ? (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={historyRows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke={COLORS.grid} vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
+                  <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={44} />
+                  <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                  <Line
+                    type="monotone"
+                    dataKey={focusKey}
+                    stroke={focusColor}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                    dot={(props: any) => {
+                      const isOut = focusOutliers?.has(props.payload.month);
+                      return (
+                        <circle
+                          key={props.index}
+                          cx={props.cx}
+                          cy={props.cy}
+                          r={isOut ? 5 : 2.5}
+                          fill={isOut ? focusColor : 'hsl(var(--background))'}
+                          stroke={focusColor}
+                          strokeWidth={isOut ? 0 : 1.5}
+                        />
+                      );
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : currentBars.length === 0 ? (
+            <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">
+              No spending logged for the current month yet.
+            </div>
+          ) : (
+            <div style={{ height: Math.max(220, currentBars.length * 32 + 40) }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={currentBars} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }} barGap={2}>
+                  <CartesianGrid stroke={COLORS.grid} horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} />
+                  <YAxis type="category" dataKey="label" tick={{ fontSize: 11 }} stroke={COLORS.muted} width={110} />
+                  <Tooltip
+                    formatter={(v: any, n: any) => [fmtUSD(Number(v)), n]}
+                    contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="budget" name="Budget" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} barSize={10} />
+                  <Bar dataKey="actual" name="Actual" radius={[0, 4, 4, 0]} barSize={10}>
+                    {currentBars.map((r, i) => {
+                      const overExpected = r.actual > r.expected + (r.budget * 0.05);
+                      const overBudget = r.actual > r.budget && r.budget > 0;
+                      const fill = overBudget ? '#ef4444' : overExpected ? '#f59e0b' : '#10b981';
+                      return <Cell key={i} fill={fill} />;
+                    })}
+                  </Bar>
+                  <Bar dataKey="expected" name="Expected by today" fill="transparent" stroke="hsl(var(--foreground))" strokeDasharray="3 3" barSize={10} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
 
