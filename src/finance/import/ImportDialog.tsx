@@ -168,16 +168,33 @@ export const ImportDialog: React.FC<{
         <DialogHeader><DialogTitle>Import expenses from file</DialogTitle></DialogHeader>
 
         {step === 'upload' && (
-          <div className="py-6 text-center">
-            <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-border rounded-xl p-10 hover:bg-accent transition"
-            >
-              <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
-              <div className="text-sm font-medium">Drop or select .xlsx export</div>
-              <div className="text-xs text-muted-foreground mt-1">From your iPhone expense tracker app</div>
-            </button>
+          <div className="py-6 space-y-4">
+            <div className="flex items-center justify-center gap-3 text-sm">
+              <span className="text-muted-foreground">Amounts in file are in:</span>
+              <div className="inline-flex rounded-lg border border-border overflow-hidden">
+                {(['USD', 'AED'] as const).map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setCurrency(c)}
+                    className={`px-3 py-1 text-xs font-medium transition ${currency === c ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+              {currency === 'AED' && <span className="text-xs text-muted-foreground">→ converted at {AED_TO_USD.toFixed(4)} USD/AED</span>}
+            </div>
+            <div className="text-center">
+              <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="w-full border-2 border-dashed border-border rounded-xl p-10 hover:bg-accent transition"
+              >
+                <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                <div className="text-sm font-medium">Drop or select .xlsx export</div>
+                <div className="text-xs text-muted-foreground mt-1">From your iPhone expense tracker app</div>
+              </button>
+            </div>
           </div>
         )}
 
