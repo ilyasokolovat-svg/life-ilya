@@ -68,7 +68,7 @@ export const ImportDialog: React.FC<{
     } finally { setBusy(false); }
   };
 
-  // Aggregate by month + target category
+  // Aggregate by month + target category (amounts converted to USD via fx)
   const aggregation = useMemo(() => {
     if (!parsed) return null;
     const byMonthCat = new Map<string, number>(); // key: month|catId
@@ -77,7 +77,7 @@ export const ImportDialog: React.FC<{
       if (!target || target === IGNORE) continue;
       const catId = target === CREATE ? `__new__${r.category}` : target;
       const k = `${r.month}|${catId}`;
-      byMonthCat.set(k, (byMonthCat.get(k) || 0) + r.amount);
+      byMonthCat.set(k, (byMonthCat.get(k) || 0) + r.amount * fx);
     }
     const monthTotals = new Map<string, number>();
     byMonthCat.forEach((v, k) => {
@@ -85,7 +85,7 @@ export const ImportDialog: React.FC<{
       monthTotals.set(m, (monthTotals.get(m) || 0) + v);
     });
     return { byMonthCat, monthTotals };
-  }, [parsed, mapping]);
+  }, [parsed, mapping, fx]);
 
   const runImport = async () => {
     if (!user || !parsed || !aggregation) return;
