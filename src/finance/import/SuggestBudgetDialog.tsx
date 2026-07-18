@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtMonth } from '../utils';
 import { toast } from 'sonner';
+import { AED_TO_USD } from '../constants';
 
 const sb = supabase as any;
 
