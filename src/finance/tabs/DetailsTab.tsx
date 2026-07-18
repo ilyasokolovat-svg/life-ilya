@@ -433,6 +433,7 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   const { user } = useAuth();
   const cats = d.budgetCategories;
   const [importOpen, setImportOpen] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
   const [futureCount, setFutureCount] = useState<number>(3);
 
