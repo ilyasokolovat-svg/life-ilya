@@ -13,6 +13,8 @@ import { COLORS } from '../constants';
 import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt, bonusVsInvestedSeries, cumulativeContributions } from '../calc';
 import { ImportDialog, type ImportSummary } from '../import/ImportDialog';
 import { CoachCard } from '../import/CoachCard';
+import { SuggestBudgetDialog } from '../import/SuggestBudgetDialog';
+import { Sparkles } from 'lucide-react';
 
 const sb = supabase as any;
 
