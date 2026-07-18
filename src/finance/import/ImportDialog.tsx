@@ -28,6 +28,7 @@ export const ImportDialog: React.FC<{
   const [sign, setSign] = useState<'ignore-sign' | 'expenses-are-positive' | 'expenses-are-negative'>('ignore-sign');
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [currency, setCurrency] = useState<'USD' | 'AED'>('USD');
+  const [importIncome, setImportIncome] = useState(true);
   const fx = currency === 'AED' ? AED_TO_USD : 1;
   const [mapping, setMapping] = useState<Record<string, string>>({}); // sourceLabel -> categoryId | IGNORE
   const [newCatNames, setNewCatNames] = useState<Record<string, string>>({});
