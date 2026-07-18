@@ -293,7 +293,7 @@ export const ImportDialog: React.FC<{
                   <div key={src} className="p-3 flex items-center gap-3 text-sm">
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{src}</div>
-                      <div className="text-xs text-muted-foreground">{count} rows · {fmtUSD(sum)}</div>
+                      <div className="text-xs text-muted-foreground">{count} rows · {fmtUSD(sum * fx)}</div>
                     </div>
                     <ArrowRight className="w-3 h-3 text-muted-foreground" />
                     <select
