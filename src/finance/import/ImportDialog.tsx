@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtMonth } from '../utils';
-import { AED_TO_USD } from '../constants';
+import { AED_TO_USD, AED_PER_USD } from '../constants';
 import { parseExpenseFile, type ParseResult, type RawRow } from './parseXlsx';
 
 const sb = supabase as any;
@@ -28,6 +28,7 @@ export const ImportDialog: React.FC<{
   const [sign, setSign] = useState<'ignore-sign' | 'expenses-are-positive' | 'expenses-are-negative'>('ignore-sign');
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [currency, setCurrency] = useState<'USD' | 'AED'>('USD');
+  const [importIncome, setImportIncome] = useState(true);
   const fx = currency === 'AED' ? AED_TO_USD : 1;
   const [mapping, setMapping] = useState<Record<string, string>>({}); // sourceLabel -> categoryId | IGNORE
   const [newCatNames, setNewCatNames] = useState<Record<string, string>>({});
@@ -109,6 +110,19 @@ export const ImportDialog: React.FC<{
     return { byMonthCat, monthTotals };
   }, [parsed, mapping, fx]);
 
+  // Aggregate income rows by month + kind (in file currency)
+  const incomeAggregation = useMemo(() => {
+    if (!parsed) return null;
+    const byMonth = new Map<string, { salary: number; bonus: number; salaryCount: number; bonusCount: number }>();
+    for (const r of parsed.incomeRows) {
+      const cur = byMonth.get(r.month) || { salary: 0, bonus: 0, salaryCount: 0, bonusCount: 0 };
+      if (r.kind === 'salary') { cur.salary += r.amount; cur.salaryCount++; }
+      else { cur.bonus += r.amount; cur.bonusCount++; }
+      byMonth.set(r.month, cur);
+    }
+    return byMonth;
+  }, [parsed]);
+
   const runImport = async () => {
     if (!user || !parsed || !aggregation) return;
     setBusy(true);
@@ -170,6 +184,48 @@ export const ImportDialog: React.FC<{
       summary.monthsTouched = Array.from(monthsSet).sort();
       summary.transactions = parsed.rows.slice(0, 500).map(r => ({ ...r, amount: r.amount * fx })); // cap for coach payload, convert to USD
 
+      // 3b) Income rows: salary → budget_months.salary (AED), bonus → budget_extras (USD)
+      let incomeMonths = 0, bonusRows = 0;
+      if (importIncome && incomeAggregation && incomeAggregation.size) {
+        // Load existing budget_months + this-year bonus extras once
+        const monthKeys = Array.from(incomeAggregation.keys()).map(m => `${m}-01`);
+        const { data: existingMonths } = await sb
+          .from('budget_months').select('id,month,salary').eq('user_id', user.id).in('month', monthKeys);
+        const { data: existingExtras } = await sb
+          .from('budget_extras').select('id,month,amount,description,type')
+          .eq('user_id', user.id).in('month', monthKeys).eq('type', 'bonus');
+
+        for (const [month, agg] of incomeAggregation.entries()) {
+          const monthISO = `${month}-01`;
+          // Salary — store in AED. File currency AED → keep; USD → convert × AED_PER_USD.
+          if (agg.salary > 0) {
+            const salaryAED = currency === 'AED' ? agg.salary : agg.salary * AED_PER_USD;
+            const existing = existingMonths?.find((x: any) => x.month === monthISO);
+            if (existing) {
+              await sb.from('budget_months').update({ salary: Math.round(salaryAED) }).eq('id', existing.id);
+            } else {
+              await sb.from('budget_months').insert({ user_id: user.id, month: monthISO, salary: Math.round(salaryAED) });
+            }
+            incomeMonths++;
+          }
+          // Bonus / commission — store in USD.
+          if (agg.bonus > 0) {
+            const bonusUSD = currency === 'AED' ? agg.bonus * AED_TO_USD : agg.bonus;
+            // Replace any prior import-tagged bonus for this month, then insert one aggregated row
+            const priorImport = (existingExtras || []).find((x: any) => x.month === monthISO && x.description === 'Imported bonus');
+            if (priorImport) {
+              await sb.from('budget_extras').update({ amount: Math.round(bonusUSD) }).eq('id', priorImport.id);
+            } else {
+              await sb.from('budget_extras').insert({
+                user_id: user.id, month: monthISO, description: 'Imported bonus',
+                amount: Math.round(bonusUSD), type: 'bonus',
+              });
+            }
+            bonusRows++;
+          }
+        }
+      }
+
       // 4) Log import
       await sb.from('expense_imports').insert({
         user_id: user.id, filename: file?.name || 'upload.xlsx',
@@ -178,7 +234,8 @@ export const ImportDialog: React.FC<{
 
       setStep('done');
       onImported(summary);
-      toast.success(`Imported ${summary.rowsWritten} category-months`);
+      const incomeMsg = importIncome && (incomeMonths || bonusRows) ? ` · income: ${incomeMonths} salary / ${bonusRows} bonus` : '';
+      toast.success(`Imported ${summary.rowsWritten} category-months${incomeMsg}`);
     } catch (e: any) {
       toast.error('Import failed: ' + e.message);
     } finally { setBusy(false); }
@@ -314,6 +371,21 @@ export const ImportDialog: React.FC<{
                 </div>
                 {currency === 'AED' && <span className="text-muted-foreground">converted to USD at {AED_TO_USD.toFixed(4)}</span>}
               </div>
+              {parsed.incomeRows.length > 0 && (
+                <div className="pt-2 border-t border-border space-y-1">
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked={importIncome} onChange={e => setImportIncome(e.target.checked)} />
+                    <span className="font-medium">Also update Income tab</span>
+                    <span className="text-muted-foreground">— {parsed.incomeRows.length} income rows detected</span>
+                  </label>
+                  {importIncome && incomeAggregation && (
+                    <div className="text-[11px] text-muted-foreground pl-5">
+                      Salary rows → Salary (AED) · Bonus rows → Commission (USD) across {incomeAggregation.size} month(s).
+                      Salary category matched by label containing "salary".
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="max-h-56 overflow-y-auto text-xs border border-border rounded-lg">
               <table className="w-full">
