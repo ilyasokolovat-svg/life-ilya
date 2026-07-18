@@ -10,6 +10,15 @@ export type RawRow = {
   note: string;
 };
 
+export type IncomeRow = {
+  date: string;
+  month: string;
+  amount: number; // absolute amount in file currency
+  category: string;
+  merchant: string;
+  kind: 'salary' | 'bonus'; // classified from the source category label
+};
+
 export type ParseResult = {
   rows: RawRow[];
   skippedIncome: number;
@@ -17,6 +26,7 @@ export type ParseResult = {
   detected: { date?: string; amount?: string; category?: string; merchant?: string; note?: string; type?: string };
   headers: string[];
   typeValues: string[]; // unique values seen in the type column (e.g. "Exp.", "Inc.", "Transfer")
+  incomeRows: IncomeRow[]; // rows detected as income (type starts with "inc") — always returned regardless of typeFilter
 };
 
 const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '');
