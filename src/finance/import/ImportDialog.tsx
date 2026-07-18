@@ -146,7 +146,7 @@ export const ImportDialog: React.FC<{
         summary.writtenBreakdown.push({ month, categoryId: catId, amount: sum });
       }
       summary.monthsTouched = Array.from(monthsSet).sort();
-      summary.transactions = parsed.rows.slice(0, 500); // cap for coach payload
+      summary.transactions = parsed.rows.slice(0, 500).map(r => ({ ...r, amount: r.amount * fx })); // cap for coach payload, convert to USD
 
       // 4) Log import
       await sb.from('expense_imports').insert({
