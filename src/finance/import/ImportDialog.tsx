@@ -184,6 +184,48 @@ export const ImportDialog: React.FC<{
       summary.monthsTouched = Array.from(monthsSet).sort();
       summary.transactions = parsed.rows.slice(0, 500).map(r => ({ ...r, amount: r.amount * fx })); // cap for coach payload, convert to USD
 
+      // 3b) Income rows: salary → budget_months.salary (AED), bonus → budget_extras (USD)
+      let incomeMonths = 0, bonusRows = 0;
+      if (importIncome && incomeAggregation && incomeAggregation.size) {
+        // Load existing budget_months + this-year bonus extras once
+        const monthKeys = Array.from(incomeAggregation.keys()).map(m => `${m}-01`);
+        const { data: existingMonths } = await sb
+          .from('budget_months').select('id,month,salary').eq('user_id', user.id).in('month', monthKeys);
+        const { data: existingExtras } = await sb
+          .from('budget_extras').select('id,month,amount,description,type')
+          .eq('user_id', user.id).in('month', monthKeys).eq('type', 'bonus');
+
+        for (const [month, agg] of incomeAggregation.entries()) {
+          const monthISO = `${month}-01`;
+          // Salary — store in AED. File currency AED → keep; USD → convert × AED_PER_USD.
+          if (agg.salary > 0) {
+            const salaryAED = currency === 'AED' ? agg.salary : agg.salary * AED_PER_USD;
+            const existing = existingMonths?.find((x: any) => x.month === monthISO);
+            if (existing) {
+              await sb.from('budget_months').update({ salary: Math.round(salaryAED) }).eq('id', existing.id);
+            } else {
+              await sb.from('budget_months').insert({ user_id: user.id, month: monthISO, salary: Math.round(salaryAED) });
+            }
+            incomeMonths++;
+          }
+          // Bonus / commission — store in USD.
+          if (agg.bonus > 0) {
+            const bonusUSD = currency === 'AED' ? agg.bonus * AED_TO_USD : agg.bonus;
+            // Replace any prior import-tagged bonus for this month, then insert one aggregated row
+            const priorImport = (existingExtras || []).find((x: any) => x.month === monthISO && x.description === 'Imported bonus');
+            if (priorImport) {
+              await sb.from('budget_extras').update({ amount: Math.round(bonusUSD) }).eq('id', priorImport.id);
+            } else {
+              await sb.from('budget_extras').insert({
+                user_id: user.id, month: monthISO, description: 'Imported bonus',
+                amount: Math.round(bonusUSD), type: 'bonus',
+              });
+            }
+            bonusRows++;
+          }
+        }
+      }
+
       // 4) Log import
       await sb.from('expense_imports').insert({
         user_id: user.id, filename: file?.name || 'upload.xlsx',
@@ -192,7 +234,8 @@ export const ImportDialog: React.FC<{
 
       setStep('done');
       onImported(summary);
-      toast.success(`Imported ${summary.rowsWritten} category-months`);
+      const incomeMsg = importIncome && (incomeMonths || bonusRows) ? ` · income: ${incomeMonths} salary / ${bonusRows} bonus` : '';
+      toast.success(`Imported ${summary.rowsWritten} category-months${incomeMsg}`);
     } catch (e: any) {
       toast.error('Import failed: ' + e.message);
     } finally { setBusy(false); }
