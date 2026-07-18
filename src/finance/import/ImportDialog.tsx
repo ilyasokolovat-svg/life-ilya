@@ -128,7 +128,7 @@ export const ImportDialog: React.FC<{
         const [month, rawCatId] = key.split('|');
         const catId = rawCatId.startsWith('__new__') ? newCatMap.get(rawCatId.replace('__new__', '')) : rawCatId;
         if (!catId) continue;
-        const existing = (existingRows || []).find((r: any) => r.category_id === catId && r.month.slice(0, 7) === month);
+        const existing = existingInScope.find((r: any) => r.category_id === catId && r.month.slice(0, 7) === month);
         if (existing?.locked) {
           summary.skippedLocked.push({ month, categoryId: catId, existingActual: Number(existing.actual) });
           continue;
