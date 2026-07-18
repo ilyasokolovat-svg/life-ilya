@@ -265,8 +265,42 @@ export const ImportDialog: React.FC<{
                     </label>
                   ))}
                 </div>
-                {parsed.skippedIncome > 0 && <div className="text-xs text-muted-foreground mt-1">Skipped {parsed.skippedIncome} income rows.</div>}
+                {parsed.skippedIncome > 0 && <div className="text-xs text-muted-foreground mt-1">Skipped {parsed.skippedIncome} non-matching rows.</div>}
               </div>
+              {parsed.detected.type && parsed.typeValues.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <div className="text-muted-foreground mb-1">
+                    Keep rows where <span className="font-mono">{parsed.detected.type}</span> is:
+                  </div>
+                  <div className="flex gap-3 flex-wrap">
+                    {parsed.typeValues.map(v => {
+                      const active = typeFilter.includes(v);
+                      return (
+                        <label key={v} className="flex items-center gap-1 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={active}
+                            onChange={() => {
+                              const next = active ? typeFilter.filter(x => x !== v) : [...typeFilter, v];
+                              reparseWithTypeFilter(next);
+                            }}
+                          />
+                          {v}
+                        </label>
+                      );
+                    })}
+                    {typeFilter.length > 0 && (
+                      <button
+                        onClick={() => reparseWithTypeFilter([])}
+                        className="text-xs underline text-muted-foreground"
+                      >clear filter</button>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Tip: for expense-tracker exports, keep only <span className="font-mono">Exp.</span> to exclude income and transfers.
+                  </div>
+                </div>
+              )}
               <div className="pt-2 border-t border-border flex items-center gap-2 flex-wrap">
                 <span className="text-muted-foreground">Currency in file:</span>
                 <div className="inline-flex rounded border border-border overflow-hidden">
