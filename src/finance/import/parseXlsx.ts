@@ -67,7 +67,10 @@ function toISODate(v: any): string | null {
 
 export async function parseExpenseFile(
   file: File,
-  opts: { treatSign: 'expenses-are-positive' | 'expenses-are-negative' | 'ignore-sign' } = { treatSign: 'ignore-sign' },
+  opts: {
+    treatSign: 'expenses-are-positive' | 'expenses-are-negative' | 'ignore-sign';
+    typeFilter?: string[]; // if set, only rows whose type column value is in this list are kept
+  } = { treatSign: 'ignore-sign' },
   overrideCols?: ParseResult['detected'],
 ): Promise<ParseResult> {
   const buf = await file.arrayBuffer();
@@ -77,6 +80,16 @@ export async function parseExpenseFile(
   const headers = json.length ? Object.keys(json[0]) : [];
   const detected = { ...detectColumns(headers), ...(overrideCols || {}) };
 
+  // Collect all unique type-column values first (before filtering) so the UI can offer them
+  const typeSet = new Set<string>();
+  if (detected.type) {
+    for (const r of json) {
+      const v = String(r[detected.type] ?? '').trim();
+      if (v) typeSet.add(v);
+    }
+  }
+  const typeValues = Array.from(typeSet).sort();
+
   const rows: RawRow[] = [];
   let skippedIncome = 0;
   for (const r of json) {
@@ -84,6 +97,12 @@ export async function parseExpenseFile(
     if (!iso) continue;
     const rawAmt = detected.amount ? Number(String(r[detected.amount]).replace(/[^0-9.\-]/g, '')) : NaN;
     if (!isFinite(rawAmt) || rawAmt === 0) continue;
+
+    // Type-column filter (e.g. keep only "Exp.")
+    if (detected.type && opts.typeFilter && opts.typeFilter.length) {
+      const v = String(r[detected.type] ?? '').trim();
+      if (!opts.typeFilter.includes(v)) { skippedIncome++; continue; }
+    }
 
     let isExpense = true;
     if (opts.treatSign === 'expenses-are-positive') isExpense = rawAmt > 0;
@@ -102,5 +121,5 @@ export async function parseExpenseFile(
   }
 
   const sourceCategories = Array.from(new Set(rows.map(r => r.category))).sort();
-  return { rows, skippedIncome, sourceCategories, detected, headers };
+  return { rows, skippedIncome, sourceCategories, detected, headers, typeValues };
 }
