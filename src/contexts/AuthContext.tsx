@@ -26,21 +26,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
+    // Keep user identity stable across TOKEN_REFRESHED events (same uid ⇒ same object ref)
+    // Otherwise every tab-focus token refresh cascades new object refs to consumers,
+    // triggering re-fetch effects that flip parents into loading states and unmount modals.
+    const applySession = (nextSession: Session | null) => {
+      const nextUser = nextSession?.user ?? null;
+      setSession((prev) => (prev?.access_token === nextSession?.access_token ? prev : nextSession));
+      setUser((prev) => (prev?.id && nextUser?.id && prev.id === nextUser.id ? prev : nextUser));
+      setLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
+      (_event, nextSession) => applySession(nextSession)
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    supabase.auth.getSession().then(({ data: { session: initial } }) => applySession(initial));
 
     return () => subscription.unsubscribe();
   }, []);
