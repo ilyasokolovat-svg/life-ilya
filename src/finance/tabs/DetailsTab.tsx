@@ -432,38 +432,68 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   const cats = d.budgetCategories;
   const [importOpen, setImportOpen] = useState(false);
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
+  const [futureCount, setFutureCount] = useState<number>(3);
 
-  // Build the last 12 months (ending current month), gap-filled.
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dayOfMonth = now.getDate();
+  const monthProgress = dayOfMonth / daysInMonth;
+
+  const isFuture = (m: string) => m > currentMonthKey;
+  const isCurrent = (m: string) => m === currentMonthKey;
+
+  // Past 12 months + current + N future months, plus any historical months already logged.
   const months = useMemo(() => {
-    const now = new Date();
     const arr: string[] = [];
     for (let i = 11; i >= 0; i--) {
       const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
       arr.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-01`);
     }
-    // Also include any historical months already logged that fall outside the window
+    for (let i = 1; i <= futureCount; i++) {
+      const dt = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      arr.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-01`);
+    }
     const extra = Array.from(new Set(d.budgetSpending.map(s => s.month.slice(0, 7) + '-01')))
       .filter(m => !arr.includes(m));
     return [...extra, ...arr].sort();
-  }, [d.budgetSpending]);
+  }, [d.budgetSpending, futureCount]);
 
   const cellAt = (month: string, catId: string) =>
     d.budgetSpending.find(s => s.month.slice(0, 7) === month.slice(0, 7) && s.category_id === catId);
   const spendAt = (month: string, catId: string) => Number(cellAt(month, catId)?.actual ?? 0);
   const lockedAt = (month: string, catId: string) => !!cellAt(month, catId)?.locked;
+  const sourceAt = (month: string, catId: string) => cellAt(month, catId)?.source ?? '';
 
   const saveCell = async (month: string, catId: string, raw: string) => {
     if (!user) return;
     const v = Number(raw) || 0;
     const existing = cellAt(month, catId);
-    if (existing?.locked) return; // don't overwrite locked
+    if (existing?.locked) return;
+    const src = isFuture(month) ? 'plan' : 'manual';
     if (existing) {
       if (v === 0) await sb.from('budget_spending').delete().eq('id', existing.id);
-      else await sb.from('budget_spending').update({ actual: v, source: 'manual' }).eq('id', existing.id);
+      else await sb.from('budget_spending').update({ actual: v, source: src }).eq('id', existing.id);
     } else if (v > 0) {
-      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v, source: 'manual' });
+      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v, source: src });
     }
     onChange();
+  };
+
+  // Pace helpers (current month only)
+  const paceColor = (actual: number, budget: number): string => {
+    if (!budget || !actual) return '';
+    const spendRatio = actual / budget;
+    if (spendRatio > monthProgress + 0.1) return 'text-destructive';
+    if (spendRatio > monthProgress - 0.05) return 'text-amber-600';
+    return 'text-emerald-600';
+  };
+  const paceDot = (actual: number, budget: number): string => {
+    if (!budget || !actual) return 'bg-muted-foreground/30';
+    const spendRatio = actual / budget;
+    if (spendRatio > monthProgress + 0.1) return 'bg-destructive';
+    if (spendRatio > monthProgress - 0.05) return 'bg-amber-500';
+    return 'bg-emerald-500';
   };
 
   const toggleLock = async (month: string, catId: string) => {
