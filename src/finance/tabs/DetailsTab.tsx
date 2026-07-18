@@ -13,6 +13,8 @@ import { COLORS } from '../constants';
 import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt, bonusVsInvestedSeries, cumulativeContributions } from '../calc';
 import { ImportDialog, type ImportSummary } from '../import/ImportDialog';
 import { CoachCard } from '../import/CoachCard';
+import { SuggestBudgetDialog } from '../import/SuggestBudgetDialog';
+import { Sparkles } from 'lucide-react';
 
 const sb = supabase as any;
 
@@ -431,6 +433,7 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   const { user } = useAuth();
   const cats = d.budgetCategories;
   const [importOpen, setImportOpen] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
   const [futureCount, setFutureCount] = useState<number>(3);
 
@@ -556,10 +559,17 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
         <div className="text-xs text-muted-foreground">
           Upload your iPhone expense app export to auto-fill actuals. Lock 🔒 any cell you want the importer to leave alone.
         </div>
-        <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
-          <Upload className="w-3.5 h-3.5 mr-1.5" /> Import from file
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setSuggestOpen(true)}>
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Suggest next month
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="w-3.5 h-3.5 mr-1.5" /> Import from file
+          </Button>
+        </div>
       </div>
+
+      <SuggestBudgetDialog open={suggestOpen} onOpenChange={setSuggestOpen} d={d} onApplied={onChange} />
 
       <CoachCard d={d} summary={lastImport} />
 
