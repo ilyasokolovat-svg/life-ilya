@@ -432,38 +432,68 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   const cats = d.budgetCategories;
   const [importOpen, setImportOpen] = useState(false);
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
+  const [futureCount, setFutureCount] = useState<number>(3);
 
-  // Build the last 12 months (ending current month), gap-filled.
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dayOfMonth = now.getDate();
+  const monthProgress = dayOfMonth / daysInMonth;
+
+  const isFuture = (m: string) => m > currentMonthKey;
+  const isCurrent = (m: string) => m === currentMonthKey;
+
+  // Past 12 months + current + N future months, plus any historical months already logged.
   const months = useMemo(() => {
-    const now = new Date();
     const arr: string[] = [];
     for (let i = 11; i >= 0; i--) {
       const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
       arr.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-01`);
     }
-    // Also include any historical months already logged that fall outside the window
+    for (let i = 1; i <= futureCount; i++) {
+      const dt = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      arr.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-01`);
+    }
     const extra = Array.from(new Set(d.budgetSpending.map(s => s.month.slice(0, 7) + '-01')))
       .filter(m => !arr.includes(m));
     return [...extra, ...arr].sort();
-  }, [d.budgetSpending]);
+  }, [d.budgetSpending, futureCount]);
 
   const cellAt = (month: string, catId: string) =>
     d.budgetSpending.find(s => s.month.slice(0, 7) === month.slice(0, 7) && s.category_id === catId);
   const spendAt = (month: string, catId: string) => Number(cellAt(month, catId)?.actual ?? 0);
   const lockedAt = (month: string, catId: string) => !!cellAt(month, catId)?.locked;
+  const sourceAt = (month: string, catId: string) => cellAt(month, catId)?.source ?? '';
 
   const saveCell = async (month: string, catId: string, raw: string) => {
     if (!user) return;
     const v = Number(raw) || 0;
     const existing = cellAt(month, catId);
-    if (existing?.locked) return; // don't overwrite locked
+    if (existing?.locked) return;
+    const src = isFuture(month) ? 'plan' : 'manual';
     if (existing) {
       if (v === 0) await sb.from('budget_spending').delete().eq('id', existing.id);
-      else await sb.from('budget_spending').update({ actual: v, source: 'manual' }).eq('id', existing.id);
+      else await sb.from('budget_spending').update({ actual: v, source: src }).eq('id', existing.id);
     } else if (v > 0) {
-      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v, source: 'manual' });
+      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v, source: src });
     }
     onChange();
+  };
+
+  // Pace helpers (current month only)
+  const paceColor = (actual: number, budget: number): string => {
+    if (!budget || !actual) return '';
+    const spendRatio = actual / budget;
+    if (spendRatio > monthProgress + 0.1) return 'text-destructive';
+    if (spendRatio > monthProgress - 0.05) return 'text-amber-600';
+    return 'text-emerald-600';
+  };
+  const paceDot = (actual: number, budget: number): string => {
+    if (!budget || !actual) return 'bg-muted-foreground/30';
+    const spendRatio = actual / budget;
+    if (spendRatio > monthProgress + 0.1) return 'bg-destructive';
+    if (spendRatio > monthProgress - 0.05) return 'bg-amber-500';
+    return 'bg-emerald-500';
   };
 
   const toggleLock = async (month: string, catId: string) => {
@@ -584,8 +614,23 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
       </Card>
 
       <Card><CardContent className="p-0">
-        <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
-          <strong className="text-foreground">Backfill past spending.</strong> Every cell is editable — click 🔒 to lock a cell so future imports skip it. Leave blank / 0 to remove.
+        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-[11px] text-muted-foreground">
+            <strong className="text-foreground">Backfill & plan ahead.</strong> Past months = actuals · <span className="text-primary">Blue-tinted row</span> = current month with pace dots · <span className="italic">Dashed rows</span> = planned future months.
+          </div>
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />On pace</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" />Watch</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-destructive" />Over</div>
+            <div className="w-px h-3 bg-border" />
+            <label className="text-muted-foreground">Plan ahead:</label>
+            <select value={futureCount} onChange={e => setFutureCount(Number(e.target.value))} className="bg-transparent border border-border rounded px-1.5 py-0.5 outline-none">
+              <option value={0}>Off</option>
+              <option value={3}>+3 mo</option>
+              <option value={6}>+6 mo</option>
+              <option value={12}>+12 mo</option>
+            </select>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -598,40 +643,67 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
               ))}
               <th className="px-3 py-2.5 text-right">Total</th>
             </tr></thead>
-            <tbody>{[...chartData.rows].reverse().map(r => (
-              <tr key={r.month} className="border-b border-border/50">
-                <td className="px-3 py-2 text-xs font-mono sticky left-0 bg-card">{fmtMonth(r.month)}</td>
-                {cats.map(c => {
-                  const v = r[c.id] as number;
-                  const isOut = chartData.outliers[c.id]?.has(r.month);
-                  const locked = lockedAt(r.month, c.id);
-                  return (
-                    <td key={c.id} className="px-3 py-2 text-right">
-                      <div className="inline-flex items-center gap-0.5">
-                        <button
-                          type="button"
-                          onClick={() => toggleLock(r.month, c.id)}
-                          title={locked ? 'Locked — imports skip this cell' : 'Lock this cell'}
-                          className={`p-0.5 rounded hover:bg-accent ${locked ? 'text-primary' : 'text-muted-foreground/30'}`}
-                        >
-                          {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                        </button>
-                        <input
-                          type="number"
-                          defaultValue={v || ''}
-                          placeholder="0"
-                          disabled={locked}
-                          onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveCell(r.month, c.id, e.target.value); }}
-                          className={`w-16 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${isOut ? 'font-semibold' : ''} ${locked ? 'opacity-70 cursor-not-allowed' : ''}`}
-                          style={isOut ? { color: c.color } : {}}
-                        />
-                      </div>
-                    </td>
-                  );
-                })}
-                <td className={`px-3 py-2 text-right tabular-nums font-medium ${chartData.totalOutliers.has(r.month) ? 'text-primary' : ''}`}>{r.total ? fmtUSD(r.total) : '—'}</td>
-              </tr>
-            ))}</tbody>
+            <tbody>{[...chartData.rows].reverse().map(r => {
+              const future = isFuture(r.month);
+              const current = isCurrent(r.month);
+              const rowCls = future
+                ? 'border-b border-dashed border-border/60 bg-muted/30'
+                : current
+                  ? 'border-b border-border/50 bg-primary/5'
+                  : 'border-b border-border/50';
+              const totalBudget = cats.reduce((a, c) => a + Number(c.budget || 0), 0);
+              return (
+                <tr key={r.month} className={rowCls}>
+                  <td className="px-3 py-2 text-xs font-mono sticky left-0 bg-inherit">
+                    <div className="flex items-center gap-1.5">
+                      {fmtMonth(r.month)}
+                      {future && <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 italic">plan</span>}
+                      {current && <span className="text-[9px] uppercase tracking-wider text-primary">day {dayOfMonth}/{daysInMonth}</span>}
+                    </div>
+                  </td>
+                  {cats.map(c => {
+                    const v = r[c.id] as number;
+                    const isOut = chartData.outliers[c.id]?.has(r.month);
+                    const locked = lockedAt(r.month, c.id);
+                    const showPace = current && v > 0 && Number(c.budget || 0) > 0;
+                    const paceCls = showPace ? paceColor(v, Number(c.budget)) : (isOut ? 'font-semibold' : '');
+                    const planned = future && sourceAt(r.month, c.id) === 'plan';
+                    return (
+                      <td key={c.id} className="px-3 py-2 text-right">
+                        <div className="inline-flex items-center gap-0.5">
+                          {showPace && <span className={`w-1.5 h-1.5 rounded-full mr-0.5 ${paceDot(v, Number(c.budget))}`} title={`Budget $${c.budget} · ${Math.round((v / Number(c.budget)) * 100)}% spent · ${Math.round(monthProgress * 100)}% through month`} />}
+                          {!future && (
+                            <button
+                              type="button"
+                              onClick={() => toggleLock(r.month, c.id)}
+                              title={locked ? 'Locked — imports skip this cell' : 'Lock this cell'}
+                              className={`p-0.5 rounded hover:bg-accent ${locked ? 'text-primary' : 'text-muted-foreground/30'}`}
+                            >
+                              {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                            </button>
+                          )}
+                          <input
+                            type="number"
+                            defaultValue={v || ''}
+                            placeholder={future ? '—' : '0'}
+                            disabled={locked}
+                            onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveCell(r.month, c.id, e.target.value); }}
+                            className={`w-16 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${paceCls} ${locked ? 'opacity-70 cursor-not-allowed' : ''} ${planned ? 'italic' : ''}`}
+                            style={isOut && !showPace ? { color: c.color } : {}}
+                          />
+                        </div>
+                      </td>
+                    );
+                  })}
+                  <td className={`px-3 py-2 text-right tabular-nums font-medium ${current && r.total > 0 && totalBudget > 0 ? paceColor(r.total, totalBudget) : (chartData.totalOutliers.has(r.month) ? 'text-primary' : '')} ${future ? 'italic text-muted-foreground' : ''}`}>
+                    {r.total ? fmtUSD(r.total) : '—'}
+                    {current && totalBudget > 0 && r.total > 0 && (
+                      <div className="text-[9px] text-muted-foreground font-normal">of {fmtUSD(totalBudget, { compact: true })}</div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}</tbody>
           </table>
         </div>
       </CardContent></Card>
