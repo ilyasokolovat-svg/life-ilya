@@ -27,6 +27,7 @@ const HINTS: Record<keyof ParseResult['detected'], string[]> = {
   category: ['category', 'type', 'group', 'tag'],
   merchant: ['merchant', 'payee', 'name', 'description', 'title', 'place'],
   note: ['note', 'notes', 'comment', 'memo'],
+  type: ['incomeexpense', 'inexp', 'transactiontype', 'kind', 'entrytype'],
 };
 
 function detectColumns(headers: string[]): ParseResult['detected'] {
