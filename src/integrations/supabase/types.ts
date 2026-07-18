@@ -271,7 +271,9 @@ export type Database = {
           category_id: string
           created_at: string | null
           id: string
+          locked: boolean
           month: string
+          source: string
           user_id: string
         }
         Insert: {
@@ -279,7 +281,9 @@ export type Database = {
           category_id: string
           created_at?: string | null
           id?: string
+          locked?: boolean
           month: string
+          source?: string
           user_id: string
         }
         Update: {
@@ -287,7 +291,9 @@ export type Database = {
           category_id?: string
           created_at?: string | null
           id?: string
+          locked?: boolean
           month?: string
+          source?: string
           user_id?: string
         }
         Relationships: [
@@ -357,6 +363,60 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weekly_last?: string | null
+        }
+        Relationships: []
+      }
+      expense_category_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          source_label: string
+          target_category_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source_label: string
+          target_category_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source_label?: string
+          target_category_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expense_imports: {
+        Row: {
+          filename: string
+          id: string
+          imported_at: string
+          months_touched: string[]
+          row_count: number
+          user_id: string
+        }
+        Insert: {
+          filename: string
+          id?: string
+          imported_at?: string
+          months_touched?: string[]
+          row_count?: number
+          user_id: string
+        }
+        Update: {
+          filename?: string
+          id?: string
+          imported_at?: string
+          months_touched?: string[]
+          row_count?: number
+          user_id?: string
         }
         Relationships: []
       }
