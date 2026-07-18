@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtMonth } from '../utils';
-import { AED_TO_USD } from '../constants';
+import { AED_TO_USD, AED_PER_USD } from '../constants';
 import { parseExpenseFile, type ParseResult, type RawRow } from './parseXlsx';
 
 const sb = supabase as any;
