@@ -245,18 +245,31 @@ export const ImportDialog: React.FC<{
                 </div>
                 {parsed.skippedIncome > 0 && <div className="text-xs text-muted-foreground mt-1">Skipped {parsed.skippedIncome} income rows.</div>}
               </div>
+              <div className="pt-2 border-t border-border flex items-center gap-2 flex-wrap">
+                <span className="text-muted-foreground">Currency in file:</span>
+                <div className="inline-flex rounded border border-border overflow-hidden">
+                  {(['USD', 'AED'] as const).map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setCurrency(c)}
+                      className={`px-2 py-0.5 text-xs ${currency === c ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    >{c}</button>
+                  ))}
+                </div>
+                {currency === 'AED' && <span className="text-muted-foreground">converted to USD at {AED_TO_USD.toFixed(4)}</span>}
+              </div>
             </div>
             <div className="max-h-56 overflow-y-auto text-xs border border-border rounded-lg">
               <table className="w-full">
                 <thead className="bg-muted/50 sticky top-0"><tr>
                   <th className="text-left px-2 py-1">Date</th><th className="text-left px-2 py-1">Merchant</th>
-                  <th className="text-right px-2 py-1">Amount</th><th className="text-left px-2 py-1">Category</th>
+                  <th className="text-right px-2 py-1">Amount {currency === 'AED' ? '(→ USD)' : ''}</th><th className="text-left px-2 py-1">Category</th>
                 </tr></thead>
                 <tbody>{parsed.rows.slice(0, 20).map((r, i) => (
                   <tr key={i} className="border-t border-border">
                     <td className="px-2 py-1 font-mono">{r.date}</td>
                     <td className="px-2 py-1 truncate max-w-[180px]">{r.merchant}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmtUSD(r.amount)}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{fmtUSD(r.amount * fx)}</td>
                     <td className="px-2 py-1">{r.category}</td>
                   </tr>
                 ))}</tbody>
