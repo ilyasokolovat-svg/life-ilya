@@ -15,7 +15,7 @@ export interface NWSnapshot { id: string; month: string; account_id: string; val
 export interface BudgetCategory { id: string; label: string; budget: number; color: string; sort_order: number; }
 export interface BudgetMonth { id: string; month: string; salary: number; }
 export interface BudgetExtra { id: string; month: string; description: string; amount: number; type: ExtraType; }
-export interface BudgetSpending { id: string; month: string; category_id: string; actual: number; }
+export interface BudgetSpending { id: string; month: string; category_id: string; actual: number; locked?: boolean; source?: string; }
 export interface InvestmentBucket { id: string; label: string; description: string | null; color: string; sort_order: number; }
 export interface InvestmentSnapshot { id: string; month: string; bucket_id: string; value: number; contribution: number; }
 export type GoalValueSource = 'net_worth' | 'total_portfolio' | 'linked_account' | 'manual';
