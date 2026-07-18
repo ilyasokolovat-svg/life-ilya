@@ -14,8 +14,9 @@ export type ParseResult = {
   rows: RawRow[];
   skippedIncome: number;
   sourceCategories: string[]; // unique source labels
-  detected: { date?: string; amount?: string; category?: string; merchant?: string; note?: string };
+  detected: { date?: string; amount?: string; category?: string; merchant?: string; note?: string; type?: string };
   headers: string[];
+  typeValues: string[]; // unique values seen in the type column (e.g. "Exp.", "Inc.", "Transfer")
 };
 
 const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '');
