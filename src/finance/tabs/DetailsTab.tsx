@@ -430,6 +430,8 @@ const DebtView: React.FC<{ d: WealthData }> = ({ d }) => {
 const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
   const { user } = useAuth();
   const cats = d.budgetCategories;
+  const [importOpen, setImportOpen] = useState(false);
+  const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
 
   // Build the last 12 months (ending current month), gap-filled.
   const months = useMemo(() => {
@@ -445,24 +447,33 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
     return [...extra, ...arr].sort();
   }, [d.budgetSpending]);
 
-  const spendAt = (month: string, catId: string) =>
-    Number(d.budgetSpending.find(s => s.month.slice(0, 7) === month.slice(0, 7) && s.category_id === catId)?.actual ?? 0);
+  const cellAt = (month: string, catId: string) =>
+    d.budgetSpending.find(s => s.month.slice(0, 7) === month.slice(0, 7) && s.category_id === catId);
+  const spendAt = (month: string, catId: string) => Number(cellAt(month, catId)?.actual ?? 0);
+  const lockedAt = (month: string, catId: string) => !!cellAt(month, catId)?.locked;
 
   const saveCell = async (month: string, catId: string, raw: string) => {
     if (!user) return;
     const v = Number(raw) || 0;
-    const { data: existing } = await sb
-      .from('budget_spending')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('category_id', catId)
-      .like('month', `${month.slice(0, 7)}%`)
-      .maybeSingle();
+    const existing = cellAt(month, catId);
+    if (existing?.locked) return; // don't overwrite locked
     if (existing) {
       if (v === 0) await sb.from('budget_spending').delete().eq('id', existing.id);
-      else await sb.from('budget_spending').update({ actual: v }).eq('id', existing.id);
+      else await sb.from('budget_spending').update({ actual: v, source: 'manual' }).eq('id', existing.id);
     } else if (v > 0) {
-      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v });
+      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: v, source: 'manual' });
+    }
+    onChange();
+  };
+
+  const toggleLock = async (month: string, catId: string) => {
+    if (!user) return;
+    const existing = cellAt(month, catId);
+    if (existing) {
+      await sb.from('budget_spending').update({ locked: !existing.locked }).eq('id', existing.id);
+    } else {
+      // Create a locked zero row so future imports skip it
+      await sb.from('budget_spending').insert({ user_id: user.id, month, category_id: catId, actual: 0, locked: true, source: 'manual' });
     }
     onChange();
   };
