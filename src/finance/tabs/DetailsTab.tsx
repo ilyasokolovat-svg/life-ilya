@@ -631,50 +631,101 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
       <Card>
         <CardHeader className="pb-2 flex-row items-center justify-between flex-wrap gap-2">
           <div>
-            <CardTitle className="text-base">Spending — {focusLabel}</CardTitle>
-            <p className="text-[11px] text-muted-foreground mt-1">Larger dots = outlier months (&gt;1.5σ from the average).</p>
+            <CardTitle className="text-base">
+              {chartView === 'history' ? `Spending — ${focusLabel}` : `This month — pace by category`}
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {chartView === 'history'
+                ? 'Larger dots = outlier months (>1.5σ from the average).'
+                : `Day ${dayOfMonth}/${daysInMonth} · Dashed line = expected spend by today. Bars past it = overspending pace.`}
+            </p>
           </div>
-          <select
-            value={focusCat}
-            onChange={e => setFocusCat(e.target.value)}
-            className="text-xs bg-transparent border border-border rounded px-2 py-1 outline-none"
-          >
-            <option value="__total__">Total spending</option>
-            {cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-          </select>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
+              <button
+                onClick={() => setChartView('history')}
+                className={`px-2.5 py-1 ${chartView === 'history' ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+              >History</button>
+              <button
+                onClick={() => setChartView('current')}
+                className={`px-2.5 py-1 border-l border-border ${chartView === 'current' ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+              >This month</button>
+            </div>
+            {chartView === 'history' && (
+              <select
+                value={focusCat}
+                onChange={e => setFocusCat(e.target.value)}
+                className="text-xs bg-transparent border border-border rounded px-2 py-1 outline-none"
+              >
+                <option value="__total__">Total spending</option>
+                {cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData.rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke={COLORS.grid} vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
-                <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={44} />
-                <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                <Line
-                  type="monotone"
-                  dataKey={focusKey}
-                  stroke={focusColor}
-                  strokeWidth={2}
-                  isAnimationActive={false}
-                  dot={(props: any) => {
-                    const isOut = focusOutliers?.has(props.payload.month);
-                    return (
-                      <circle
-                        key={props.index}
-                        cx={props.cx}
-                        cy={props.cy}
-                        r={isOut ? 5 : 2.5}
-                        fill={isOut ? focusColor : 'hsl(var(--background))'}
-                        stroke={focusColor}
-                        strokeWidth={isOut ? 0 : 1.5}
-                      />
-                    );
-                  }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {chartView === 'history' ? (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={historyRows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke={COLORS.grid} vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => fmtMonth(v)} />
+                  <YAxis tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} width={44} />
+                  <Tooltip formatter={(v: any) => fmtUSD(Number(v))} labelFormatter={(l) => fmtMonth(String(l))} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                  <Line
+                    type="monotone"
+                    dataKey={focusKey}
+                    stroke={focusColor}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                    dot={(props: any) => {
+                      const isOut = focusOutliers?.has(props.payload.month);
+                      return (
+                        <circle
+                          key={props.index}
+                          cx={props.cx}
+                          cy={props.cy}
+                          r={isOut ? 5 : 2.5}
+                          fill={isOut ? focusColor : 'hsl(var(--background))'}
+                          stroke={focusColor}
+                          strokeWidth={isOut ? 0 : 1.5}
+                        />
+                      );
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : currentBars.length === 0 ? (
+            <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">
+              No spending logged for the current month yet.
+            </div>
+          ) : (
+            <div style={{ height: Math.max(220, currentBars.length * 32 + 40) }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={currentBars} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }} barGap={2}>
+                  <CartesianGrid stroke={COLORS.grid} horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 10 }} stroke={COLORS.muted} tickFormatter={(v) => `$${Math.round(v / 1000)}K`} />
+                  <YAxis type="category" dataKey="label" tick={{ fontSize: 11 }} stroke={COLORS.muted} width={110} />
+                  <Tooltip
+                    formatter={(v: any, n: any) => [fmtUSD(Number(v)), n]}
+                    contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="budget" name="Budget" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} barSize={10} />
+                  <Bar dataKey="actual" name="Actual" radius={[0, 4, 4, 0]} barSize={10}>
+                    {currentBars.map((r, i) => {
+                      const overExpected = r.actual > r.expected + (r.budget * 0.05);
+                      const overBudget = r.actual > r.budget && r.budget > 0;
+                      const fill = overBudget ? '#ef4444' : overExpected ? '#f59e0b' : '#10b981';
+                      return <Cell key={i} fill={fill} />;
+                    })}
+                  </Bar>
+                  <Bar dataKey="expected" name="Expected by today" fill="transparent" stroke="hsl(var(--foreground))" strokeDasharray="3 3" barSize={10} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
 
