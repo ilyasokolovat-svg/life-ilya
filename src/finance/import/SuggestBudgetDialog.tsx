@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtMonth } from '../utils';
 import { toast } from 'sonner';
+import { AED_TO_USD } from '../constants';
 
 const sb = supabase as any;
 
@@ -67,12 +68,14 @@ export const SuggestBudgetDialog: React.FC<{
     });
 
     // Income: avg salary + extras over the last 3 completed months.
+    // Income: salary is stored in AED, extras (commission/bonus) in USD. Convert salary to USD.
     const incs = months.map(m => {
       const bm = d.budgetMonths.find(x => x.month.slice(0, 7) === m.slice(0, 7));
-      const extras = d.budgetExtras
+      const salaryUsd = bm ? Number(bm.salary || 0) * AED_TO_USD : 0;
+      const extrasUsd = d.budgetExtras
         .filter(e => e.month.slice(0, 7) === m.slice(0, 7))
         .reduce((a, e) => a + Number(e.amount || 0), 0);
-      return (bm ? Number(bm.salary || 0) : 0) + extras;
+      return salaryUsd + extrasUsd;
     }).filter(v => v > 0);
     const incomeMonthly = incs.length ? incs.reduce((a, b) => a + b, 0) / incs.length : 0;
 
