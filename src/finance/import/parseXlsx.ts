@@ -101,14 +101,29 @@ export async function parseExpenseFile(
   const typeValues = Array.from(typeSet).sort();
 
   const rows: RawRow[] = [];
+  const incomeRows: IncomeRow[] = [];
   let skippedIncome = 0;
   for (const r of json) {
     const iso = detected.date ? toISODate(r[detected.date]) : null;
     if (!iso) continue;
     const rawAmt = detected.amount ? Number(String(r[detected.amount]).replace(/[^0-9.\-]/g, '')) : NaN;
     if (!isFinite(rawAmt) || rawAmt === 0) continue;
+    const catLabel = detected.category ? String(r[detected.category] || 'Uncategorized').trim() || 'Uncategorized' : 'Uncategorized';
+    const merchant = detected.merchant ? String(r[detected.merchant] || '').trim() : '';
 
-    // Type-column filter (e.g. keep only "Exp.")
+    // Always capture income rows (type starts with "inc") for the Income importer
+    if (detected.type) {
+      const typeVal = String(r[detected.type] ?? '').trim();
+      if (/^inc/i.test(typeVal)) {
+        const kind: 'salary' | 'bonus' = /salary|payroll|wage/i.test(catLabel) ? 'salary' : 'bonus';
+        incomeRows.push({
+          date: iso, month: iso.slice(0, 7), amount: Math.abs(rawAmt),
+          category: catLabel, merchant, kind,
+        });
+      }
+    }
+
+    // Type-column filter for expenses (e.g. keep only "Exp.")
     if (detected.type && opts.typeFilter && opts.typeFilter.length) {
       const v = String(r[detected.type] ?? '').trim();
       if (!opts.typeFilter.includes(v)) { skippedIncome++; continue; }
@@ -124,12 +139,12 @@ export async function parseExpenseFile(
       month: iso.slice(0, 7),
       amount: Math.abs(rawAmt),
       rawAmount: rawAmt,
-      category: detected.category ? String(r[detected.category] || 'Uncategorized').trim() || 'Uncategorized' : 'Uncategorized',
-      merchant: detected.merchant ? String(r[detected.merchant] || '').trim() : '',
+      category: catLabel,
+      merchant,
       note: detected.note ? String(r[detected.note] || '').trim() : '',
     });
   }
 
   const sourceCategories = Array.from(new Set(rows.map(r => r.category))).sort();
-  return { rows, skippedIncome, sourceCategories, detected, headers, typeValues };
+  return { rows, skippedIncome, sourceCategories, detected, headers, typeValues, incomeRows };
 }
