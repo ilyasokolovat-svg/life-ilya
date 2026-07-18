@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtMonth } from '../utils';
+import { AED_TO_USD } from '../constants';
 import { parseExpenseFile, type ParseResult, type RawRow } from './parseXlsx';
 
 const sb = supabase as any;
@@ -25,6 +26,8 @@ export const ImportDialog: React.FC<{
   const [file, setFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [sign, setSign] = useState<'ignore-sign' | 'expenses-are-positive' | 'expenses-are-negative'>('ignore-sign');
+  const [currency, setCurrency] = useState<'USD' | 'AED'>('USD');
+  const fx = currency === 'AED' ? AED_TO_USD : 1;
   const [mapping, setMapping] = useState<Record<string, string>>({}); // sourceLabel -> categoryId | IGNORE
   const [newCatNames, setNewCatNames] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -65,7 +68,7 @@ export const ImportDialog: React.FC<{
     } finally { setBusy(false); }
   };
 
-  // Aggregate by month + target category
+  // Aggregate by month + target category (amounts converted to USD via fx)
   const aggregation = useMemo(() => {
     if (!parsed) return null;
     const byMonthCat = new Map<string, number>(); // key: month|catId
@@ -74,7 +77,7 @@ export const ImportDialog: React.FC<{
       if (!target || target === IGNORE) continue;
       const catId = target === CREATE ? `__new__${r.category}` : target;
       const k = `${r.month}|${catId}`;
-      byMonthCat.set(k, (byMonthCat.get(k) || 0) + r.amount);
+      byMonthCat.set(k, (byMonthCat.get(k) || 0) + r.amount * fx);
     }
     const monthTotals = new Map<string, number>();
     byMonthCat.forEach((v, k) => {
@@ -82,7 +85,7 @@ export const ImportDialog: React.FC<{
       monthTotals.set(m, (monthTotals.get(m) || 0) + v);
     });
     return { byMonthCat, monthTotals };
-  }, [parsed, mapping]);
+  }, [parsed, mapping, fx]);
 
   const runImport = async () => {
     if (!user || !parsed || !aggregation) return;
@@ -143,7 +146,7 @@ export const ImportDialog: React.FC<{
         summary.writtenBreakdown.push({ month, categoryId: catId, amount: sum });
       }
       summary.monthsTouched = Array.from(monthsSet).sort();
-      summary.transactions = parsed.rows.slice(0, 500); // cap for coach payload
+      summary.transactions = parsed.rows.slice(0, 500).map(r => ({ ...r, amount: r.amount * fx })); // cap for coach payload, convert to USD
 
       // 4) Log import
       await sb.from('expense_imports').insert({
@@ -165,16 +168,33 @@ export const ImportDialog: React.FC<{
         <DialogHeader><DialogTitle>Import expenses from file</DialogTitle></DialogHeader>
 
         {step === 'upload' && (
-          <div className="py-6 text-center">
-            <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-border rounded-xl p-10 hover:bg-accent transition"
-            >
-              <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
-              <div className="text-sm font-medium">Drop or select .xlsx export</div>
-              <div className="text-xs text-muted-foreground mt-1">From your iPhone expense tracker app</div>
-            </button>
+          <div className="py-6 space-y-4">
+            <div className="flex items-center justify-center gap-3 text-sm">
+              <span className="text-muted-foreground">Amounts in file are in:</span>
+              <div className="inline-flex rounded-lg border border-border overflow-hidden">
+                {(['USD', 'AED'] as const).map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setCurrency(c)}
+                    className={`px-3 py-1 text-xs font-medium transition ${currency === c ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+              {currency === 'AED' && <span className="text-xs text-muted-foreground">→ converted at {AED_TO_USD.toFixed(4)} USD/AED</span>}
+            </div>
+            <div className="text-center">
+              <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="w-full border-2 border-dashed border-border rounded-xl p-10 hover:bg-accent transition"
+              >
+                <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                <div className="text-sm font-medium">Drop or select .xlsx export</div>
+                <div className="text-xs text-muted-foreground mt-1">From your iPhone expense tracker app</div>
+              </button>
+            </div>
           </div>
         )}
 
@@ -225,18 +245,31 @@ export const ImportDialog: React.FC<{
                 </div>
                 {parsed.skippedIncome > 0 && <div className="text-xs text-muted-foreground mt-1">Skipped {parsed.skippedIncome} income rows.</div>}
               </div>
+              <div className="pt-2 border-t border-border flex items-center gap-2 flex-wrap">
+                <span className="text-muted-foreground">Currency in file:</span>
+                <div className="inline-flex rounded border border-border overflow-hidden">
+                  {(['USD', 'AED'] as const).map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setCurrency(c)}
+                      className={`px-2 py-0.5 text-xs ${currency === c ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    >{c}</button>
+                  ))}
+                </div>
+                {currency === 'AED' && <span className="text-muted-foreground">converted to USD at {AED_TO_USD.toFixed(4)}</span>}
+              </div>
             </div>
             <div className="max-h-56 overflow-y-auto text-xs border border-border rounded-lg">
               <table className="w-full">
                 <thead className="bg-muted/50 sticky top-0"><tr>
                   <th className="text-left px-2 py-1">Date</th><th className="text-left px-2 py-1">Merchant</th>
-                  <th className="text-right px-2 py-1">Amount</th><th className="text-left px-2 py-1">Category</th>
+                  <th className="text-right px-2 py-1">Amount {currency === 'AED' ? '(→ USD)' : ''}</th><th className="text-left px-2 py-1">Category</th>
                 </tr></thead>
                 <tbody>{parsed.rows.slice(0, 20).map((r, i) => (
                   <tr key={i} className="border-t border-border">
                     <td className="px-2 py-1 font-mono">{r.date}</td>
                     <td className="px-2 py-1 truncate max-w-[180px]">{r.merchant}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmtUSD(r.amount)}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{fmtUSD(r.amount * fx)}</td>
                     <td className="px-2 py-1">{r.category}</td>
                   </tr>
                 ))}</tbody>
@@ -260,7 +293,7 @@ export const ImportDialog: React.FC<{
                   <div key={src} className="p-3 flex items-center gap-3 text-sm">
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{src}</div>
-                      <div className="text-xs text-muted-foreground">{count} rows · {fmtUSD(sum)}</div>
+                      <div className="text-xs text-muted-foreground">{count} rows · {fmtUSD(sum * fx)}</div>
                     </div>
                     <ArrowRight className="w-3 h-3 text-muted-foreground" />
                     <select
