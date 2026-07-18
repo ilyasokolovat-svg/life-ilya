@@ -371,6 +371,21 @@ export const ImportDialog: React.FC<{
                 </div>
                 {currency === 'AED' && <span className="text-muted-foreground">converted to USD at {AED_TO_USD.toFixed(4)}</span>}
               </div>
+              {parsed.incomeRows.length > 0 && (
+                <div className="pt-2 border-t border-border space-y-1">
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <input type="checkbox" checked={importIncome} onChange={e => setImportIncome(e.target.checked)} />
+                    <span className="font-medium">Also update Income tab</span>
+                    <span className="text-muted-foreground">— {parsed.incomeRows.length} income rows detected</span>
+                  </label>
+                  {importIncome && incomeAggregation && (
+                    <div className="text-[11px] text-muted-foreground pl-5">
+                      Salary rows → Salary (AED) · Bonus rows → Commission (USD) across {incomeAggregation.size} month(s).
+                      Salary category matched by label containing "salary".
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="max-h-56 overflow-y-auto text-xs border border-border rounded-lg">
               <table className="w-full">
