@@ -222,6 +222,31 @@ const IncomeView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onCh
     onChange();
   };
 
+  // Replace all extras rows for that month with a single bonus entry (or delete when zero).
+  const saveCommission = async (month: string, raw: string) => {
+    if (!user) return;
+    const v = Number(raw) || 0;
+    const monthPrefix = month.slice(0, 7);
+    const { data: existing } = await sb
+      .from('budget_extras')
+      .select('id')
+      .eq('user_id', user.id)
+      .like('month', `${monthPrefix}%`);
+    if (existing?.length) {
+      await sb.from('budget_extras').delete().in('id', existing.map((e: any) => e.id));
+    }
+    if (v !== 0) {
+      await sb.from('budget_extras').insert({
+        user_id: user.id,
+        month: `${monthPrefix}-01`,
+        type: 'bonus',
+        amount: v,
+        description: 'Commission / bonus',
+      });
+    }
+    onChange();
+  };
+
   const data = useMemo(() => {
     const raw = Array.from(new Set([
       ...d.budgetMonths.map(b => b.month.slice(0, 7)),
