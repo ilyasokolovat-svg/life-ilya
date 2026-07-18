@@ -576,11 +576,33 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   }, [months, cats, d.budgetSpending]);
 
   const [focusCat, setFocusCat] = useState<string>('__total__');
+  const [chartView, setChartView] = useState<'history' | 'current'>('history');
 
   const focusOutliers = focusCat === '__total__' ? chartData.totalOutliers : chartData.outliers[focusCat];
   const focusColor = focusCat === '__total__' ? '#3b82f6' : (cats.find(c => c.id === focusCat)?.color ?? '#3b82f6');
   const focusKey = focusCat === '__total__' ? 'total' : focusCat;
   const focusLabel = focusCat === '__total__' ? 'Total' : (cats.find(c => c.id === focusCat)?.label ?? '');
+
+  // History chart: exclude future months
+  const historyRows = useMemo(
+    () => chartData.rows.filter(r => !isFuture(r.month)),
+    [chartData.rows, currentMonthKey]
+  );
+
+  // Current-month view: per-category actual vs budget vs expected-by-today
+  const currentRow = chartData.rows.find(r => isCurrent(r.month));
+  const currentBars = useMemo(() => {
+    if (!currentRow) return [];
+    return cats
+      .map(c => {
+        const actual = Number(currentRow[c.id] || 0);
+        const budget = Number(c.budget || 0);
+        const expected = budget * monthProgress;
+        return { label: c.label, color: c.color, actual, budget, expected };
+      })
+      .filter(r => r.actual > 0 || r.budget > 0)
+      .sort((a, b) => (b.actual / (b.budget || 1)) - (a.actual / (a.budget || 1)));
+  }, [currentRow, cats, monthProgress]);
 
   if (!cats.length) {
     return <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Add spending categories in the Plan tab first.</CardContent></Card>;
