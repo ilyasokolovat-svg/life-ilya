@@ -118,13 +118,11 @@ export const ImportDialog: React.FC<{
         rowsWritten: 0, monthsTouched: [], skippedLocked: [], writtenBreakdown: [], transactions: [],
       };
       const monthsSet = new Set<string>();
-      // Prefetch existing rows to know locked state
       const months = Array.from(aggregation.monthTotals.keys());
-      const monthPrefixes = months.map(m => `${m}%`);
       const { data: existingRows } = await sb
         .from('budget_spending').select('id,month,category_id,actual,locked')
-        .eq('user_id', user.id)
-        .or(monthPrefixes.map(p => `month.like.${p}`).join(','));
+        .eq('user_id', user.id);
+      const existingInScope = (existingRows || []).filter((r: any) => months.includes(r.month.slice(0, 7)));
 
       for (const [key, sum] of aggregation.byMonthCat.entries()) {
         const [month, rawCatId] = key.split('|');
