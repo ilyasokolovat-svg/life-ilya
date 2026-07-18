@@ -230,16 +230,16 @@ export const ImportDialog: React.FC<{
             <div className="rounded-lg border border-border p-3 text-xs space-y-2">
               <div className="font-medium">Detected columns</div>
               <div className="grid grid-cols-2 gap-2">
-                {(['date', 'amount', 'category', 'merchant', 'note'] as const).map(k => (
+                {(['date', 'amount', 'category', 'merchant', 'note', 'type'] as const).map(k => (
                   <div key={k} className="flex items-center gap-1">
-                    <span className="text-muted-foreground w-20">{k}:</span>
+                    <span className="text-muted-foreground w-20">{k === 'type' ? 'in/exp col' : k}:</span>
                     <select
                       value={parsed.detected[k] || ''}
                       onChange={async e => {
                         if (!file) return;
                         setBusy(true);
                         try {
-                          const next = await parseExpenseFile(file, { treatSign: sign }, { ...parsed.detected, [k]: e.target.value || undefined });
+                          const next = await parseExpenseFile(file, { treatSign: sign, typeFilter }, { ...parsed.detected, [k]: e.target.value || undefined });
                           setParsed(next);
                         } finally { setBusy(false); }
                       }}
