@@ -26,6 +26,7 @@ export const ImportDialog: React.FC<{
   const [file, setFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [sign, setSign] = useState<'ignore-sign' | 'expenses-are-positive' | 'expenses-are-negative'>('ignore-sign');
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [currency, setCurrency] = useState<'USD' | 'AED'>('USD');
   const fx = currency === 'AED' ? AED_TO_USD : 1;
   const [mapping, setMapping] = useState<Record<string, string>>({}); // sourceLabel -> categoryId | IGNORE
@@ -42,7 +43,18 @@ export const ImportDialog: React.FC<{
     setFile(f);
     setBusy(true);
     try {
-      const p = await parseExpenseFile(f, { treatSign: sign });
+      // First pass: no filter, so we can discover the type column values
+      const p0 = await parseExpenseFile(f, { treatSign: sign });
+      // Auto-preselect "Exp."-style values if the type column was detected
+      let initialFilter: string[] = [];
+      if (p0.detected.type && p0.typeValues.length) {
+        const expLike = p0.typeValues.filter(v => /^exp/i.test(v));
+        initialFilter = expLike.length ? expLike : [];
+      }
+      setTypeFilter(initialFilter);
+      const p = initialFilter.length
+        ? await parseExpenseFile(f, { treatSign: sign, typeFilter: initialFilter })
+        : p0;
       setParsed(p);
       // Preload remembered mappings
       const { data: prev } = await sb.from('expense_category_mappings').select('source_label,target_category_id').eq('user_id', user!.id);
@@ -63,7 +75,17 @@ export const ImportDialog: React.FC<{
     if (!file) return;
     setBusy(true);
     try {
-      const p = await parseExpenseFile(file, { treatSign: newSign });
+      const p = await parseExpenseFile(file, { treatSign: newSign, typeFilter });
+      setParsed(p);
+    } finally { setBusy(false); }
+  };
+
+  const reparseWithTypeFilter = async (nextFilter: string[]) => {
+    setTypeFilter(nextFilter);
+    if (!file) return;
+    setBusy(true);
+    try {
+      const p = await parseExpenseFile(file, { treatSign: sign, typeFilter: nextFilter });
       setParsed(p);
     } finally { setBusy(false); }
   };
@@ -208,16 +230,16 @@ export const ImportDialog: React.FC<{
             <div className="rounded-lg border border-border p-3 text-xs space-y-2">
               <div className="font-medium">Detected columns</div>
               <div className="grid grid-cols-2 gap-2">
-                {(['date', 'amount', 'category', 'merchant', 'note'] as const).map(k => (
+                {(['date', 'amount', 'category', 'merchant', 'note', 'type'] as const).map(k => (
                   <div key={k} className="flex items-center gap-1">
-                    <span className="text-muted-foreground w-20">{k}:</span>
+                    <span className="text-muted-foreground w-20">{k === 'type' ? 'in/exp col' : k}:</span>
                     <select
                       value={parsed.detected[k] || ''}
                       onChange={async e => {
                         if (!file) return;
                         setBusy(true);
                         try {
-                          const next = await parseExpenseFile(file, { treatSign: sign }, { ...parsed.detected, [k]: e.target.value || undefined });
+                          const next = await parseExpenseFile(file, { treatSign: sign, typeFilter }, { ...parsed.detected, [k]: e.target.value || undefined });
                           setParsed(next);
                         } finally { setBusy(false); }
                       }}
@@ -243,8 +265,42 @@ export const ImportDialog: React.FC<{
                     </label>
                   ))}
                 </div>
-                {parsed.skippedIncome > 0 && <div className="text-xs text-muted-foreground mt-1">Skipped {parsed.skippedIncome} income rows.</div>}
+                {parsed.skippedIncome > 0 && <div className="text-xs text-muted-foreground mt-1">Skipped {parsed.skippedIncome} non-matching rows.</div>}
               </div>
+              {parsed.detected.type && parsed.typeValues.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <div className="text-muted-foreground mb-1">
+                    Keep rows where <span className="font-mono">{parsed.detected.type}</span> is:
+                  </div>
+                  <div className="flex gap-3 flex-wrap">
+                    {parsed.typeValues.map(v => {
+                      const active = typeFilter.includes(v);
+                      return (
+                        <label key={v} className="flex items-center gap-1 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={active}
+                            onChange={() => {
+                              const next = active ? typeFilter.filter(x => x !== v) : [...typeFilter, v];
+                              reparseWithTypeFilter(next);
+                            }}
+                          />
+                          {v}
+                        </label>
+                      );
+                    })}
+                    {typeFilter.length > 0 && (
+                      <button
+                        onClick={() => reparseWithTypeFilter([])}
+                        className="text-xs underline text-muted-foreground"
+                      >clear filter</button>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Tip: for expense-tracker exports, keep only <span className="font-mono">Exp.</span> to exclude income and transfers.
+                  </div>
+                </div>
+              )}
               <div className="pt-2 border-t border-border flex items-center gap-2 flex-wrap">
                 <span className="text-muted-foreground">Currency in file:</span>
                 <div className="inline-flex rounded border border-border overflow-hidden">
