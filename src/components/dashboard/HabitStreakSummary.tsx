@@ -9,7 +9,6 @@ const categories = [
   { key: "sleep", label: "Sleep", color: "hsl(217, 91%, 60%)", darkColor: "hsl(217, 91%, 35%)" },
   { key: "gym", label: "Gym", color: "hsl(142, 70%, 50%)", darkColor: "hsl(142, 70%, 30%)" },
   { key: "alcohol", label: "No Alcohol", color: "hsl(280, 75%, 70%)", darkColor: "hsl(280, 75%, 40%)" },
-  { key: "meditation", label: "Mindfulness", color: "hsl(48, 96%, 53%)", darkColor: "hsl(48, 96%, 35%)" },
 ];
 
 export function HabitStreakSummary() {
