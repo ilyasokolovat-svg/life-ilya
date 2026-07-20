@@ -58,32 +58,42 @@ export default function useHabits() {
         
         console.log('Fetched data from Supabase:', { days: dayData, goals: goalData });
         
-        // Only update if we got data
-        if (dayData?.length > 0 || goalData?.length > 0) {
-          // Transform to expected format
-          const days: Record<string, DayData> = {};
-          if (dayData) {
-            dayData.forEach((record: any) => {
-              days[record.date] = record.habit_data;
-            });
-          }
-          
-          const goals = { ...createDefaultMonthlyGoals() };
-          if (goalData) {
-            goalData.forEach((record: any) => {
-              goals[record.month_key] = record.goals_data;
-            });
-          }
-          
-          // Merge with local data - remote data takes precedence
-          setHabitsState(prevState => ({
-            ...prevState,
-            days: { ...prevState.days, ...days },
-            goals: { ...prevState.goals, ...goals }
-          }));
-          
-          toast.success("Data synced from cloud", { duration: 1500 });
+        // Transform to expected format
+        const days: Record<string, DayData> = {};
+        if (dayData) {
+          dayData.forEach((record: any) => {
+            days[record.date] = record.habit_data;
+          });
         }
+
+        const goals = { ...createDefaultMonthlyGoals() };
+        if (goalData) {
+          goalData.forEach((record: any) => {
+            goals[record.month_key] = record.goals_data;
+          });
+        }
+
+        // Merge with local data — remote days take precedence for keys they cover
+        setHabitsState(prevState => ({
+          ...prevState,
+          days: { ...prevState.days, ...days },
+          goals: { ...prevState.goals, ...goals }
+        }));
+
+        // If cloud is empty but we have local data, push it up so other
+        // consumers (HeaderStreakStrip / HabitStreakSummary) see it.
+        const localDayKeys = Object.keys(habitsState.days || {});
+        if ((dayData?.length ?? 0) === 0 && localDayKeys.length > 0) {
+          for (const iso of localDayKeys) {
+            await supabase.from('habit_days').upsert({
+              user_id: user.id,
+              date: iso,
+              habit_data: habitsState.days[iso] as any,
+            }, { onConflict: 'user_id,date' });
+          }
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["habit_days"] });
       } catch (error) {
         console.error('Error syncing from Supabase:', error);
       } finally {
