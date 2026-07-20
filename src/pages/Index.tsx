@@ -365,18 +365,8 @@ const Index = () => {
           />
         </div>
         
-        
-        {/* Presence Planning Section */}
-        <div className="mt-8 mb-8">
-          <PresencePlanning 
-            habitsState={habitsState}
-            viewMonth={viewMonth}
-            viewYear={viewYear}
-            onUpdatePresencePlan={handleUpdatePresencePlan}
-          />
-        </div>
-        
         {/* Priority Streaks moved to top of page */}
+
         
         {/* Stats section - All 4 categories in one horizontal line */}
         <div className="mt-8 mb-8">
