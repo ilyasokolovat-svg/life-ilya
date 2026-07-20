@@ -146,11 +146,18 @@ export default function useHabits() {
           if (error) {
             console.error('Error syncing to Supabase:', error);
             toast.error('Failed to sync to cloud', { duration: 1500, id: 'sync-error' });
+          } else {
+            // Broadcast to any react-query consumer reading habit_days
+            queryClient.invalidateQueries({ queryKey: ["habit_days"] });
           }
         } catch (syncError) {
           console.error('Error in Supabase sync:', syncError);
         }
       }
+
+      // Always broadcast locally too, so query consumers with cached rows re-run
+      // their selectors even when Supabase sync is off.
+      queryClient.invalidateQueries({ queryKey: ["habit_days"] });
 
       toast.success('Progress saved!', { duration: 1500 });
     } catch (error) {
