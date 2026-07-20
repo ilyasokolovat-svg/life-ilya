@@ -106,7 +106,6 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
     { type: 'sleep' as HabitType, icon: Moon, name: 'Sleep (7+ hrs)', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', isSpecial: true },
     { type: 'gym' as HabitType, icon: Dumbbell, name: 'Gym', color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
     { type: 'alcohol' as HabitType, icon: Wine, name: 'Sober Day', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-    { type: 'meditation' as HabitType, icon: Brain, name: 'Presence', description: 'Meditate, Journal and mindful phone usage', color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
   ];
 
   const gymData = todayData?.gym || { planned: false, completed: false };
