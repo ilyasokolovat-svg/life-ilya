@@ -50,7 +50,7 @@ export function HeaderStreakStrip() {
   }, []);
 
   const { data: habitDays = {} } = useQuery({
-    queryKey: ["habit_days_strip", user?.id],
+    queryKey: ["habit_days", user?.id],
     queryFn: async () => {
       if (!user?.id) return {};
       const { data } = await supabase
