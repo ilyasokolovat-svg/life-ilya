@@ -142,8 +142,8 @@ const TodayHabits: React.FC<TodayHabitsProps> = ({ todayData, onUpdateHabit }) =
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900 text-lg">{habit.name}</div>
-                    {habit.description && (
-                      <div className="text-sm text-gray-600 mt-1">{habit.description}</div>
+                    {(habit as any).description && (
+                      <div className="text-sm text-gray-600 mt-1">{(habit as any).description}</div>
                     )}
                   </div>
                 </div>
