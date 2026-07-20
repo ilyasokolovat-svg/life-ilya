@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import useLocalStorage from "./useLocalStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 // A hook that combines local storage with Supabase syncing for authenticated users
 export default function useHabits() {
