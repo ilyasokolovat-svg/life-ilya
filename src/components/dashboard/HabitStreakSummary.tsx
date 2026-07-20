@@ -30,7 +30,7 @@ export function HabitStreakSummary() {
   }, []);
 
   const { data: habitDays = {} } = useQuery({
-    queryKey: ["habit_days_streak", user?.id],
+    queryKey: ["habit_days", user?.id],
     queryFn: async () => {
       if (!user?.id) return {};
       const { data, error } = await supabase
