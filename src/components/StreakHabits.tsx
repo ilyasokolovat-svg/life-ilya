@@ -152,16 +152,18 @@ const StreakHabits: React.FC = () => {
                     key={index}
                     className="flex flex-col items-center cursor-pointer group"
                     onClick={() => toggleDay(habit.id, index)}
+                    title="Click to cycle: pending → done → not done → pending"
                   >
                     {status === 'missed' ? (
                       <div className="h-5 w-5 rounded border-2 border-destructive bg-destructive/20 flex items-center justify-center transition-all group-hover:scale-110">
                         <X className="h-3 w-3 text-destructive" />
                       </div>
+                    ) : status === 'completed' ? (
+                      <div className="h-5 w-5 rounded border-2 border-primary bg-primary flex items-center justify-center transition-all group-hover:scale-110">
+                        <svg className="h-3 w-3 text-primary-foreground" viewBox="0 0 20 20" fill="currentColor"><path d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 111.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z"/></svg>
+                      </div>
                     ) : (
-                      <Checkbox
-                        checked={status === 'completed'}
-                        className="h-5 w-5 rounded border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:scale-110"
-                      />
+                      <div className="h-5 w-5 rounded border-2 border-muted-foreground/40 bg-background transition-all group-hover:scale-110 group-hover:border-primary/60" />
                     )}
                     <span className="text-[10px] text-muted-foreground mt-0.5">{index + 1}</span>
                   </div>
