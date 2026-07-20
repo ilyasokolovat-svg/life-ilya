@@ -304,11 +304,8 @@ const Index = () => {
           <StreakHabits />
         </div>
 
-        {/* Today's Habits Section - Mobile Friendly */}
-        <TodayHabits 
-          todayData={todayData}
-          onUpdateHabit={handleUpdateHabit}
-        />
+        {/* Today's Habits box removed — now lives on Dashboard's "Today" card */}
+
         
         {/* Month Slider for Charts and Calendar */}
         <div className="mb-4">

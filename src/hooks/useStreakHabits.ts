@@ -11,33 +11,6 @@ export interface StreakHabit {
   lastUpdateDate: string;
 }
 
-const updateMissedDays = (habit: StreakHabit): StreakHabit => {
-  const lastUpdate = new Date(habit.lastUpdateDate);
-  const now = new Date();
-  const daysSinceCreation = Math.floor((now.getTime() - new Date(habit.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-  
-  const updatedDays = [...habit.completedDays];
-  
-  // Find the last completed or missed day
-  let lastMarkedIndex = -1;
-  for (let i = updatedDays.length - 1; i >= 0; i--) {
-    if (updatedDays[i] === 'completed' || updatedDays[i] === 'missed') {
-      lastMarkedIndex = i;
-      break;
-    }
-  }
-  
-  // Mark missed days from last marked day to current day
-  const currentDayIndex = Math.min(daysSinceCreation, habit.goalDuration - 1);
-  for (let i = lastMarkedIndex + 1; i <= currentDayIndex; i++) {
-    if (updatedDays[i] === 'pending') {
-      updatedDays[i] = 'missed';
-    }
-  }
-  
-  return { ...habit, completedDays: updatedDays };
-};
-
 // Same-tab pub/sub so all hook instances stay in sync
 const streakListeners = new Set<(habits: StreakHabit[]) => void>();
 
@@ -51,7 +24,7 @@ const loadStreakHabits = (): StreakHabit[] => {
       );
     }
     if (!habit.lastUpdateDate) habit.lastUpdateDate = habit.createdAt;
-    return updateMissedDays(habit);
+    return habit;
   });
 };
 
@@ -73,15 +46,6 @@ export const useStreakHabits = () => {
     return () => { streakListeners.delete(fn); };
   }, []);
 
-  useEffect(() => {
-    // Update missed days every minute
-    const interval = setInterval(() => {
-      setStreakHabits(prev => prev.map(updateMissedDays));
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   const addStreakHabit = (name: string, goalDuration: number) => {
     const now = new Date().toISOString();
     const newHabit: StreakHabit = {
@@ -95,26 +59,15 @@ export const useStreakHabits = () => {
     setStreakHabits([...streakHabits, newHabit]);
   };
 
+  // Cycle: pending → completed → missed → pending
+  // User manually marks each day; no automatic missed-marking.
   const toggleDay = (habitId: string, dayIndex: number) => {
     setStreakHabits(streakHabits.map(habit => {
-      if (habit.id === habitId) {
-        const newCompletedDays = [...habit.completedDays];
-        const currentStatus = newCompletedDays[dayIndex];
-        
-        // Toggle between completed and pending/missed
-        if (currentStatus === 'completed') {
-          newCompletedDays[dayIndex] = 'pending';
-        } else {
-          newCompletedDays[dayIndex] = 'completed';
-        }
-        
-        return { 
-          ...habit, 
-          completedDays: newCompletedDays,
-          lastUpdateDate: new Date().toISOString()
-        };
-      }
-      return habit;
+      if (habit.id !== habitId) return habit;
+      const newDays = [...habit.completedDays];
+      const cur = newDays[dayIndex];
+      newDays[dayIndex] = cur === 'pending' ? 'completed' : cur === 'completed' ? 'missed' : 'pending';
+      return { ...habit, completedDays: newDays, lastUpdateDate: new Date().toISOString() };
     }));
   };
 

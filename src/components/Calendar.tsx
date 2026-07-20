@@ -79,7 +79,7 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
     if (!dayData) return 0;
     
     let count = 0;
-    const habitTypes: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
+    const habitTypes: HabitType[] = ['sleep', 'gym', 'alcohol'];
     
     habitTypes.forEach(habitType => {
       if (habitType === 'sleep' && dayData[habitType].sleepHours && dayData[habitType].sleepHours >= 7) {
@@ -109,8 +109,8 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
     const isToday = todayISO === isoDate;
     const isPast = date < new Date(dubaiToday.setHours(0, 0, 0, 0));
     const completedCount = getCompletedHabitsCount(dayData);
-    const progressPercentage = (completedCount / 4) * 100;
-    const isAllCompleted = completedCount === 4;
+    const progressPercentage = (completedCount / 3) * 100;
+    const isAllCompleted = completedCount === 3;
     
     // Add debug logging for today's date
     if (isToday) {
@@ -164,15 +164,14 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
       });
     };
 
-    // Reordering habits to put sleep first, then gym, alcohol, meditation (no social)
-    const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol', 'meditation'];
+    // Reordering habits to put sleep first, then gym, alcohol (Presence removed)
+    const habitOrder: HabitType[] = ['sleep', 'gym', 'alcohol'];
 
     const getHabitLabel = (habitType: HabitType) => {
       switch (habitType) {
         case 'sleep': return 'Sleep';
         case 'gym': return 'Gym';
         case 'alcohol': return 'Sober Day';
-        case 'meditation': return 'Presence';
         default: return '';
       }
     };
@@ -186,8 +185,6 @@ const Calendar: React.FC<CalendarProps> = ({ days, onUpdateHabit, onUpdateLocati
           return <Dumbbell {...iconProps} />;
         case "alcohol":
           return <WineOff {...iconProps} />;
-        case "meditation":
-          return <Brain {...iconProps} />;
         default:
           return null;
       }
