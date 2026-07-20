@@ -20,7 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import GymPlanning from "@/components/GymPlanning";
-import PresencePlanning from "@/components/PresencePlanning";
+// PresencePlanning removed
 import TodayHabits from "@/components/TodayHabits";
 import StreakHabits from "@/components/StreakHabits";
 import DrinkingBudget from "@/components/DrinkingBudget";
@@ -365,24 +365,14 @@ const Index = () => {
           />
         </div>
         
-        
-        {/* Presence Planning Section */}
-        <div className="mt-8 mb-8">
-          <PresencePlanning 
-            habitsState={habitsState}
-            viewMonth={viewMonth}
-            viewYear={viewYear}
-            onUpdatePresencePlan={handleUpdatePresencePlan}
-          />
-        </div>
-        
         {/* Priority Streaks moved to top of page */}
+
         
         {/* Stats section - All 4 categories in one horizontal line */}
         <div className="mt-8 mb-8">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Your Progress Stats</h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <HabitStats 
               habitType="sleep" 
               stats={sleepStats} 
@@ -400,13 +390,6 @@ const Index = () => {
             <HabitStats 
               habitType="alcohol" 
               stats={alcoholStats} 
-              habitsState={habitsState}
-              viewMonth={viewMonth}
-              viewYear={viewYear}
-            />
-            <HabitStats 
-              habitType="meditation" 
-              stats={meditationStats} 
               habitsState={habitsState}
               viewMonth={viewMonth}
               viewYear={viewYear}
@@ -445,12 +428,6 @@ const Index = () => {
                 <Wine className="h-8 w-8 text-blue-dark" />
               </div>
               <p className="text-sm">Stay Sober</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="bg-blue-light p-4 rounded-full mb-2">
-                <Brain className="h-8 w-8 text-blue-dark" />
-              </div>
-              <p className="text-sm">Stay Mindful</p>
             </div>
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto">

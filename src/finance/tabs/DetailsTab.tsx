@@ -462,9 +462,35 @@ const DebtView: React.FC<{ d: WealthData }> = ({ d }) => {
   );
 };
 
+// Classify categories into fixed (non-negotiable) vs variable (nice-to-have).
+// Priority order within each group is used for column ordering.
+const FIXED_ORDER = ['accommodation', 'housing', 'rent', 'wealth', 'saving', 'invest', 'transport', 'car'];
+const VARIABLE_ORDER = ['food', 'grocer', 'health', 'medical', 'gym', 'social', 'entertain', 'dining', 'travel', 'trip', 'cloth', 'apparel', 'present', 'gift', 'other', 'misc'];
+
+function catGroup(label: string): 'fixed' | 'variable' {
+  const l = label.toLowerCase();
+  if (FIXED_ORDER.some(k => l.includes(k))) return 'fixed';
+  return 'variable';
+}
+function catRank(label: string): number {
+  const l = label.toLowerCase();
+  const order = catGroup(label) === 'fixed' ? FIXED_ORDER : VARIABLE_ORDER;
+  const idx = order.findIndex(k => l.includes(k));
+  return idx === -1 ? 999 : idx;
+}
+
 const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
   const { user } = useAuth();
-  const cats = d.budgetCategories;
+  const cats = useMemo(() => {
+    const sorted = [...d.budgetCategories].sort((a, b) => {
+      const ga = catGroup(a.label), gb = catGroup(b.label);
+      if (ga !== gb) return ga === 'fixed' ? -1 : 1;
+      return catRank(a.label) - catRank(b.label);
+    });
+    return sorted;
+  }, [d.budgetCategories]);
+  const fixedCats = cats.filter(c => catGroup(c.label) === 'fixed');
+  const variableCats = cats.filter(c => catGroup(c.label) === 'variable');
   const [importOpen, setImportOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
@@ -750,15 +776,32 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-border"><tr className="text-left text-xs text-muted-foreground">
-              <th className="px-3 py-2.5 sticky left-0 bg-card">Month</th>
-              {cats.map(c => (
-                <th key={c.id} className="px-3 py-2.5 text-right whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: c.color }} />{c.label}</span>
-                </th>
-              ))}
-              <th className="px-3 py-2.5 text-right">Total</th>
-            </tr></thead>
+            <thead className="border-b border-border">
+              <tr className="text-[10px] uppercase tracking-wider">
+                <th className="px-3 pt-2 pb-1 sticky left-0 bg-card"></th>
+                {fixedCats.length > 0 && (
+                  <th colSpan={fixedCats.length} className="px-3 pt-2 pb-1 text-left text-sky-700/70 dark:text-sky-300/70 bg-sky-50/40 dark:bg-sky-950/20 border-l border-sky-200/40">Non-negotiable</th>
+                )}
+                {variableCats.length > 0 && (
+                  <th colSpan={variableCats.length} className="px-3 pt-2 pb-1 text-left text-amber-700/70 dark:text-amber-300/70 bg-amber-50/40 dark:bg-amber-950/20 border-l border-amber-200/40">Nice-to-have</th>
+                )}
+                <th className="px-3 pt-2 pb-1"></th>
+              </tr>
+              <tr className="text-left text-xs text-muted-foreground">
+                <th className="px-3 py-2 sticky left-0 bg-card">Month</th>
+                {fixedCats.map((c, i) => (
+                  <th key={c.id} className={`px-3 py-2 text-right whitespace-nowrap bg-sky-50/40 dark:bg-sky-950/20 ${i === 0 ? 'border-l border-sky-200/40' : ''}`}>
+                    <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: c.color }} />{c.label}</span>
+                  </th>
+                ))}
+                {variableCats.map((c, i) => (
+                  <th key={c.id} className={`px-3 py-2 text-right whitespace-nowrap bg-amber-50/40 dark:bg-amber-950/20 ${i === 0 ? 'border-l border-amber-200/40' : ''}`}>
+                    <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: c.color }} />{c.label}</span>
+                  </th>
+                ))}
+                <th className="px-3 py-2 text-right">Total</th>
+              </tr>
+            </thead>
             <tbody>{[...chartData.rows].reverse().map(r => {
               const future = isFuture(r.month);
               const current = isCurrent(r.month);
@@ -768,6 +811,48 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
                   ? 'border-b border-border/50 bg-primary/5'
                   : 'border-b border-border/50';
               const totalBudget = cats.reduce((a, c) => a + Number(c.budget || 0), 0);
+              // Denominator for % share: for future months use planned budgets sum; else use actual row total
+              const denom = future
+                ? cats.reduce((a, c) => a + Number(r[c.id] || 0), 0) || totalBudget
+                : r.total;
+              const renderCell = (c: typeof cats[number], groupTint: string, isFirstInGroup: boolean) => {
+                const v = r[c.id] as number;
+                const isOut = chartData.outliers[c.id]?.has(r.month);
+                const locked = lockedAt(r.month, c.id);
+                const showPace = current && v > 0 && Number(c.budget || 0) > 0;
+                const paceCls = showPace ? paceColor(v, Number(c.budget)) : (isOut ? 'font-semibold' : '');
+                const planned = future && sourceAt(r.month, c.id) === 'plan';
+                const pct = v > 0 && denom > 0 ? Math.round((v / denom) * 100) : 0;
+                return (
+                  <td key={c.id} className={`px-3 py-2 text-right ${groupTint} ${isFirstInGroup ? (groupTint.includes('sky') ? 'border-l border-sky-200/40' : 'border-l border-amber-200/40') : ''}`}>
+                    <div className="inline-flex items-center gap-0.5">
+                      {showPace && <span className={`w-1.5 h-1.5 rounded-full mr-0.5 ${paceDot(v, Number(c.budget))}`} title={`Budget $${c.budget} · ${Math.round((v / Number(c.budget)) * 100)}% spent · ${Math.round(monthProgress * 100)}% through month`} />}
+                      {!future && (
+                        <button
+                          type="button"
+                          onClick={() => toggleLock(r.month, c.id)}
+                          title={locked ? 'Locked — imports skip this cell' : 'Lock this cell'}
+                          className={`p-0.5 rounded hover:bg-accent ${locked ? 'text-primary' : 'text-muted-foreground/30'}`}
+                        >
+                          {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                        </button>
+                      )}
+                      <input
+                        type="number"
+                        defaultValue={v || ''}
+                        placeholder={future ? '—' : '0'}
+                        disabled={locked}
+                        onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveCell(r.month, c.id, e.target.value); }}
+                        className={`w-16 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${paceCls} ${locked ? 'opacity-70 cursor-not-allowed' : ''} ${planned ? 'italic' : ''}`}
+                        style={isOut && !showPace ? { color: c.color } : {}}
+                      />
+                      {pct > 0 && (
+                        <span className="text-[9px] text-muted-foreground/70 tabular-nums w-7 text-right">{pct}%</span>
+                      )}
+                    </div>
+                  </td>
+                );
+              };
               return (
                 <tr key={r.month} className={rowCls}>
                   <td className="px-3 py-2 text-xs font-mono sticky left-0 bg-inherit">
@@ -777,40 +862,8 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
                       {current && <span className="text-[9px] uppercase tracking-wider text-primary">day {dayOfMonth}/{daysInMonth}</span>}
                     </div>
                   </td>
-                  {cats.map(c => {
-                    const v = r[c.id] as number;
-                    const isOut = chartData.outliers[c.id]?.has(r.month);
-                    const locked = lockedAt(r.month, c.id);
-                    const showPace = current && v > 0 && Number(c.budget || 0) > 0;
-                    const paceCls = showPace ? paceColor(v, Number(c.budget)) : (isOut ? 'font-semibold' : '');
-                    const planned = future && sourceAt(r.month, c.id) === 'plan';
-                    return (
-                      <td key={c.id} className="px-3 py-2 text-right">
-                        <div className="inline-flex items-center gap-0.5">
-                          {showPace && <span className={`w-1.5 h-1.5 rounded-full mr-0.5 ${paceDot(v, Number(c.budget))}`} title={`Budget $${c.budget} · ${Math.round((v / Number(c.budget)) * 100)}% spent · ${Math.round(monthProgress * 100)}% through month`} />}
-                          {!future && (
-                            <button
-                              type="button"
-                              onClick={() => toggleLock(r.month, c.id)}
-                              title={locked ? 'Locked — imports skip this cell' : 'Lock this cell'}
-                              className={`p-0.5 rounded hover:bg-accent ${locked ? 'text-primary' : 'text-muted-foreground/30'}`}
-                            >
-                              {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                            </button>
-                          )}
-                          <input
-                            type="number"
-                            defaultValue={v || ''}
-                            placeholder={future ? '—' : '0'}
-                            disabled={locked}
-                            onBlur={e => { const nv = Number(e.target.value) || 0; if (nv !== v) saveCell(r.month, c.id, e.target.value); }}
-                            className={`w-16 bg-transparent text-right text-xs tabular-nums hover:bg-accent focus:bg-accent rounded px-1 py-0.5 outline-none ${paceCls} ${locked ? 'opacity-70 cursor-not-allowed' : ''} ${planned ? 'italic' : ''}`}
-                            style={isOut && !showPace ? { color: c.color } : {}}
-                          />
-                        </div>
-                      </td>
-                    );
-                  })}
+                  {fixedCats.map((c, i) => renderCell(c, 'bg-sky-50/30 dark:bg-sky-950/10', i === 0))}
+                  {variableCats.map((c, i) => renderCell(c, 'bg-amber-50/30 dark:bg-amber-950/10', i === 0))}
                   <td className={`px-3 py-2 text-right tabular-nums font-medium ${current && r.total > 0 && totalBudget > 0 ? paceColor(r.total, totalBudget) : (chartData.totalOutliers.has(r.month) ? 'text-primary' : '')} ${future ? 'italic text-muted-foreground' : ''}`}>
                     {r.total ? fmtUSD(r.total) : '—'}
                     {current && totalBudget > 0 && r.total > 0 && (

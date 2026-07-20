@@ -4,14 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDubaiDate, formatDateISO } from "@/utils/dateUtils";
 import { useStreakHabits } from "@/hooks/useStreakHabits";
-import { Moon, Dumbbell, Wine, Brain } from "lucide-react";
+import { Moon, Dumbbell, Wine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const coreCategories = [
   { key: "sleep", label: "Sleep", Icon: Moon, color: "hsl(217, 91%, 55%)" },
   { key: "gym", label: "Gym", Icon: Dumbbell, color: "hsl(142, 70%, 45%)" },
   { key: "alcohol", label: "Sober", Icon: Wine, color: "hsl(280, 65%, 60%)" },
-  { key: "meditation", label: "Mind", Icon: Brain, color: "hsl(48, 90%, 50%)" },
 ] as const;
 
 function isDone(dayData: any, key: string): boolean {
