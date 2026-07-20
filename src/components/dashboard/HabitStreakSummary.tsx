@@ -52,8 +52,9 @@ export function HabitStreakSummary() {
     if (!dayData) return false;
 
     if (habitKey === "alcohol") {
-      // No alcohol = completed means they did NOT drink
-      return dayData.alcohol?.completed === false || !dayData.alcohol?.completed;
+      // "No Alcohol" is completed when the user marked the day as Sober
+      // (alcohol.completed === true) OR left drinkingEventType empty.
+      return dayData.alcohol?.completed === true;
     }
     if (habitKey === "gym") {
       // Check for workout intensity (multi-select) or completed
