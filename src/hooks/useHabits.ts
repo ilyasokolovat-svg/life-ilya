@@ -6,11 +6,13 @@ import { toast } from "sonner";
 import useLocalStorage from "./useLocalStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 // A hook that combines local storage with Supabase syncing for authenticated users
 export default function useHabits() {
   const { user } = useAuth();
-  
+  const queryClient = useQueryClient();
+
   // Use local storage as the primary data source for immediate responsiveness
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits_data", {
     days: {},
@@ -20,7 +22,8 @@ export default function useHabits() {
 
   // Track sync status
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncEnabled, setSyncEnabled] = useLocalStorage<boolean>("habits_sync_enabled", false);
+  // Auto-enable sync for authenticated users so every consumer stays in step.
+  const [syncEnabled, setSyncEnabled] = useLocalStorage<boolean>("habits_sync_enabled", true);
 
   // Sync from Supabase when user is authenticated
   useEffect(() => {
@@ -55,32 +58,42 @@ export default function useHabits() {
         
         console.log('Fetched data from Supabase:', { days: dayData, goals: goalData });
         
-        // Only update if we got data
-        if (dayData?.length > 0 || goalData?.length > 0) {
-          // Transform to expected format
-          const days: Record<string, DayData> = {};
-          if (dayData) {
-            dayData.forEach((record: any) => {
-              days[record.date] = record.habit_data;
-            });
-          }
-          
-          const goals = { ...createDefaultMonthlyGoals() };
-          if (goalData) {
-            goalData.forEach((record: any) => {
-              goals[record.month_key] = record.goals_data;
-            });
-          }
-          
-          // Merge with local data - remote data takes precedence
-          setHabitsState(prevState => ({
-            ...prevState,
-            days: { ...prevState.days, ...days },
-            goals: { ...prevState.goals, ...goals }
-          }));
-          
-          toast.success("Data synced from cloud", { duration: 1500 });
+        // Transform to expected format
+        const days: Record<string, DayData> = {};
+        if (dayData) {
+          dayData.forEach((record: any) => {
+            days[record.date] = record.habit_data;
+          });
         }
+
+        const goals = { ...createDefaultMonthlyGoals() };
+        if (goalData) {
+          goalData.forEach((record: any) => {
+            goals[record.month_key] = record.goals_data;
+          });
+        }
+
+        // Merge with local data — remote days take precedence for keys they cover
+        setHabitsState(prevState => ({
+          ...prevState,
+          days: { ...prevState.days, ...days },
+          goals: { ...prevState.goals, ...goals }
+        }));
+
+        // If cloud is empty but we have local data, push it up so other
+        // consumers (HeaderStreakStrip / HabitStreakSummary) see it.
+        const localDayKeys = Object.keys(habitsState.days || {});
+        if ((dayData?.length ?? 0) === 0 && localDayKeys.length > 0) {
+          for (const iso of localDayKeys) {
+            await supabase.from('habit_days').upsert({
+              user_id: user.id,
+              date: iso,
+              habit_data: habitsState.days[iso] as any,
+            }, { onConflict: 'user_id,date' });
+          }
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["habit_days"] });
       } catch (error) {
         console.error('Error syncing from Supabase:', error);
       } finally {
@@ -143,11 +156,18 @@ export default function useHabits() {
           if (error) {
             console.error('Error syncing to Supabase:', error);
             toast.error('Failed to sync to cloud', { duration: 1500, id: 'sync-error' });
+          } else {
+            // Broadcast to any react-query consumer reading habit_days
+            queryClient.invalidateQueries({ queryKey: ["habit_days"] });
           }
         } catch (syncError) {
           console.error('Error in Supabase sync:', syncError);
         }
       }
+
+      // Always broadcast locally too, so query consumers with cached rows re-run
+      // their selectors even when Supabase sync is off.
+      queryClient.invalidateQueries({ queryKey: ["habit_days"] });
 
       toast.success('Progress saved!', { duration: 1500 });
     } catch (error) {
