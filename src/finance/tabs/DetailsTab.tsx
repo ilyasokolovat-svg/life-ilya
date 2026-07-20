@@ -462,9 +462,35 @@ const DebtView: React.FC<{ d: WealthData }> = ({ d }) => {
   );
 };
 
+// Classify categories into fixed (non-negotiable) vs variable (nice-to-have).
+// Priority order within each group is used for column ordering.
+const FIXED_ORDER = ['accommodation', 'housing', 'rent', 'wealth', 'saving', 'invest', 'transport', 'car'];
+const VARIABLE_ORDER = ['food', 'grocer', 'health', 'medical', 'gym', 'social', 'entertain', 'dining', 'travel', 'trip', 'cloth', 'apparel', 'present', 'gift', 'other', 'misc'];
+
+function catGroup(label: string): 'fixed' | 'variable' {
+  const l = label.toLowerCase();
+  if (FIXED_ORDER.some(k => l.includes(k))) return 'fixed';
+  return 'variable';
+}
+function catRank(label: string): number {
+  const l = label.toLowerCase();
+  const order = catGroup(label) === 'fixed' ? FIXED_ORDER : VARIABLE_ORDER;
+  const idx = order.findIndex(k => l.includes(k));
+  return idx === -1 ? 999 : idx;
+}
+
 const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, onChange }) => {
   const { user } = useAuth();
-  const cats = d.budgetCategories;
+  const cats = useMemo(() => {
+    const sorted = [...d.budgetCategories].sort((a, b) => {
+      const ga = catGroup(a.label), gb = catGroup(b.label);
+      if (ga !== gb) return ga === 'fixed' ? -1 : 1;
+      return catRank(a.label) - catRank(b.label);
+    });
+    return sorted;
+  }, [d.budgetCategories]);
+  const fixedCats = cats.filter(c => catGroup(c.label) === 'fixed');
+  const variableCats = cats.filter(c => catGroup(c.label) === 'variable');
   const [importOpen, setImportOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
