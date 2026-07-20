@@ -98,52 +98,78 @@ const StreakHabits: React.FC = () => {
           </p>
         )}
 
-        {streakHabits.map((habit) => (
-          <div
-            key={habit.id}
-            className="border rounded-lg p-4 transition-all duration-300"
-            style={{ backgroundColor: getBackgroundColor(habit.completedDays) }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm md:text-base">{habit.name}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {habit.completedDays.filter(day => day === 'completed').length} / {habit.goalDuration} days completed
-                </p>
-              </div>
-              <Button
-                onClick={() => deleteStreakHabit(habit.id)}
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="flex flex-wrap gap-1">
-              {habit.completedDays.map((status, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center cursor-pointer group"
-                  onClick={() => toggleDay(habit.id, index)}
-                >
-                  {status === 'missed' ? (
-                    <div className="h-5 w-5 rounded border-2 border-destructive bg-destructive/20 flex items-center justify-center transition-all group-hover:scale-110">
-                      <X className="h-3 w-3 text-destructive" />
-                    </div>
-                  ) : (
-                    <Checkbox
-                      checked={status === 'completed'}
-                      className="h-5 w-5 rounded border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:scale-110"
-                    />
-                  )}
-                  <span className="text-[10px] text-muted-foreground mt-0.5">{index + 1}</span>
+        {streakHabits.map((habit) => {
+          const completedCount = habit.completedDays.filter(d => d === 'completed').length;
+          // Compute current streak (consecutive completed from the last completed day backwards)
+          let currentStreak = 0;
+          for (let i = habit.completedDays.length - 1; i >= 0; i--) {
+            if (habit.completedDays[i] === 'completed') currentStreak++;
+            else if (habit.completedDays[i] === 'missed') break;
+            else if (currentStreak > 0) break;
+          }
+          const pct = Math.round((completedCount / habit.goalDuration) * 100);
+          return (
+            <div
+              key={habit.id}
+              className="border rounded-lg p-4 transition-all duration-300"
+              style={{ backgroundColor: getBackgroundColor(habit.completedDays) }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm md:text-base">{habit.name}</h3>
+                    {currentStreak > 0 && (
+                      <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-700 font-semibold">
+                        🔥 {currentStreak}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {completedCount} / {habit.goalDuration} days · {pct}%
+                  </p>
                 </div>
-              ))}
+                <Button
+                  onClick={() => deleteStreakHabit(habit.id)}
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Progress bar */}
+              <div className="h-1.5 w-full rounded-full bg-muted mb-3 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1">
+                {habit.completedDays.map((status, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center cursor-pointer group"
+                    onClick={() => toggleDay(habit.id, index)}
+                  >
+                    {status === 'missed' ? (
+                      <div className="h-5 w-5 rounded border-2 border-destructive bg-destructive/20 flex items-center justify-center transition-all group-hover:scale-110">
+                        <X className="h-3 w-3 text-destructive" />
+                      </div>
+                    ) : (
+                      <Checkbox
+                        checked={status === 'completed'}
+                        className="h-5 w-5 rounded border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:scale-110"
+                      />
+                    )}
+                    <span className="text-[10px] text-muted-foreground mt-0.5">{index + 1}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );
