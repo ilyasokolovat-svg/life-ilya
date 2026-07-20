@@ -11,7 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 // A hook that combines local storage with Supabase syncing for authenticated users
 export default function useHabits() {
   const { user } = useAuth();
-  
+  const queryClient = useQueryClient();
+
   // Use local storage as the primary data source for immediate responsiveness
   const [habitsState, setHabitsState] = useLocalStorage<HabitsState>("habits_data", {
     days: {},
@@ -21,7 +22,8 @@ export default function useHabits() {
 
   // Track sync status
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncEnabled, setSyncEnabled] = useLocalStorage<boolean>("habits_sync_enabled", false);
+  // Auto-enable sync for authenticated users so every consumer stays in step.
+  const [syncEnabled, setSyncEnabled] = useLocalStorage<boolean>("habits_sync_enabled", true);
 
   // Sync from Supabase when user is authenticated
   useEffect(() => {
