@@ -175,6 +175,7 @@ export default function JobSearch() {
       s = ins.data;
     }
     let a: Activity | null = aR.data;
+    const isFirstEver = !sR.data;
     if (!a) {
       const def = {
         user_id: user.id, week_start_date: weekStart,
@@ -185,7 +186,9 @@ export default function JobSearch() {
     }
 
     let list: Opp[] = oR.data || [];
-    if (list.length === 0) {
+    // Only seed on the very first-ever load (when the settings row also had to be created).
+    // Otherwise an empty list means the user cleared it, and we must NOT repopulate.
+    if (list.length === 0 && isFirstEver) {
       const seed = SEED_OPPS.map((o) => ({ ...o, user_id: user.id, stage: "Lead" }));
       const insSeed = await sb.from("job_opportunities").insert(seed).select();
       list = insSeed.data || [];
