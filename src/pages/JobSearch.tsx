@@ -175,6 +175,7 @@ export default function JobSearch() {
       s = ins.data;
     }
     let a: Activity | null = aR.data;
+    const isFirstEver = !sR.data;
     if (!a) {
       const def = {
         user_id: user.id, week_start_date: weekStart,
@@ -185,7 +186,9 @@ export default function JobSearch() {
     }
 
     let list: Opp[] = oR.data || [];
-    if (list.length === 0) {
+    // Only seed on the very first-ever load (when the settings row also had to be created).
+    // Otherwise an empty list means the user cleared it, and we must NOT repopulate.
+    if (list.length === 0 && isFirstEver) {
       const seed = SEED_OPPS.map((o) => ({ ...o, user_id: user.id, stage: "Lead" }));
       const insSeed = await sb.from("job_opportunities").insert(seed).select();
       list = insSeed.data || [];
@@ -248,6 +251,15 @@ export default function JobSearch() {
     toast.success(`Deleted ${ids.length}`);
     reload();
   };
+
+  const clearAllOpps = async () => {
+    if (!user) return;
+    if (!confirm("Delete ALL opportunities? This cannot be undone.")) return;
+    await sb.from("job_opportunities").delete().eq("user_id", user.id);
+    toast.success("All opportunities cleared");
+    reload();
+  };
+
 
   const saveRecruiter = async (r: Partial<Recruiter> & { id?: string }) => {
     if (!user) return;
@@ -489,6 +501,7 @@ export default function JobSearch() {
                 recruiters={recruiters}
                 onOpenOpp={setEditing}
                 onBulkDeleteOpps={bulkDeleteOpps}
+                onClearAllOpps={clearAllOpps}
                 onOpenRecruiter={setEditingRecruiter}
                 onNewRecruiter={() => setShowNewRecruiter(true)}
               />
@@ -631,12 +644,13 @@ function PipelineKanban({
 }
 
 function OutreachSection({
-  opps, recruiters, onOpenOpp, onBulkDeleteOpps, onOpenRecruiter, onNewRecruiter,
+  opps, recruiters, onOpenOpp, onBulkDeleteOpps, onClearAllOpps, onOpenRecruiter, onNewRecruiter,
 }: {
   opps: Opp[];
   recruiters: Recruiter[];
   onOpenOpp: (o: Opp) => void;
   onBulkDeleteOpps: (ids: string[]) => void;
+  onClearAllOpps: () => void;
   onOpenRecruiter: (r: Recruiter) => void;
   onNewRecruiter: () => void;
 }) {
@@ -670,20 +684,36 @@ function OutreachSection({
             Recruiters ({recruiters.length})
           </TabsTrigger>
         </TabsList>
-        {selected.size > 0 && (
-          <Button
-            variant="outline"
-            className="text-red-600 border-red-200 gap-1.5"
-            onClick={() => {
-              onBulkDeleteOpps(Array.from(selected));
-              setSelected(new Set());
-            }}
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete {selected.size} selected
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && (
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-200 gap-1.5"
+              onClick={() => {
+                onBulkDeleteOpps(Array.from(selected));
+                setSelected(new Set());
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete {selected.size} selected
+            </Button>
+          )}
+          {opps.length > 0 && (
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-200 gap-1.5"
+              onClick={() => {
+                onClearAllOpps();
+                setSelected(new Set());
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear all
+            </Button>
+          )}
+        </div>
       </div>
+
 
       <TabsContent value="companies">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
