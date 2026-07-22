@@ -679,70 +679,103 @@ export type Database = {
       }
       job_opportunities: {
         Row: {
-          base_salary_monthly_usd: number | null
+          comp_notes: string | null
           company_name: string
           company_stage: string | null
+          company_valuation_usd: number | null
           contact_linkedin: string | null
           contact_name: string | null
           contact_role: string | null
           created_at: string
-          direction: string
-          entity_type: string | null
-          equity_offered: string | null
+          domain_fit_rating: number | null
+          equity_confidence_pct: number
+          equity_pct: number | null
           id: string
+          last_touched_at: string
+          liq_pref_known: boolean
+          living_cost_annual_usd: number | null
+          location: string
+          net_annual_usd: number | null
           next_action: string | null
           next_action_date: string | null
           notes: string | null
+          opportunity_type: string
+          optionality_rating: number | null
           role_title: string | null
           sort_order: number | null
           source: string | null
+          stability_rating: number | null
           stage: string
           updated_at: string
           user_id: string
+          vesting_type: string | null
+          vesting_years: number | null
         }
         Insert: {
-          base_salary_monthly_usd?: number | null
+          comp_notes?: string | null
           company_name: string
           company_stage?: string | null
+          company_valuation_usd?: number | null
           contact_linkedin?: string | null
           contact_name?: string | null
           contact_role?: string | null
           created_at?: string
-          direction?: string
-          entity_type?: string | null
-          equity_offered?: string | null
+          domain_fit_rating?: number | null
+          equity_confidence_pct?: number
+          equity_pct?: number | null
           id?: string
+          last_touched_at?: string
+          liq_pref_known?: boolean
+          living_cost_annual_usd?: number | null
+          location?: string
+          net_annual_usd?: number | null
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null
+          opportunity_type?: string
+          optionality_rating?: number | null
           role_title?: string | null
           sort_order?: number | null
           source?: string | null
+          stability_rating?: number | null
           stage?: string
           updated_at?: string
           user_id: string
+          vesting_type?: string | null
+          vesting_years?: number | null
         }
         Update: {
-          base_salary_monthly_usd?: number | null
+          comp_notes?: string | null
           company_name?: string
           company_stage?: string | null
+          company_valuation_usd?: number | null
           contact_linkedin?: string | null
           contact_name?: string | null
           contact_role?: string | null
           created_at?: string
-          direction?: string
-          entity_type?: string | null
-          equity_offered?: string | null
+          domain_fit_rating?: number | null
+          equity_confidence_pct?: number
+          equity_pct?: number | null
           id?: string
+          last_touched_at?: string
+          liq_pref_known?: boolean
+          living_cost_annual_usd?: number | null
+          location?: string
+          net_annual_usd?: number | null
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null
+          opportunity_type?: string
+          optionality_rating?: number | null
           role_title?: string | null
           sort_order?: number | null
           source?: string | null
+          stability_rating?: number | null
           stage?: string
           updated_at?: string
           user_id?: string
+          vesting_type?: string | null
+          vesting_years?: number | null
         }
         Relationships: []
       }
@@ -844,37 +877,73 @@ export type Database = {
       }
       job_search_settings: {
         Row: {
+          assumed_annual_return_pct: number
           checkpoint_date: string
           created_at: string
+          current_net_worth_usd: number
+          equity_benchmark_usd: number
           id: string
+          living_cost_dubai_usd: number
+          living_cost_hk_usd: number
+          living_cost_other_usd: number
+          target_annual_savings_usd: number
+          target_net_worth_usd: number
           target_offer_date: string
           updated_at: string
           user_id: string
           weekly_target_applications: number
           weekly_target_outreach: number
-          weekly_target_posts: number
+          weight_comp: number
+          weight_equity: number
+          weight_fit: number
+          weight_optionality: number
+          weight_risk: number
         }
         Insert: {
+          assumed_annual_return_pct?: number
           checkpoint_date?: string
           created_at?: string
+          current_net_worth_usd?: number
+          equity_benchmark_usd?: number
           id?: string
+          living_cost_dubai_usd?: number
+          living_cost_hk_usd?: number
+          living_cost_other_usd?: number
+          target_annual_savings_usd?: number
+          target_net_worth_usd?: number
           target_offer_date?: string
           updated_at?: string
           user_id: string
           weekly_target_applications?: number
           weekly_target_outreach?: number
-          weekly_target_posts?: number
+          weight_comp?: number
+          weight_equity?: number
+          weight_fit?: number
+          weight_optionality?: number
+          weight_risk?: number
         }
         Update: {
+          assumed_annual_return_pct?: number
           checkpoint_date?: string
           created_at?: string
+          current_net_worth_usd?: number
+          equity_benchmark_usd?: number
           id?: string
+          living_cost_dubai_usd?: number
+          living_cost_hk_usd?: number
+          living_cost_other_usd?: number
+          target_annual_savings_usd?: number
+          target_net_worth_usd?: number
           target_offer_date?: string
           updated_at?: string
           user_id?: string
           weekly_target_applications?: number
           weekly_target_outreach?: number
-          weekly_target_posts?: number
+          weight_comp?: number
+          weight_equity?: number
+          weight_fit?: number
+          weight_optionality?: number
+          weight_risk?: number
         }
         Relationships: []
       }
@@ -1442,7 +1511,6 @@ export type Database = {
           applications_sent: number
           created_at: string
           id: string
-          linkedin_posts: number
           outreach_sent: number
           recruiter_contacts: number
           updated_at: string
@@ -1453,7 +1521,6 @@ export type Database = {
           applications_sent?: number
           created_at?: string
           id?: string
-          linkedin_posts?: number
           outreach_sent?: number
           recruiter_contacts?: number
           updated_at?: string
@@ -1464,7 +1531,6 @@ export type Database = {
           applications_sent?: number
           created_at?: string
           id?: string
-          linkedin_posts?: number
           outreach_sent?: number
           recruiter_contacts?: number
           updated_at?: string
