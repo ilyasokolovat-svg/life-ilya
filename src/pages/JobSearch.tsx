@@ -644,12 +644,13 @@ function PipelineKanban({
 }
 
 function OutreachSection({
-  opps, recruiters, onOpenOpp, onBulkDeleteOpps, onOpenRecruiter, onNewRecruiter,
+  opps, recruiters, onOpenOpp, onBulkDeleteOpps, onClearAllOpps, onOpenRecruiter, onNewRecruiter,
 }: {
   opps: Opp[];
   recruiters: Recruiter[];
   onOpenOpp: (o: Opp) => void;
   onBulkDeleteOpps: (ids: string[]) => void;
+  onClearAllOpps: () => void;
   onOpenRecruiter: (r: Recruiter) => void;
   onNewRecruiter: () => void;
 }) {
@@ -683,20 +684,36 @@ function OutreachSection({
             Recruiters ({recruiters.length})
           </TabsTrigger>
         </TabsList>
-        {selected.size > 0 && (
-          <Button
-            variant="outline"
-            className="text-red-600 border-red-200 gap-1.5"
-            onClick={() => {
-              onBulkDeleteOpps(Array.from(selected));
-              setSelected(new Set());
-            }}
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete {selected.size} selected
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && (
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-200 gap-1.5"
+              onClick={() => {
+                onBulkDeleteOpps(Array.from(selected));
+                setSelected(new Set());
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete {selected.size} selected
+            </Button>
+          )}
+          {opps.length > 0 && (
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-200 gap-1.5"
+              onClick={() => {
+                onClearAllOpps();
+                setSelected(new Set());
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear all
+            </Button>
+          )}
+        </div>
       </div>
+
 
       <TabsContent value="companies">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
