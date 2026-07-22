@@ -501,6 +501,7 @@ export default function JobSearch() {
                 recruiters={recruiters}
                 onOpenOpp={setEditing}
                 onBulkDeleteOpps={bulkDeleteOpps}
+                onClearAllOpps={clearAllOpps}
                 onOpenRecruiter={setEditingRecruiter}
                 onNewRecruiter={() => setShowNewRecruiter(true)}
               />
