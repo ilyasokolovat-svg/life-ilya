@@ -252,6 +252,15 @@ export default function JobSearch() {
     reload();
   };
 
+  const clearAllOpps = async () => {
+    if (!user) return;
+    if (!confirm("Delete ALL opportunities? This cannot be undone.")) return;
+    await sb.from("job_opportunities").delete().eq("user_id", user.id);
+    toast.success("All opportunities cleared");
+    reload();
+  };
+
+
   const saveRecruiter = async (r: Partial<Recruiter> & { id?: string }) => {
     if (!user) return;
     if (r.id) {
