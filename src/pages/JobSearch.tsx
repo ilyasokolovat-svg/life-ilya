@@ -1088,7 +1088,7 @@ function OpportunityDialog({ opp, settings, onClose, onSave, onDelete }: {
 
   const previewScore = settings ? computeScore(form as Opp, settings) : null;
   const previewSavings = annualSavings(form as Opp);
-  const previewYrs = settings ? yearsTo1M(settings, previewSavings) : null;
+  const previewYrs = settings ? yearsTo1M(settings, form as Opp) : null;
 
   return (
     <Dialog open onOpenChange={onClose}>
