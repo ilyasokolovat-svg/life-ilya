@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Briefcase, Trash2, Calendar as CalendarIcon, AlertCircle, Users, Target, TrendingUp } from "lucide-react";
+import { Plus, Briefcase, Trash2, Calendar as CalendarIcon, AlertCircle, Users, Target, TrendingUp, Upload, ArrowRight, Search } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { format, differenceInWeeks, differenceInDays, startOfWeek, parseISO, isBefore } from "date-fns";
@@ -123,6 +123,56 @@ type Recruiter = {
 const RECRUITER_STATUSES = ["New", "Active", "Warm", "Cold", "Placed me before", "Dormant"];
 const RECRUITER_REGIONS = ["Dubai/GCC", "Hong Kong/APAC", "Remote/Global", "Other"];
 
+// ================= target companies =================
+const TARGET_CATEGORIES = [
+  "Crypto exchange",
+  "Institutional crypto infra",
+  "Market maker / trading",
+  "Payments / stablecoins",
+  "Trading tech / liquidity",
+  "Wealth / asset tech",
+  "Enterprise SaaS",
+  "Other",
+] as const;
+const TARGET_TIERS = ["Tier 1", "Tier 1.5", "Tier 2"] as const;
+const TARGET_PRIORITIES = ["High", "Medium", "Low"] as const;
+const TARGET_STATUSES = [
+  "Not started",
+  "Researching",
+  "Alert set",
+  "Outreach sent",
+  "Applied",
+  "In pipeline",
+  "No fit",
+  "Not hiring",
+] as const;
+const TIER_ORDER: Record<string, number> = { "Tier 1": 0, "Tier 1.5": 1, "Tier 2": 2 };
+const PRIORITY_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
+
+type TargetCompany = {
+  id: string;
+  user_id: string;
+  company_name: string;
+  category: string | null;
+  tier: string | null;
+  location_presence: string | null;
+  priority: string;
+  status: string;
+  target_roles: string | null;
+  careers_url: string | null;
+  warm_contact: string | null;
+  last_checked: string | null;
+  notes: string | null;
+  opportunity_id: string | null;
+};
+
+function targetToOppLocation(lp: string | null): Location {
+  const s = (lp || "").toLowerCase();
+  if (s.includes("dubai")) return "Dubai";
+  if (s.includes("hk") || s.includes("hong kong")) return "Hong Kong";
+  return "Other";
+}
+
 const sb = supabase as any;
 
 // ================= math helpers =================
@@ -220,24 +270,29 @@ export default function JobSearch() {
   const { user } = useAuth();
   const [opps, setOpps] = useState<Opp[]>([]);
   const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
+  const [targets, setTargets] = useState<TargetCompany[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [activity, setActivity] = useState<Activity | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Opp | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [newOppPrefill, setNewOppPrefill] = useState<Partial<Opp> | null>(null);
+  const [convertingTargetId, setConvertingTargetId] = useState<string | null>(null);
   const [editingRecruiter, setEditingRecruiter] = useState<Recruiter | null>(null);
   const [showNewRecruiter, setShowNewRecruiter] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const weekStart = useMemo(() => format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"), []);
 
   const reload = async () => {
     if (!user) return;
-    const [oR, sR, aR, rR] = await Promise.all([
+    const [oR, sR, aR, rR, tR] = await Promise.all([
       sb.from("job_opportunities").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       sb.from("job_search_settings").select("*").eq("user_id", user.id).maybeSingle(),
       sb.from("weekly_activity").select("*").eq("user_id", user.id).eq("week_start_date", weekStart).maybeSingle(),
       sb.from("job_recruiters").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+      sb.from("target_companies").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
     ]);
     let s: Settings | null = sR.data;
     if (!s) {
@@ -262,6 +317,7 @@ export default function JobSearch() {
     }
     setOpps(oR.data || []);
     setRecruiters(rR.data || []);
+    setTargets(tR.data || []);
     setSettings(s);
     setActivity(a);
     setLoading(false);
@@ -269,16 +325,17 @@ export default function JobSearch() {
 
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [user?.id]);
 
-  const saveOpp = async (o: Partial<Opp> & { id?: string }) => {
-    if (!user) return;
+  const saveOpp = async (o: Partial<Opp> & { id?: string }): Promise<string | null> => {
+    if (!user) return null;
     const nowIso = new Date().toISOString();
+    let newId: string | null = null;
     if (o.id) {
       const { id, ...patch } = o;
       const { error } = await sb.from("job_opportunities")
         .update({ ...patch, last_touched_at: nowIso, updated_at: nowIso }).eq("id", id);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return null; }
     } else {
-      const { error } = await sb.from("job_opportunities").insert({
+      const { data, error } = await sb.from("job_opportunities").insert({
         user_id: user.id,
         company_name: o.company_name || "Untitled",
         role_title: o.role_title || null,
@@ -307,12 +364,19 @@ export default function JobSearch() {
         next_action_date: o.next_action_date || null,
         notes: o.notes || null,
         last_touched_at: nowIso,
-      });
-      if (error) return toast.error(error.message);
+      }).select("id").single();
+      if (error) { toast.error(error.message); return null; }
+      newId = data?.id || null;
+      if (newId && convertingTargetId) {
+        await sb.from("target_companies")
+          .update({ opportunity_id: newId, status: "In pipeline", updated_at: nowIso })
+          .eq("id", convertingTargetId);
+      }
     }
     toast.success("Saved");
-    setEditing(null); setShowNew(false);
+    setEditing(null); setShowNew(false); setNewOppPrefill(null); setConvertingTargetId(null);
     reload();
+    return newId;
   };
 
   const deleteOpp = async (id: string) => {
@@ -407,6 +471,94 @@ export default function JobSearch() {
     });
   };
 
+  // ---- target companies ----
+  const saveTarget = async (t: Partial<TargetCompany> & { id?: string }) => {
+    if (!user) return;
+    if (t.id) {
+      const { id, ...patch } = t;
+      const { error } = await sb.from("target_companies")
+        .update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await sb.from("target_companies").insert({
+        user_id: user.id,
+        company_name: t.company_name || "Untitled",
+        category: t.category || null,
+        tier: t.tier || null,
+        location_presence: t.location_presence || null,
+        priority: t.priority || "Medium",
+        status: t.status || "Not started",
+        target_roles: t.target_roles || null,
+        careers_url: t.careers_url || null,
+        warm_contact: t.warm_contact || null,
+        last_checked: t.last_checked || null,
+        notes: t.notes || null,
+      });
+      if (error) return toast.error(error.message);
+    }
+    reload();
+  };
+
+  const deleteTarget = async (id: string) => {
+    await sb.from("target_companies").delete().eq("id", id);
+    reload();
+  };
+
+  const bulkDeleteTargets = async (ids: string[]) => {
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} target${ids.length === 1 ? "" : "s"}?`)) return;
+    await sb.from("target_companies").delete().in("id", ids);
+    toast.success(`Deleted ${ids.length}`);
+    reload();
+  };
+
+  const bulkPatchTargets = async (ids: string[], patch: Partial<TargetCompany>) => {
+    if (!ids.length) return;
+    await sb.from("target_companies")
+      .update({ ...patch, updated_at: new Date().toISOString() }).in("id", ids);
+    reload();
+  };
+
+  const importTargetsCsv = async (rows: Partial<TargetCompany>[]) => {
+    if (!user || !rows.length) return;
+    const existing = new Set(targets.map((t) => t.company_name.trim().toLowerCase()));
+    const fresh = rows.filter((r) => r.company_name && !existing.has(String(r.company_name).trim().toLowerCase()));
+    if (!fresh.length) { toast.info("No new companies to import"); return; }
+    const payload = fresh.map((r) => ({
+      user_id: user.id,
+      company_name: String(r.company_name).trim(),
+      category: r.category || null,
+      tier: r.tier || null,
+      location_presence: r.location_presence || null,
+      priority: r.priority || "Medium",
+      status: "Not started",
+      target_roles: r.target_roles || null,
+      notes: r.notes || null,
+    }));
+    const { error } = await sb.from("target_companies").insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success(`Imported ${payload.length} (skipped ${rows.length - payload.length} duplicates)`);
+    reload();
+  };
+
+  const convertTargetToOpp = (t: TargetCompany) => {
+    if (t.opportunity_id) {
+      const existing = opps.find((o) => o.id === t.opportunity_id);
+      if (existing) { setEditing(existing); return; }
+    }
+    setConvertingTargetId(t.id);
+    setNewOppPrefill({
+      company_name: t.company_name,
+      location: targetToOppLocation(t.location_presence),
+      opportunity_type: "External role",
+      stage: "Lead",
+      notes: t.notes || null,
+      role_title: (t.target_roles || "").split(",")[0]?.trim() || null,
+    });
+    setShowNew(true);
+  };
+
+
   const weeksToTarget = settings ? Math.max(0, differenceInWeeks(parseISO(settings.target_offer_date), new Date())) : 0;
   const weeksToCheckpt = settings ? Math.max(0, differenceInWeeks(parseISO(settings.checkpoint_date), new Date())) : 0;
   const checkpointSoon = weeksToCheckpt <= 2;
@@ -474,9 +626,10 @@ export default function JobSearch() {
             </div>
           </Card>
 
-          <Tabs defaultValue="dashboard">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white border">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="targets">Targets {targets.length > 0 && <Badge variant="secondary" className="ml-2">{targets.length}</Badge>}</TabsTrigger>
               <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
               <TabsTrigger value="compare">Compare {compareIds.size > 0 && <Badge variant="secondary" className="ml-2">{compareIds.size}</Badge>}</TabsTrigger>
               <TabsTrigger value="outreach">Outreach</TabsTrigger>
@@ -537,6 +690,36 @@ export default function JobSearch() {
                 </Card>
               </div>
 
+              {/* Target funnel */}
+              {(() => {
+                const total = targets.length;
+                const high = targets.filter((t) => t.priority === "High").length;
+                const highNotStarted = targets.filter((t) => t.priority === "High" && t.status === "Not started").length;
+                return (
+                  <Card className="p-5">
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-slate-500" />
+                        <h3 className="font-semibold text-slate-900">Target funnel</h3>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => setActiveTab("targets")}>
+                        Open Targets <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mb-2">
+                      <div><div className="text-xs text-slate-500">Total targets</div><div className="text-xl font-semibold text-slate-900">{total}</div></div>
+                      <div><div className="text-xs text-slate-500">High priority</div><div className="text-xl font-semibold text-slate-900">{high}</div></div>
+                      <div><div className="text-xs text-slate-500">High · Not started</div><div className={`text-xl font-semibold ${highNotStarted > 0 ? "text-amber-700" : "text-emerald-700"}`}>{highNotStarted}</div></div>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      {high === 0
+                        ? "No high-priority targets yet."
+                        : <><strong>{highNotStarted}</strong> of your <strong>{high}</strong> high-priority targets have not been touched yet.</>}
+                    </p>
+                  </Card>
+                );
+              })()}
+
               <Card className="p-5">
                 <h3 className="font-semibold text-slate-900 mb-4">This week ({format(parseISO(weekStart), "d MMM")})</h3>
                 <div className="space-y-4">
@@ -580,6 +763,19 @@ export default function JobSearch() {
                   </div>
                 )}
               </Card>
+            </TabsContent>
+
+            {/* ============ TARGETS ============ */}
+            <TabsContent value="targets" className="mt-4">
+              <TargetsTab
+                targets={targets}
+                onSave={saveTarget}
+                onDelete={deleteTarget}
+                onBulkDelete={bulkDeleteTargets}
+                onBulkPatch={bulkPatchTargets}
+                onImportCsv={importTargetsCsv}
+                onConvert={convertTargetToOpp}
+              />
             </TabsContent>
 
             {/* ============ PIPELINE ============ */}
@@ -633,8 +829,9 @@ export default function JobSearch() {
       {(editing || showNew) && (
         <OpportunityDialog
           opp={editing}
+          initial={newOppPrefill}
           settings={settings}
-          onClose={() => { setEditing(null); setShowNew(false); }}
+          onClose={() => { setEditing(null); setShowNew(false); setNewOppPrefill(null); setConvertingTargetId(null); }}
           onSave={saveOpp}
           onDelete={editing ? () => deleteOpp(editing.id) : undefined}
         />
@@ -1076,17 +1273,21 @@ function RecruiterDialog({ recruiter, onClose, onSave, onDelete }: {
   );
 }
 
-function OpportunityDialog({ opp, settings, onClose, onSave, onDelete }: {
-  opp: Opp | null; settings: Settings; onClose: () => void;
-  onSave: (o: Partial<Opp> & { id?: string }) => void; onDelete?: () => void;
+function OpportunityDialog({ opp, initial, settings, onClose, onSave, onDelete }: {
+  opp: Opp | null; initial?: Partial<Opp> | null; settings: Settings; onClose: () => void;
+  onSave: (o: Partial<Opp> & { id?: string }) => void | Promise<any>; onDelete?: () => void;
 }) {
-  const [form, setForm] = useState<Partial<Opp>>(
-    opp || {
+  const [form, setForm] = useState<Partial<Opp>>(() => {
+    if (opp) return opp;
+    const base: Partial<Opp> = {
       location: "Dubai", opportunity_type: "External role", stage: "Lead", company_stage: "Unknown",
       vesting_type: "Unknown", equity_confidence_pct: 20, liq_pref_known: false,
       living_cost_annual_usd: settings.living_cost_dubai_usd,
-    }
-  );
+    };
+    const merged = { ...base, ...(initial || {}) };
+    if (initial?.location) merged.living_cost_annual_usd = defaultLivingCost(initial.location as Location, settings);
+    return merged;
+  });
   const set = (k: keyof Opp, v: any) => setForm((p) => ({ ...p, [k]: v }));
 
   const onLocationChange = (loc: Location) => {
@@ -1438,3 +1639,302 @@ function ResumesSection() {
     </div>
   );
 }
+
+// ================= Targets tab =================
+function parseCsv(text: string): Record<string, string>[] {
+  const lines = text.replace(/\r\n?/g, "\n").split("\n").filter((l) => l.trim().length);
+  if (!lines.length) return [];
+  const parseLine = (line: string): string[] => {
+    const out: string[] = []; let cur = ""; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ;
+      } else if (c === "," && !inQ) { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+    out.push(cur);
+    return out.map((s) => s.trim());
+  };
+  const headers = parseLine(lines[0]).map((h) => h.toLowerCase());
+  return lines.slice(1).map((line) => {
+    const vals = parseLine(line);
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => { row[h] = vals[i] ?? ""; });
+    return row;
+  });
+}
+
+function TargetsTab({ targets, onSave, onDelete, onBulkDelete, onBulkPatch, onImportCsv, onConvert }: {
+  targets: TargetCompany[];
+  onSave: (t: Partial<TargetCompany> & { id?: string }) => void;
+  onDelete: (id: string) => void;
+  onBulkDelete: (ids: string[]) => void;
+  onBulkPatch: (ids: string[], patch: Partial<TargetCompany>) => void;
+  onImportCsv: (rows: Partial<TargetCompany>[]) => void;
+  onConvert: (t: TargetCompany) => void;
+}) {
+  const [editing, setEditing] = useState<TargetCompany | null>(null);
+  const [showNew, setShowNew] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [q, setQ] = useState("");
+  const [fTier, setFTier] = useState("all");
+  const [fCat, setFCat] = useState("all");
+  const [fLoc, setFLoc] = useState("");
+  const [fPri, setFPri] = useState("all");
+  const [fStatus, setFStatus] = useState("all");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const filtered = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    return targets
+      .filter((t) => (fTier === "all" || t.tier === fTier))
+      .filter((t) => (fCat === "all" || t.category === fCat))
+      .filter((t) => (!fLoc.trim() || (t.location_presence || "").toLowerCase().includes(fLoc.trim().toLowerCase())))
+      .filter((t) => (fPri === "all" || t.priority === fPri))
+      .filter((t) => (fStatus === "all" || t.status === fStatus))
+      .filter((t) => !qq || t.company_name.toLowerCase().includes(qq))
+      .sort((a, b) => {
+        const p = (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
+        if (p !== 0) return p;
+        const ti = (TIER_ORDER[a.tier || ""] ?? 9) - (TIER_ORDER[b.tier || ""] ?? 9);
+        if (ti !== 0) return ti;
+        return a.company_name.localeCompare(b.company_name);
+      });
+  }, [targets, q, fTier, fCat, fLoc, fPri, fStatus]);
+
+  const total = targets.length;
+  const byTier = TARGET_TIERS.map((t) => ({ t, n: targets.filter((x) => x.tier === t).length }));
+  const highNotStarted = targets.filter((t) => t.priority === "High" && t.status === "Not started").length;
+
+  const toggle = (id: string) => setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleAll = () => {
+    const ids = filtered.map((t) => t.id);
+    const allOn = ids.length > 0 && ids.every((id) => selected.has(id));
+    setSelected(allOn ? new Set() : new Set(ids));
+  };
+
+  const handleCsv = async (file: File) => {
+    const text = await file.text();
+    const raw = parseCsv(text);
+    const rows: Partial<TargetCompany>[] = raw.map((r) => ({
+      company_name: r["company_name"] || r["company"] || r["name"],
+      category: r["category"] || null,
+      tier: r["tier"] || null,
+      location_presence: r["location_presence"] || r["location"] || null,
+      priority: r["priority"] || "Medium",
+      target_roles: r["target_roles"] || r["roles"] || null,
+      notes: r["notes"] || null,
+    })).filter((r) => r.company_name);
+    onImportCsv(rows);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header stats */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div><span className="text-slate-500">Total:</span> <span className="font-semibold text-slate-900">{total}</span></div>
+            {byTier.map(({ t, n }) => (
+              <div key={t}><span className="text-slate-500">{t}:</span> <span className="font-semibold text-slate-900">{n}</span></div>
+            ))}
+            <div>
+              <span className="text-slate-500">High · Not started:</span>{" "}
+              <span className={`font-semibold ${highNotStarted > 0 ? "text-amber-700" : "text-emerald-700"}`}>{highNotStarted}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCsv(f); e.target.value = ""; }} />
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => fileRef.current?.click()}>
+              <Upload className="w-4 h-4" /> Import CSV
+            </Button>
+            <Button size="sm" className="gap-1.5" onClick={() => setShowNew(true)}>
+              <Plus className="w-4 h-4" /> Add target
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Filters */}
+      <Card className="p-3">
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input placeholder="Search company…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9 w-56" />
+          </div>
+          <Select value={fTier} onValueChange={setFTier}><SelectTrigger className="h-9 w-32"><SelectValue placeholder="Tier" /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All tiers</SelectItem>{TARGET_TIERS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={fCat} onValueChange={setFCat}><SelectTrigger className="h-9 w-48"><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All categories</SelectItem>{TARGET_CATEGORIES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+          <Input placeholder="Location contains…" value={fLoc} onChange={(e) => setFLoc(e.target.value)} className="h-9 w-44" />
+          <Select value={fPri} onValueChange={setFPri}><SelectTrigger className="h-9 w-32"><SelectValue placeholder="Priority" /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All</SelectItem>{TARGET_PRIORITIES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={fStatus} onValueChange={setFStatus}><SelectTrigger className="h-9 w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All statuses</SelectItem>{TARGET_STATUSES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+          {(q || fTier !== "all" || fCat !== "all" || fLoc || fPri !== "all" || fStatus !== "all") && (
+            <Button size="sm" variant="ghost" onClick={() => { setQ(""); setFTier("all"); setFCat("all"); setFLoc(""); setFPri("all"); setFStatus("all"); }}>Clear</Button>
+          )}
+        </div>
+      </Card>
+
+      {/* Bulk bar */}
+      {selected.size > 0 && (
+        <Card className="p-3 bg-blue-50 border-blue-200">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-medium text-blue-900">{selected.size} selected</span>
+            <Select onValueChange={(v) => onBulkPatch(Array.from(selected), { status: v })}>
+              <SelectTrigger className="h-8 w-40 bg-white"><SelectValue placeholder="Set status…" /></SelectTrigger>
+              <SelectContent>{TARGET_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select onValueChange={(v) => onBulkPatch(Array.from(selected), { priority: v })}>
+              <SelectTrigger className="h-8 w-36 bg-white"><SelectValue placeholder="Set priority…" /></SelectTrigger>
+              <SelectContent>{TARGET_PRIORITIES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" className="text-red-600 border-red-200 gap-1.5 ml-auto"
+              onClick={() => { onBulkDelete(Array.from(selected)); setSelected(new Set()); }}>
+              <Trash2 className="w-4 h-4" /> Delete
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear selection</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Table */}
+      <Card className="p-0 overflow-x-auto">
+        {filtered.length === 0 ? (
+          <div className="p-8 text-center text-sm text-slate-500">No target companies match your filters.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-slate-50 text-slate-600">
+                <th className="p-2 w-8"><Checkbox checked={filtered.length > 0 && filtered.every((t) => selected.has(t.id))} onCheckedChange={toggleAll} /></th>
+                <th className="text-left p-2 font-medium">Company</th>
+                <th className="text-left p-2 font-medium">Category</th>
+                <th className="text-left p-2 font-medium">Tier</th>
+                <th className="text-left p-2 font-medium">Location</th>
+                <th className="text-left p-2 font-medium">Priority</th>
+                <th className="text-left p-2 font-medium">Status</th>
+                <th className="text-left p-2 font-medium">Target roles</th>
+                <th className="text-left p-2 font-medium">Warm</th>
+                <th className="text-left p-2 font-medium">Last checked</th>
+                <th className="text-right p-2 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((t) => {
+                const flag = t.priority === "High" && t.status === "Not started";
+                return (
+                  <tr key={t.id} className={`border-b last:border-b-0 ${flag ? "bg-amber-50/60" : "hover:bg-slate-50"}`}>
+                    <td className="p-2"><Checkbox checked={selected.has(t.id)} onCheckedChange={() => toggle(t.id)} /></td>
+                    <td className="p-2">
+                      <button onClick={() => setEditing(t)} className="text-left">
+                        <div className="font-medium text-slate-900">{t.company_name}</div>
+                        {t.careers_url && <div className="text-[10px] text-slate-500 truncate max-w-[220px]">{t.careers_url}</div>}
+                      </button>
+                    </td>
+                    <td className="p-2 text-slate-700">{t.category || "—"}</td>
+                    <td className="p-2 text-slate-700">{t.tier || "—"}</td>
+                    <td className="p-2 text-slate-700">{t.location_presence || "—"}</td>
+                    <td className="p-2">
+                      <Select value={t.priority} onValueChange={(v) => onSave({ id: t.id, priority: v })}>
+                        <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{TARGET_PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </td>
+                    <td className="p-2">
+                      <Select value={t.status} onValueChange={(v) => onSave({ id: t.id, status: v })}>
+                        <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{TARGET_STATUSES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </td>
+                    <td className="p-2 text-slate-700 max-w-[180px] truncate">{t.target_roles || "—"}</td>
+                    <td className="p-2 text-slate-700">{t.warm_contact || "—"}</td>
+                    <td className="p-2 text-slate-600 text-xs">{t.last_checked ? format(parseISO(t.last_checked), "d MMM yy") : "—"}</td>
+                    <td className="p-2 text-right whitespace-nowrap">
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => onConvert(t)}>
+                        {t.opportunity_id ? "View opportunity" : (<><ArrowRight className="w-3 h-3" /> Create opportunity</>)}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      {(editing || showNew) && (
+        <TargetDialog
+          target={editing}
+          onClose={() => { setEditing(null); setShowNew(false); }}
+          onSave={(t) => { onSave(t); setEditing(null); setShowNew(false); }}
+          onDelete={editing ? () => { if (confirm("Delete this target?")) { onDelete(editing.id); setEditing(null); } } : undefined}
+        />
+      )}
+    </div>
+  );
+}
+
+function TargetDialog({ target, onClose, onSave, onDelete }: {
+  target: TargetCompany | null; onClose: () => void;
+  onSave: (t: Partial<TargetCompany> & { id?: string }) => void; onDelete?: () => void;
+}) {
+  const [form, setForm] = useState<Partial<TargetCompany>>(target || { priority: "Medium", status: "Not started" });
+  const set = (k: keyof TargetCompany, v: any) => setForm((p) => ({ ...p, [k]: v }));
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{target ? "Edit target" : "New target company"}</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Company *" full><Input value={form.company_name || ""} onChange={(e) => set("company_name", e.target.value)} /></Field>
+          <Field label="Category">
+            <Select value={form.category || ""} onValueChange={(v) => set("category", v)}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>{TARGET_CATEGORIES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Tier">
+            <Select value={form.tier || ""} onValueChange={(v) => set("tier", v)}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>{TARGET_TIERS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Location presence"><Input placeholder="e.g. Dubai + HK" value={form.location_presence || ""} onChange={(e) => set("location_presence", e.target.value)} /></Field>
+          <Field label="Priority">
+            <Select value={form.priority || "Medium"} onValueChange={(v) => set("priority", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{TARGET_PRIORITIES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select value={form.status || "Not started"} onValueChange={(v) => set("status", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{TARGET_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Target roles" full><Input value={form.target_roles || ""} onChange={(e) => set("target_roles", e.target.value)} /></Field>
+          <Field label="Careers URL" full><Input value={form.careers_url || ""} onChange={(e) => set("careers_url", e.target.value)} /></Field>
+          <Field label="Warm contact"><Input value={form.warm_contact || ""} onChange={(e) => set("warm_contact", e.target.value)} /></Field>
+          <Field label="Last checked"><Input type="date" value={form.last_checked || ""} onChange={(e) => set("last_checked", e.target.value || null)} /></Field>
+          <Field label="Notes" full><Textarea rows={3} value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} /></Field>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-2">
+          {onDelete && (
+            <Button variant="outline" className="text-red-600 mr-auto gap-1" onClick={onDelete}>
+              <Trash2 className="w-4 h-4" /> Delete
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => onSave({ ...form, id: target?.id })}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
