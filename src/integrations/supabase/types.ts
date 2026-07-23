@@ -1347,6 +1347,71 @@ export type Database = {
           },
         ]
       }
+      target_companies: {
+        Row: {
+          careers_url: string | null
+          category: string | null
+          company_name: string
+          created_at: string
+          id: string
+          last_checked: string | null
+          location_presence: string | null
+          notes: string | null
+          opportunity_id: string | null
+          priority: string
+          status: string
+          target_roles: string | null
+          tier: string | null
+          updated_at: string
+          user_id: string
+          warm_contact: string | null
+        }
+        Insert: {
+          careers_url?: string | null
+          category?: string | null
+          company_name: string
+          created_at?: string
+          id?: string
+          last_checked?: string | null
+          location_presence?: string | null
+          notes?: string | null
+          opportunity_id?: string | null
+          priority?: string
+          status?: string
+          target_roles?: string | null
+          tier?: string | null
+          updated_at?: string
+          user_id: string
+          warm_contact?: string | null
+        }
+        Update: {
+          careers_url?: string | null
+          category?: string | null
+          company_name?: string
+          created_at?: string
+          id?: string
+          last_checked?: string | null
+          location_presence?: string | null
+          notes?: string | null
+          opportunity_id?: string | null
+          priority?: string
+          status?: string
+          target_roles?: string | null
+          tier?: string | null
+          updated_at?: string
+          user_id?: string
+          warm_contact?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "target_companies_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "job_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travel_periods: {
         Row: {
           color: string | null
