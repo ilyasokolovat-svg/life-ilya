@@ -1135,13 +1135,22 @@ function OpportunityDialog({ opp, settings, onClose, onSave, onDelete }: {
             </Select>
           </Field>
 
-          <Field label="Net annual earnings (USD, after tax)">
-            <Input type="number" value={form.net_annual_usd ?? ""} onChange={(e) => set("net_annual_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
-          </Field>
+          <div className="col-span-2 border rounded-lg p-3 bg-slate-50/50">
+            <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Compensation</div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Net earnings, year 1 (incl. ramp)">
+                <Input type="number" value={form.net_year1_usd ?? ""} onChange={(e) => set("net_year1_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
+              </Field>
+              <Field label="Net earnings, steady state (year 2+)">
+                <Input type="number" value={form.net_annual_usd ?? ""} onChange={(e) => set("net_annual_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
+              </Field>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">All-in: base + commission + bonuses, after tax. Enter commission at ~70–80% of what was promised.</p>
+          </div>
           <Field label="Living cost / yr (USD)">
             <Input type="number" value={form.living_cost_annual_usd ?? ""} onChange={(e) => set("living_cost_annual_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
           </Field>
-          <Field label="Comp notes (base / OTE split)" full>
+          <Field label="Comp notes (attainment %, ramp length, promised)" full>
             <Input value={form.comp_notes || ""} onChange={(e) => set("comp_notes", e.target.value)} />
           </Field>
 
