@@ -287,6 +287,7 @@ export default function JobSearch() {
         stage: o.stage || "Lead",
         company_stage: o.company_stage || "Unknown",
         net_annual_usd: o.net_annual_usd ?? null,
+        net_year1_usd: o.net_year1_usd ?? o.net_annual_usd ?? null,
         comp_notes: o.comp_notes || null,
         living_cost_annual_usd: o.living_cost_annual_usd ?? (settings ? defaultLivingCost(o.location || "Dubai", settings) : null),
         equity_pct: o.equity_pct ?? null,
