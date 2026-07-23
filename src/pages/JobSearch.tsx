@@ -416,7 +416,7 @@ export default function JobSearch() {
     return activeOpps.map((o) => {
       const _score = computeScore(o, settings);
       const _savings = annualSavings(o);
-      const _yrs = yearsTo1M(settings, _savings);
+      const _yrs = yearsTo1M(settings, o);
       return { ...o, _score, _savings, _yrs };
     }).sort((a, b) => b._score.total - a._score.total);
   }, [activeOpps, settings]);
