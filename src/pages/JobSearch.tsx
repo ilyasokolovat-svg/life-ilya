@@ -808,7 +808,12 @@ function CompareTab({ allRanked, ids, onToggle, onClear, settings }: {
     { label: "Company / role", getValue: (o) => `${o.company_name}${o.role_title ? " · " + o.role_title : ""}` },
     { label: "Location", getValue: (o) => o.location },
     { label: "Type", getValue: (o) => o.opportunity_type },
-    { label: "Net annual", getValue: (o) => Number(o.net_annual_usd) || 0, higherBetter: true, fmt: fmtUSD },
+    { label: "Net annual (steady state)", getValue: (o) => Number(o.net_annual_usd) || 0, higherBetter: true, fmt: fmtUSD },
+    { label: "Net earnings, year 1", getValue: (o) => o.net_year1_usd != null ? Number(o.net_year1_usd) : Number(o.net_annual_usd) || 0, higherBetter: true, fmt: fmtUSD },
+    { label: "Ramp gap", getValue: (o) => {
+        const y1 = o.net_year1_usd != null ? Number(o.net_year1_usd) : Number(o.net_annual_usd) || 0;
+        return (Number(o.net_annual_usd) || 0) - y1;
+      }, higherBetter: false, fmt: fmtUSD },
     { label: "Living cost", getValue: (o) => Number(o.living_cost_annual_usd) || 0, higherBetter: false, fmt: fmtUSD },
     { label: "Annual savings", getValue: (o) => o._savings, higherBetter: true, fmt: fmtUSD },
     { label: "Years to $1M", getValue: (o) => (o._yrs === null ? Infinity : o._yrs), higherBetter: false, fmt: (v) => v === Infinity ? "Not on track" : `${v.toFixed(1)} yrs` },
