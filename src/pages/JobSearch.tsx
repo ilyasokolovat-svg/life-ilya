@@ -690,6 +690,36 @@ export default function JobSearch() {
                 </Card>
               </div>
 
+              {/* Target funnel */}
+              {(() => {
+                const total = targets.length;
+                const high = targets.filter((t) => t.priority === "High").length;
+                const highNotStarted = targets.filter((t) => t.priority === "High" && t.status === "Not started").length;
+                return (
+                  <Card className="p-5">
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-slate-500" />
+                        <h3 className="font-semibold text-slate-900">Target funnel</h3>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => setActiveTab("targets")}>
+                        Open Targets <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mb-2">
+                      <div><div className="text-xs text-slate-500">Total targets</div><div className="text-xl font-semibold text-slate-900">{total}</div></div>
+                      <div><div className="text-xs text-slate-500">High priority</div><div className="text-xl font-semibold text-slate-900">{high}</div></div>
+                      <div><div className="text-xs text-slate-500">High · Not started</div><div className={`text-xl font-semibold ${highNotStarted > 0 ? "text-amber-700" : "text-emerald-700"}`}>{highNotStarted}</div></div>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      {high === 0
+                        ? "No high-priority targets yet."
+                        : <><strong>{highNotStarted}</strong> of your <strong>{high}</strong> high-priority targets have not been touched yet.</>}
+                    </p>
+                  </Card>
+                );
+              })()}
+
               <Card className="p-5">
                 <h3 className="font-semibold text-slate-900 mb-4">This week ({format(parseISO(weekStart), "d MMM")})</h3>
                 <div className="space-y-4">
