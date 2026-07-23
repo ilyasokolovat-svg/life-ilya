@@ -626,9 +626,10 @@ export default function JobSearch() {
             </div>
           </Card>
 
-          <Tabs defaultValue="dashboard">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white border">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="targets">Targets {targets.length > 0 && <Badge variant="secondary" className="ml-2">{targets.length}</Badge>}</TabsTrigger>
               <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
               <TabsTrigger value="compare">Compare {compareIds.size > 0 && <Badge variant="secondary" className="ml-2">{compareIds.size}</Badge>}</TabsTrigger>
               <TabsTrigger value="outreach">Outreach</TabsTrigger>
