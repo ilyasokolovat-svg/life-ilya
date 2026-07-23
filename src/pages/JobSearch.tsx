@@ -50,6 +50,7 @@ type Opp = {
   stage: Stage;
   company_stage: string | null;
   net_annual_usd: number | null;
+  net_year1_usd: number | null;
   comp_notes: string | null;
   living_cost_annual_usd: number | null;
   equity_pct: number | null;
@@ -129,18 +130,26 @@ export function annualSavings(o: Opp): number {
   return (Number(o.net_annual_usd) || 0) - (Number(o.living_cost_annual_usd) || 0);
 }
 
-export function yearsTo1M(s: Settings, savings: number): number | null {
+export function annualSavingsYear1(o: Opp): number {
+  const y1 = o.net_year1_usd != null ? Number(o.net_year1_usd) : Number(o.net_annual_usd) || 0;
+  return y1 - (Number(o.living_cost_annual_usd) || 0);
+}
+
+export function yearsTo1M(s: Settings, o: Opp): number | null {
   const r = (Number(s.assumed_annual_return_pct) || 0) / 100;
-  const PMT = savings;
+  const savings1 = annualSavingsYear1(o);
+  const savings = annualSavings(o);
   const PV = Number(s.current_net_worth_usd) || 0;
   const FV = Number(s.target_net_worth_usd) || 0;
   if (PV >= FV) return 0;
-  if (PMT <= 0 && PV < FV) return null;
-  if (r === 0) return (FV - PV) / PMT;
-  const num = FV + PMT / r;
-  const den = PV + PMT / r;
+  const pvAfterY1 = PV * (1 + r) + savings1;
+  if (pvAfterY1 >= FV) return 1;
+  if (savings <= 0) return null;
+  if (r === 0) return 1 + (FV - pvAfterY1) / savings;
+  const num = FV + savings / r;
+  const den = pvAfterY1 + savings / r;
   if (num <= 0 || den <= 0) return null;
-  const yrs = Math.log(num / den) / Math.log(1 + r);
+  const yrs = 1 + Math.log(num / den) / Math.log(1 + r);
   return isFinite(yrs) && yrs >= 0 ? yrs : null;
 }
 
@@ -278,6 +287,7 @@ export default function JobSearch() {
         stage: o.stage || "Lead",
         company_stage: o.company_stage || "Unknown",
         net_annual_usd: o.net_annual_usd ?? null,
+        net_year1_usd: o.net_year1_usd ?? o.net_annual_usd ?? null,
         comp_notes: o.comp_notes || null,
         living_cost_annual_usd: o.living_cost_annual_usd ?? (settings ? defaultLivingCost(o.location || "Dubai", settings) : null),
         equity_pct: o.equity_pct ?? null,
@@ -407,7 +417,7 @@ export default function JobSearch() {
     return activeOpps.map((o) => {
       const _score = computeScore(o, settings);
       const _savings = annualSavings(o);
-      const _yrs = yearsTo1M(settings, _savings);
+      const _yrs = yearsTo1M(settings, o);
       return { ...o, _score, _savings, _yrs };
     }).sort((a, b) => b._score.total - a._score.total);
   }, [activeOpps, settings]);
@@ -754,11 +764,20 @@ function PipelineKanban({ ranked, onMove, onOpen, compareIds, onToggleCompare }:
                               <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px]">KPI vesting</Badge>
                             )}
                           </div>
-                          <div className="grid grid-cols-3 gap-1 text-[11px] text-slate-600 mb-2">
+                          <div className="grid grid-cols-3 gap-1 text-[11px] text-slate-600 mb-1">
                             <div><div className="text-slate-400">Net</div><div className="font-medium">{fmtUSD(o.net_annual_usd)}</div></div>
                             <div><div className="text-slate-400">Save</div><div className="font-medium">{fmtUSD(o._savings)}</div></div>
                             <div><div className="text-slate-400">$1M</div><div className="font-medium">{fmtYrs(o._yrs)}</div></div>
                           </div>
+                          {(() => {
+                            const y1 = o.net_year1_usd;
+                            const steady = o.net_annual_usd;
+                            if (y1 != null && steady != null && steady !== 0 && Math.abs((y1 - steady) / steady) > 0.1) {
+                              const gap = steady - y1;
+                              return <div className="text-[10px] text-amber-700 mb-1.5">Year 1: {fmtUSD(y1)} (ramp gap {fmtUSD(gap)})</div>;
+                            }
+                            return null;
+                          })()}
                           <div className="flex items-center justify-between">
                             <ScoreBadge s={o._score} />
                             {o.next_action_date && (
@@ -789,7 +808,12 @@ function CompareTab({ allRanked, ids, onToggle, onClear, settings }: {
     { label: "Company / role", getValue: (o) => `${o.company_name}${o.role_title ? " · " + o.role_title : ""}` },
     { label: "Location", getValue: (o) => o.location },
     { label: "Type", getValue: (o) => o.opportunity_type },
-    { label: "Net annual", getValue: (o) => Number(o.net_annual_usd) || 0, higherBetter: true, fmt: fmtUSD },
+    { label: "Net annual (steady state)", getValue: (o) => Number(o.net_annual_usd) || 0, higherBetter: true, fmt: fmtUSD },
+    { label: "Net earnings, year 1", getValue: (o) => o.net_year1_usd != null ? Number(o.net_year1_usd) : Number(o.net_annual_usd) || 0, higherBetter: true, fmt: fmtUSD },
+    { label: "Ramp gap", getValue: (o) => {
+        const y1 = o.net_year1_usd != null ? Number(o.net_year1_usd) : Number(o.net_annual_usd) || 0;
+        return (Number(o.net_annual_usd) || 0) - y1;
+      }, higherBetter: false, fmt: fmtUSD },
     { label: "Living cost", getValue: (o) => Number(o.living_cost_annual_usd) || 0, higherBetter: false, fmt: fmtUSD },
     { label: "Annual savings", getValue: (o) => o._savings, higherBetter: true, fmt: fmtUSD },
     { label: "Years to $1M", getValue: (o) => (o._yrs === null ? Infinity : o._yrs), higherBetter: false, fmt: (v) => v === Infinity ? "Not on track" : `${v.toFixed(1)} yrs` },
@@ -1079,7 +1103,7 @@ function OpportunityDialog({ opp, settings, onClose, onSave, onDelete }: {
 
   const previewScore = settings ? computeScore(form as Opp, settings) : null;
   const previewSavings = annualSavings(form as Opp);
-  const previewYrs = settings ? yearsTo1M(settings, previewSavings) : null;
+  const previewYrs = settings ? yearsTo1M(settings, form as Opp) : null;
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -1125,13 +1149,22 @@ function OpportunityDialog({ opp, settings, onClose, onSave, onDelete }: {
             </Select>
           </Field>
 
-          <Field label="Net annual earnings (USD, after tax)">
-            <Input type="number" value={form.net_annual_usd ?? ""} onChange={(e) => set("net_annual_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
-          </Field>
+          <div className="col-span-2 border rounded-lg p-3 bg-slate-50/50">
+            <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Compensation</div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Net earnings, year 1 (incl. ramp)">
+                <Input type="number" value={form.net_year1_usd ?? ""} onChange={(e) => set("net_year1_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
+              </Field>
+              <Field label="Net earnings, steady state (year 2+)">
+                <Input type="number" value={form.net_annual_usd ?? ""} onChange={(e) => set("net_annual_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
+              </Field>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">All-in: base + commission + bonuses, after tax. Enter commission at ~70–80% of what was promised.</p>
+          </div>
           <Field label="Living cost / yr (USD)">
             <Input type="number" value={form.living_cost_annual_usd ?? ""} onChange={(e) => set("living_cost_annual_usd", e.target.value === "" ? null : parseFloat(e.target.value))} />
           </Field>
-          <Field label="Comp notes (base / OTE split)" full>
+          <Field label="Comp notes (attainment %, ramp length, promised)" full>
             <Input value={form.comp_notes || ""} onChange={(e) => set("comp_notes", e.target.value)} />
           </Field>
 
