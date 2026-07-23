@@ -123,6 +123,56 @@ type Recruiter = {
 const RECRUITER_STATUSES = ["New", "Active", "Warm", "Cold", "Placed me before", "Dormant"];
 const RECRUITER_REGIONS = ["Dubai/GCC", "Hong Kong/APAC", "Remote/Global", "Other"];
 
+// ================= target companies =================
+const TARGET_CATEGORIES = [
+  "Crypto exchange",
+  "Institutional crypto infra",
+  "Market maker / trading",
+  "Payments / stablecoins",
+  "Trading tech / liquidity",
+  "Wealth / asset tech",
+  "Enterprise SaaS",
+  "Other",
+] as const;
+const TARGET_TIERS = ["Tier 1", "Tier 1.5", "Tier 2"] as const;
+const TARGET_PRIORITIES = ["High", "Medium", "Low"] as const;
+const TARGET_STATUSES = [
+  "Not started",
+  "Researching",
+  "Alert set",
+  "Outreach sent",
+  "Applied",
+  "In pipeline",
+  "No fit",
+  "Not hiring",
+] as const;
+const TIER_ORDER: Record<string, number> = { "Tier 1": 0, "Tier 1.5": 1, "Tier 2": 2 };
+const PRIORITY_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
+
+type TargetCompany = {
+  id: string;
+  user_id: string;
+  company_name: string;
+  category: string | null;
+  tier: string | null;
+  location_presence: string | null;
+  priority: string;
+  status: string;
+  target_roles: string | null;
+  careers_url: string | null;
+  warm_contact: string | null;
+  last_checked: string | null;
+  notes: string | null;
+  opportunity_id: string | null;
+};
+
+function targetToOppLocation(lp: string | null): Location {
+  const s = (lp || "").toLowerCase();
+  if (s.includes("dubai")) return "Dubai";
+  if (s.includes("hk") || s.includes("hong kong")) return "Hong Kong";
+  return "Other";
+}
+
 const sb = supabase as any;
 
 // ================= math helpers =================
