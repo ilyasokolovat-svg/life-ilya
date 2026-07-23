@@ -765,6 +765,19 @@ export default function JobSearch() {
               </Card>
             </TabsContent>
 
+            {/* ============ TARGETS ============ */}
+            <TabsContent value="targets" className="mt-4">
+              <TargetsTab
+                targets={targets}
+                onSave={saveTarget}
+                onDelete={deleteTarget}
+                onBulkDelete={bulkDeleteTargets}
+                onBulkPatch={bulkPatchTargets}
+                onImportCsv={importTargetsCsv}
+                onConvert={convertTargetToOpp}
+              />
+            </TabsContent>
+
             {/* ============ PIPELINE ============ */}
             <TabsContent value="pipeline" className="mt-4">
               <PipelineKanban
