@@ -130,18 +130,26 @@ export function annualSavings(o: Opp): number {
   return (Number(o.net_annual_usd) || 0) - (Number(o.living_cost_annual_usd) || 0);
 }
 
-export function yearsTo1M(s: Settings, savings: number): number | null {
+export function annualSavingsYear1(o: Opp): number {
+  const y1 = o.net_year1_usd != null ? Number(o.net_year1_usd) : Number(o.net_annual_usd) || 0;
+  return y1 - (Number(o.living_cost_annual_usd) || 0);
+}
+
+export function yearsTo1M(s: Settings, o: Opp): number | null {
   const r = (Number(s.assumed_annual_return_pct) || 0) / 100;
-  const PMT = savings;
+  const savings1 = annualSavingsYear1(o);
+  const savings = annualSavings(o);
   const PV = Number(s.current_net_worth_usd) || 0;
   const FV = Number(s.target_net_worth_usd) || 0;
   if (PV >= FV) return 0;
-  if (PMT <= 0 && PV < FV) return null;
-  if (r === 0) return (FV - PV) / PMT;
-  const num = FV + PMT / r;
-  const den = PV + PMT / r;
+  const pvAfterY1 = PV * (1 + r) + savings1;
+  if (pvAfterY1 >= FV) return 1;
+  if (savings <= 0) return null;
+  if (r === 0) return 1 + (FV - pvAfterY1) / savings;
+  const num = FV + savings / r;
+  const den = pvAfterY1 + savings / r;
   if (num <= 0 || den <= 0) return null;
-  const yrs = Math.log(num / den) / Math.log(1 + r);
+  const yrs = 1 + Math.log(num / den) / Math.log(1 + r);
   return isFinite(yrs) && yrs >= 0 ? yrs : null;
 }
 
