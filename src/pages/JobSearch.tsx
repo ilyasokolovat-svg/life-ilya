@@ -1273,15 +1273,19 @@ function RecruiterDialog({ recruiter, onClose, onSave, onDelete }: {
   );
 }
 
-function OpportunityDialog({ opp, settings, onClose, onSave, onDelete }: {
-  opp: Opp | null; settings: Settings; onClose: () => void;
-  onSave: (o: Partial<Opp> & { id?: string }) => void; onDelete?: () => void;
+function OpportunityDialog({ opp, initial, settings, onClose, onSave, onDelete }: {
+  opp: Opp | null; initial?: Partial<Opp> | null; settings: Settings; onClose: () => void;
+  onSave: (o: Partial<Opp> & { id?: string }) => void | Promise<any>; onDelete?: () => void;
 }) {
   const [form, setForm] = useState<Partial<Opp>>(
     opp || {
       location: "Dubai", opportunity_type: "External role", stage: "Lead", company_stage: "Unknown",
       vesting_type: "Unknown", equity_confidence_pct: 20, liq_pref_known: false,
       living_cost_annual_usd: settings.living_cost_dubai_usd,
+      ...(initial || {}),
+      living_cost_annual_usd: initial?.location
+        ? defaultLivingCost(initial.location as Location, settings)
+        : settings.living_cost_dubai_usd,
     }
   );
   const set = (k: keyof Opp, v: any) => setForm((p) => ({ ...p, [k]: v }));
