@@ -50,6 +50,7 @@ type Opp = {
   stage: Stage;
   company_stage: string | null;
   net_annual_usd: number | null;
+  net_year1_usd: number | null;
   comp_notes: string | null;
   living_cost_annual_usd: number | null;
   equity_pct: number | null;
