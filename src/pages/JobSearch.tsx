@@ -270,24 +270,29 @@ export default function JobSearch() {
   const { user } = useAuth();
   const [opps, setOpps] = useState<Opp[]>([]);
   const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
+  const [targets, setTargets] = useState<TargetCompany[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [activity, setActivity] = useState<Activity | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Opp | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [newOppPrefill, setNewOppPrefill] = useState<Partial<Opp> | null>(null);
+  const [convertingTargetId, setConvertingTargetId] = useState<string | null>(null);
   const [editingRecruiter, setEditingRecruiter] = useState<Recruiter | null>(null);
   const [showNewRecruiter, setShowNewRecruiter] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const weekStart = useMemo(() => format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"), []);
 
   const reload = async () => {
     if (!user) return;
-    const [oR, sR, aR, rR] = await Promise.all([
+    const [oR, sR, aR, rR, tR] = await Promise.all([
       sb.from("job_opportunities").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       sb.from("job_search_settings").select("*").eq("user_id", user.id).maybeSingle(),
       sb.from("weekly_activity").select("*").eq("user_id", user.id).eq("week_start_date", weekStart).maybeSingle(),
       sb.from("job_recruiters").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+      sb.from("target_companies").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
     ]);
     let s: Settings | null = sR.data;
     if (!s) {
@@ -312,6 +317,7 @@ export default function JobSearch() {
     }
     setOpps(oR.data || []);
     setRecruiters(rR.data || []);
+    setTargets(tR.data || []);
     setSettings(s);
     setActivity(a);
     setLoading(false);
@@ -319,16 +325,17 @@ export default function JobSearch() {
 
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [user?.id]);
 
-  const saveOpp = async (o: Partial<Opp> & { id?: string }) => {
-    if (!user) return;
+  const saveOpp = async (o: Partial<Opp> & { id?: string }): Promise<string | null> => {
+    if (!user) return null;
     const nowIso = new Date().toISOString();
+    let newId: string | null = null;
     if (o.id) {
       const { id, ...patch } = o;
       const { error } = await sb.from("job_opportunities")
         .update({ ...patch, last_touched_at: nowIso, updated_at: nowIso }).eq("id", id);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return null; }
     } else {
-      const { error } = await sb.from("job_opportunities").insert({
+      const { data, error } = await sb.from("job_opportunities").insert({
         user_id: user.id,
         company_name: o.company_name || "Untitled",
         role_title: o.role_title || null,
@@ -357,12 +364,19 @@ export default function JobSearch() {
         next_action_date: o.next_action_date || null,
         notes: o.notes || null,
         last_touched_at: nowIso,
-      });
-      if (error) return toast.error(error.message);
+      }).select("id").single();
+      if (error) { toast.error(error.message); return null; }
+      newId = data?.id || null;
+      if (newId && convertingTargetId) {
+        await sb.from("target_companies")
+          .update({ opportunity_id: newId, status: "In pipeline", updated_at: nowIso })
+          .eq("id", convertingTargetId);
+      }
     }
     toast.success("Saved");
-    setEditing(null); setShowNew(false);
+    setEditing(null); setShowNew(false); setNewOppPrefill(null); setConvertingTargetId(null);
     reload();
+    return newId;
   };
 
   const deleteOpp = async (id: string) => {
