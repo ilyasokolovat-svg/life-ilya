@@ -829,8 +829,9 @@ export default function JobSearch() {
       {(editing || showNew) && (
         <OpportunityDialog
           opp={editing}
+          initial={newOppPrefill}
           settings={settings}
-          onClose={() => { setEditing(null); setShowNew(false); }}
+          onClose={() => { setEditing(null); setShowNew(false); setNewOppPrefill(null); setConvertingTargetId(null); }}
           onSave={saveOpp}
           onDelete={editing ? () => deleteOpp(editing.id) : undefined}
         />
