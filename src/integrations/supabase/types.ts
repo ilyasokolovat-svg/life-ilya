@@ -696,6 +696,7 @@ export type Database = {
           living_cost_annual_usd: number | null
           location: string
           net_annual_usd: number | null
+          net_year1_usd: number | null
           next_action: string | null
           next_action_date: string | null
           notes: string | null
@@ -729,6 +730,7 @@ export type Database = {
           living_cost_annual_usd?: number | null
           location?: string
           net_annual_usd?: number | null
+          net_year1_usd?: number | null
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null
@@ -762,6 +764,7 @@ export type Database = {
           living_cost_annual_usd?: number | null
           location?: string
           net_annual_usd?: number | null
+          net_year1_usd?: number | null
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null

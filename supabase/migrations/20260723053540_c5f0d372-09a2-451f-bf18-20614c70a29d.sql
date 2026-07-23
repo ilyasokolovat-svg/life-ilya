@@ -1,0 +1,1 @@
+ALTER TABLE public.job_opportunities ADD COLUMN IF NOT EXISTS net_year1_usd numeric;
