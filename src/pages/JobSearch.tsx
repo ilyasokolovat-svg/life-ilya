@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Briefcase, Trash2, Calendar as CalendarIcon, AlertCircle, Users, Target, TrendingUp } from "lucide-react";
+import { Plus, Briefcase, Trash2, Calendar as CalendarIcon, AlertCircle, Users, Target, TrendingUp, Upload, ArrowRight, Search } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { format, differenceInWeeks, differenceInDays, startOfWeek, parseISO, isBefore } from "date-fns";
