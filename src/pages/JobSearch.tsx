@@ -471,6 +471,94 @@ export default function JobSearch() {
     });
   };
 
+  // ---- target companies ----
+  const saveTarget = async (t: Partial<TargetCompany> & { id?: string }) => {
+    if (!user) return;
+    if (t.id) {
+      const { id, ...patch } = t;
+      const { error } = await sb.from("target_companies")
+        .update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await sb.from("target_companies").insert({
+        user_id: user.id,
+        company_name: t.company_name || "Untitled",
+        category: t.category || null,
+        tier: t.tier || null,
+        location_presence: t.location_presence || null,
+        priority: t.priority || "Medium",
+        status: t.status || "Not started",
+        target_roles: t.target_roles || null,
+        careers_url: t.careers_url || null,
+        warm_contact: t.warm_contact || null,
+        last_checked: t.last_checked || null,
+        notes: t.notes || null,
+      });
+      if (error) return toast.error(error.message);
+    }
+    reload();
+  };
+
+  const deleteTarget = async (id: string) => {
+    await sb.from("target_companies").delete().eq("id", id);
+    reload();
+  };
+
+  const bulkDeleteTargets = async (ids: string[]) => {
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} target${ids.length === 1 ? "" : "s"}?`)) return;
+    await sb.from("target_companies").delete().in("id", ids);
+    toast.success(`Deleted ${ids.length}`);
+    reload();
+  };
+
+  const bulkPatchTargets = async (ids: string[], patch: Partial<TargetCompany>) => {
+    if (!ids.length) return;
+    await sb.from("target_companies")
+      .update({ ...patch, updated_at: new Date().toISOString() }).in("id", ids);
+    reload();
+  };
+
+  const importTargetsCsv = async (rows: Partial<TargetCompany>[]) => {
+    if (!user || !rows.length) return;
+    const existing = new Set(targets.map((t) => t.company_name.trim().toLowerCase()));
+    const fresh = rows.filter((r) => r.company_name && !existing.has(String(r.company_name).trim().toLowerCase()));
+    if (!fresh.length) { toast.info("No new companies to import"); return; }
+    const payload = fresh.map((r) => ({
+      user_id: user.id,
+      company_name: String(r.company_name).trim(),
+      category: r.category || null,
+      tier: r.tier || null,
+      location_presence: r.location_presence || null,
+      priority: r.priority || "Medium",
+      status: "Not started",
+      target_roles: r.target_roles || null,
+      notes: r.notes || null,
+    }));
+    const { error } = await sb.from("target_companies").insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success(`Imported ${payload.length} (skipped ${rows.length - payload.length} duplicates)`);
+    reload();
+  };
+
+  const convertTargetToOpp = (t: TargetCompany) => {
+    if (t.opportunity_id) {
+      const existing = opps.find((o) => o.id === t.opportunity_id);
+      if (existing) { setEditing(existing); return; }
+    }
+    setConvertingTargetId(t.id);
+    setNewOppPrefill({
+      company_name: t.company_name,
+      location: targetToOppLocation(t.location_presence),
+      opportunity_type: "External role",
+      stage: "Lead",
+      notes: t.notes || null,
+      role_title: (t.target_roles || "").split(",")[0]?.trim() || null,
+    });
+    setShowNew(true);
+  };
+
+
   const weeksToTarget = settings ? Math.max(0, differenceInWeeks(parseISO(settings.target_offer_date), new Date())) : 0;
   const weeksToCheckpt = settings ? Math.max(0, differenceInWeeks(parseISO(settings.checkpoint_date), new Date())) : 0;
   const checkpointSoon = weeksToCheckpt <= 2;
