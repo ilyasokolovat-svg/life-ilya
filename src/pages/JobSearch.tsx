@@ -764,11 +764,20 @@ function PipelineKanban({ ranked, onMove, onOpen, compareIds, onToggleCompare }:
                               <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px]">KPI vesting</Badge>
                             )}
                           </div>
-                          <div className="grid grid-cols-3 gap-1 text-[11px] text-slate-600 mb-2">
+                          <div className="grid grid-cols-3 gap-1 text-[11px] text-slate-600 mb-1">
                             <div><div className="text-slate-400">Net</div><div className="font-medium">{fmtUSD(o.net_annual_usd)}</div></div>
                             <div><div className="text-slate-400">Save</div><div className="font-medium">{fmtUSD(o._savings)}</div></div>
                             <div><div className="text-slate-400">$1M</div><div className="font-medium">{fmtYrs(o._yrs)}</div></div>
                           </div>
+                          {(() => {
+                            const y1 = o.net_year1_usd;
+                            const steady = o.net_annual_usd;
+                            if (y1 != null && steady != null && steady !== 0 && Math.abs((y1 - steady) / steady) > 0.1) {
+                              const gap = steady - y1;
+                              return <div className="text-[10px] text-amber-700 mb-1.5">Year 1: {fmtUSD(y1)} (ramp gap {fmtUSD(gap)})</div>;
+                            }
+                            return null;
+                          })()}
                           <div className="flex items-center justify-between">
                             <ScoreBadge s={o._score} />
                             {o.next_action_date && (
