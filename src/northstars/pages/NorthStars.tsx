@@ -7,7 +7,14 @@ import { useNorthStars } from "../useNorthStars";
 import { CategoryTimeline } from "../components/CategoryTimeline";
 import { CheckinModal } from "../components/CheckinModal";
 import { NorthStarsSettings } from "../components/NorthStarsSettings";
-import { checkinStreak, headlineMetric, metricProgress, metricValueLabel, travelModeOn } from "../utils";
+import { SegmentBar } from "../components/SegmentBar";
+import {
+  categoryEmoji,
+  checkinStreak,
+  quarterProgress,
+  routineProgress,
+  travelModeOn,
+} from "../utils";
 
 export default function NorthStars() {
   const ns = useNorthStars();
@@ -18,11 +25,6 @@ export default function NorthStars() {
   const streak = useMemo(() => checkinStreak(ns.checkins), [ns.checkins]);
   const travel = travelModeOn(ns.settings);
 
-  const headlineFor = (categoryId: string) => {
-    const q = ns.quarters.find((x) => x.category_id === categoryId && x.is_active);
-    if (!q) return null;
-    return headlineMetric(ns.metrics.filter((m) => m.quarter_id === q.id));
-  };
 
   return (
     <div className="min-h-screen bg-background">
