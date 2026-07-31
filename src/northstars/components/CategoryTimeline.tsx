@@ -266,10 +266,76 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
   );
 }
 
+/** Defaults for the quarter following `quarter`: starts the day after it ends, runs 3 months. */
+function nextQuarterDefaults(quarter: GoalQuarter) {
+  const start = new Date(quarter.end_date + "T00:00:00");
+  start.setDate(start.getDate() + 1);
+  const end = new Date(start.getFullYear(), start.getMonth() + 3, 0);
+  const label = `Q${Math.floor(start.getMonth() / 3) + 1} ${start.getFullYear()}`;
+  return { label, start: toISODate(start), end: toISODate(end), copy: true };
+}
+
+function NextQuarterDialog({
+  quarter,
+  ns,
+  open,
+  onOpenChange,
+}: {
+  quarter: GoalQuarter;
+  ns: NorthStarsApi;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const [form, setForm] = useState(() => nextQuarterDefaults(quarter));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-base">Plan next quarter</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Label</Label>
+            <Input className="h-8" value={form.label} placeholder="Q4 2026" onChange={(e) => setForm({ ...form, label: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Start</Label>
+              <Input type="date" className="h-8" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">End</Label>
+              <Input type="date" className="h-8" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={form.copy} onChange={(e) => setForm({ ...form, copy: e.target.checked })} />
+            Copy metric names, reset values to 0
+          </label>
+          <p className="text-[10px] text-muted-foreground">
+            If the start date is in the future it stays in draft and activates itself on that day.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button
+            size="sm"
+            onClick={() => {
+              ns.startNextQuarter(quarter, form.label || "New quarter", form.start, form.end, form.copy);
+              onOpenChange(false);
+            }}
+          >
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function QuarterMenu({ quarter, ns }: { quarter: GoalQuarter; ns: NorthStarsApi }) {
   const [menu, setMenu] = useState(false);
   const [next, setNext] = useState(false);
-  const [form, setForm] = useState({ label: "", start: quarter.end_date, end: quarter.end_date, copy: true });
 
   return (
     <div className="relative">
@@ -300,48 +366,11 @@ function QuarterMenu({ quarter, ns }: { quarter: GoalQuarter; ns: NorthStarsApi 
               setNext(true);
             }}
           >
-            Start next quarter
+            Plan next quarter
           </button>
         </div>
       )}
-      <Dialog open={next} onOpenChange={setNext}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">Start next quarter</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Label</Label>
-              <Input className="h-8" value={form.label} placeholder="Q4 2026" onChange={(e) => setForm({ ...form, label: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs">Start</Label>
-                <Input type="date" className="h-8" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs">End</Label>
-                <Input type="date" className="h-8" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} />
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" checked={form.copy} onChange={(e) => setForm({ ...form, copy: e.target.checked })} />
-              Copy metric names, reset values to 0
-            </label>
-          </div>
-          <DialogFooter>
-            <Button
-              size="sm"
-              onClick={() => {
-                ns.startNextQuarter(quarter, form.label || "New quarter", form.start, form.end, form.copy);
-                setNext(false);
-              }}
-            >
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NextQuarterDialog quarter={quarter} ns={ns} open={next} onOpenChange={setNext} />
     </div>
   );
 }
