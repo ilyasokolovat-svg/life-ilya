@@ -26,35 +26,89 @@ function Dot({ color, hollow }: { color: string; hollow?: boolean }) {
   );
 }
 
-function MetricDialog({
+const AUTO_OPTIONS: { value: "" | AutoSource; label: string }[] = [
+  { value: "", label: "Manual entry" },
+  { value: "gym_sessions", label: "Auto · training sessions (Healthy Life)" },
+  { value: "net_worth", label: "Auto · net worth (Finance)" },
+  { value: "debt", label: "Auto · total debt (Finance)" },
+];
+
+function MetricFormDialog({
   metric,
+  title,
   open,
   onOpenChange,
   onSave,
 }: {
-  metric: GoalMetric;
+  metric: Partial<GoalMetric>;
+  title: string;
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onSave: (patch: Partial<GoalMetric>) => void;
 }) {
   const [form, setForm] = useState({
-    name: metric.name,
-    unit: metric.unit,
-    direction: metric.direction,
-    headline_priority: metric.headline_priority,
-    start_value: metric.start_value ?? metric.current_value,
+    name: metric.name ?? "",
+    unit: metric.unit ?? "",
+    direction: (metric.direction ?? "up") as "up" | "down",
+    headline_priority: metric.headline_priority ?? 1,
+    current_value: metric.current_value ?? 0,
+    target_value: metric.target_value ?? 1,
+    start_value: metric.start_value ?? metric.current_value ?? 0,
     notes: metric.notes || "",
+    auto_source: (metric.auto_source ?? "") as "" | AutoSource,
   });
+  const auto = form.auto_source !== "";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Metric details</DialogTitle>
+          <DialogTitle className="text-base">{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Name</Label>
-            <Input className="h-8" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input className="h-8" value={form.name} placeholder="e.g. Training sessions" onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </div>
+          <div>
+            <Label className="text-xs">Data source</Label>
+            <select
+              className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+              value={form.auto_source}
+              onChange={(e) => setForm({ ...form, auto_source: e.target.value as "" | AutoSource })}
+            >
+              {AUTO_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {auto && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                🔗 Linked to {AUTO_SOURCE_LABEL[form.auto_source as AutoSource]} — the current value updates itself.
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Current</Label>
+              <Input
+                type="number"
+                className="h-8"
+                disabled={auto}
+                value={form.current_value}
+                onChange={(e) => setForm({ ...form, current_value: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Target</Label>
+              <Input
+                type="number"
+                className="h-8"
+                value={form.target_value}
+                onChange={(e) => setForm({ ...form, target_value: Number(e.target.value) })}
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -94,15 +148,24 @@ function MetricDialog({
             </div>
           </div>
           <div>
-            <Label className="text-xs">Notes</Label>
-            <Textarea rows={4} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <Label className="text-xs">Sub-text (shown under the progress bar)</Label>
+            <Textarea
+              rows={3}
+              placeholder="Context, definition of done, how you'll measure it…"
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
           </div>
         </div>
         <DialogFooter>
           <Button
             size="sm"
             onClick={() => {
-              onSave({ ...form, notes: form.notes || null });
+              onSave({
+                ...form,
+                notes: form.notes || null,
+                auto_source: (form.auto_source || null) as AutoSource | null,
+              });
               onOpenChange(false);
             }}
           >
@@ -118,6 +181,7 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
   const [menu, setMenu] = useState(false);
   const [details, setDetails] = useState(false);
   const pct = Math.round(metricProgress(metric) * 100);
+  const auto = metric.auto_source;
 
   return (
     <div className="group py-1.5">
@@ -128,7 +192,11 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
           className="text-sm text-foreground flex-1 min-w-0"
         />
         <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-          <InlineNumber value={metric.current_value} onSave={(v) => ns.updateMetric(metric.id, { current_value: v })} />
+          {auto ? (
+            <span className="tabular-nums">{formatNumber(metric.current_value)}</span>
+          ) : (
+            <InlineNumber value={metric.current_value} onSave={(v) => ns.updateMetric(metric.id, { current_value: v })} />
+          )}
           {" / "}
           <InlineNumber value={metric.target_value} onSave={(v) => ns.updateMetric(metric.id, { target_value: v })} />
           {metric.unit ? ` ${metric.unit}` : ""}
@@ -174,10 +242,20 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
           </span>
         )}
       </div>
-      {metric.notes && <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{metric.notes}</p>}
+      {auto && (
+        <p className="text-[10px] text-muted-foreground mt-1">🔗 Linked to {AUTO_SOURCE_LABEL[auto]} — updates automatically</p>
+      )}
+      <InlineText
+        value={metric.notes || ""}
+        onSave={(v) => ns.updateMetric(metric.id, { notes: v || null })}
+        multiline
+        placeholder="Add sub-text…"
+        className="text-[11px] text-muted-foreground mt-1 leading-snug block"
+      />
       {details && (
-        <MetricDialog
+        <MetricFormDialog
           metric={metric}
+          title="Metric details"
           open={details}
           onOpenChange={setDetails}
           onSave={(patch) => ns.updateMetric(metric.id, patch)}
