@@ -3,6 +3,7 @@ import { Check, Link2 } from "lucide-react";
 import { GoalRoutine, GoalSettings, RoutineLog } from "../types";
 import { currentWeekStart, effectiveTarget } from "../utils";
 import { cn } from "@/lib/utils";
+import { InlineText } from "./Inline";
 
 interface Props {
   routine: GoalRoutine;
@@ -13,9 +14,10 @@ interface Props {
   compact?: boolean;
   accent?: string;
   linked?: boolean;
+  onRename?: (name: string) => void;
 }
 
-export function RoutineControl({ routine, logs, settings, onSet, week, compact, accent, linked }: Props) {
+export function RoutineControl({ routine, logs, settings, onSet, week, compact, accent, linked, onRename }: Props) {
   const wk = week || currentWeekStart();
   const value = logs.find((l) => l.routine_id === routine.id && l.week_start_date === wk)?.value ?? 0;
   const target = Math.max(1, effectiveTarget(routine, settings));
@@ -53,9 +55,19 @@ export function RoutineControl({ routine, logs, settings, onSet, week, compact, 
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className={cn("text-xs text-foreground truncate", done && "text-muted-foreground line-through")}>
-            {routine.name}
-          </span>
+          {onRename ? (
+            <InlineText
+              value={routine.name}
+              onSave={onRename}
+              placeholder="Routine name…"
+              className={cn("text-xs text-foreground", done && "text-muted-foreground line-through")}
+              inputClassName="text-xs py-0.5"
+            />
+          ) : (
+            <span className={cn("text-xs text-foreground truncate", done && "text-muted-foreground line-through")}>
+              {routine.name}
+            </span>
+          )}
           {linked && <Link2 className="w-3 h-3 text-muted-foreground shrink-0" aria-label="Feeds a quarterly metric" />}
         </div>
         {!routine.is_binary && (
