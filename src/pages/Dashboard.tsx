@@ -16,7 +16,7 @@ import { HabitStreakSummary } from "@/components/dashboard/HabitStreakSummary";
 import { TodayStreaksCard } from "@/components/dashboard/TodayStreaksCard";
 import { HeaderStreakStrip } from "@/components/dashboard/HeaderStreakStrip";
 import { DailyCheckinModal } from "@/daily-checkin/DailyCheckinModal";
-import { QuarterlyDashboardStrip } from "@/goals/components/QuarterlyDashboardStrip";
+import { ThisWeekBlock } from "@/northstars/components/ThisWeekBlock";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
