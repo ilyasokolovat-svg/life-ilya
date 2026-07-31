@@ -99,34 +99,53 @@ export function CheckinModal({ open, onOpenChange, ns, onlyCategoryId, moneyDay 
                     {c.name}
                   </p>
                   {c.cadence === "weekly" && routines.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {routines.map((r) => (
-                        <RoutineControl
-                          key={r.id}
-                          routine={r}
-                          logs={ns.logs}
-                          settings={ns.settings}
-                          onSet={(v) => ns.setRoutineValue(r.id, v)}
-                        />
-                      ))}
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">1 · This week</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {routines.map((r) => (
+                          <RoutineControl
+                            key={r.id}
+                            routine={r}
+                            logs={ns.logs}
+                            settings={ns.settings}
+                            onSet={(v) => ns.setRoutineValue(r.id, v)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
-                  <div className="space-y-1">
-                    {metrics.map((m) => (
-                      <div key={m.id} className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground flex-1 truncate">{m.name}</span>
-                        <Input
-                          type="number"
-                          value={values[m.id] ?? ""}
-                          onChange={(e) => setValues((v) => ({ ...v, [m.id]: e.target.value }))}
-                          className="h-7 w-24 text-xs"
-                        />
-                        <span className="text-[11px] text-muted-foreground w-20">
-                          / {m.target_value.toLocaleString()} {m.unit}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  {metrics.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">2 · Quarter numbers</p>
+                      {metrics.map((m) => (
+                        <div key={m.id} className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground flex-1 truncate">
+                            {m.auto_source && "🔗 "}
+                            {m.name}
+                          </span>
+                          {m.auto_source ? (
+                            <span className="h-7 w-24 text-xs flex items-center justify-end tabular-nums text-foreground">
+                              {m.current_value.toLocaleString()}
+                            </span>
+                          ) : (
+                            <Input
+                              type="number"
+                              value={values[m.id] ?? ""}
+                              onChange={(e) => setValues((v) => ({ ...v, [m.id]: e.target.value }))}
+                              className="h-7 w-24 text-xs"
+                            />
+                          )}
+                          <span className="text-[11px] text-muted-foreground w-20">
+                            / {m.target_value.toLocaleString()} {m.unit}
+                          </span>
+                        </div>
+                      ))}
+                      {metrics.some((m) => m.auto_source) && (
+                        <p className="text-[10px] text-muted-foreground">🔗 = auto-synced, nothing to type.</p>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               );
             })}
