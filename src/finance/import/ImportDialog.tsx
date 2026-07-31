@@ -148,18 +148,19 @@ export const ImportDialog: React.FC<{
         if (data?.id) newCatMap.set(src, data.id);
       }
 
-      // 2) Persist mappings for future imports
+      // 2) Persist mappings for future imports (Ignore choices are remembered as NULL target)
       const mappingRows = Object.entries(mapping)
-        .filter(([, v]) => v && v !== IGNORE)
+        .filter(([, v]) => !!v)
         .map(([source_label, v]) => ({
           user_id: user.id,
           source_label,
-          target_category_id: v === CREATE ? newCatMap.get(source_label)! : v,
+          target_category_id: v === IGNORE ? null : (v === CREATE ? newCatMap.get(source_label) ?? null : v),
         }))
-        .filter(r => r.target_category_id);
+        .filter(r => r.target_category_id !== undefined);
       if (mappingRows.length) {
         await sb.from('expense_category_mappings').upsert(mappingRows, { onConflict: 'user_id,source_label' });
       }
+
 
       // 3) Resolve aggregation keys to real cat IDs, then upsert budget_spending (skip locked)
       const summary: ImportSummary = {
