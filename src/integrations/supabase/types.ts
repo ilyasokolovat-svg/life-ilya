@@ -565,6 +565,7 @@ export type Database = {
       }
       goal_metrics: {
         Row: {
+          auto_source: string | null
           created_at: string
           current_value: number
           direction: string
@@ -581,6 +582,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auto_source?: string | null
           created_at?: string
           current_value?: number
           direction?: string
@@ -597,6 +599,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auto_source?: string | null
           created_at?: string
           current_value?: number
           direction?: string
