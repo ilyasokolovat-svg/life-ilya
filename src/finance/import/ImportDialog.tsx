@@ -31,14 +31,18 @@ export const ImportDialog: React.FC<{
   const [importIncome, setImportIncome] = useState(true);
   const fx = currency === 'AED' ? AED_TO_USD : 1;
   const [mapping, setMapping] = useState<Record<string, string>>({}); // sourceLabel -> categoryId | IGNORE
+  const [remembered, setRemembered] = useState<Record<string, boolean>>({}); // sourceLabel -> came from saved mappings
+  const [showAllMappings, setShowAllMappings] = useState(false);
   const [newCatNames, setNewCatNames] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setStep('upload'); setFile(null); setParsed(null); setMapping({}); setNewCatNames({});
+    setRemembered({}); setShowAllMappings(false);
   };
   const close = () => { onOpenChange(false); setTimeout(reset, 200); };
+
 
   const handleFile = async (f: File) => {
     setFile(f);
@@ -57,14 +61,19 @@ export const ImportDialog: React.FC<{
         ? await parseExpenseFile(f, { treatSign: sign, typeFilter: initialFilter })
         : p0;
       setParsed(p);
-      // Preload remembered mappings
+      // Preload remembered mappings (including remembered "Ignore" choices)
       const { data: prev } = await sb.from('expense_category_mappings').select('source_label,target_category_id').eq('user_id', user!.id);
       const map: Record<string, string> = {};
+      const known: Record<string, boolean> = {};
       for (const src of p.sourceCategories) {
         const hit = prev?.find((x: any) => x.source_label.toLowerCase() === src.toLowerCase());
-        if (hit && d.budgetCategories.some(c => c.id === hit.target_category_id)) map[src] = hit.target_category_id;
+        if (!hit) continue;
+        if (hit.target_category_id == null) { map[src] = IGNORE; known[src] = true; }
+        else if (d.budgetCategories.some(c => c.id === hit.target_category_id)) { map[src] = hit.target_category_id; known[src] = true; }
       }
       setMapping(map);
+      setRemembered(known);
+
       setStep('preview');
     } catch (e: any) {
       toast.error('Could not parse file: ' + e.message);
@@ -139,18 +148,19 @@ export const ImportDialog: React.FC<{
         if (data?.id) newCatMap.set(src, data.id);
       }
 
-      // 2) Persist mappings for future imports
+      // 2) Persist mappings for future imports (Ignore choices are remembered as NULL target)
       const mappingRows = Object.entries(mapping)
-        .filter(([, v]) => v && v !== IGNORE)
+        .filter(([, v]) => !!v)
         .map(([source_label, v]) => ({
           user_id: user.id,
           source_label,
-          target_category_id: v === CREATE ? newCatMap.get(source_label)! : v,
+          target_category_id: v === IGNORE ? null : (v === CREATE ? newCatMap.get(source_label) ?? null : v),
         }))
-        .filter(r => r.target_category_id);
+        .filter(r => r.target_category_id !== undefined);
       if (mappingRows.length) {
         await sb.from('expense_category_mappings').upsert(mappingRows, { onConflict: 'user_id,source_label' });
       }
+
 
       // 3) Resolve aggregation keys to real cat IDs, then upsert budget_spending (skip locked)
       const summary: ImportSummary = {
@@ -403,24 +413,56 @@ export const ImportDialog: React.FC<{
                 ))}</tbody>
               </table>
             </div>
-            <DialogFooter>
+            {(() => {
+              const unmapped = parsed.sourceCategories.filter(s => !mapping[s]);
+              const knownCount = parsed.sourceCategories.length - unmapped.length;
+              return (
+                <div className="rounded-lg border border-border p-3 text-xs space-y-1">
+                  <div className="font-medium">Category mapping</div>
+                  <div className="text-muted-foreground">
+                    {knownCount} of {parsed.sourceCategories.length} source categories already mapped from previous imports.
+                  </div>
+                  {unmapped.length > 0
+                    ? <div className="text-amber-600 dark:text-amber-400">{unmapped.length} new categor{unmapped.length === 1 ? 'y' : 'ies'} need mapping: {unmapped.join(', ')}</div>
+                    : <div className="text-emerald-600 dark:text-emerald-400">Nothing new — you can go straight to review.</div>}
+                </div>
+              );
+            })()}
+            <DialogFooter className="gap-2">
               <Button variant="ghost" onClick={close}>Cancel</Button>
-              <Button onClick={() => setStep('map')} disabled={!parsed.rows.length}>Next: Map categories <ArrowRight className="w-4 h-4 ml-1" /></Button>
+              <Button variant="outline" onClick={() => { setShowAllMappings(true); setStep('map'); }}>Edit mappings</Button>
+              {(() => {
+                const unmapped = parsed.sourceCategories.filter(s => !mapping[s]);
+                return unmapped.length > 0
+                  ? <Button onClick={() => { setShowAllMappings(false); setStep('map'); }} disabled={!parsed.rows.length}>Map {unmapped.length} new <ArrowRight className="w-4 h-4 ml-1" /></Button>
+                  : <Button onClick={() => setStep('confirm')} disabled={!parsed.rows.length}>Next: Review <ArrowRight className="w-4 h-4 ml-1" /></Button>;
+              })()}
             </DialogFooter>
           </div>
         )}
 
-        {step === 'map' && parsed && (
+        {step === 'map' && parsed && (() => {
+          const unmapped = parsed.sourceCategories.filter(s => !mapping[s]);
+          const visible = showAllMappings ? parsed.sourceCategories : (unmapped.length ? unmapped : parsed.sourceCategories);
+          const hiddenCount = parsed.sourceCategories.length - visible.length;
+          return (
           <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">Choose which finance category each source label maps to. Set to "Ignore" to skip.</p>
+            <p className="text-xs text-muted-foreground">
+              Choose which finance category each source label maps to. Set to "Ignore" to skip — your choices are remembered for future uploads.
+            </p>
             <div className="max-h-[50vh] overflow-y-auto border border-border rounded-lg divide-y divide-border">
-              {parsed.sourceCategories.map(src => {
+              {visible.map(src => {
                 const count = parsed.rows.filter(r => r.category === src).length;
                 const sum = parsed.rows.filter(r => r.category === src).reduce((a, r) => a + r.amount, 0);
                 return (
                   <div key={src} className="p-3 flex items-center gap-3 text-sm">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{src}</div>
+                      <div className="font-medium truncate flex items-center gap-2">
+                        {src}
+                        {remembered[src]
+                          ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">saved</span>
+                          : <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">new</span>}
+                      </div>
                       <div className="text-xs text-muted-foreground">{count} rows · {fmtUSD(sum * fx)}</div>
                     </div>
                     <ArrowRight className="w-3 h-3 text-muted-foreground" />
@@ -446,6 +488,11 @@ export const ImportDialog: React.FC<{
                 );
               })}
             </div>
+            {hiddenCount > 0 && (
+              <button onClick={() => setShowAllMappings(true)} className="text-xs underline text-muted-foreground">
+                Show {hiddenCount} already-mapped categor{hiddenCount === 1 ? 'y' : 'ies'}
+              </button>
+            )}
             <DialogFooter>
               <Button variant="ghost" onClick={() => setStep('preview')}>Back</Button>
               <Button onClick={() => setStep('confirm')} disabled={!Object.values(mapping).some(v => v && v !== IGNORE)}>
@@ -453,7 +500,9 @@ export const ImportDialog: React.FC<{
               </Button>
             </DialogFooter>
           </div>
-        )}
+          );
+        })()}
+
 
         {step === 'confirm' && aggregation && (
           <div className="space-y-3">

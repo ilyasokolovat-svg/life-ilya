@@ -1,0 +1,1 @@
+ALTER TABLE public.expense_category_mappings ALTER COLUMN target_category_id DROP NOT NULL;

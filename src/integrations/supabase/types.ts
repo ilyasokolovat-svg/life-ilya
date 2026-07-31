@@ -395,7 +395,7 @@ export type Database = {
           created_at: string
           id: string
           source_label: string
-          target_category_id: string
+          target_category_id: string | null
           updated_at: string
           user_id: string
         }
@@ -403,7 +403,7 @@ export type Database = {
           created_at?: string
           id?: string
           source_label: string
-          target_category_id: string
+          target_category_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -411,7 +411,7 @@ export type Database = {
           created_at?: string
           id?: string
           source_label?: string
-          target_category_id?: string
+          target_category_id?: string | null
           updated_at?: string
           user_id?: string
         }
