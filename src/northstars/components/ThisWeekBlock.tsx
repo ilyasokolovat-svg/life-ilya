@@ -4,14 +4,15 @@ import { ChevronRight, Flame } from "lucide-react";
 import { useNorthStars } from "../useNorthStars";
 import { CheckinModal } from "./CheckinModal";
 import { RoutineControl } from "./RoutineControl";
+import { SegmentBar } from "./SegmentBar";
 import { Button } from "@/components/ui/button";
 import {
+  categoryEmoji,
   checkinStreak,
   currentWeekStart,
   daysUntil,
-  headlineMetric,
-  metricProgress,
-  metricValueLabel,
+  quarterProgress,
+  routineProgress,
 } from "../utils";
 
 export function ThisWeekBlock() {
@@ -45,48 +46,57 @@ export function ThisWeekBlock() {
       <div className="divide-y divide-border">
         {ns.categories.map((c) => {
           const q = ns.quarters.find((x) => x.category_id === c.id && x.is_active);
-          const hm = q ? headlineMetric(ns.metrics.filter((m) => m.quarter_id === q.id)) : null;
-          const pct = hm ? Math.round(metricProgress(hm) * 100) : 0;
-          const routines = ns.routines.filter((r) => r.category_id === c.id && r.is_active).slice(0, 4);
+          const metrics = q ? ns.metrics.filter((m) => m.quarter_id === q.id) : [];
+          const qp = quarterProgress(metrics);
+          const routines = ns.routines.filter((r) => r.category_id === c.id && r.is_active);
+          const rp = routineProgress(routines, ns.logs, ns.settings);
           const moneyIn = daysUntil(ns.settings?.next_money_day ?? null);
 
           return (
-            <div key={c.id} className="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-2 sm:w-[46%] min-w-0">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.accent_color }} />
-                <span className="text-xs font-medium text-foreground shrink-0">{c.name}</span>
-                {hm ? (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {hm.name} · {metricValueLabel(hm)}
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">No metric</span>
-                )}
+            <div key={c.id} className="px-4 py-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-base leading-none">{categoryEmoji(c)}</span>
+                <span className="text-xs font-semibold text-foreground">{c.name}</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {qp.total ? `${qp.done}/${qp.total} goals hit` : "No metrics"}
+                </span>
+                <span
+                  className="ml-auto text-xs font-semibold tabular-nums"
+                  style={{ color: c.accent_color }}
+                >
+                  {Math.round(qp.pct * 100)}%
+                </span>
               </div>
 
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="h-[5px] w-20 bg-muted rounded-full overflow-hidden shrink-0">
-                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: c.accent_color }} />
-                </div>
-                {c.cadence === "weekly" ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {routines.map((r) => (
-                      <RoutineControl
-                        key={r.id}
-                        routine={r}
-                        logs={ns.logs}
-                        settings={ns.settings}
-                        onSet={(v) => ns.setRoutineValue(r.id, v)}
-                        compact
-                      />
-                    ))}
+              <SegmentBar parts={qp.parts} color={c.accent_color} height={5} />
+
+              {c.cadence === "weekly" ? (
+                routines.length > 0 && (
+                  <div className="space-y-1.5 pt-0.5">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Weekly · {rp.done}/{rp.total} done
+                    </p>
+                    <div className="grid gap-1.5 sm:grid-cols-2">
+                      {routines.slice(0, 6).map((r) => (
+                        <RoutineControl
+                          key={r.id}
+                          routine={r}
+                          logs={ns.logs}
+                          settings={ns.settings}
+                          accent={c.accent_color}
+                          linked={!!r.linked_metric_id}
+                          onSet={(v) => ns.setRoutineValue(r.id, v)}
+                          compact
+                        />
+                      ))}
+                    </div>
                   </div>
-                ) : (
-                  <span className="text-[11px] text-muted-foreground">
-                    Money day {moneyIn !== null ? `in ${moneyIn} days` : "—"}
-                  </span>
-                )}
-              </div>
+                )
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  💰 Money day {moneyIn !== null ? `in ${moneyIn} days` : "—"}
+                </p>
+              )}
             </div>
           );
         })}
