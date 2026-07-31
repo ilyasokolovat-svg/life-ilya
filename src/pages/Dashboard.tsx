@@ -132,8 +132,8 @@ const Dashboard = () => {
           {/* Today's streaks + habits */}
           <TodayStreaksCard onOpenCheckin={() => setCheckinOpen(true)} />
 
-          {/* Quarterly goals weekly snapshot */}
-          <QuarterlyDashboardStrip />
+          {/* North Stars — this week */}
+          <ThisWeekBlock />
         </main>
       </div>
     </div>
