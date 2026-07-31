@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Flame } from "lucide-react";
 import { NorthStarsApi } from "../useNorthStars";
 import { RoutineControl } from "./RoutineControl";
-import { checkinStreak, currentWeekStart, nextMoneyDayAfter } from "../utils";
+import { checkinStreak, currentWeekStart, lastValueLabel, nextMoneyDayAfter } from "../utils";
 
 interface Props {
   open: boolean;
