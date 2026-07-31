@@ -106,3 +106,36 @@ export function checkinStreak(checkins: Checkin[]): number {
 
 export const uniqueKey = (name: string) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "category";
+
+/** Aggregate progress across every metric of a quarter (0..1) + counts. */
+export function quarterProgress(metrics: GoalMetric[]) {
+  if (!metrics.length) return { pct: 0, done: 0, total: 0, parts: [] as { id: string; pct: number; name: string }[] };
+  const parts = metrics.map((m) => ({ id: m.id, name: m.name, pct: metricProgress(m) }));
+  const pct = parts.reduce((a, p) => a + p.pct, 0) / parts.length;
+  const done = metrics.filter((m) => isMetricComplete(m)).length;
+  return { pct, done, total: metrics.length, parts };
+}
+
+/** Weekly routine completion for a given week (0..1) + counts. */
+export function routineProgress(
+  routines: GoalRoutine[],
+  logs: { routine_id: string; week_start_date: string; value: number }[],
+  settings: GoalSettings | null,
+  week: string = currentWeekStart()
+) {
+  const active = routines.filter((r) => r.is_active);
+  if (!active.length) return { pct: 0, done: 0, total: 0 };
+  let sum = 0;
+  let done = 0;
+  for (const r of active) {
+    const value = logs.find((l) => l.routine_id === r.id && l.week_start_date === week)?.value ?? 0;
+    const target = Math.max(1, effectiveTarget(r, settings));
+    const p = Math.min(1, value / target);
+    sum += p;
+    if (p >= 1) done += 1;
+  }
+  return { pct: sum / active.length, done, total: active.length };
+}
+
+/** Emoji fallback when a category has none set. */
+export const categoryEmoji = (c: { emoji?: string | null; name: string }) => c.emoji || "⭐";
