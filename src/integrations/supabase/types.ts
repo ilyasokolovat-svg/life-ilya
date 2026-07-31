@@ -482,6 +482,7 @@ export type Database = {
           accent_color: string
           cadence: string
           created_at: string
+          emoji: string
           id: string
           key: string
           name: string
@@ -493,6 +494,7 @@ export type Database = {
           accent_color?: string
           cadence?: string
           created_at?: string
+          emoji?: string
           id?: string
           key: string
           name: string
@@ -504,6 +506,7 @@ export type Database = {
           accent_color?: string
           cadence?: string
           created_at?: string
+          emoji?: string
           id?: string
           key?: string
           name?: string
@@ -670,6 +673,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_binary: boolean
+          linked_metric_id: string | null
           name: string
           notes: string | null
           sort_order: number
@@ -684,6 +688,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_binary?: boolean
+          linked_metric_id?: string | null
           name: string
           notes?: string | null
           sort_order?: number
@@ -698,6 +703,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_binary?: boolean
+          linked_metric_id?: string | null
           name?: string
           notes?: string | null
           sort_order?: number
@@ -712,6 +718,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "goal_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_routines_linked_metric_id_fkey"
+            columns: ["linked_metric_id"]
+            isOneToOne: false
+            referencedRelation: "goal_metrics"
             referencedColumns: ["id"]
           },
         ]
