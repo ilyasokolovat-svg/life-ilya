@@ -8,6 +8,7 @@ export interface GoalCategory {
   key: string;
   name: string;
   accent_color: string;
+  emoji: string;
   cadence: Cadence;
   sort_order: number;
 }
@@ -59,6 +60,7 @@ export interface GoalRoutine {
   is_active: boolean;
   sort_order: number;
   notes: string | null;
+  linked_metric_id: string | null;
 }
 
 export interface RoutineLog {
