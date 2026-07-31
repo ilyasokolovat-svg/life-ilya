@@ -7,7 +7,14 @@ import { useNorthStars } from "../useNorthStars";
 import { CategoryTimeline } from "../components/CategoryTimeline";
 import { CheckinModal } from "../components/CheckinModal";
 import { NorthStarsSettings } from "../components/NorthStarsSettings";
-import { checkinStreak, headlineMetric, metricProgress, metricValueLabel, travelModeOn } from "../utils";
+import { SegmentBar } from "../components/SegmentBar";
+import {
+  categoryEmoji,
+  checkinStreak,
+  quarterProgress,
+  routineProgress,
+  travelModeOn,
+} from "../utils";
 
 export default function NorthStars() {
   const ns = useNorthStars();
@@ -18,11 +25,6 @@ export default function NorthStars() {
   const streak = useMemo(() => checkinStreak(ns.checkins), [ns.checkins]);
   const travel = travelModeOn(ns.settings);
 
-  const headlineFor = (categoryId: string) => {
-    const q = ns.quarters.find((x) => x.category_id === categoryId && x.is_active);
-    if (!q) return null;
-    return headlineMetric(ns.metrics.filter((m) => m.quarter_id === q.id));
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,8 +56,15 @@ export default function NorthStars() {
         {ns.loading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
         {ns.categories.map((c) => {
-          const hm = headlineFor(c.id);
-          const pct = hm ? Math.round(metricProgress(hm) * 100) : 0;
+          const q = ns.quarters.find((x) => x.category_id === c.id && x.is_active);
+          const metrics = q ? ns.metrics.filter((m) => m.quarter_id === q.id) : [];
+          const qp = quarterProgress(metrics);
+          const pct = Math.round(qp.pct * 100);
+          const rp = routineProgress(
+            ns.routines.filter((r) => r.category_id === c.id),
+            ns.logs,
+            ns.settings
+          );
           const isOpen = expanded === c.id;
           return (
             <section key={c.id} className="border border-border rounded-xl bg-card overflow-hidden">
@@ -63,19 +72,20 @@ export default function NorthStars() {
                 className="w-full text-left px-4 py-3.5 flex items-center gap-3"
                 onClick={() => setExpanded(isOpen ? null : c.id)}
               >
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.accent_color }} />
+                <span className="text-xl leading-none shrink-0">{categoryEmoji(c)}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{c.name}</p>
-                  {hm ? (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">{c.name}</p>
+                    <span className="text-[11px] text-muted-foreground">{q?.label}</span>
+                  </div>
+                  {qp.total ? (
                     <>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {hm.name} · {metricValueLabel(hm)}
+                        {qp.done}/{qp.total} quarter goals hit
+                        {c.cadence === "weekly" && rp.total ? ` · weekly ${rp.done}/${rp.total}` : ""}
                       </p>
-                      <div className="h-[5px] w-full bg-muted rounded-full overflow-hidden mt-1.5">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: c.accent_color }}
-                        />
+                      <div className="mt-1.5">
+                        <SegmentBar parts={qp.parts} color={c.accent_color} height={5} />
                       </div>
                     </>
                   ) : (
@@ -87,6 +97,7 @@ export default function NorthStars() {
                   className={cn("w-4 h-4 text-muted-foreground transition-transform", isOpen && "rotate-180")}
                 />
               </button>
+
               {isOpen && (
                 <div className="px-4 pb-4 pt-1 border-t border-border">
                   <CategoryTimeline category={c} ns={ns} onMoneyDay={() => setMoneyDayFor(c.id)} />

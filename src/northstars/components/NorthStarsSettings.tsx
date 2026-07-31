@@ -51,10 +51,17 @@ export function NorthStarsSettings({ ns }: { ns: NorthStarsApi }) {
             {ns.categories.map((c) => (
               <div key={c.id} className="flex items-center gap-2">
                 <input
+                  value={c.emoji || "⭐"}
+                  onChange={(e) => ns.updateCategory(c.id, { emoji: e.target.value.slice(0, 4) || "⭐" })}
+                  className="w-9 h-7 text-center rounded-md border border-input bg-background text-sm"
+                  aria-label={`${c.name} emoji`}
+                />
+                <input
                   type="color"
                   value={c.accent_color}
                   onChange={(e) => ns.updateCategory(c.id, { accent_color: e.target.value })}
                   className="w-6 h-6 rounded border border-border bg-transparent"
+                  aria-label={`${c.name} progress colour`}
                 />
                 <InlineText value={c.name} onSave={(v) => ns.updateCategory(c.id, { name: v })} className="text-xs flex-1" />
                 <select
@@ -81,6 +88,10 @@ export function NorthStarsSettings({ ns }: { ns: NorthStarsApi }) {
                 </button>
               </div>
             ))}
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Emoji = the icon shown everywhere. Colour = the progress-bar colour. Cadence: <b>weekly</b> categories
+              show tickable weekly routines, <b>monthly</b> ones show a money day instead. The number is display order.
+            </p>
             <Button
               size="sm"
               variant="outline"
@@ -90,6 +101,7 @@ export function NorthStarsSettings({ ns }: { ns: NorthStarsApi }) {
               <Plus className="w-3 h-3 mr-1" /> Add category
             </Button>
           </div>
+
         </div>
       )}
     </div>

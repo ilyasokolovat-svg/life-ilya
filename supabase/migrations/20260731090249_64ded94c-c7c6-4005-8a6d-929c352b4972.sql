@@ -1,0 +1,2 @@
+ALTER TABLE public.goal_categories ADD COLUMN IF NOT EXISTS emoji text NOT NULL DEFAULT '⭐';
+ALTER TABLE public.goal_routines ADD COLUMN IF NOT EXISTS linked_metric_id uuid REFERENCES public.goal_metrics(id) ON DELETE SET NULL;

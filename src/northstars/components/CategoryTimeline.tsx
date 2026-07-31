@@ -368,33 +368,53 @@ export function CategoryTimeline({
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Weekly routines
               </p>
-              <div className="mt-2 space-y-1.5">
+              <div className="mt-2 space-y-2">
                 {routines.map((r) => (
-                  <div key={r.id} className="flex items-center gap-2 group">
+                  <div key={r.id} className="group space-y-1">
                     <RoutineControl
                       routine={r}
                       logs={ns.logs}
                       settings={ns.settings}
+                      accent={accent}
+                      linked={!!r.linked_metric_id}
                       onSet={(v) => ns.setRoutineValue(r.id, v)}
                     />
-                    <InlineNumber
-                      value={r.target_per_week}
-                      onSave={(v) => ns.updateRoutine(r.id, { target_per_week: v })}
-                      className="text-[10px] text-muted-foreground"
-                    />
-                    <span className="text-[10px] text-muted-foreground">/wk</span>
-                    <span className="text-[10px] text-muted-foreground">travel</span>
-                    <InlineNumber
-                      value={r.travel_mode_target ?? 0}
-                      onSave={(v) => ns.updateRoutine(r.id, { travel_mode_target: v })}
-                      className="text-[10px] text-muted-foreground"
-                    />
-                    <button
-                      className="opacity-0 group-hover:opacity-100 text-[10px] text-destructive"
-                      onClick={() => ns.deleteRoutine(r.id)}
-                    >
-                      delete
-                    </button>
+                    <div className="flex flex-wrap items-center gap-1.5 pl-2 text-[10px] text-muted-foreground">
+                      <span>🎯</span>
+                      <InlineNumber
+                        value={r.target_per_week}
+                        onSave={(v) => ns.updateRoutine(r.id, { target_per_week: v })}
+                        className="text-[10px] text-muted-foreground"
+                      />
+                      <span>/wk</span>
+                      <span>✈️</span>
+                      <InlineNumber
+                        value={r.travel_mode_target ?? 0}
+                        onSave={(v) => ns.updateRoutine(r.id, { travel_mode_target: v })}
+                        className="text-[10px] text-muted-foreground"
+                      />
+                      <span className="ml-1">🔗</span>
+                      <select
+                        className="h-6 rounded-md border border-input bg-background px-1 text-[10px] max-w-[180px]"
+                        value={r.linked_metric_id ?? ""}
+                        onChange={(e) =>
+                          ns.updateRoutine(r.id, { linked_metric_id: e.target.value || null })
+                        }
+                      >
+                        <option value="">Not linked to a quarter goal</option>
+                        {metrics.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="opacity-0 group-hover:opacity-100 text-[10px] text-destructive ml-auto"
+                        onClick={() => ns.deleteRoutine(r.id)}
+                      >
+                        delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -405,6 +425,7 @@ export function CategoryTimeline({
                 <Plus className="w-3 h-3" /> Add routine
               </button>
             </>
+
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Monthly</p>
