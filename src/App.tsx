@@ -9,7 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import GoalsOverview from "./pages/GoalsOverview";
-import GoalsV2 from "./pages/GoalsV2";
+import NorthStars from "./northstars/pages/NorthStars";
 import LifeEvents from "./pages/LifeEvents";
 import TripPlanning from "./pages/TripPlanning";
 import YearAnalysis from "./pages/YearAnalysis";
