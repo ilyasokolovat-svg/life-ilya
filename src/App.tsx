@@ -104,8 +104,8 @@ const AppRoutes = () => {
         <Route path="/habits" element={<ProtectedRoute><Index /></ProtectedRoute>} />
         <Route path="/life-events" element={<ProtectedRoute><LifeEvents /></ProtectedRoute>} />
         <Route path="/goals/:category" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
-        <Route path="/goals-overview" element={<ProtectedRoute><GoalsV2 /></ProtectedRoute>} />
-        <Route path="/goals" element={<ProtectedRoute><GoalsV2 /></ProtectedRoute>} />
+        <Route path="/goals-overview" element={<ProtectedRoute><NorthStars /></ProtectedRoute>} />
+        <Route path="/goals" element={<ProtectedRoute><NorthStars /></ProtectedRoute>} />
         <Route path="/trip-planning" element={<ProtectedRoute><TripPlanning /></ProtectedRoute>} />
         <Route path="/year-analysis" element={<ProtectedRoute><YearAnalysisIndex /></ProtectedRoute>} />
         <Route path="/year-analysis/:year" element={<ProtectedRoute><YearAnalysis /></ProtectedRoute>} />
