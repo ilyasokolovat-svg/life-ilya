@@ -61,14 +61,19 @@ export const ImportDialog: React.FC<{
         ? await parseExpenseFile(f, { treatSign: sign, typeFilter: initialFilter })
         : p0;
       setParsed(p);
-      // Preload remembered mappings
+      // Preload remembered mappings (including remembered "Ignore" choices)
       const { data: prev } = await sb.from('expense_category_mappings').select('source_label,target_category_id').eq('user_id', user!.id);
       const map: Record<string, string> = {};
+      const known: Record<string, boolean> = {};
       for (const src of p.sourceCategories) {
         const hit = prev?.find((x: any) => x.source_label.toLowerCase() === src.toLowerCase());
-        if (hit && d.budgetCategories.some(c => c.id === hit.target_category_id)) map[src] = hit.target_category_id;
+        if (!hit) continue;
+        if (hit.target_category_id == null) { map[src] = IGNORE; known[src] = true; }
+        else if (d.budgetCategories.some(c => c.id === hit.target_category_id)) { map[src] = hit.target_category_id; known[src] = true; }
       }
       setMapping(map);
+      setRemembered(known);
+
       setStep('preview');
     } catch (e: any) {
       toast.error('Could not parse file: ' + e.message);
