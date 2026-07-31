@@ -138,4 +138,15 @@ export function routineProgress(
 }
 
 /** Emoji fallback when a category has none set. */
-export const categoryEmoji = (c: { emoji?: string | null; name: string }) => c.emoji || "⭐";
+const EMOJI_BY_NAME: Record<string, string> = {
+  personal: "🌱",
+  professional: "💼",
+  financial: "💰",
+  health: "💪",
+  social: "🥂",
+};
+
+/** Emoji fallback when a category has none set. */
+export const categoryEmoji = (c: { emoji?: string | null; name: string }) =>
+  c.emoji || EMOJI_BY_NAME[c.name.trim().toLowerCase()] || "⭐";
+
