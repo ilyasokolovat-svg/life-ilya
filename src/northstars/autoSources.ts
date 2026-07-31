@@ -6,7 +6,7 @@ export type AutoSource = "gym_sessions" | "net_worth" | "debt";
 export const AUTO_SOURCE_LABEL: Record<AutoSource, string> = {
   gym_sessions: "Healthy Life training log",
   net_worth: "Finance · net worth",
-  debt: "Finance · total debt",
+  debt: "Finance · credit-card debt (car loan excluded)",
 };
 
 export interface AutoSourceData {
@@ -16,11 +16,11 @@ export interface AutoSourceData {
   debt: number;
 }
 
-const isDebtLabel = (label: string, type: string) =>
-  type === "debt" ||
-  label.includes("loan") ||
-  label.includes("debt") ||
-  label.includes("credit");
+const isCreditCardAccount = (label: string, type: string) =>
+  type === "credit_card" ||
+  label.includes("credit card") ||
+  label.includes("credit-card") ||
+  label.includes("card debt");
 
 export async function fetchAutoSources(userId: string): Promise<AutoSourceData> {
   const [days, accounts, nw, inv] = await Promise.all([
@@ -52,16 +52,14 @@ export async function fetchAutoSources(userId: string): Promise<AutoSourceData> 
   let investments = 0;
   invLatest.forEach((r) => (investments += Number((r as { value: number }).value) || 0));
 
-  let debt = 0;
   let cc = 0;
   for (const a of (accounts.data || []) as { id: string; label: string; type: string }[]) {
     const snap = nwLatest.get(a.id) as { value: number } | undefined;
     if (!snap) continue;
     const label = (a.label || "").toLowerCase();
-    if (!isDebtLabel(label, a.type)) continue;
+    if (!isCreditCardAccount(label, a.type)) continue;
     const abs = Math.abs(Number(snap.value) || 0);
-    debt += abs;
-    if (label.includes("credit")) cc += abs;
+    cc += abs;
   }
 
   return {
@@ -73,6 +71,6 @@ export async function fetchAutoSources(userId: string): Promise<AutoSourceData> 
       return n;
     },
     netWorth: investments - cc,
-    debt,
+    debt: cc,
   };
 }
