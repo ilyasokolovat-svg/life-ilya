@@ -14,6 +14,7 @@ import {
 import { archiveLegacyGoalsV2, seedNorthStars } from "./seed";
 import { fetchAutoSources } from "./autoSources";
 import { currentWeekStart, lastDayOfMonth, toISODate } from "./utils";
+import { AED_PER_USD } from "@/wealth/format";
 
 export interface NorthStarsData {
   categories: GoalCategory[];
@@ -86,7 +87,10 @@ export function useNorthStars() {
     const metrics = ((mets.data || []) as GoalMetric[]).map((m) => {
       if (!m.auto_source) return m;
       if (m.auto_source === "net_worth") return { ...m, current_value: auto.netWorth };
-      if (m.auto_source === "debt") return { ...m, current_value: auto.debt };
+      if (m.auto_source === "debt") {
+        const debt = m.unit.trim().toUpperCase() === "AED" ? auto.debt * AED_PER_USD : auto.debt;
+        return { ...m, current_value: debt };
+      }
       const q = quarterById.get(m.quarter_id);
       return q ? { ...m, current_value: auto.gymSessions(q.start_date, q.end_date) } : m;
     });

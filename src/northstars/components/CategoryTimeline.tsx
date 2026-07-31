@@ -31,7 +31,7 @@ const AUTO_OPTIONS: { value: "" | AutoSource; label: string }[] = [
   { value: "", label: "Manual entry" },
   { value: "gym_sessions", label: "Auto · training sessions (Healthy Life)" },
   { value: "net_worth", label: "Auto · net worth (Finance)" },
-  { value: "debt", label: "Auto · total debt (Finance)" },
+  { value: "debt", label: "Auto · credit-card debt (Finance, no car loan)" },
 ];
 
 function MetricFormDialog({
