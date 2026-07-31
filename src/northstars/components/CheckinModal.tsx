@@ -118,26 +118,32 @@ export function CheckinModal({ open, onOpenChange, ns, onlyCategoryId, moneyDay 
                     <div className="space-y-1">
                       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">2 · Quarter numbers</p>
                       {metrics.map((m) => (
-                        <div key={m.id} className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground flex-1 truncate">
-                            {m.auto_source && "🔗 "}
-                            {m.name}
-                          </span>
-                          {m.auto_source ? (
-                            <span className="h-7 w-24 text-xs flex items-center justify-end tabular-nums text-foreground">
-                              {m.current_value.toLocaleString()}
+                        <div key={m.id} className="space-y-0.5 py-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground flex-1 truncate" title={m.name}>
+                              {m.auto_source && "🔗 "}
+                              {m.name}
                             </span>
-                          ) : (
-                            <Input
-                              type="number"
-                              value={values[m.id] ?? ""}
-                              onChange={(e) => setValues((v) => ({ ...v, [m.id]: e.target.value }))}
-                              className="h-7 w-24 text-xs"
-                            />
+                            {m.auto_source ? (
+                              <span className="h-7 w-24 text-xs flex items-center justify-end tabular-nums text-foreground">
+                                {m.current_value.toLocaleString()}
+                              </span>
+                            ) : (
+                              <Input
+                                type="number"
+                                value={values[m.id] ?? ""}
+                                onChange={(e) => setValues((v) => ({ ...v, [m.id]: e.target.value }))}
+                                className="h-7 w-24 text-xs"
+                              />
+                            )}
+                            <span className="text-[11px] text-muted-foreground w-20">
+                              / {m.target_value.toLocaleString()} {m.unit}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground tabular-nums">{lastValueLabel(m)}</p>
+                          {m.notes && (
+                            <p className="text-[10px] leading-snug text-muted-foreground">{m.notes}</p>
                           )}
-                          <span className="text-[11px] text-muted-foreground w-20">
-                            / {m.target_value.toLocaleString()} {m.unit}
-                          </span>
                         </div>
                       ))}
                       {metrics.some((m) => m.auto_source) && (
