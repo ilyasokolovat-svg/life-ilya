@@ -366,6 +366,30 @@ export type Database = {
         }
         Relationships: []
       }
+      checkins: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+          week_start_date?: string
+        }
+        Relationships: []
+      }
       expense_category_mappings: {
         Row: {
           created_at: string
@@ -449,6 +473,278 @@ export type Database = {
           goal?: string
           id?: string
           started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_categories: {
+        Row: {
+          accent_color: string
+          cadence: string
+          created_at: string
+          id: string
+          key: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string
+          cadence?: string
+          created_at?: string
+          id?: string
+          key: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string
+          cadence?: string
+          created_at?: string
+          id?: string
+          key?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_horizons: {
+        Row: {
+          body: string
+          category_id: string
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          target_date: string | null
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          category_id: string
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          target_date?: string | null
+          tier: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          target_date?: string | null
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_horizons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "goal_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_metrics: {
+        Row: {
+          created_at: string
+          current_value: number
+          direction: string
+          headline_priority: number
+          id: string
+          name: string
+          notes: string | null
+          quarter_id: string
+          sort_order: number
+          start_value: number | null
+          target_value: number
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          direction?: string
+          headline_priority?: number
+          id?: string
+          name: string
+          notes?: string | null
+          quarter_id: string
+          sort_order?: number
+          start_value?: number | null
+          target_value?: number
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          direction?: string
+          headline_priority?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          quarter_id?: string
+          sort_order?: number
+          start_value?: number | null
+          target_value?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_metrics_quarter_id_fkey"
+            columns: ["quarter_id"]
+            isOneToOne: false
+            referencedRelation: "goal_quarters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_quarters: {
+        Row: {
+          category_id: string
+          created_at: string
+          end_date: string
+          id: string
+          is_active: boolean
+          label: string
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_active?: boolean
+          label: string
+          start_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_quarters_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "goal_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_routines: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_binary: boolean
+          name: string
+          notes: string | null
+          sort_order: number
+          target_per_week: number
+          travel_mode_target: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_binary?: boolean
+          name: string
+          notes?: string | null
+          sort_order?: number
+          target_per_week?: number
+          travel_mode_target?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_binary?: boolean
+          name?: string
+          notes?: string | null
+          sort_order?: number
+          target_per_week?: number
+          travel_mode_target?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_routines_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "goal_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_settings: {
+        Row: {
+          created_at: string
+          id: string
+          next_money_day: string | null
+          todoist_note: string | null
+          travel_mode_active: boolean
+          travel_mode_until: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          next_money_day?: string | null
+          todoist_note?: string | null
+          travel_mode_active?: boolean
+          travel_mode_until?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          next_money_day?: string | null
+          todoist_note?: string | null
+          travel_mode_active?: boolean
+          travel_mode_until?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1089,6 +1385,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      routine_log: {
+        Row: {
+          created_at: string
+          id: string
+          routine_id: string
+          updated_at: string
+          user_id: string
+          value: number
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          routine_id: string
+          updated_at?: string
+          user_id: string
+          value?: number
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          routine_id?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_log_routine_id_fkey"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "goal_routines"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
