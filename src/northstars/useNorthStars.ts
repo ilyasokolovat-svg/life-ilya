@@ -183,9 +183,11 @@ export function useNorthStars() {
       await load();
     },
     startNextQuarter: async (quarter: GoalQuarter, label: string, start: string, end: string, copyMetrics: boolean) => {
+      const today = toISODate(new Date());
+      const startsLater = start > today;
       const { data: q } = await supabase
         .from("goal_quarters")
-        .insert(withUser({ category_id: quarter.category_id, label, start_date: start, end_date: end, is_active: true }))
+        .insert(withUser({ category_id: quarter.category_id, label, start_date: start, end_date: end, is_active: !startsLater }))
         .select()
         .single();
       if (q && copyMetrics) {
@@ -204,12 +206,15 @@ export function useNorthStars() {
                 headline_priority: m.headline_priority,
                 sort_order: m.sort_order,
                 notes: m.notes,
+                auto_source: m.auto_source,
               })
             )
           );
         }
       }
-      await supabase.from("goal_quarters").update({ is_active: false }).eq("id", quarter.id);
+      if (!startsLater) {
+        await supabase.from("goal_quarters").update({ is_active: false }).eq("id", quarter.id);
+      }
       await load();
     },
 
@@ -227,6 +232,7 @@ export function useNorthStars() {
           headline_priority: patch.headline_priority ?? count + 1,
           sort_order: count,
           notes: patch.notes ?? null,
+          auto_source: patch.auto_source ?? null,
         })
       );
       await load();
