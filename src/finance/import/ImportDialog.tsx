@@ -31,14 +31,18 @@ export const ImportDialog: React.FC<{
   const [importIncome, setImportIncome] = useState(true);
   const fx = currency === 'AED' ? AED_TO_USD : 1;
   const [mapping, setMapping] = useState<Record<string, string>>({}); // sourceLabel -> categoryId | IGNORE
+  const [remembered, setRemembered] = useState<Record<string, boolean>>({}); // sourceLabel -> came from saved mappings
+  const [showAllMappings, setShowAllMappings] = useState(false);
   const [newCatNames, setNewCatNames] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setStep('upload'); setFile(null); setParsed(null); setMapping({}); setNewCatNames({});
+    setRemembered({}); setShowAllMappings(false);
   };
   const close = () => { onOpenChange(false); setTimeout(reset, 200); };
+
 
   const handleFile = async (f: File) => {
     setFile(f);
