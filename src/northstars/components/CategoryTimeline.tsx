@@ -4,7 +4,7 @@ import { InlineNumber, InlineText } from "./Inline";
 import { RoutineControl } from "./RoutineControl";
 import { NorthStarsApi } from "../useNorthStars";
 import { GoalCategory, GoalMetric, GoalQuarter, HorizonTier } from "../types";
-import { daysUntil, formatDate, metricProgress, metricValueLabel, formatNumber } from "../utils";
+import { daysUntil, formatDate, metricProgress, metricValueLabel, formatNumber, toISODate } from "../utils";
 import { AUTO_SOURCE_LABEL, AutoSource } from "../autoSources";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
