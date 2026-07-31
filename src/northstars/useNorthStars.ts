@@ -12,6 +12,7 @@ import {
   RoutineLog,
 } from "./types";
 import { archiveLegacyGoalsV2, seedNorthStars } from "./seed";
+import { fetchAutoSources } from "./autoSources";
 import { currentWeekStart, lastDayOfMonth, toISODate } from "./utils";
 
 export interface NorthStarsData {
@@ -61,7 +62,7 @@ export function useNorthStars() {
 
     // Auto-roll the active quarter forward once the previous one ends.
     const today = toISODate(new Date());
-    const rollovers: Promise<unknown>[] = [];
+    const rollovers: PromiseLike<unknown>[] = [];
     for (const c of (cats.data || []) as GoalCategory[]) {
       const mine = quarters.filter((q) => q.category_id === c.id);
       const active = mine.find((q) => q.is_active);
