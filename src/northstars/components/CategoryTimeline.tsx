@@ -418,23 +418,15 @@ export function CategoryTimeline({
                   <QuarterMenu quarter={quarter} ns={ns} />
                 </div>
               </div>
-              <div className="mt-1 divide-y divide-border/60">
-                {metrics.map((m) => (
-                  <MetricRow key={m.id} metric={m} accent={accent} ns={ns} />
-                ))}
-              </div>
-              <button
-                className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => ns.addMetric(quarter.id, {})}
-              >
-                <Plus className="w-3 h-3" /> Add metric
-              </button>
+              <QuarterMetrics quarter={quarter} accent={accent} ns={ns} />
             </>
           ) : (
             <p className="text-xs text-muted-foreground">No active quarter.</p>
           )}
+          {quarter && <NextQuarterBlock quarter={quarter} accent={accent} ns={ns} />}
         </div>
       </div>
+
 
       {/* Routines or money day */}
       <div className="flex gap-3">
