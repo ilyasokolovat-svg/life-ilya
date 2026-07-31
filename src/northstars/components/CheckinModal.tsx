@@ -50,12 +50,14 @@ export function CheckinModal({ open, onOpenChange, ns, onlyCategoryId, moneyDay 
     try {
       for (const c of categories) {
         for (const m of activeMetricsFor(c.id)) {
+          if (m.auto_source) continue; // linked metrics are computed, never written from here
           const v = Number(values[m.id]);
           if (!Number.isNaN(v) && v !== m.current_value) {
             await ns.updateMetric(m.id, { current_value: v });
           }
         }
       }
+
       if (!moneyDay) {
         await ns.saveCheckin(note, week);
       }
