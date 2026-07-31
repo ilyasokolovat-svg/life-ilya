@@ -1,0 +1,1 @@
+ALTER TABLE public.goal_metrics ADD COLUMN IF NOT EXISTS auto_source text;

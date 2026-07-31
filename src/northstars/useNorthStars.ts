@@ -12,6 +12,7 @@ import {
   RoutineLog,
 } from "./types";
 import { archiveLegacyGoalsV2, seedNorthStars } from "./seed";
+import { fetchAutoSources } from "./autoSources";
 import { currentWeekStart, lastDayOfMonth, toISODate } from "./utils";
 
 export interface NorthStarsData {
@@ -45,7 +46,7 @@ export function useNorthStars() {
 
   const load = useCallback(async () => {
     if (!userId) return;
-    const [cats, hor, qs, mets, rts, lgs, cis, st] = await Promise.all([
+    const [cats, hor, qs, mets, rts, lgs, cis, st, auto] = await Promise.all([
       supabase.from("goal_categories").select("*").order("sort_order"),
       supabase.from("goal_horizons").select("*").order("sort_order"),
       supabase.from("goal_quarters").select("*").order("start_date"),
@@ -54,13 +55,47 @@ export function useNorthStars() {
       supabase.from("routine_log").select("*"),
       supabase.from("checkins").select("*").order("week_start_date", { ascending: false }),
       supabase.from("goal_settings").select("*").maybeSingle(),
+      fetchAutoSources(userId),
     ]);
+
+    const quarters = (qs.data || []) as GoalQuarter[];
+
+    // Auto-roll the active quarter forward once the previous one ends.
+    const today = toISODate(new Date());
+    const rollovers: PromiseLike<unknown>[] = [];
+    for (const c of (cats.data || []) as GoalCategory[]) {
+      const mine = quarters.filter((q) => q.category_id === c.id);
+      const active = mine.find((q) => q.is_active);
+      if (active && active.end_date < today) {
+        const next = mine
+          .filter((q) => q.start_date > active.start_date && q.end_date >= today)
+          .sort((a, b) => a.start_date.localeCompare(b.start_date))[0];
+        if (next) {
+          active.is_active = false;
+          next.is_active = true;
+          rollovers.push(
+            supabase.from("goal_quarters").update({ is_active: false }).eq("id", active.id),
+            supabase.from("goal_quarters").update({ is_active: true }).eq("id", next.id)
+          );
+        }
+      }
+    }
+    if (rollovers.length) await Promise.all(rollovers);
+
+    const quarterById = new Map(quarters.map((q) => [q.id, q]));
+    const metrics = ((mets.data || []) as GoalMetric[]).map((m) => {
+      if (!m.auto_source) return m;
+      if (m.auto_source === "net_worth") return { ...m, current_value: auto.netWorth };
+      if (m.auto_source === "debt") return { ...m, current_value: auto.debt };
+      const q = quarterById.get(m.quarter_id);
+      return q ? { ...m, current_value: auto.gymSessions(q.start_date, q.end_date) } : m;
+    });
 
     setData({
       categories: (cats.data || []) as GoalCategory[],
       horizons: (hor.data || []) as GoalHorizon[],
-      quarters: (qs.data || []) as GoalQuarter[],
-      metrics: (mets.data || []) as GoalMetric[],
+      quarters,
+      metrics,
       routines: (rts.data || []) as GoalRoutine[],
       logs: (lgs.data || []) as RoutineLog[],
       checkins: (cis.data || []) as Checkin[],
@@ -148,9 +183,11 @@ export function useNorthStars() {
       await load();
     },
     startNextQuarter: async (quarter: GoalQuarter, label: string, start: string, end: string, copyMetrics: boolean) => {
+      const today = toISODate(new Date());
+      const startsLater = start > today;
       const { data: q } = await supabase
         .from("goal_quarters")
-        .insert(withUser({ category_id: quarter.category_id, label, start_date: start, end_date: end, is_active: true }))
+        .insert(withUser({ category_id: quarter.category_id, label, start_date: start, end_date: end, is_active: !startsLater }))
         .select()
         .single();
       if (q && copyMetrics) {
@@ -169,12 +206,15 @@ export function useNorthStars() {
                 headline_priority: m.headline_priority,
                 sort_order: m.sort_order,
                 notes: m.notes,
+                auto_source: m.auto_source,
               })
             )
           );
         }
       }
-      await supabase.from("goal_quarters").update({ is_active: false }).eq("id", quarter.id);
+      if (!startsLater) {
+        await supabase.from("goal_quarters").update({ is_active: false }).eq("id", quarter.id);
+      }
       await load();
     },
 
@@ -192,6 +232,7 @@ export function useNorthStars() {
           headline_priority: patch.headline_priority ?? count + 1,
           sort_order: count,
           notes: patch.notes ?? null,
+          auto_source: patch.auto_source ?? null,
         })
       );
       await load();

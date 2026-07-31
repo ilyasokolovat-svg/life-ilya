@@ -4,7 +4,8 @@ import { InlineNumber, InlineText } from "./Inline";
 import { RoutineControl } from "./RoutineControl";
 import { NorthStarsApi } from "../useNorthStars";
 import { GoalCategory, GoalMetric, GoalQuarter, HorizonTier } from "../types";
-import { daysUntil, formatDate, metricProgress, metricValueLabel, formatNumber } from "../utils";
+import { daysUntil, formatDate, metricProgress, metricValueLabel, formatNumber, toISODate } from "../utils";
+import { AUTO_SOURCE_LABEL, AutoSource } from "../autoSources";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,35 +27,89 @@ function Dot({ color, hollow }: { color: string; hollow?: boolean }) {
   );
 }
 
-function MetricDialog({
+const AUTO_OPTIONS: { value: "" | AutoSource; label: string }[] = [
+  { value: "", label: "Manual entry" },
+  { value: "gym_sessions", label: "Auto · training sessions (Healthy Life)" },
+  { value: "net_worth", label: "Auto · net worth (Finance)" },
+  { value: "debt", label: "Auto · total debt (Finance)" },
+];
+
+function MetricFormDialog({
   metric,
+  title,
   open,
   onOpenChange,
   onSave,
 }: {
-  metric: GoalMetric;
+  metric: Partial<GoalMetric>;
+  title: string;
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onSave: (patch: Partial<GoalMetric>) => void;
 }) {
   const [form, setForm] = useState({
-    name: metric.name,
-    unit: metric.unit,
-    direction: metric.direction,
-    headline_priority: metric.headline_priority,
-    start_value: metric.start_value ?? metric.current_value,
+    name: metric.name ?? "",
+    unit: metric.unit ?? "",
+    direction: (metric.direction ?? "up") as "up" | "down",
+    headline_priority: metric.headline_priority ?? 1,
+    current_value: metric.current_value ?? 0,
+    target_value: metric.target_value ?? 1,
+    start_value: metric.start_value ?? metric.current_value ?? 0,
     notes: metric.notes || "",
+    auto_source: (metric.auto_source ?? "") as "" | AutoSource,
   });
+  const auto = form.auto_source !== "";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Metric details</DialogTitle>
+          <DialogTitle className="text-base">{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Name</Label>
-            <Input className="h-8" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input className="h-8" value={form.name} placeholder="e.g. Training sessions" onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </div>
+          <div>
+            <Label className="text-xs">Data source</Label>
+            <select
+              className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+              value={form.auto_source}
+              onChange={(e) => setForm({ ...form, auto_source: e.target.value as "" | AutoSource })}
+            >
+              {AUTO_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {auto && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                🔗 Linked to {AUTO_SOURCE_LABEL[form.auto_source as AutoSource]} — the current value updates itself.
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Current</Label>
+              <Input
+                type="number"
+                className="h-8"
+                disabled={auto}
+                value={form.current_value}
+                onChange={(e) => setForm({ ...form, current_value: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Target</Label>
+              <Input
+                type="number"
+                className="h-8"
+                value={form.target_value}
+                onChange={(e) => setForm({ ...form, target_value: Number(e.target.value) })}
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -94,15 +149,24 @@ function MetricDialog({
             </div>
           </div>
           <div>
-            <Label className="text-xs">Notes</Label>
-            <Textarea rows={4} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <Label className="text-xs">Sub-text (shown under the progress bar)</Label>
+            <Textarea
+              rows={3}
+              placeholder="Context, definition of done, how you'll measure it…"
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
           </div>
         </div>
         <DialogFooter>
           <Button
             size="sm"
             onClick={() => {
-              onSave({ ...form, notes: form.notes || null });
+              onSave({
+                ...form,
+                notes: form.notes || null,
+                auto_source: (form.auto_source || null) as AutoSource | null,
+              });
               onOpenChange(false);
             }}
           >
@@ -118,6 +182,7 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
   const [menu, setMenu] = useState(false);
   const [details, setDetails] = useState(false);
   const pct = Math.round(metricProgress(metric) * 100);
+  const auto = metric.auto_source;
 
   return (
     <div className="group py-1.5">
@@ -128,7 +193,11 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
           className="text-sm text-foreground flex-1 min-w-0"
         />
         <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-          <InlineNumber value={metric.current_value} onSave={(v) => ns.updateMetric(metric.id, { current_value: v })} />
+          {auto ? (
+            <span className="tabular-nums">{formatNumber(metric.current_value)}</span>
+          ) : (
+            <InlineNumber value={metric.current_value} onSave={(v) => ns.updateMetric(metric.id, { current_value: v })} />
+          )}
           {" / "}
           <InlineNumber value={metric.target_value} onSave={(v) => ns.updateMetric(metric.id, { target_value: v })} />
           {metric.unit ? ` ${metric.unit}` : ""}
@@ -174,10 +243,20 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
           </span>
         )}
       </div>
-      {metric.notes && <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{metric.notes}</p>}
+      {auto && (
+        <p className="text-[10px] text-muted-foreground mt-1">🔗 Linked to {AUTO_SOURCE_LABEL[auto]} — updates automatically</p>
+      )}
+      <InlineText
+        value={metric.notes || ""}
+        onSave={(v) => ns.updateMetric(metric.id, { notes: v || null })}
+        multiline
+        placeholder="Add sub-text…"
+        className="text-[11px] text-muted-foreground mt-1 leading-snug block"
+      />
       {details && (
-        <MetricDialog
+        <MetricFormDialog
           metric={metric}
+          title="Metric details"
           open={details}
           onOpenChange={setDetails}
           onSave={(patch) => ns.updateMetric(metric.id, patch)}
@@ -187,10 +266,76 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
   );
 }
 
+/** Defaults for the quarter following `quarter`: starts the day after it ends, runs 3 months. */
+function nextQuarterDefaults(quarter: GoalQuarter) {
+  const start = new Date(quarter.end_date + "T00:00:00");
+  start.setDate(start.getDate() + 1);
+  const end = new Date(start.getFullYear(), start.getMonth() + 3, 0);
+  const label = `Q${Math.floor(start.getMonth() / 3) + 1} ${start.getFullYear()}`;
+  return { label, start: toISODate(start), end: toISODate(end), copy: true };
+}
+
+function NextQuarterDialog({
+  quarter,
+  ns,
+  open,
+  onOpenChange,
+}: {
+  quarter: GoalQuarter;
+  ns: NorthStarsApi;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const [form, setForm] = useState(() => nextQuarterDefaults(quarter));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-base">Plan next quarter</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Label</Label>
+            <Input className="h-8" value={form.label} placeholder="Q4 2026" onChange={(e) => setForm({ ...form, label: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Start</Label>
+              <Input type="date" className="h-8" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">End</Label>
+              <Input type="date" className="h-8" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={form.copy} onChange={(e) => setForm({ ...form, copy: e.target.checked })} />
+            Copy metric names, reset values to 0
+          </label>
+          <p className="text-[10px] text-muted-foreground">
+            If the start date is in the future it stays in draft and activates itself on that day.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button
+            size="sm"
+            onClick={() => {
+              ns.startNextQuarter(quarter, form.label || "New quarter", form.start, form.end, form.copy);
+              onOpenChange(false);
+            }}
+          >
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function QuarterMenu({ quarter, ns }: { quarter: GoalQuarter; ns: NorthStarsApi }) {
   const [menu, setMenu] = useState(false);
   const [next, setNext] = useState(false);
-  const [form, setForm] = useState({ label: "", start: quarter.end_date, end: quarter.end_date, copy: true });
 
   return (
     <div className="relative">
@@ -221,51 +366,93 @@ function QuarterMenu({ quarter, ns }: { quarter: GoalQuarter; ns: NorthStarsApi 
               setNext(true);
             }}
           >
-            Start next quarter
+            Plan next quarter
           </button>
         </div>
       )}
-      <Dialog open={next} onOpenChange={setNext}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">Start next quarter</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Label</Label>
-              <Input className="h-8" value={form.label} placeholder="Q4 2026" onChange={(e) => setForm({ ...form, label: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs">Start</Label>
-                <Input type="date" className="h-8" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs">End</Label>
-                <Input type="date" className="h-8" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} />
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" checked={form.copy} onChange={(e) => setForm({ ...form, copy: e.target.checked })} />
-              Copy metric names, reset values to 0
-            </label>
-          </div>
-          <DialogFooter>
-            <Button
-              size="sm"
-              onClick={() => {
-                ns.startNextQuarter(quarter, form.label || "New quarter", form.start, form.end, form.copy);
-                setNext(false);
-              }}
-            >
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NextQuarterDialog quarter={quarter} ns={ns} open={next} onOpenChange={setNext} />
     </div>
   );
 }
+
+function QuarterMetrics({ quarter, accent, ns }: { quarter: GoalQuarter; accent: string; ns: NorthStarsApi }) {
+  const [adding, setAdding] = useState(false);
+  const metrics = ns.metrics
+    .filter((m) => m.quarter_id === quarter.id)
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  return (
+    <>
+      <div className="mt-1 divide-y divide-border/60">
+        {metrics.map((m) => (
+          <MetricRow key={m.id} metric={m} accent={accent} ns={ns} />
+        ))}
+      </div>
+      <button
+        className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        onClick={() => setAdding(true)}
+      >
+        <Plus className="w-3 h-3" /> Add metric
+      </button>
+      {adding && (
+        <MetricFormDialog
+          metric={{}}
+          title="New metric"
+          open={adding}
+          onOpenChange={setAdding}
+          onSave={(patch) => ns.addMetric(quarter.id, patch)}
+        />
+      )}
+    </>
+  );
+}
+
+/** Shows the already-planned next quarter, or a prompt to plan it in the final weeks. */
+function NextQuarterBlock({ quarter, accent, ns }: { quarter: GoalQuarter; accent: string; ns: NorthStarsApi }) {
+  const [plan, setPlan] = useState(false);
+  const today = toISODate(new Date());
+  const upcoming = ns.quarters
+    .filter((q) => q.category_id === quarter.category_id && !q.is_active && q.start_date > today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))[0];
+  const endsIn = daysUntil(quarter.end_date);
+
+  if (upcoming) {
+    return (
+      <div className="mt-4 rounded-lg border border-dashed border-border p-3">
+        <div className="flex items-center gap-2">
+          <InlineText
+            value={upcoming.label}
+            onSave={(v) => ns.updateQuarter(upcoming.id, { label: v })}
+            className="text-[11px] font-semibold uppercase tracking-wide"
+          />
+          <span className="text-[10px] text-muted-foreground">
+            upcoming · starts {formatDate(upcoming.start_date)}
+          </span>
+        </div>
+        <QuarterMetrics quarter={upcoming} accent={accent} ns={ns} />
+        <p className="text-[10px] text-muted-foreground mt-2">
+          Goes live automatically on {formatDate(upcoming.start_date)}.
+        </p>
+      </div>
+    );
+  }
+
+  if (endsIn === null || endsIn > 45) return null;
+
+  return (
+    <div className="mt-4 rounded-lg border border-dashed border-border p-3 flex flex-wrap items-center gap-2">
+      <p className="text-xs text-muted-foreground">
+        {quarter.label} ends in {endsIn} days — time to plan the next one.
+      </p>
+      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPlan(true)}>
+        <Plus className="w-3 h-3 mr-1" /> Plan next quarter
+      </Button>
+      <NextQuarterDialog quarter={quarter} ns={ns} open={plan} onOpenChange={setPlan} />
+    </div>
+  );
+}
+
+
 
 export function CategoryTimeline({
   category,
@@ -339,23 +526,15 @@ export function CategoryTimeline({
                   <QuarterMenu quarter={quarter} ns={ns} />
                 </div>
               </div>
-              <div className="mt-1 divide-y divide-border/60">
-                {metrics.map((m) => (
-                  <MetricRow key={m.id} metric={m} accent={accent} ns={ns} />
-                ))}
-              </div>
-              <button
-                className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => ns.addMetric(quarter.id, {})}
-              >
-                <Plus className="w-3 h-3" /> Add metric
-              </button>
+              <QuarterMetrics quarter={quarter} accent={accent} ns={ns} />
             </>
           ) : (
             <p className="text-xs text-muted-foreground">No active quarter.</p>
           )}
+          {quarter && <NextQuarterBlock quarter={quarter} accent={accent} ns={ns} />}
         </div>
       </div>
+
 
       {/* Routines or money day */}
       <div className="flex gap-3">

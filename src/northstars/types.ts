@@ -47,6 +47,7 @@ export interface GoalMetric {
   headline_priority: number;
   sort_order: number;
   notes: string | null;
+  auto_source: "gym_sessions" | "net_worth" | "debt" | null;
 }
 
 export interface GoalRoutine {
