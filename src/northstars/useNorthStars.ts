@@ -86,10 +86,12 @@ export function useNorthStars() {
     const quarterById = new Map(quarters.map((q) => [q.id, q]));
     const metrics = ((mets.data || []) as GoalMetric[]).map((m) => {
       if (!m.auto_source) return m;
-      if (m.auto_source === "net_worth") return { ...m, current_value: auto.netWorth };
+      const isAED = (m.unit || "").trim().toUpperCase() === "AED";
+      if (m.auto_source === "net_worth") {
+        return { ...m, current_value: isAED ? auto.netWorth * AED_PER_USD : auto.netWorth };
+      }
       if (m.auto_source === "debt") {
-        const debt = m.unit.trim().toUpperCase() === "AED" ? auto.debt * AED_PER_USD : auto.debt;
-        return { ...m, current_value: debt };
+        return { ...m, current_value: isAED ? auto.debt * AED_PER_USD : auto.debt };
       }
       const q = quarterById.get(m.quarter_id);
       return q ? { ...m, current_value: auto.gymSessions(q.start_date, q.end_date) } : m;
