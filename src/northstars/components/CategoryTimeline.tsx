@@ -346,6 +346,85 @@ function QuarterMenu({ quarter, ns }: { quarter: GoalQuarter; ns: NorthStarsApi 
   );
 }
 
+function QuarterMetrics({ quarter, accent, ns }: { quarter: GoalQuarter; accent: string; ns: NorthStarsApi }) {
+  const [adding, setAdding] = useState(false);
+  const metrics = ns.metrics
+    .filter((m) => m.quarter_id === quarter.id)
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  return (
+    <>
+      <div className="mt-1 divide-y divide-border/60">
+        {metrics.map((m) => (
+          <MetricRow key={m.id} metric={m} accent={accent} ns={ns} />
+        ))}
+      </div>
+      <button
+        className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        onClick={() => setAdding(true)}
+      >
+        <Plus className="w-3 h-3" /> Add metric
+      </button>
+      {adding && (
+        <MetricFormDialog
+          metric={{}}
+          title="New metric"
+          open={adding}
+          onOpenChange={setAdding}
+          onSave={(patch) => ns.addMetric(quarter.id, patch)}
+        />
+      )}
+    </>
+  );
+}
+
+/** Shows the already-planned next quarter, or a prompt to plan it in the final weeks. */
+function NextQuarterBlock({ quarter, accent, ns }: { quarter: GoalQuarter; accent: string; ns: NorthStarsApi }) {
+  const [plan, setPlan] = useState(false);
+  const today = toISODate(new Date());
+  const upcoming = ns.quarters
+    .filter((q) => q.category_id === quarter.category_id && !q.is_active && q.start_date > today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))[0];
+  const endsIn = daysUntil(quarter.end_date);
+
+  if (upcoming) {
+    return (
+      <div className="mt-4 rounded-lg border border-dashed border-border p-3">
+        <div className="flex items-center gap-2">
+          <InlineText
+            value={upcoming.label}
+            onSave={(v) => ns.updateQuarter(upcoming.id, { label: v })}
+            className="text-[11px] font-semibold uppercase tracking-wide"
+          />
+          <span className="text-[10px] text-muted-foreground">
+            upcoming · starts {formatDate(upcoming.start_date)}
+          </span>
+        </div>
+        <QuarterMetrics quarter={upcoming} accent={accent} ns={ns} />
+        <p className="text-[10px] text-muted-foreground mt-2">
+          Goes live automatically on {formatDate(upcoming.start_date)}.
+        </p>
+      </div>
+    );
+  }
+
+  if (endsIn === null || endsIn > 45) return null;
+
+  return (
+    <div className="mt-4 rounded-lg border border-dashed border-border p-3 flex flex-wrap items-center gap-2">
+      <p className="text-xs text-muted-foreground">
+        {quarter.label} ends in {endsIn} days — time to plan the next one.
+      </p>
+      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPlan(true)}>
+        <Plus className="w-3 h-3 mr-1" /> Plan next quarter
+      </Button>
+      <NextQuarterDialog quarter={quarter} ns={ns} open={plan} onOpenChange={setPlan} />
+    </div>
+  );
+}
+
+
+
 export function CategoryTimeline({
   category,
   ns,
