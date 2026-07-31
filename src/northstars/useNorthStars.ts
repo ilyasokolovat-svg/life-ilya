@@ -231,11 +231,25 @@ export function useNorthStars() {
     },
 
     setRoutineValue: async (routineId: string, value: number, week = currentWeekStart()) => {
+      const prev = data.logs.find((l) => l.routine_id === routineId && l.week_start_date === week)?.value ?? 0;
       await supabase
         .from("routine_log")
         .upsert(withUser({ routine_id: routineId, week_start_date: week, value }), {
           onConflict: "routine_id,week_start_date",
         });
+
+      // Routines linked to a quarterly metric roll their delta into the quarter total.
+      const routine = data.routines.find((r) => r.id === routineId);
+      const metric = routine?.linked_metric_id
+        ? data.metrics.find((m) => m.id === routine.linked_metric_id)
+        : null;
+      const delta = value - prev;
+      if (metric && delta !== 0) {
+        await supabase
+          .from("goal_metrics")
+          .update({ current_value: Math.max(0, metric.current_value + delta) })
+          .eq("id", metric.id);
+      }
       await load();
     },
 
