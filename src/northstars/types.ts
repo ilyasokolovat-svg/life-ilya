@@ -39,6 +39,8 @@ export interface GoalMetric {
   user_id: string;
   quarter_id: string;
   name: string;
+  /** Short label for the cramped homepage row. Falls back to `name`. */
+  short_name: string | null;
   current_value: number;
   target_value: number;
   start_value: number | null;
@@ -48,6 +50,8 @@ export interface GoalMetric {
   sort_order: number;
   notes: string | null;
   auto_source: "gym_sessions" | "net_worth" | "debt" | null;
+  /** When the value was last entered. */
+  last_updated_at: string | null;
 }
 
 export interface GoalRoutine {
