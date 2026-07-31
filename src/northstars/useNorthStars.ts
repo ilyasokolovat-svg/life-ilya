@@ -202,6 +202,7 @@ export function useNorthStars() {
               withUser({
                 quarter_id: q.id,
                 name: m.name,
+                short_name: m.short_name,
                 current_value: 0,
                 target_value: m.target_value,
                 start_value: 0,
@@ -228,6 +229,7 @@ export function useNorthStars() {
         withUser({
           quarter_id: quarterId,
           name: patch.name || "New metric",
+          short_name: patch.short_name ?? null,
           current_value: patch.current_value ?? 0,
           target_value: patch.target_value ?? 1,
           start_value: patch.current_value ?? 0,
@@ -237,12 +239,17 @@ export function useNorthStars() {
           sort_order: count,
           notes: patch.notes ?? null,
           auto_source: patch.auto_source ?? null,
+          last_updated_at: new Date().toISOString(),
         })
       );
       await load();
     },
     updateMetric: async (id: string, patch: Partial<GoalMetric>) => {
-      await supabase.from("goal_metrics").update(patch).eq("id", id);
+      const row =
+        patch.current_value !== undefined
+          ? { ...patch, last_updated_at: new Date().toISOString() }
+          : patch;
+      await supabase.from("goal_metrics").update(row).eq("id", id);
       await load();
     },
     deleteMetric: async (id: string) => {
