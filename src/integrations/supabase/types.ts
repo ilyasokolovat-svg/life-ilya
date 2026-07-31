@@ -571,11 +571,9 @@ export type Database = {
           direction: string
           headline_priority: number
           id: string
-          last_updated_at: string | null
           name: string
           notes: string | null
           quarter_id: string
-          short_name: string | null
           sort_order: number
           start_value: number | null
           target_value: number
@@ -590,11 +588,9 @@ export type Database = {
           direction?: string
           headline_priority?: number
           id?: string
-          last_updated_at?: string | null
           name: string
           notes?: string | null
           quarter_id: string
-          short_name?: string | null
           sort_order?: number
           start_value?: number | null
           target_value?: number
@@ -609,11 +605,9 @@ export type Database = {
           direction?: string
           headline_priority?: number
           id?: string
-          last_updated_at?: string | null
           name?: string
           notes?: string | null
           quarter_id?: string
-          short_name?: string | null
           sort_order?: number
           start_value?: number | null
           target_value?: number

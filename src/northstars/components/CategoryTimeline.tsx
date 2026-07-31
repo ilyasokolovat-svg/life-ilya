@@ -49,7 +49,6 @@ function MetricFormDialog({
 }) {
   const [form, setForm] = useState({
     name: metric.name ?? "",
-    short_name: metric.short_name ?? "",
     unit: metric.unit ?? "",
     direction: (metric.direction ?? "up") as "up" | "down",
     headline_priority: metric.headline_priority ?? 1,
@@ -71,15 +70,6 @@ function MetricFormDialog({
           <div>
             <Label className="text-xs">Name</Label>
             <Input className="h-8" value={form.name} placeholder="e.g. Training sessions" onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </div>
-          <div>
-            <Label className="text-xs">Short name (homepage row)</Label>
-            <Input
-              className="h-8"
-              value={form.short_name}
-              placeholder="Falls back to the full name"
-              onChange={(e) => setForm({ ...form, short_name: e.target.value })}
-            />
           </div>
           <div>
             <Label className="text-xs">Data source</Label>
@@ -174,7 +164,6 @@ function MetricFormDialog({
             onClick={() => {
               onSave({
                 ...form,
-                short_name: form.short_name.trim() || null,
                 notes: form.notes || null,
                 auto_source: (form.auto_source || null) as AutoSource | null,
               });

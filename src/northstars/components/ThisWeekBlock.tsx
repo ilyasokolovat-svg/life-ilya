@@ -9,10 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   categoryEmoji,
   checkinStreak,
-  headlineMetric,
-  metricProgress,
-  metricShortLabel,
-  formatNumber,
   currentWeekStart,
   daysUntil,
   quarterProgress,
@@ -55,7 +51,6 @@ export function ThisWeekBlock() {
           const routines = ns.routines.filter((r) => r.category_id === c.id && r.is_active);
           const rp = routineProgress(routines, ns.logs, ns.settings);
           const moneyIn = daysUntil(ns.settings?.next_money_day ?? null);
-          const headline = headlineMetric(metrics);
 
           return (
             <div key={c.id} className="px-4 py-3 space-y-2">
@@ -74,30 +69,6 @@ export function ThisWeekBlock() {
               </div>
 
               <SegmentBar parts={qp.parts} color={c.accent_color} height={5} />
-
-              {headline && (
-                <div className="flex items-center gap-2">
-                  <span
-                    title={headline.name}
-                    className="text-[11px] text-muted-foreground truncate cursor-help"
-                  >
-                    {metricShortLabel(headline)}
-                  </span>
-                  <span className="text-[11px] tabular-nums text-foreground shrink-0">
-                    {formatNumber(headline.current_value)} / {formatNumber(headline.target_value)}
-                    {headline.unit ? ` ${headline.unit}` : ""}
-                  </span>
-                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden min-w-[40px]">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.round(metricProgress(headline) * 100)}%`,
-                        backgroundColor: c.accent_color,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
 
               {c.cadence === "weekly" ? (
                 routines.length > 0 && (

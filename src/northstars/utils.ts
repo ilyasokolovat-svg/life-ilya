@@ -51,18 +51,6 @@ export function formatDate(iso: string | null) {
 export const formatNumber = (n: number) =>
   Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
-/** Compact label for tight layouts; the full name stays available as a tooltip. */
-export const metricShortLabel = (m: { short_name?: string | null; name: string }) =>
-  (m.short_name && m.short_name.trim()) || m.name;
-
-/** "last: 22,500 on 1 Aug" */
-export function lastValueLabel(m: { current_value: number; last_updated_at?: string | null }) {
-  const when = m.last_updated_at
-    ? new Date(m.last_updated_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })
-    : null;
-  return `last: ${formatNumber(m.current_value)}${when ? ` on ${when}` : ""}`;
-}
-
 export const metricValueLabel = (m: GoalMetric) =>
   `${formatNumber(m.current_value)} / ${formatNumber(m.target_value)}${m.unit ? ` ${m.unit}` : ""}`;
 
