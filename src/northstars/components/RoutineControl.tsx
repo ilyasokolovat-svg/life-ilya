@@ -116,9 +116,7 @@ export function RoutineControl({
             >
               −
             </button>
-            <span className="text-xs tabular-nums font-medium text-foreground w-9 text-center">
-              {value}/{target}
-            </span>
+            <ValueInput value={value} target={target} onSet={onSet} label={routine.name} />
             <button
               type="button"
               onClick={() => onSet(value + 1)}
@@ -129,6 +127,7 @@ export function RoutineControl({
             </button>
           </div>
         )}
+
       </div>
 
       {onNote && (
