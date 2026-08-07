@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Link2, Pencil } from "lucide-react";
+import { Check, Link2, Pencil, RefreshCw } from "lucide-react";
 import { GoalRoutine, GoalSettings, RoutineLog } from "../types";
 import { currentWeekStart, effectiveTarget } from "../utils";
 import { cn } from "@/lib/utils";
@@ -103,13 +103,16 @@ export function RoutineControl({
   const target = Math.max(1, effectiveTarget(routine, settings));
   const pct = Math.min(100, Math.round((value / target) * 100));
   const done = value >= target;
-  const color = accent || "hsl(var(--primary))";
+  const auto = !!routine.auto_source;
+  const color = done ? "hsl(43 85% 48%)" : accent || "hsl(var(--primary))";
 
   return (
     <div
       className={cn(
         "rounded-lg border px-2.5 py-1.5 transition-colors w-full",
-        done ? "border-primary/30 bg-primary/[0.06]" : "border-border bg-background"
+        done
+          ? "border-amber-300/70 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10"
+          : "border-border bg-background"
       )}
     >
       <div className="flex items-center gap-2">
@@ -140,15 +143,28 @@ export function RoutineControl({
                 value={routine.name}
                 onSave={onRename}
                 placeholder="Routine name…"
-                className={cn("text-xs text-foreground", done && "text-muted-foreground line-through")}
+                className={cn("text-xs text-foreground", done && "text-amber-700 dark:text-amber-300 font-medium")}
                 inputClassName="text-xs py-0.5"
               />
             ) : (
-              <span className={cn("text-xs text-foreground truncate", done && "text-muted-foreground line-through")}>
+              <span className={cn("text-xs text-foreground truncate", done && "text-amber-700 dark:text-amber-300 font-medium")}>
                 {routine.name}
               </span>
             )}
-            {linked && <Link2 className="w-3 h-3 text-muted-foreground shrink-0" aria-label="Feeds a quarterly metric" />}
+            {done && (
+              <span className="text-[11px] leading-none shrink-0" title="Target hit this week">
+                ⭐
+              </span>
+            )}
+            {auto && (
+              <span
+                className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground shrink-0"
+                title="Counted automatically from your Healthy Life training log"
+              >
+                <RefreshCw className="w-2.5 h-2.5" /> auto
+              </span>
+            )}
+            {linked && !auto && <Link2 className="w-3 h-3 text-muted-foreground shrink-0" aria-label="Feeds a quarterly metric" />}
             {onEdit && (
               <button
                 type="button"
@@ -167,7 +183,11 @@ export function RoutineControl({
           )}
         </div>
 
-        {routine.is_binary ? (
+        {auto ? (
+          <span className="text-xs tabular-nums font-medium text-foreground shrink-0">
+            {value}/{target}
+          </span>
+        ) : routine.is_binary ? (
           <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{value >= 1 ? "done" : "—"}</span>
         ) : (
           <div className="flex items-center gap-1 shrink-0">
