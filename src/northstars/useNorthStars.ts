@@ -13,7 +13,7 @@ import {
 } from "./types";
 import { archiveLegacyGoalsV2, seedNorthStars } from "./seed";
 import { fetchAutoSources } from "./autoSources";
-import { currentWeekStart, lastDayOfMonth, toISODate } from "./utils";
+import { currentWeekStart, effectiveTarget, lastDayOfMonth, toISODate } from "./utils";
 import { AED_PER_USD } from "@/wealth/format";
 
 export interface NorthStarsData {
@@ -279,14 +279,15 @@ export function useNorthStars() {
 
     setRoutineValue: async (routineId: string, value: number, week = currentWeekStart()) => {
       const prev = data.logs.find((l) => l.routine_id === routineId && l.week_start_date === week)?.value ?? 0;
+      const routine = data.routines.find((r) => r.id === routineId);
+      const target = routine ? effectiveTarget(routine, data.settings) : null;
       await supabase
         .from("routine_log")
-        .upsert(withUser({ routine_id: routineId, week_start_date: week, value }), {
+        .upsert(withUser({ routine_id: routineId, week_start_date: week, value, target_snapshot: target }), {
           onConflict: "routine_id,week_start_date",
         });
 
       // Routines linked to a quarterly metric roll their delta into the quarter total.
-      const routine = data.routines.find((r) => r.id === routineId);
       const metric = routine?.linked_metric_id
         ? data.metrics.find((m) => m.id === routine.linked_metric_id)
         : null;
@@ -299,6 +300,23 @@ export function useNorthStars() {
       }
       await load();
     },
+
+    setRoutineNote: async (routineId: string, note: string, week = currentWeekStart()) => {
+      const existing = data.logs.find((l) => l.routine_id === routineId && l.week_start_date === week);
+      const routine = data.routines.find((r) => r.id === routineId);
+      await supabase.from("routine_log").upsert(
+        withUser({
+          routine_id: routineId,
+          week_start_date: week,
+          value: existing?.value ?? 0,
+          note: note || null,
+          target_snapshot: existing?.target_snapshot ?? (routine ? effectiveTarget(routine, data.settings) : null),
+        }),
+        { onConflict: "routine_id,week_start_date" }
+      );
+      await load();
+    },
+
 
     saveCheckin: async (note: string, week = currentWeekStart()) => {
       await supabase

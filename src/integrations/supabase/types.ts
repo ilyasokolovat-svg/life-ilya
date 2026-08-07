@@ -1412,7 +1412,9 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          note: string | null
           routine_id: string
+          target_snapshot: number | null
           updated_at: string
           user_id: string
           value: number
@@ -1421,7 +1423,9 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          note?: string | null
           routine_id: string
+          target_snapshot?: number | null
           updated_at?: string
           user_id: string
           value?: number
@@ -1430,7 +1434,9 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          note?: string | null
           routine_id?: string
+          target_snapshot?: number | null
           updated_at?: string
           user_id?: string
           value?: number

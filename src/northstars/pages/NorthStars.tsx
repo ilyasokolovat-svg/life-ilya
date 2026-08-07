@@ -7,6 +7,8 @@ import { useNorthStars } from "../useNorthStars";
 import { CategoryTimeline } from "../components/CategoryTimeline";
 import { CheckinModal } from "../components/CheckinModal";
 import { NorthStarsSettings } from "../components/NorthStarsSettings";
+import { ArchiveOverview } from "../components/RoutineArchive";
+
 import { SegmentBar } from "../components/SegmentBar";
 import {
   categoryEmoji,
@@ -107,7 +109,10 @@ export default function NorthStars() {
           );
         })}
 
+        <ArchiveOverview ns={ns} />
+
         <NorthStarsSettings ns={ns} />
+
       </main>
 
       <CheckinModal open={checkin} onOpenChange={setCheckin} ns={ns} />
