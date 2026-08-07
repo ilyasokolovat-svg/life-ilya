@@ -677,6 +677,7 @@ export type Database = {
       }
       goal_routines: {
         Row: {
+          auto_source: string | null
           category_id: string
           created_at: string
           id: string
@@ -692,6 +693,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auto_source?: string | null
           category_id: string
           created_at?: string
           id?: string
@@ -707,6 +709,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auto_source?: string | null
           category_id?: string
           created_at?: string
           id?: string

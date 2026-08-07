@@ -1,0 +1,2 @@
+ALTER TABLE public.goal_routines ADD COLUMN IF NOT EXISTS auto_source TEXT;
+UPDATE public.goal_routines SET auto_source = 'gym_sessions', linked_metric_id = NULL WHERE id = 'a436a402-c404-48bc-a166-e13d20c87948';
