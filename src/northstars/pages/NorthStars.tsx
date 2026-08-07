@@ -107,7 +107,10 @@ export default function NorthStars() {
           );
         })}
 
+        <ArchiveOverview ns={ns} />
+
         <NorthStarsSettings ns={ns} />
+
       </main>
 
       <CheckinModal open={checkin} onOpenChange={setCheckin} ns={ns} />
