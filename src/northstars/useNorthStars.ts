@@ -309,6 +309,7 @@ export function useNorthStars() {
     setRoutineValue: async (routineId: string, value: number, week = currentWeekStart()) => {
       const prev = data.logs.find((l) => l.routine_id === routineId && l.week_start_date === week)?.value ?? 0;
       const routine = data.routines.find((r) => r.id === routineId);
+      if (routine?.auto_source) return; // computed from the source of truth
       const target = routine ? effectiveTarget(routine, data.settings) : null;
       await supabase
         .from("routine_log")
