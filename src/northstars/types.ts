@@ -70,7 +70,10 @@ export interface RoutineLog {
   routine_id: string;
   week_start_date: string;
   value: number;
+  note?: string | null;
+  target_snapshot?: number | null;
 }
+
 
 export interface Checkin {
   id: string;
