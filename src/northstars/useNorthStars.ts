@@ -40,7 +40,9 @@ const empty: NorthStarsData = {
 
 export function useNorthStars() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const userId = user?.id;
+
   const [data, setData] = useState<NorthStarsData>(empty);
   const [loading, setLoading] = useState(true);
   const seeding = useRef(false);
