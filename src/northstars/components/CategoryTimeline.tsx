@@ -558,7 +558,9 @@ export function CategoryTimeline({
                       linked={!!r.linked_metric_id}
                       onRename={(v) => ns.updateRoutine(r.id, { name: v })}
                       onSet={(v) => ns.setRoutineValue(r.id, v)}
+                      onNote={(note) => ns.setRoutineNote(r.id, note)}
                     />
+
                     <div className="flex flex-wrap items-center gap-1.5 pl-2 text-[10px] text-muted-foreground">
                       <span>🎯</span>
                       <InlineNumber
