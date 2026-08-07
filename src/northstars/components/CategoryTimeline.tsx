@@ -8,6 +8,7 @@ import { daysUntil, formatDate, metricProgress, metricValueLabel, formatNumber, 
 import { AUTO_SOURCE_LABEL, AutoSource } from "../autoSources";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -183,6 +184,8 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
   const [details, setDetails] = useState(false);
   const pct = Math.round(metricProgress(metric) * 100);
   const auto = metric.auto_source;
+  const hit = pct >= 100;
+  const barColor = hit ? "hsl(43 85% 48%)" : accent;
 
   return (
     <div className="group py-1.5">
@@ -190,8 +193,9 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
         <InlineText
           value={metric.name}
           onSave={(v) => ns.updateMetric(metric.id, { name: v })}
-          className="text-sm text-foreground flex-1 min-w-0"
+          className={cn("text-sm flex-1 min-w-0", hit ? "text-amber-700 dark:text-amber-300 font-medium" : "text-foreground")}
         />
+        {hit && <span className="text-[11px] leading-none shrink-0" title="Target hit">⭐</span>}
         <span className="text-xs text-muted-foreground tabular-nums shrink-0">
           {auto ? (
             <span className="tabular-nums">{formatNumber(metric.current_value)}</span>
@@ -235,7 +239,7 @@ function MetricRow({ metric, accent, ns }: { metric: GoalMetric; accent: string;
       </div>
       <div className="flex items-center gap-2 mt-1">
         <div className="h-[5px] flex-1 bg-muted rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: accent }} />
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: barColor }} />
         </div>
         {metric.direction === "down" && (
           <span className="text-[10px] text-muted-foreground tabular-nums">

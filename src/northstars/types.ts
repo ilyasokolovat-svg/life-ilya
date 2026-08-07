@@ -62,6 +62,8 @@ export interface GoalRoutine {
   sort_order: number;
   notes: string | null;
   linked_metric_id: string | null;
+  /** When set, the weekly value is computed, not typed (e.g. gym sessions from Healthy Life). */
+  auto_source: "gym_sessions" | null;
 }
 
 export interface RoutineLog {

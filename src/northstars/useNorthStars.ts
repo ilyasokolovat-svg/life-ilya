@@ -13,7 +13,7 @@ import {
 } from "./types";
 import { archiveLegacyGoalsV2, seedNorthStars } from "./seed";
 import { fetchAutoSources } from "./autoSources";
-import { currentWeekStart, effectiveTarget, lastDayOfMonth, toISODate } from "./utils";
+import { addDays, currentWeekStart, effectiveTarget, lastDayOfMonth, parseISODate, toISODate, weekStart } from "./utils";
 import { AED_PER_USD } from "@/wealth/format";
 
 export interface NorthStarsData {
@@ -97,13 +97,41 @@ export function useNorthStars() {
       return q ? { ...m, current_value: auto.gymSessions(q.start_date, q.end_date) } : m;
     });
 
+    const routines = (rts.data || []) as GoalRoutine[];
+    let logs = (lgs.data || []) as RoutineLog[];
+
+    // Routines with an auto source are computed per week from the source of truth.
+    const autoRoutines = routines.filter((r) => r.auto_source === "gym_sessions");
+    if (autoRoutines.length) {
+      const monday = weekStart();
+      const weeks: string[] = [];
+      for (let i = 0; i < 26; i++) weeks.push(toISODate(addDays(monday, -7 * i)));
+      const kept = logs.filter((l) => !autoRoutines.some((r) => r.id === l.routine_id));
+      const synth: RoutineLog[] = [];
+      for (const r of autoRoutines) {
+        for (const w of weeks) {
+          const existing = logs.find((l) => l.routine_id === r.id && l.week_start_date === w);
+          synth.push({
+            id: existing?.id || `auto-${r.id}-${w}`,
+            user_id: userId,
+            routine_id: r.id,
+            week_start_date: w,
+            value: auto.gymSessions(w, toISODate(addDays(parseISODate(w), 6))),
+            note: existing?.note ?? null,
+            target_snapshot: existing?.target_snapshot ?? r.target_per_week,
+          });
+        }
+      }
+      logs = [...kept, ...synth];
+    }
+
     setData({
       categories: (cats.data || []) as GoalCategory[],
       horizons: (hor.data || []) as GoalHorizon[],
       quarters,
       metrics,
-      routines: (rts.data || []) as GoalRoutine[],
-      logs: (lgs.data || []) as RoutineLog[],
+      routines,
+      logs,
       checkins: (cis.data || []) as Checkin[],
       settings: (st.data as GoalSettings) || null,
     });
@@ -264,6 +292,7 @@ export function useNorthStars() {
           is_active: true,
           sort_order: count,
           notes: patch.notes ?? null,
+          auto_source: patch.auto_source ?? null,
         })
       );
       await load();
@@ -280,6 +309,7 @@ export function useNorthStars() {
     setRoutineValue: async (routineId: string, value: number, week = currentWeekStart()) => {
       const prev = data.logs.find((l) => l.routine_id === routineId && l.week_start_date === week)?.value ?? 0;
       const routine = data.routines.find((r) => r.id === routineId);
+      if (routine?.auto_source) return; // computed from the source of truth
       const target = routine ? effectiveTarget(routine, data.settings) : null;
       await supabase
         .from("routine_log")
