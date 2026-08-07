@@ -21,6 +21,69 @@ interface Props {
   onEdit?: () => void;
 }
 
+/** Click-to-type actual value for the week (keeps +/- as a shortcut). */
+function ValueInput({
+  value,
+  target,
+  onSet,
+  label,
+}: {
+  value: number;
+  target: number;
+  onSet: (v: number) => void;
+  label: string;
+}) {
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(String(value));
+  React.useEffect(() => setDraft(String(value)), [value]);
+
+  const commit = () => {
+    setEditing(false);
+    const n = Number(draft);
+    if (!Number.isNaN(n) && n >= 0 && n !== value) onSet(n);
+    else setDraft(String(value));
+  };
+
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-0.5">
+        <input
+          autoFocus
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") {
+              setDraft(String(value));
+              setEditing(false);
+            }
+          }}
+          aria-label={`Actual for ${label}`}
+          className="w-9 bg-background border border-primary/50 rounded px-1 py-0 text-xs tabular-nums text-center outline-none"
+        />
+        <span className="text-[10px] text-muted-foreground tabular-nums">/{target}</span>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      aria-label={`Set actual for ${label}`}
+      title="Click to type the actual number"
+      className="text-xs tabular-nums font-medium text-foreground w-9 text-center rounded hover:bg-secondary"
+    >
+      {value}/{target}
+    </button>
+  );
+}
+
+
 export function RoutineControl({
   routine,
   logs,
