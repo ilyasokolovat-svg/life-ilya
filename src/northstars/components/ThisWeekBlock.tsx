@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Flame, Plus } from "lucide-react";
+import { ChevronRight, ChevronDown, ChevronUp, Flame, Plus } from "lucide-react";
 import { useNorthStars } from "../useNorthStars";
 import { CheckinModal } from "./CheckinModal";
 import { RoutineControl } from "./RoutineControl";
