@@ -205,6 +205,24 @@ export function useNorthStars() {
       await supabase.from("goal_categories").update(patch).eq("id", id);
       await load();
     },
+    moveCategory: async (id: string, dir: -1 | 1) => {
+      const ordered = [...data.categories].sort((a, b) => a.sort_order - b.sort_order);
+      const idx = ordered.findIndex((c) => c.id === id);
+      const swapIdx = idx + dir;
+      if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+      [ordered[idx], ordered[swapIdx]] = [ordered[swapIdx], ordered[idx]];
+      // re-index everything so ordering stays stable even with duplicate sort_order values
+      const renumbered = ordered.map((c, i) => ({ ...c, sort_order: i }));
+      setData((d) => ({ ...d, categories: renumbered }));
+      await Promise.all(
+        renumbered.map((c) =>
+          supabase.from("goal_categories").update({ sort_order: c.sort_order }).eq("id", c.id)
+        )
+      );
+      await load();
+    },
+
+
     addCategory: async (name: string, accent: string, cadence: "weekly" | "monthly") => {
       const sort = data.categories.length;
       const { data: cat } = await supabase
