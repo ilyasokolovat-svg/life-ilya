@@ -48,7 +48,7 @@ export function ThisWeekBlock() {
       </div>
 
       <div className="divide-y divide-border">
-        {ns.categories.map((c) => {
+        {ns.categories.map((c, idx) => {
           const q = ns.quarters.find((x) => x.category_id === c.id && x.is_active);
           const metrics = q ? ns.metrics.filter((m) => m.quarter_id === q.id) : [];
           const qp = quarterProgress(metrics);
@@ -70,7 +70,28 @@ export function ThisWeekBlock() {
                 >
                   {Math.round(qp.pct * 100)}%
                 </span>
+                <span className="flex flex-col shrink-0">
+                  <button
+                    type="button"
+                    aria-label={`Move ${c.name} up`}
+                    disabled={idx === 0}
+                    onClick={() => ns.moveCategory(c.id, -1)}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-25 leading-none"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Move ${c.name} down`}
+                    disabled={idx === ns.categories.length - 1}
+                    onClick={() => ns.moveCategory(c.id, 1)}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-25 leading-none"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </span>
               </div>
+
 
               <SegmentBar parts={qp.parts} color={c.accent_color} height={5} />
 
