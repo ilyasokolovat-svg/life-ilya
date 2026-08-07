@@ -75,11 +75,22 @@ export function ThisWeekBlock() {
               <SegmentBar parts={qp.parts} color={c.accent_color} height={5} />
 
               {c.cadence === "weekly" ? (
-                routines.length > 0 && (
-                  <div className="space-y-1.5 pt-0.5">
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center gap-2">
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                       Weekly · {rp.done}/{rp.total} done
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => setEditor({ categoryId: c.id })}
+                      className="ml-auto inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                    >
+                      <Plus className="w-3 h-3" /> routine
+                    </button>
+                  </div>
+                  {routines.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground">No routines yet.</p>
+                  ) : (
                     <div className="grid gap-1.5 sm:grid-cols-2">
                       {routines.slice(0, 6).map((r) => (
                         <RoutineControl
@@ -90,12 +101,14 @@ export function ThisWeekBlock() {
                           accent={c.accent_color}
                           linked={!!r.linked_metric_id}
                           onSet={(v) => ns.setRoutineValue(r.id, v)}
+                          onNote={(note) => ns.setRoutineNote(r.id, note)}
+                          onEdit={() => setEditor({ categoryId: c.id, routine: r })}
                           compact
                         />
                       ))}
                     </div>
-                  </div>
-                )
+                  )}
+                </div>
               ) : (
                 <p className="text-[11px] text-muted-foreground">
                   💰 Money day {moneyIn !== null ? `in ${moneyIn} days` : "—"}
@@ -107,6 +120,26 @@ export function ThisWeekBlock() {
       </div>
 
       <CheckinModal open={checkin} onOpenChange={setCheckin} ns={ns} />
+
+      {editor && (
+        <RoutineEditorDialog
+          key={editor.routine?.id ?? "new"}
+          open
+          onOpenChange={(o) => !o && setEditor(null)}
+          routine={editor.routine}
+          metrics={ns.metrics.filter((m) => {
+            const q = ns.quarters.find((x) => x.id === m.quarter_id);
+            return q?.category_id === editor.categoryId && q.is_active;
+          })}
+          onSave={(draft) =>
+            editor.routine
+              ? ns.updateRoutine(editor.routine.id, draft)
+              : ns.addRoutine(editor.categoryId, draft)
+          }
+          onDelete={editor.routine ? () => ns.deleteRoutine(editor.routine!.id) : undefined}
+        />
+      )}
     </div>
   );
 }
+
