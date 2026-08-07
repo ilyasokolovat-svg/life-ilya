@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ChevronDown, Flame, Plane } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Flame, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNorthStars } from "../useNorthStars";
