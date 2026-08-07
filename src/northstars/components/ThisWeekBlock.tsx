@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Flame } from "lucide-react";
+import { ChevronRight, Flame, Plus } from "lucide-react";
 import { useNorthStars } from "../useNorthStars";
 import { CheckinModal } from "./CheckinModal";
 import { RoutineControl } from "./RoutineControl";
+import { RoutineEditorDialog } from "./RoutineEditorDialog";
+import { GoalRoutine } from "../types";
 import { SegmentBar } from "./SegmentBar";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,11 +20,13 @@ import {
 export function ThisWeekBlock() {
   const ns = useNorthStars();
   const [checkin, setCheckin] = useState(false);
+  const [editor, setEditor] = useState<{ categoryId: string; routine?: GoalRoutine } | null>(null);
   const streak = useMemo(() => checkinStreak(ns.checkins), [ns.checkins]);
   const week = currentWeekStart();
   const checkedIn = ns.checkins.some((c) => c.week_start_date === week);
 
   if (!ns.categories.length) return null;
+
 
   return (
     <div className="border border-border rounded-xl bg-card">
