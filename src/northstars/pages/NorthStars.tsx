@@ -95,10 +95,31 @@ export default function NorthStars() {
                   )}
                 </div>
                 <span className="text-xs font-medium text-foreground tabular-nums w-10 text-right">{pct}%</span>
+                <span className="flex flex-col shrink-0">
+                  <button
+                    type="button"
+                    aria-label={`Move ${c.name} up`}
+                    disabled={idx === 0}
+                    onClick={(e) => { e.stopPropagation(); ns.moveCategory(c.id, -1); }}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-25 leading-none"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Move ${c.name} down`}
+                    disabled={idx === ns.categories.length - 1}
+                    onClick={(e) => { e.stopPropagation(); ns.moveCategory(c.id, 1); }}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-25 leading-none"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </span>
                 <ChevronDown
                   className={cn("w-4 h-4 text-muted-foreground transition-transform", isOpen && "rotate-180")}
                 />
               </button>
+
 
               {isOpen && (
                 <div className="px-4 pb-4 pt-1 border-t border-border">
