@@ -166,6 +166,32 @@ export function useNorthStars() {
     };
   }, [userId, load]);
 
+  // Auto-sourced values (gym log) live in habit_days. Re-pull whenever that
+  // cache changes or the tab regains focus, so routines never show a stale 0.
+  useEffect(() => {
+    if (!userId) return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const kick = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => void load(), 400);
+    };
+    const unsub = queryClient.getQueryCache().subscribe((event) => {
+      const key = (event as { query?: { queryKey?: unknown[] } })?.query?.queryKey;
+      if (Array.isArray(key) && key[0] === "habit_days") kick();
+    });
+    const onFocus = () => kick();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      if (t) clearTimeout(t);
+      unsub();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [userId, load, queryClient]);
+
+
+
   // ---- mutations (all reload afterwards) ----
   const withUser = <T extends object>(row: T) => ({ ...row, user_id: userId as string });
 
