@@ -8,6 +8,7 @@ import { daysUntil, formatDate, metricProgress, metricValueLabel, formatNumber, 
 import { AUTO_SOURCE_LABEL, AutoSource } from "../autoSources";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";

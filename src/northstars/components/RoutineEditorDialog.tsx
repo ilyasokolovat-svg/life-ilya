@@ -13,6 +13,7 @@ export interface RoutineDraft {
   is_binary: boolean;
   linked_metric_id: string | null;
   notes: string | null;
+  auto_source: "gym_sessions" | null;
 }
 
 /** Add / edit a weekly routine. Used from both the dashboard and the goals page. */
@@ -38,6 +39,7 @@ export function RoutineEditorDialog({
     is_binary: routine?.is_binary ?? false,
     linked_metric_id: routine?.linked_metric_id ?? null,
     notes: routine?.notes ?? null,
+    auto_source: routine?.auto_source ?? null,
   });
 
   return (
@@ -56,6 +58,24 @@ export function RoutineEditorDialog({
               placeholder="e.g. Gym sessions"
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
+          </div>
+          <div>
+            <Label className="text-xs">Auto-count from</Label>
+            <select
+              className="mt-1 h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+              value={form.auto_source ?? ""}
+              onChange={(e) =>
+                setForm({ ...form, auto_source: (e.target.value || null) as "gym_sessions" | null })
+              }
+            >
+              <option value="">Log it manually</option>
+              <option value="gym_sessions">Training sessions (Healthy Life tracker)</option>
+            </select>
+            {form.auto_source && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                🔄 Counted automatically each week from your Healthy Life gym log.
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
