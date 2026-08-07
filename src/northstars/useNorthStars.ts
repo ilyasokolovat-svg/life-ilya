@@ -13,7 +13,7 @@ import {
 } from "./types";
 import { archiveLegacyGoalsV2, seedNorthStars } from "./seed";
 import { fetchAutoSources } from "./autoSources";
-import { currentWeekStart, effectiveTarget, lastDayOfMonth, toISODate } from "./utils";
+import { addDays, currentWeekStart, effectiveTarget, lastDayOfMonth, parseISODate, toISODate, weekStart } from "./utils";
 import { AED_PER_USD } from "@/wealth/format";
 
 export interface NorthStarsData {
@@ -292,6 +292,7 @@ export function useNorthStars() {
           is_active: true,
           sort_order: count,
           notes: patch.notes ?? null,
+          auto_source: patch.auto_source ?? null,
         })
       );
       await load();
