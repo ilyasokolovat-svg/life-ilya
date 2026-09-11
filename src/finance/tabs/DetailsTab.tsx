@@ -873,13 +873,6 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
           </table>
         </div>
       </CardContent></Card>
-
-      <ImportDialog
-        d={d}
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        onImported={(s) => { setLastImport(s); onChange(); }}
-      />
     </div>
   );
 };
