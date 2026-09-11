@@ -31,20 +31,25 @@ export const QuickUpdateDialog: React.FC<{
   const { user } = useAuth();
   const [asOf, setAsOf] = useState(todayISO());
   const [vals, setVals] = useState<Record<string, string>>({});
+  const [flows, setFlows] = useState<Record<string, string>>({});
   const [bonus, setBonus] = useState('');
   const [bonusDate, setBonusDate] = useState(todayISO());
   const [salary, setSalary] = useState('');
   const [salaryDate, setSalaryDate] = useState(todayISO());
   const [ccBal, setCcBal] = useState('');
+  const [carBal, setCarBal] = useState('');
   const [busy, setBusy] = useState(false);
 
   const latest = useMemo(() => latestBucketValues(d), [d]);
   const cc = ccAccount(d);
-  const lastCC = useMemo(() => {
-    if (!cc) return 0;
-    const snaps = [...d.nwSnapshots].filter(s => s.account_id === cc.id).sort((a, b) => (b.month > a.month ? 1 : -1));
+  const car = carLoanAccount(d);
+  const lastBalance = (accId: string | undefined) => {
+    if (!accId) return 0;
+    const snaps = [...d.nwSnapshots].filter(s => s.account_id === accId).sort((a, b) => (b.month > a.month ? 1 : -1));
     return snaps.length ? Math.abs(Number(snaps[0].value)) : 0;
-  }, [d.nwSnapshots, cc]);
+  };
+  const lastCC = useMemo(() => lastBalance(cc?.id), [d.nwSnapshots, cc]);
+  const lastCar = useMemo(() => lastBalance(car?.id), [d.nwSnapshots, car]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,11 +65,14 @@ export const QuickUpdateDialog: React.FC<{
       init[b.label] = String(Math.round(latest.find(l => l.bucketId === b.id)?.value ?? 0));
     }
     setVals(init);
+    setFlows({});
     setAsOf(todayISO());
     setBonus(''); setSalary('');
     setBonusDate(todayISO()); setSalaryDate(todayISO());
     setCcBal(String(Math.round(lastCC)));
+    setCarBal(String(Math.round(lastCar)));
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const allRows = useMemo(() => {
     const extras = d.investmentBuckets
