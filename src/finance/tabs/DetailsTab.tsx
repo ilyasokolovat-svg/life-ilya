@@ -11,7 +11,7 @@ import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtDate, fmtMonth, parseEntryDate, sortByDateAsc, sortByDateDesc } from '../utils';
 import { COLORS } from '../constants';
 import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt, bonusVsInvestedSeries, cumulativeContributions } from '../calc';
-import { ImportDialog, type ImportSummary } from '../import/ImportDialog';
+import { type ImportSummary } from '../import/ImportDialog';
 import { CoachCard } from '../import/CoachCard';
 import { SuggestBudgetDialog } from '../import/SuggestBudgetDialog';
 import { Sparkles } from 'lucide-react';
@@ -491,9 +491,8 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   }, [d.budgetCategories]);
   const fixedCats = cats.filter(c => catGroup(c.label) === 'fixed');
   const variableCats = cats.filter(c => catGroup(c.label) === 'variable');
-  const [importOpen, setImportOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
+  const [lastImport] = useState<ImportSummary | null>(null);
   const [futureCount, setFutureCount] = useState<number>(3);
 
   const now = new Date();
@@ -638,14 +637,11 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="text-xs text-muted-foreground">
-          Upload your iPhone expense app export to auto-fill actuals. Lock 🔒 any cell you want the importer to leave alone.
+          Use “Upload spending file” at the top of the page to auto-fill actuals. Lock 🔒 any cell you want the importer to leave alone.
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => setSuggestOpen(true)}>
             <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Suggest next month
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload className="w-3.5 h-3.5 mr-1.5" /> Import from file
           </Button>
         </div>
       </div>
@@ -876,13 +872,6 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
           </table>
         </div>
       </CardContent></Card>
-
-      <ImportDialog
-        d={d}
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        onImported={(s) => { setLastImport(s); onChange(); }}
-      />
     </div>
   );
 };
