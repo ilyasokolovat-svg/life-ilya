@@ -444,6 +444,89 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_trip_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          spent_on: string | null
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          spent_on?: string | null
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          spent_on?: string | null
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_trip_expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "finance_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_trips: {
+        Row: {
+          created_at: string
+          destination: string | null
+          end_date: string
+          id: string
+          notes: string | null
+          planned_budget: number
+          start_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination?: string | null
+          end_date: string
+          id?: string
+          notes?: string | null
+          planned_budget?: number
+          start_date: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string | null
+          end_date?: string
+          id?: string
+          notes?: string | null
+          planned_budget?: number
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       focus_blocks: {
         Row: {
           completed: boolean
