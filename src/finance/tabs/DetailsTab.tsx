@@ -491,9 +491,8 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
   }, [d.budgetCategories]);
   const fixedCats = cats.filter(c => catGroup(c.label) === 'fixed');
   const variableCats = cats.filter(c => catGroup(c.label) === 'variable');
-  const [importOpen, setImportOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const [lastImport, setLastImport] = useState<ImportSummary | null>(null);
+  const [lastImport] = useState<ImportSummary | null>(null);
   const [futureCount, setFutureCount] = useState<number>(3);
 
   const now = new Date();
