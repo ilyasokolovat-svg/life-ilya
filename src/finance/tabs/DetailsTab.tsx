@@ -398,11 +398,19 @@ const DebtView: React.FC<{ d: WealthData }> = ({ d }) => {
     ...(cc ? d.nwSnapshots.filter(s => s.account_id === cc.id).map(s => s.month) : []),
     ...(car ? d.nwSnapshots.filter(s => s.account_id === car.id).map(s => s.month) : []),
   ])).sort(), [d, cc, car]);
-  const data = dates.map(dt => ({
-    date: dt,
-    cc: cc ? Math.abs(Number(d.nwSnapshots.find(s => s.month === dt && s.account_id === cc.id)?.value ?? 0)) : 0,
-    car: car ? Math.abs(Number(d.nwSnapshots.find(s => s.month === dt && s.account_id === car.id)?.value ?? 0)) : 0,
-  }));
+  // Carry the last known balance forward: a date where only one account was updated
+  // must not drop the other account to zero.
+  const data = useMemo(() => {
+    let lastCC = 0, lastCar = 0;
+    return dates.map(dt => {
+      const ccSnap = cc ? d.nwSnapshots.find(s => s.month === dt && s.account_id === cc.id) : undefined;
+      const carSnap = car ? d.nwSnapshots.find(s => s.month === dt && s.account_id === car.id) : undefined;
+      if (ccSnap) lastCC = Math.abs(Number(ccSnap.value));
+      if (carSnap) lastCar = Math.abs(Number(carSnap.value));
+      return { date: dt, cc: lastCC, car: lastCar };
+    });
+  }, [dates, d.nwSnapshots, cc, car]);
+
 
   const tableRows = useMemo(() => {
     const rows: { date: string; type: string; balance: number; change: number; color: string }[] = [];
