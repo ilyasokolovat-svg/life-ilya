@@ -11,7 +11,7 @@ import type { WealthData } from '@/wealth/types';
 import { fmtUSD, fmtDate, fmtMonth, parseEntryDate, sortByDateAsc, sortByDateDesc } from '../utils';
 import { COLORS } from '../constants';
 import { bucketStackSeries, ccAccount, carLoanAccount, investmentDates, netWorthSeries, totalInvestmentsAt, bonusVsInvestedSeries, cumulativeContributions } from '../calc';
-import { ImportDialog, type ImportSummary } from '../import/ImportDialog';
+import { type ImportSummary } from '../import/ImportDialog';
 import { CoachCard } from '../import/CoachCard';
 import { SuggestBudgetDialog } from '../import/SuggestBudgetDialog';
 import { Sparkles } from 'lucide-react';
