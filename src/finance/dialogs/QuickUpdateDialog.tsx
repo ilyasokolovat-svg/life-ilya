@@ -193,9 +193,13 @@ export const QuickUpdateDialog: React.FC<{
           </div>
 
           <div className="space-y-2.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Current balances ($)</p>
+            <div className="grid grid-cols-[1fr_115px_115px] gap-2 items-end">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Current balances ($)</p>
+              <p className="text-[10px] text-muted-foreground text-right leading-tight">Balance now</p>
+              <p className="text-[10px] text-muted-foreground text-right leading-tight">Added / taken out</p>
+            </div>
             {allRows.map(r => (
-              <div key={r.label} className="grid grid-cols-[1fr_130px] gap-2 items-center">
+              <div key={r.label} className="grid grid-cols-[1fr_115px_115px] gap-2 items-center">
                 <div>
                   <div className="text-sm flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: r.color }} />{r.label}
@@ -208,18 +212,40 @@ export const QuickUpdateDialog: React.FC<{
                   onChange={e => setVals({ ...vals, [r.label]: e.target.value })}
                   className="tabular-nums text-right"
                 />
+                <Input
+                  type="number"
+                  value={flows[r.label] ?? ''}
+                  placeholder="0"
+                  onChange={e => setFlows({ ...flows, [r.label]: e.target.value })}
+                  className="tabular-nums text-right"
+                />
               </div>
             ))}
+            <p className="text-[11px] text-muted-foreground">
+              Use the right column only for money you actually moved in since the last update — a minus number if you took money out. It shows up on the Flows chart.
+            </p>
             {cc && (
-              <div className="grid grid-cols-[1fr_130px] gap-2 items-center pt-1 border-t border-border">
+              <div className="grid grid-cols-[1fr_115px_115px] gap-2 items-center pt-1 border-t border-border">
                 <div>
                   <div className="text-sm">Credit card owed</div>
                   <div className="text-[11px] text-muted-foreground">Subtracted from net worth</div>
                 </div>
                 <Input type="number" value={ccBal} onChange={e => setCcBal(e.target.value)} className="tabular-nums text-right" />
+                <div />
+              </div>
+            )}
+            {car && (
+              <div className="grid grid-cols-[1fr_115px_115px] gap-2 items-center">
+                <div>
+                  <div className="text-sm">Car loan left</div>
+                  <div className="text-[11px] text-muted-foreground">Kept out of net worth, shown on Debt</div>
+                </div>
+                <Input type="number" value={carBal} onChange={e => setCarBal(e.target.value)} className="tabular-nums text-right" />
+                <div />
               </div>
             )}
           </div>
+
 
           <div className="space-y-2.5 border-t border-border pt-3">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Money received since last update</p>
