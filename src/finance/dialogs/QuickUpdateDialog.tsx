@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, todayISO } from '../utils';
 import { AED_TO_USD } from '../constants';
-import { latestBucketValues, ccAccount } from '../calc';
+import { latestBucketValues, ccAccount, carLoanAccount } from '../calc';
 
 const sb = supabase as any;
 
@@ -31,20 +31,25 @@ export const QuickUpdateDialog: React.FC<{
   const { user } = useAuth();
   const [asOf, setAsOf] = useState(todayISO());
   const [vals, setVals] = useState<Record<string, string>>({});
+  const [flows, setFlows] = useState<Record<string, string>>({});
   const [bonus, setBonus] = useState('');
   const [bonusDate, setBonusDate] = useState(todayISO());
   const [salary, setSalary] = useState('');
   const [salaryDate, setSalaryDate] = useState(todayISO());
   const [ccBal, setCcBal] = useState('');
+  const [carBal, setCarBal] = useState('');
   const [busy, setBusy] = useState(false);
 
   const latest = useMemo(() => latestBucketValues(d), [d]);
   const cc = ccAccount(d);
-  const lastCC = useMemo(() => {
-    if (!cc) return 0;
-    const snaps = [...d.nwSnapshots].filter(s => s.account_id === cc.id).sort((a, b) => (b.month > a.month ? 1 : -1));
+  const car = carLoanAccount(d);
+  const lastBalance = (accId: string | undefined) => {
+    if (!accId) return 0;
+    const snaps = [...d.nwSnapshots].filter(s => s.account_id === accId).sort((a, b) => (b.month > a.month ? 1 : -1));
     return snaps.length ? Math.abs(Number(snaps[0].value)) : 0;
-  }, [d.nwSnapshots, cc]);
+  };
+  const lastCC = useMemo(() => lastBalance(cc?.id), [d.nwSnapshots, cc]);
+  const lastCar = useMemo(() => lastBalance(car?.id), [d.nwSnapshots, car]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,11 +65,14 @@ export const QuickUpdateDialog: React.FC<{
       init[b.label] = String(Math.round(latest.find(l => l.bucketId === b.id)?.value ?? 0));
     }
     setVals(init);
+    setFlows({});
     setAsOf(todayISO());
     setBonus(''); setSalary('');
     setBonusDate(todayISO()); setSalaryDate(todayISO());
     setCcBal(String(Math.round(lastCC)));
+    setCarBal(String(Math.round(lastCar)));
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const allRows = useMemo(() => {
     const extras = d.investmentBuckets
@@ -92,11 +100,12 @@ export const QuickUpdateDialog: React.FC<{
     if (!user) return;
     setBusy(true);
     try {
-      // 1. Portfolio values — one snapshot per bucket at the as-of date (idempotent per date).
+      // 1. Portfolio values + money added/withdrawn — one snapshot per bucket at the as-of date.
       for (const row of allRows) {
         const spec = BUCKET_SPEC.find(s => s.label === row.label);
         const bucketId = await ensureBucketId(row.label, row.color, spec?.sort ?? 99);
         const value = Number(vals[row.label]) || 0;
+        const contribution = Number(flows[row.label]) || 0;
         const { data: existing } = await sb
           .from('investment_snapshots')
           .select('id')
@@ -104,23 +113,26 @@ export const QuickUpdateDialog: React.FC<{
           .eq('bucket_id', bucketId)
           .eq('month', asOf)
           .maybeSingle();
-        if (existing) await sb.from('investment_snapshots').update({ value }).eq('id', existing.id);
-        else await sb.from('investment_snapshots').insert({ user_id: user.id, bucket_id: bucketId, month: asOf, value, contribution: 0 });
+        if (existing) await sb.from('investment_snapshots').update({ value, contribution }).eq('id', existing.id);
+        else await sb.from('investment_snapshots').insert({ user_id: user.id, bucket_id: bucketId, month: asOf, value, contribution });
       }
 
-      // 2. Credit card balance (stored negative), one row per as-of date.
-      if (cc) {
-        const value = -Math.abs(Number(ccBal) || 0);
+      // 2. Debt balances (stored negative), one row per account per as-of date.
+      const saveDebt = async (accountId: string, amount: number) => {
+        const value = -Math.abs(amount);
         const { data: existing } = await sb
           .from('nw_snapshots')
           .select('id')
           .eq('user_id', user.id)
-          .eq('account_id', cc.id)
+          .eq('account_id', accountId)
           .eq('month', asOf)
           .maybeSingle();
         if (existing) await sb.from('nw_snapshots').update({ value }).eq('id', existing.id);
-        else await sb.from('nw_snapshots').insert({ user_id: user.id, account_id: cc.id, month: asOf, value });
-      }
+        else await sb.from('nw_snapshots').insert({ user_id: user.id, account_id: accountId, month: asOf, value });
+      };
+      if (cc) await saveDebt(cc.id, Number(ccBal) || 0);
+      if (car) await saveDebt(car.id, Number(carBal) || 0);
+
 
       // 3. Bonus — added to the month it landed, skipped if an identical entry already exists.
       const bonusAmount = Number(bonus) || 0;
@@ -181,9 +193,13 @@ export const QuickUpdateDialog: React.FC<{
           </div>
 
           <div className="space-y-2.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Current balances ($)</p>
+            <div className="grid grid-cols-[1fr_115px_115px] gap-2 items-end">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Current balances ($)</p>
+              <p className="text-[10px] text-muted-foreground text-right leading-tight">Balance now</p>
+              <p className="text-[10px] text-muted-foreground text-right leading-tight">Added / taken out</p>
+            </div>
             {allRows.map(r => (
-              <div key={r.label} className="grid grid-cols-[1fr_130px] gap-2 items-center">
+              <div key={r.label} className="grid grid-cols-[1fr_115px_115px] gap-2 items-center">
                 <div>
                   <div className="text-sm flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: r.color }} />{r.label}
@@ -196,18 +212,40 @@ export const QuickUpdateDialog: React.FC<{
                   onChange={e => setVals({ ...vals, [r.label]: e.target.value })}
                   className="tabular-nums text-right"
                 />
+                <Input
+                  type="number"
+                  value={flows[r.label] ?? ''}
+                  placeholder="0"
+                  onChange={e => setFlows({ ...flows, [r.label]: e.target.value })}
+                  className="tabular-nums text-right"
+                />
               </div>
             ))}
+            <p className="text-[11px] text-muted-foreground">
+              Use the right column only for money you actually moved in since the last update — a minus number if you took money out. It shows up on the Flows chart.
+            </p>
             {cc && (
-              <div className="grid grid-cols-[1fr_130px] gap-2 items-center pt-1 border-t border-border">
+              <div className="grid grid-cols-[1fr_115px_115px] gap-2 items-center pt-1 border-t border-border">
                 <div>
                   <div className="text-sm">Credit card owed</div>
                   <div className="text-[11px] text-muted-foreground">Subtracted from net worth</div>
                 </div>
                 <Input type="number" value={ccBal} onChange={e => setCcBal(e.target.value)} className="tabular-nums text-right" />
+                <div />
+              </div>
+            )}
+            {car && (
+              <div className="grid grid-cols-[1fr_115px_115px] gap-2 items-center">
+                <div>
+                  <div className="text-sm">Car loan left</div>
+                  <div className="text-[11px] text-muted-foreground">Kept out of net worth, shown on Debt</div>
+                </div>
+                <Input type="number" value={carBal} onChange={e => setCarBal(e.target.value)} className="tabular-nums text-right" />
+                <div />
               </div>
             )}
           </div>
+
 
           <div className="space-y-2.5 border-t border-border pt-3">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Money received since last update</p>
