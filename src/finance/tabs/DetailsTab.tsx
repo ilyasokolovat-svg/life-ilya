@@ -638,14 +638,11 @@ const SpendingView: React.FC<{ d: WealthData; onChange: () => void }> = ({ d, on
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="text-xs text-muted-foreground">
-          Upload your iPhone expense app export to auto-fill actuals. Lock 🔒 any cell you want the importer to leave alone.
+          Use “Upload spending file” at the top of the page to auto-fill actuals. Lock 🔒 any cell you want the importer to leave alone.
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => setSuggestOpen(true)}>
             <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Suggest next month
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload className="w-3.5 h-3.5 mr-1.5" /> Import from file
           </Button>
         </div>
       </div>
