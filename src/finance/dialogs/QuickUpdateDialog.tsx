@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import type { WealthData } from '@/wealth/types';
 import { fmtUSD, todayISO } from '../utils';
 import { AED_TO_USD } from '../constants';
-import { latestBucketValues, ccAccount } from '../calc';
+import { latestBucketValues, ccAccount, carLoanAccount } from '../calc';
 
 const sb = supabase as any;
 
