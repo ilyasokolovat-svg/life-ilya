@@ -40,7 +40,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (_event, nextSession) => applySession(nextSession)
     );
 
-    supabase.auth.getSession().then(({ data: { session: initial } }) => applySession(initial));
+    // Open access: automatically sign in to the owner's account (no login screen).
+    supabase.auth.getSession().then(async ({ data: { session: initial } }) => {
+      if (initial) return applySession(initial);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'ilya.sokolov.at@gmail.com',
+        password: '123456781',
+      });
+      if (error) console.error('Auto sign-in failed:', error.message);
+      applySession(data?.session ?? null);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
